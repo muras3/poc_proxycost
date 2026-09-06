@@ -36,6 +36,8 @@ export interface Line {
   optional?: boolean;
 }
 
+export type WeightOrigin = 'table' | 'assumed' | 'user';
+
 export interface Item {
   id: string;
   title: string;
@@ -45,11 +47,19 @@ export interface Item {
   site: SiteId;
   url?: string | null;
   imageUrl?: string | null;
-  /** null = カテゴリからも決まらない。段（Band）に落ちる。 */
+  /** null = 重量が無い。段（Band）に落ちる。**計算機の UI は null を渡さない**
+   *  （表に当たらなければ仮置きを入れ、そう書いて、直してもらう。docs/UI-DESIGN.md §4）。 */
   weightG: number | null;
   weightTier: Tier;
   /** 重量の出所（'1/7 scale · n=647 · Solaris Japan' など）。 */
   weightSource?: string | null;
+  /** 重量の出どころ。'table' = 重量表のライン、'assumed' = 表に当たらず仮置き、'user' = 利用者が入力。 */
+  weightOrigin?: WeightOrigin;
+  /** 重量表のラインの P25–P75（g）。表から引いたときだけ入る。
+   *  この幅の中で1位が替わるかを compare() が見る。 */
+  weightRangeG?: [number, number] | null;
+  /** 重量表のライン id。/weights#<id> へのリンクに使う。 */
+  weightLineId?: string | null;
   /** 出品が送料込みか。全社に等しく効くので1位は動かない（docs/DESIGN-NOTES.md §1）。 */
   freeShipping?: boolean;
   domesticShippingYen?: number | null;
@@ -110,6 +120,26 @@ export interface Band {
   cheapestServiceName: string;
 }
 
+/**
+ * 1点の重量だけを動かしたとき1位が替わるか。
+ * 他の点は与えられた重量のまま、この点だけを lowG / highG に置いて比べる。
+ * **「順位が替わる」と「比べられなくなる」を混ぜない**（rankStable と同じ規則）。
+ */
+export interface WeightSensitivity {
+  /** 試した下限・上限（g／点）。表のラインなら P25–P75、仮置きなら 500 g〜10 kg。 */
+  lowG: number;
+  highG: number;
+  /** その重量で1位になる行の label。比較可能な行が無ければ null。 */
+  winnerAtLow: string | null;
+  winnerAtHigh: string | null;
+  /** その端で比較可能な行が減っていたら true。そのときの winner は「最安」ではなく
+   *  「唯一値段が付く社」。画面ではそう書く。 */
+  onlyPricedAtLow: boolean;
+  onlyPricedAtHigh: boolean;
+  /** この点の重量だけで1位が替わるか。null（比べられない）は「替わった」に数えない。 */
+  decisive: boolean;
+}
+
 export interface CompareResult {
   /** 重量が確定しているときの結果。bands があるときは代表段（中央の段）の結果。 */
   rows: Row[];
@@ -125,9 +155,18 @@ export interface CompareResult {
   rankStabilityNote: string;
   /** bands があるときの総額全体の幅。 */
   totalRangeYen: [number, number] | null;
-  currency: { code: string; rate: number; asOf: string };
+  /**
+   * 表示に添える現地通貨換算。asOf は出典（ECB）の参照日で、我々が読んだ日ではない。
+   * 画面はこの2つを区別して出す（片方だけ出すと出典表示が嘘になる）。
+   */
+  currency: { code: string; rate: number; asOf: string; fetchedOn: string; sourceUrl: string };
   /** 重量が1点でも不明か。 */
   hasUnknownWeight: boolean;
+  /**
+   * 項目 id → その点の重量だけを動かしたときの1位の動き。
+   * 重量が全点そろっているときだけ。利用者が入れた重量の点は入れない（幅を知らない）。
+   */
+  weightSensitivity: Record<string, WeightSensitivity>;
 }
 
 export interface CompareInput {
