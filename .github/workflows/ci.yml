@@ -1,9 +1,17 @@
 name: ci
 
+# PR に紐づかない作業ブランチへの push も見たいが、PR がある間は
+# pull_request 側だけで足りる。両方を無条件に焚くと同じコミットを二重に検証する。
 on:
   pull_request:
   push:
     branches-ignore: [main]
+
+concurrency:
+  # 同じブランチの古い実行は打ち切る。PR への push で pull_request と push の
+  # 2本が立つが、同じ group に入るので後から来た方だけが残る。
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
