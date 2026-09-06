@@ -1,0 +1,577 @@
+{
+  "category": "sports-goods",
+  "labelJa": "スポーツ用品",
+  "labelEn": "Sports equipment",
+  "checkedOn": "2026-09-06",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "tozandoshop.com",
+      "url": "https://tozandoshop.com/products.json?limit=250&page=1",
+      "products": 1160,
+      "variantsWithGrams": 4917,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.9%, multiples of 100: 98%, of 500: 78%. Tozando of Kyoto, export storefront. product_type separates men / kote / do / tare / bogu set / hakama / shinai / bokuto / iaito / yumi, which makes the product lines easy to cut. Values sit on 500 g packing steps, but the steps differ per item (yumi 7,000 g, bogu set 5,000 g, men 2,500 g, tare 1,500 g, tenugui 100 g), so adopted.",
+      "reasonJa": "distinct比 0.9%, 100の倍数 98%, 500の倍数 78%。京都・東山堂の海外向け店。product_type が 面/小手/胴/垂/防具セット/袴/竹刀/木刀/居合刀/弓 に分かれていて商品ラインを切りやすい。値は 500g 刻みの梱包区分だが、品目ごとに段が分かれている（弓 7,000g / 防具セット 5,000g / 面 2,500g / 垂 1,500g / 手拭い 100g）ので採用"
+    },
+    {
+      "domain": "www.seidoshop.com",
+      "url": "https://www.seidoshop.com/products.json?limit=250&page=1",
+      "products": 675,
+      "variantsWithGrams": 4199,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.7%, multiples of 100: 52%, of 500: 26%. Aikido and koryu budo, shipped from Japan. 1,800 rows are embroidery, crest and alteration services — all 10 g, not products — and were excluded. The rest is uniforms, hakama, obi and bokuto, and its steps agree with Tozando's.",
+      "reasonJa": "distinct比 0.7%, 100の倍数 52%, 500の倍数 26%。合気道・古武道の日本発の店。刺繍/家紋/寸法直しなどの加工サービスが 1,800件あり全部 10g なので除外した（商品ではない）。残りは道着・袴・帯・木刀で、東山堂と品目の段が一致する"
+    },
+    {
+      "domain": "kendostar.com",
+      "url": "https://kendostar.com/products.json?limit=250&page=1",
+      "products": 486,
+      "variantsWithGrams": 131,
+      "verdict": "suspect",
+      "reason": "distinct ratio 6.1%, multiples of 100: 100%, of 500: 87%. Only 131 of 486 products carry grams. Small, but bogu 4,000 g and shinai 3,000 g are close to Tozando's steps, so it was adopted to add sample size for shinai and bogu sets.",
+      "reasonJa": "distinct比 6.1%, 100の倍数 100%, 500の倍数 87%。486商品のうち grams が入っているのは 131 variants だけ。少ないが防具 4,000g・竹刀 3,000g と東山堂の段に近く、竹刀と防具セットの n を補うために採用"
+    },
+    {
+      "domain": "www.kendo.co.jp",
+      "url": "https://www.kendo.co.jp/products.json?limit=250&page=1",
+      "products": 461,
+      "variantsWithGrams": 2528,
+      "verdict": "suspect",
+      "reason": "The script scores this suspect, but it is not adopted. Shinai carry 200,000 g (200 kg) and bogu sets 600,000 g — a factor of 1,000 out, as if a price or another unit were typed into the weight field. The maximum is 5,000,000 g. The ratios between items look right, but the absolute values are unusable.",
+      "reasonJa": "スクリプトの判定は suspect だが不採用。竹刀に 200,000g（200kg）、防具セットに 600,000g が入っていて桁が 1,000倍ずれている（重量欄に価格か別単位を入れたとみられる）。最大 5,000,000g。段の比率は正しそうでも絶対値が使えない"
+    },
+    {
+      "domain": "japangolfclubs.com",
+      "url": "https://japangolfclubs.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 2592,
+      "verdict": "pseudo",
+      "reason": "distinct=9, top value 78% of all rows. Drivers and iron sets alike are fixed at 2,268 g (5 lb). A flat packing class in pounds, with no difference between club types.",
+      "reasonJa": "distinct=9, 最頻値が全体の 78%。ドライバーもアイアンセットも 2,268g（=5 lb）固定。ポンド単位の一律梱包区分で、クラブ種別の差が出ていない"
+    },
+    {
+      "domain": "golfpartnerusa.com",
+      "url": "https://golfpartnerusa.com/products.json?limit=250&page=1",
+      "products": 4944,
+      "variantsWithGrams": 45,
+      "verdict": "insufficient",
+      "reason": "Only 45 of 4,944 products carry grams, and all of them are 1,361 g (3 lb). Below n=50 to judge, and pseudo anyway.",
+      "reasonJa": "4,944商品中 grams があるのは 45 variants のみ、しかも全部 1,361g（=3 lb）固定。n<50 で判定不能かつ擬似値"
+    },
+    {
+      "domain": "japangolfimport.com",
+      "url": "https://japangolfimport.com/products.json?limit=250&page=1",
+      "products": 2,
+      "variantsWithGrams": 72,
+      "verdict": "pseudo",
+      "reason": "distinct=1, all rows 4,000 g. Effectively two products (variations of one custom iron).",
+      "reasonJa": "distinct=1, 全件 4,000g。商品が実質2件（カスタムアイアンのバリエーション）"
+    },
+    {
+      "domain": "taiwanbaseball.com.tw",
+      "url": "https://taiwanbaseball.com.tw/products.json?limit=250&page=1",
+      "products": 156,
+      "variantsWithGrams": 168,
+      "verdict": "pseudo",
+      "reason": "distinct=4, top value 91%. A Taiwanese shop that ships Japanese brands (ZETT, SSK, Hi-Gold) worldwide. Gloves, mitts and protective gear are all fixed at 1,000 g, and it is not a Japanese shop, so not adopted.",
+      "reasonJa": "distinct=4, 最頻値 91%。ZETT/SSK/ハイゴールド等の日本ブランドを世界発送する台湾の店。グラブもミットも防具も全部 1,000g 固定で、日本の店ではないこともあり不採用"
+    },
+    {
+      "domain": "ballgloveblueprint.com",
+      "url": "https://ballgloveblueprint.com/products.json?limit=250&page=1",
+      "products": 114,
+      "variantsWithGrams": 133,
+      "verdict": "pseudo",
+      "reason": "distinct=2, top value 99%. Sells Japanese gloves (ATOMS, Wagyu-JB) but is a US shop. Every row is 907 g (2 lb).",
+      "reasonJa": "distinct=2, 最頻値 99%。日本製グラブ（ATOMS/Wagyu-JB）を扱うが米国の店。全件 907g（=2 lb）固定"
+    },
+    {
+      "domain": "japan-ballpark.com",
+      "url": "https://japan-ballpark.com/products.json?limit=250&page=1",
+      "products": 250,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify returns JSON, but grams is 0 on every row — no weights entered.",
+      "reasonJa": "Shopify で JSON は返るが、grams が全件 0（重量を入力していない）"
+    },
+    {
+      "domain": "katanajp.co",
+      "url": "https://katanajp.co/products.json?limit=250&page=1",
+      "products": 72,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "A hard-ball glove maker in Osaka. Shopify, but grams is 0 on every row.",
+      "reasonJa": "大阪の硬式グラブメーカー。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "en.kyujisensei.com",
+      "url": "https://en.kyujisensei.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns 404 — not a Shopify store. A second-hand baseball shop in Osaka.",
+      "reasonJa": "products.json が 404（Shopify ではない）。大阪の野球用品中古店"
+    },
+    {
+      "domain": "www.yabaibaseball.com",
+      "url": "https://www.yabaibaseball.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 400 — not a Shopify store.",
+      "reasonJa": "400（Shopify ではない）"
+    },
+    {
+      "domain": "www.hatakeyama-jp.com",
+      "url": "https://www.hatakeyama-jp.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "sskbaseballshop.com",
+      "url": "https://sskbaseballshop.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "www.kozuji.com",
+      "url": "https://www.kozuji.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — the shop blocks automated requests.",
+      "reasonJa": "403（ボット遮断。Winning のボクシング用品を世界発送する日本の店だが取得できず）"
+    },
+    {
+      "domain": "www.nishohi.com",
+      "url": "https://www.nishohi.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — the shop blocks automated requests.",
+      "reasonJa": "403（新体操・卓球・柔道・空手の日本メーカー直販だが取得できず）"
+    },
+    {
+      "domain": "www.tourspecgolf.com",
+      "url": "https://www.tourspecgolf.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Magento。Shopify ではない）"
+    },
+    {
+      "domain": "shop.golfdigest.co.jp",
+      "url": "https://shop.golfdigest.co.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — not a Shopify store.",
+      "reasonJa": "403（Shopify ではない）"
+    },
+    {
+      "domain": "japansoccer-jersey.com",
+      "url": "https://japansoccer-jersey.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store. Ships J.League kit worldwide.",
+      "reasonJa": "404（Shopify ではない）。Jリーグのユニフォームを世界発送する日本の店"
+    },
+    {
+      "domain": "footballshop-fcfa.com",
+      "url": "https://footballshop-fcfa.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Could not connect — not a Shopify store.",
+      "reasonJa": "接続できず（Shopify ではない）"
+    },
+    {
+      "domain": "www.sports-ws.com",
+      "url": "https://www.sports-ws.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "zennihonbudougu.com",
+      "url": "https://zennihonbudougu.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（EC-CUBE。Shopify ではない）"
+    },
+    {
+      "domain": "www.e-bogu.jp",
+      "url": "https://www.e-bogu.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "www.f-budogu.jp",
+      "url": "https://www.f-budogu.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "kendoshop.com",
+      "url": "https://kendoshop.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "tanabesports.net",
+      "url": "https://tanabesports.net/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — the shop blocks automated requests.",
+      "reasonJa": "403（スキー用品。取得できず）"
+    },
+    {
+      "domain": "jpn.mizuno.com",
+      "url": "https://jpn.mizuno.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない）"
+    },
+    {
+      "domain": "www.himaraya.co.jp",
+      "url": "https://www.himaraya.co.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — not a Shopify store.",
+      "reasonJa": "403（Shopify ではない）"
+    }
+  ],
+  "lines": [
+    {
+      "id": "budo-bag",
+      "labelEn": "Bogu bag / shinai bag / weapon case",
+      "match": [
+        "防具袋",
+        "防具バッグ",
+        "竹刀袋",
+        "木刀袋",
+        "刀袋",
+        "bogu bag",
+        "shinai bag"
+      ],
+      "medianG": 800,
+      "p25": 500,
+      "p75": 1500,
+      "n": 156,
+      "spread": 3.0,
+      "tier": "unverified"
+    },
+    {
+      "id": "budo-small-parts",
+      "labelEn": "Small parts and accessories (tenugui, tsuba, sageo, himo)",
+      "match": [
+        "手ぬぐい",
+        "手拭い",
+        "面手ぬぐい",
+        "面紐",
+        "胴紐",
+        "乳革",
+        "下緒",
+        "鍔",
+        "柄糸",
+        "目貫",
+        "tenugui",
+        "tsuba",
+        "sageo"
+      ],
+      "medianG": 200,
+      "p25": 100,
+      "p75": 200,
+      "n": 1073,
+      "spread": 2.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "kendo-bogu-set",
+      "labelEn": "Kendo bogu, full set",
+      "match": [
+        "防具セット",
+        "剣道防具セット",
+        "bogu set",
+        "kendo bogu set"
+      ],
+      "medianG": 5000,
+      "p25": 4250,
+      "p75": 5000,
+      "n": 54,
+      "spread": 1.18,
+      "tier": "estimate"
+    },
+    {
+      "id": "kendo-men",
+      "labelEn": "Kendo men (helmet), single piece",
+      "match": [
+        "面単品",
+        "剣道面",
+        "面 単品",
+        "kendo men"
+      ],
+      "medianG": 2500,
+      "p25": 2500,
+      "p75": 2500,
+      "n": 198,
+      "spread": 1.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "kendo-kote",
+      "labelEn": "Kendo kote (gauntlets)",
+      "match": [
+        "小手",
+        "甲手",
+        "kote"
+      ],
+      "medianG": 2000,
+      "p25": 1500,
+      "p75": 2500,
+      "n": 187,
+      "spread": 1.67,
+      "tier": "estimate"
+    },
+    {
+      "id": "kendo-do",
+      "labelEn": "Kendo do (torso armour)",
+      "match": [
+        "胴単品",
+        "剣道胴",
+        "胴台",
+        "胴 単品"
+      ],
+      "medianG": 2000,
+      "p25": 1500,
+      "p75": 7500,
+      "n": 97,
+      "spread": 5.0,
+      "tier": "unverified"
+    },
+    {
+      "id": "kendo-tare",
+      "labelEn": "Kendo tare (waist protector)",
+      "match": [
+        "垂単品",
+        "剣道垂",
+        "垂 単品",
+        "tare"
+      ],
+      "medianG": 1500,
+      "p25": 1500,
+      "p75": 1500,
+      "n": 67,
+      "spread": 1.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "budo-uniform-set",
+      "labelEn": "Budo uniform, jacket and hakama/pants set",
+      "match": [
+        "上下セット",
+        "道着セット",
+        "剣道着セット",
+        "空手着セット",
+        "柔道着セット",
+        "上下組",
+        "uniform set"
+      ],
+      "medianG": 2500,
+      "p25": 2000,
+      "p75": 2500,
+      "n": 792,
+      "spread": 1.25,
+      "tier": "estimate"
+    },
+    {
+      "id": "budo-pants",
+      "labelEn": "Budo uniform pants (karate/judo bottoms)",
+      "match": [
+        "道着ズボン",
+        "空手ズボン",
+        "柔道ズボン",
+        "空手着ズボン",
+        "下衣",
+        "karate pants",
+        "judo pants"
+      ],
+      "medianG": 2100,
+      "p25": 800,
+      "p75": 2200,
+      "n": 185,
+      "spread": 2.75,
+      "tier": "unverified"
+    },
+    {
+      "id": "budo-jacket",
+      "labelEn": "Budo uniform jacket (keikogi, karategi, judogi, kendogi)",
+      "match": [
+        "剣道着",
+        "空手着",
+        "柔道着",
+        "合気道着",
+        "稽古着",
+        "道着",
+        "上衣",
+        "keikogi",
+        "karategi",
+        "judogi",
+        "kendogi",
+        "dogi"
+      ],
+      "medianG": 2200,
+      "p25": 1500,
+      "p75": 2500,
+      "n": 691,
+      "spread": 1.67,
+      "tier": "estimate"
+    },
+    {
+      "id": "hakama",
+      "labelEn": "Hakama",
+      "match": [
+        "袴",
+        "hakama"
+      ],
+      "medianG": 1500,
+      "p25": 1500,
+      "p75": 2500,
+      "n": 1696,
+      "spread": 1.67,
+      "tier": "estimate"
+    },
+    {
+      "id": "budo-obi",
+      "labelEn": "Obi / belt",
+      "match": [
+        "黒帯",
+        "色帯",
+        "角帯",
+        "武道帯",
+        "空手帯",
+        "柔道帯",
+        "obi"
+      ],
+      "medianG": 400,
+      "p25": 400,
+      "p75": 500,
+      "n": 291,
+      "spread": 1.25,
+      "tier": "estimate"
+    },
+    {
+      "id": "budo-tabi",
+      "labelEn": "Tabi / setta (footwear)",
+      "match": [
+        "足袋",
+        "雪駄",
+        "tabi",
+        "setta"
+      ],
+      "medianG": 500,
+      "p25": 300,
+      "p75": 500,
+      "n": 151,
+      "spread": 1.67,
+      "tier": "estimate"
+    },
+    {
+      "id": "shinai",
+      "labelEn": "Shinai (bamboo sword)",
+      "match": [
+        "竹刀",
+        "shinai"
+      ],
+      "medianG": 3000,
+      "p25": 1500,
+      "p75": 3000,
+      "n": 202,
+      "spread": 2.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "bokuto",
+      "labelEn": "Bokuto / bokken / jo (wooden weapon)",
+      "match": [
+        "木刀",
+        "木剣",
+        "杖",
+        "bokuto",
+        "bokken",
+        "jo staff"
+      ],
+      "medianG": 2000,
+      "p25": 2000,
+      "p75": 2000,
+      "n": 250,
+      "spread": 1.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "iaito",
+      "labelEn": "Iaito (practice sword)",
+      "match": [
+        "居合刀",
+        "模擬刀",
+        "iaito",
+        "mogito"
+      ],
+      "medianG": 2500,
+      "p25": 2000,
+      "p75": 3500,
+      "n": 143,
+      "spread": 1.75,
+      "tier": "estimate"
+    },
+    {
+      "id": "kyudo-yumi",
+      "labelEn": "Kyudo yumi (bow)",
+      "match": [
+        "和弓",
+        "弓道 弓",
+        "グラス弓",
+        "カーボン弓",
+        "yumi",
+        "kyudo bow"
+      ],
+      "medianG": 7000,
+      "p25": 7000,
+      "p75": 7000,
+      "n": 270,
+      "spread": 1.0,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": 2000,
+  "fallbackTier": "unverified",
+  "notes": "Three shops adopted, 6,503 variants (after removing the 10 g rows that are alteration services rather than products). The lines are evaluated top to bottom — a shinai bag must be tested before shinai, and karate trousers before budo-jacket. Classification uses each shop's own product_type: the shop's own category misfires far less often than words in the title.\n\nLimits that matter:\n\n(1) What we obtained is budo equipment, not the category as named. Not one baseball, football or golf shop yielded data. In baseball, japan-ballpark.com and katanajp.co are Shopify but leave grams at 0, while taiwanbaseball (Taiwan) and ballgloveblueprint (US) are fixed at 1,000 g and 907 g. In golf, japangolfclubs is fixed at 2,268 g (5 lb), golfpartnerusa at 1,361 g (3 lb) and japangolfimport at 4,000 g — all flat pound-denominated classes. For football we could not find a Japanese Shopify shop at all (fcFA, SWS and japansoccer-jersey are on other platforms). So the weight difference between a glove, a bat and a jersey is not covered by this data.\n\n(2) These grams are packing classes, not measurements. All three shops put 78-90% of rows on 500 g steps; all 198 of Tozando's men are 2,500 g and all 270 of its yumi are 7,000 g. Hence measured: false. Good enough to pick an EMS step, never to be presented as a measured weight.\n\n(3) The same item sits on different steps at different shops. Hakama is 2,500 g at Tozando and 1,500 g at Seido; shinai is 2,500 g at Tozando and 3,000 g at KendoStar. The pooled median is only somewhere in between.\n\n(4) kendo-do has a spread of 5.0 (p25 1,500 g, p75 7,500 g) because a bare do and a full do-with-dodai set share one product_type. It is not dependable, so its tier is unverified.\n\n(5) Shinai (3,000 g), bokuto (2,000 g) and yumi (7,000 g) look like long-parcel packing values rather than mass — a shinai actually weighs about 500 g. International shipping hits the 1.5 m length limit first, so a weight-only estimate will be wrong, and a yumi is over 2 m and cannot go by EMS at all.\n\n(6) Shinai and bokuto listings include ten-packs (26,000 g, 25,000 g), which lift the upper tail.\n\n(7) www.kendo.co.jp scores suspect but was rejected: its figures are out by a factor of 1,000 (shinai at 200,000 g). Dividing by 1,000 was considered and refused — that would be a correction with nothing behind it.\n\n(8) fallbackG 2,000 is the overall median of the three adopted shops. Their catalogues are uniform- and armour-heavy, so applying it to non-budo sports goods (balls, apparel, small accessories) will overstate badly.",
+  "notesJa": "採用3店・6,503 variants（加工サービス扱いの 10g 行を除外後）。lines は上から順に評価する前提で並べてある（『竹刀袋』を先に置かないと shinai に、『空手着ズボン』を先に置かないと budo-jacket に取られる）。分類は各店の product_type で切った。タイトル語より店が付けた分類のほうが誤爆しない。\n\n重要な限界:\n(1) 取れたのは武道具だけで、カテゴリ名の『スポーツ用品』全体ではない。野球・サッカー・ゴルフは 1店も採れなかった。野球は japan-ballpark.com と katanajp.co が Shopify だが grams が全件 0、taiwanbaseball（台湾）と ballgloveblueprint（米国）は全件 1,000g / 907g の固定値。ゴルフは japangolfclubs が全件 2,268g（5 lb）、golfpartnerusa が全件 1,361g（3 lb）、japangolfimport が全件 4,000g で、いずれもポンド単位の一律区分。サッカーは Shopify の日本店自体が見つからなかった（fcFA・SWS・japansoccer-jersey はいずれも別プラットフォーム）。したがってグラブ・バット・ユニフォームの重量差はこのデータでは埋められていない。\n(2) grams は実測ではなく梱包区分。3店とも 500g 刻みが 78〜90% を占め、東山堂の『面』は 198件すべて 2,500g、『弓』は 270件すべて 7,000g。だから measured:false。EMS の段を引く用途には足りるが実測値として出してはいけない。\n(3) 同じ品目でも店で段が違う。袴は東山堂 2,500g / Seido 1,500g、竹刀は東山堂 2,500g / KendoStar 3,000g。統合中央値はその間でしかない。\n(4) kendo-do の spread は 5.0（p25 1,500g / p75 7,500g）。単品の胴と『胴＋胴台一式』が同じ product_type に混ざっているためで、当てにならない。tier を unverified にした。\n(5) 竹刀（3,000g）・木刀（2,000g）・弓（7,000g）は質量ではなく長尺梱包の値とみられる（竹刀の実重量は約 500g）。国際発送では長さ 1.5m 制限に先に当たるので、重量段だけで見積もると外れる。弓は 2m を超えるため EMS ではそもそも送れない。\n(6) 竹刀・木刀には 10本まとめ売り（26,000g / 25,000g）が混ざっており、上側の裾を引き上げている。\n(7) www.kendo.co.jp は判定 suspect だが桁が 1,000倍ずれている（竹刀 200,000g）ので不採用。数値を 1/1000 して使うことも考えたが、根拠のない補正なのでやめた。\n(8) fallbackG=2,000 は採用3店の全体中央値。ただしカタログが道着・防具中心なので、武道具以外のスポーツ用品（ボール・ウェア・小物）に当てると大きく過大になる。"
+}
