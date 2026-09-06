@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Japan Proxy Total Cost</title>
+<style>
+  :root{
+    --bg:#fbfbf9; --card:#fff; --ink:#1a1a19; --dim:#6b6b66; --line:#e4e4de;
+    --best:#0d7a4f; --best-bg:#eaf6f0; --warn:#8a6d1f; --accent:#2b5fd9;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+    --bg:#161614; --card:#1e1e1c; --ink:#eceae5; --dim:#9b9a93; --line:#33322e;
+    --best:#4ecf96; --best-bg:#163024; --warn:#d7b45a; --accent:#7ea2ff;
+  }}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:720px;margin:0 auto;padding:28px 18px 64px}
+  h1{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+  .sub{color:var(--dim);font-size:13.5px;margin:0 0 22px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px}
+  label{display:block;font-size:12px;color:var(--dim);margin-bottom:5px;font-weight:600;
+    letter-spacing:.02em;text-transform:uppercase}
+  input,select{width:100%;padding:8px 10px;font-size:15px;font-family:inherit;
+    border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .results{margin-top:20px;display:flex;flex-direction:column;gap:9px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  details[data-best]{border-color:var(--best);background:var(--best-bg)}
+  summary{cursor:pointer;list-style:none;padding:14px 16px;display:flex;align-items:baseline;gap:10px}
+  summary::-webkit-details-marker{display:none}
+  .nm{font-weight:650;font-size:16px}
+  .tag{font-size:11px;font-weight:700;color:var(--best);border:1px solid var(--best);
+    border-radius:99px;padding:1px 7px;letter-spacing:.04em}
+  .delta{font-size:13px;color:var(--dim)}
+  .amt{margin-left:auto;font-size:19px;font-weight:650;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  td{padding:7px 16px;border-top:1px solid var(--line);vertical-align:top}
+  td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .note{color:var(--dim);font-size:12px;display:block;margin-top:1px}
+  .est{color:var(--warn);font-weight:600}
+  tr.sum td{font-weight:650;border-top:1px solid var(--line)}
+  footer{margin-top:26px;font-size:12.5px;color:var(--dim);line-height:1.7}
+  footer a{color:var(--accent)}
+  .flag{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--warn);
+    border-radius:7px;padding:10px 13px;font-size:12.5px;color:var(--dim);margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Japan Proxy Total Cost</h1>
+  <p class="sub">What you actually pay — Neokyo, ZenMarket and Buyee, itemised.</p>
+
+  <div class="card">
+    <div class="grid">
+      <div><label for="count">Items</label><input id="count" type="number" min="1" max="50" value="3"></div>
+      <div><label for="price">Price each (¥)</label><input id="price" type="number" min="0" step="100" value="3000"></div>
+      <div><label for="dom">Domestic shipping each (¥)</label>
+           <input id="dom" type="number" min="0" step="50" value="500"></div>
+      <div><label for="kg">Parcel weight (kg)</label><input id="kg" type="number" min="0.1" step="0.1" value="2"></div>
+      <div><label for="intl">International shipping (¥)</label>
+           <input id="intl" type="number" min="0" step="100" value="3000"></div>
+      <div><label for="tier">ZenMarket fee tier</label>
+        <select id="tier">
+          <option value="800" selected>¥800 — Yahoo Auctions / Mercari</option>
+          <option value="500">¥500 — most shops</option>
+          <option value="300">¥300 — recommended shops</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="results" id="out"></div>
+
+  <div class="flag">
+    Domestic and international shipping are your inputs — a used listing rarely states its weight,
+    so no one can compute them exactly before the parcel is packed. Everything else here is the
+    published fee schedule, applied in full.
+  </div>
+
+  <footer>
+    Fees taken from each operator's own page:
+    <a href="https://neokyo.com/en/fees">Neokyo</a> ·
+    <a href="https://zenmarket.jp/ja/fees.aspx">ZenMarket</a> ·
+    <a href="https://buyee.jp/helpcenter/guide/fees?lang=en">Buyee</a>.
+    Buyee processes each order separately, so its per-order fees multiply with the number of items.
+    ZenMarket's 3.5% deposit fee is charged on the total you top up, not on the service fee alone.
+  </footer>
+</div>
+
+<script type="module">
+import { compare } from './src/calc.js';
+
+const $ = (id) => document.getElementById(id);
+const fields = ['count','price','dom','kg','intl','tier'].map($);
+const yen = (n) => '¥' + Math.round(n).toLocaleString('en-US');
+
+function render() {
+  const n = Math.max(1, Math.min(50, +$('count').value || 1));
+  const rows = compare({
+    items: Array.from({length:n}, () => ({ price:+$('price').value||0, domesticShipping:+$('dom').value||0 })),
+    weightKg: +$('kg').value || 0.1,
+    internationalShipping: +$('intl').value || 0,
+    zenTier: +$('tier').value,
+  });
+
+  $('out').innerHTML = rows.map((r, i) => `
+    <details ${i===0?'data-best open':''}>
+      <summary>
+        <span class="nm">${r.name}</span>
+        ${i===0 ? '<span class="tag">CHEAPEST</span>'
+                : `<span class="delta">+${yen(r.diffFromCheapest)}</span>`}
+        <span class="amt">${yen(r.total)}</span>
+      </summary>
+      <table>
+        ${r.breakdown.map(b => `<tr>
+            <td>${b.label}${b.note ? `<span class="note">${b.note}</span>` : ''}</td>
+            <td${/shipping/i.test(b.label) ? ' class="est"' : ''}>${yen(b.amount)}</td>
+          </tr>`).join('')}
+        <tr class="sum"><td>Total</td><td>${yen(r.total)}</td></tr>
+      </table>
+    </details>`).join('');
+}
+
+fields.forEach(f => f.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>

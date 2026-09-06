@@ -1,0 +1,10 @@
+{
+  "name": "proxy-cost-jp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Total landed-cost comparison for Japanese proxy buying services",
+  "scripts": {
+    "test": "node --test 'test/**/*.test.js'"
+  }
+}
