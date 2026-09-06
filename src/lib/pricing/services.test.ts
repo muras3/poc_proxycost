@@ -304,6 +304,68 @@ describe('Buyee — per order, and the domestic handling fee that never existed'
       expect(amount(one('buyee', { site }), 'protection-plan'), site).toBe(500);
     }
   });
+
+  // 原文:「Shopping: Order / flat rate ¥500 * Even if multiple purchases are from the
+  // same store, it is a flat rate of ¥500.」店舗は出品URLから引く（shops.ts）。
+  describe('shopping from the same store is one order', () => {
+    const rakuten = (id: string, shop: string) =>
+      item({ id, site: 'rakuten', url: `https://item.rakuten.co.jp/${shop}/${id}/` });
+
+    test('two listings from one Rakuten shop are one ¥500, not two', () => {
+      const row = byService(rowsFor([rakuten('a', 'book'), rakuten('b', 'book')]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(500);
+      expect(amount(row, 'protection-plan')).toBe(500);
+      expect(line(row, 'purchase-fee').note).toContain('1 order');
+      expect(line(row, 'purchase-fee').note).toContain('same-shop items count as one order');
+    });
+
+    test('two shops are still two orders', () => {
+      const row = byService(rowsFor([rakuten('a', 'book'), rakuten('b', 'other')]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(1000);
+      expect(amount(row, 'protection-plan')).toBe(1000);
+    });
+
+    test('a whole-domain shop needs no URL: two Suruga-ya items are one order', () => {
+      const row = byService(rowsFor([
+        item({ id: 'a', site: 'suruga-ya' }), item({ id: 'b', site: 'suruga-ya' }),
+      ]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(500);
+    });
+
+    test('one order also means one parcel in the default (split) row', () => {
+      // 個口が減れば EMS の段も変わる。まとめたのに個口だけ2つ残ったら内訳が矛盾する。
+      const rows = rowsFor([rakuten('a', 'book'), rakuten('b', 'book')]);
+      const split = rows.find((r) => r.id === 'buyee:default')!;
+      expect(split.parcels).toBe(1);
+      expect(split.tag).toBe('1 order · 1 parcel');
+    });
+
+    test('when we cannot read the shop we keep charging per listing — and say so', () => {
+      // 店舗が読めない出品はまとめない。**この向きの誤りは Buyee を高く見せる**
+      // （＝我々に報酬を払う社に不利）。黙って安くせず、まとめ損ねたことを内訳に書く。
+      const row = byService(rowsFor([
+        item({ id: 'a', site: 'other', url: 'https://example.com/1' }),
+        item({ id: 'b', site: 'other', url: 'https://example.com/2' }),
+      ]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(1000);
+      expect(line(row, 'purchase-fee').note).toContain('could not read the shop from 2 listings');
+    });
+
+    test('an auction basket says nothing about shops — per bid is the published rule', () => {
+      // ヤフオク・メルカリは原文が「落札・購入1件ごとに ¥500」。ここに「店舗が読めなかった」
+      // と書くと、欠落でないものを欠落として見せることになる。
+      const row = byService(rowsFor([item({ id: 'a' }), item({ id: 'b' })]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(1000);
+      expect(line(row, 'purchase-fee').note).toBe('¥500 × 2 orders');
+    });
+
+    test('nobody else changes: the per-item services still charge per listing', () => {
+      const items = [rakuten('a', 'book'), rakuten('b', 'book')];
+      expect(amount(byService(rowsFor(items), 'neokyo'), 'service-fee')).toBe(700);
+      expect(amount(byService(rowsFor(items), 'zenmarket'), 'service-fee')).toBe(1000);
+      expect(amount(byService(rowsFor(items), 'fromjapan'), 'service-fee')).toBe(1000);
+    });
+  });
 });
 
 describe('Jauce — ¥400 + 8% on the auction site, ¥1,000 + 8% off it', () => {

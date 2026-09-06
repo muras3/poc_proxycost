@@ -3,6 +3,7 @@ import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import { SERVICES, type Service } from './services';
+import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import type {
   Band, CompareInput, CompareResult, Item, Line, Row, Tier, WeightSensitivity,
@@ -144,8 +145,21 @@ function packingLine(svc: Service, parcelWeights: number[]): Line | null {
   return L('packing', 'Packing', yen, note, p.tier, svc.sourceUrl);
 }
 
-function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[] {
+function feeLines(
+  svc: Service, ctx: Ctx, grouping: ShopGrouping, units: number,
+): Line[] {
   const f = svc.fee;
+  const orders = grouping.groups.length;
+  // 同一店舗をまとめる社で、店舗を特定できなかった点があるなら**そう書く**。
+  // まとめられていない点は1点＝1注文で課金しているので、この社の総額は高く出ている。
+  // 黙って安くも高くもせず、どちらに外しているかを画面に出す（AGENTS.md の開示規則）。
+  const shopNote = f.ordersGroupedByShop
+    ? (grouping.merged > 0 ? ' — same-shop items count as one order' : '')
+      + (grouping.unknownShopItems > 0
+        ? ` — we could not read the shop from ${plural(grouping.unknownShopItems, 'listing')},`
+          + ' so those are charged separately'
+        : '')
+    : '';
   const out: Line[] = [];
   const free = new Set(f.freeForSites ?? []);
   const chargeable = ctx.items.filter((i) => !free.has(i.site));
@@ -161,7 +175,7 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
 
   if (f.perOrderYen != null) {
     out.push(L('purchase-fee', 'Purchase fee', f.perOrderYen * orders,
-      `¥${f.perOrderYen} × ${plural(orders, 'order')}`, f.tier, svc.sourceUrl));
+      `¥${f.perOrderYen} × ${plural(orders, 'order')}${shopNote}`, f.tier, svc.sourceUrl));
   }
   if (f.protectionPlanPerOrderYen != null) {
     out.push(L('protection-plan', 'Protection plan', f.protectionPlanPerOrderYen * orders,
@@ -258,7 +272,11 @@ function prepaidImportTaxLine(
 
 function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const items = ctx.items;
-  const orders = items.length;
+  // **注文の数は社ごとに違う。** Buyee のショッピングは同一店舗の複数点で1注文
+  // （原文「Even if multiple purchases are from the same store, it is a flat rate of ¥500」）。
+  // 店舗が URL から引けない点はまとめず、1点＝1注文のまま（過大なほうに残す）。
+  const grouping = svc.fee.ordersGroupedByShop ? groupByShop(items) : oneOrderPerItem(items);
+  const orders = grouping.groups.length;
   const units = items.reduce((a, i) => a + i.qty, 0);
   const itemsYen = items.reduce((a, i) => a + i.priceYen * i.qty, 0);
   const zone = EMS_ZONE[ctx.cc];
@@ -273,8 +291,11 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 
   const split = variant === 'default' && svc.parcelDefault === 'per-order';
   const parcels = split ? orders : 1;
+  // 個口も注文の単位で割る。同一店舗の2点が1注文なら、届くのも1個口
+  // （Buyee 原文「we process each order respectively … separate domestic shipment fees
+  //  for each order」＝**注文ごと**であって点ごとではない）。
   const parcelGross = split
-    ? netPerItem.map((g) => grossG(g))
+    ? grouping.groups.map((g) => grossG(g.reduce((a, idx) => a + netPerItem[idx]!, 0)))
     : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
 
   // **表の外（30kg 超）の重量では料金を持っていない。丸めない。**
@@ -297,7 +318,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       priceEstimated ? 'estimate' : 'fixed'),
   ];
 
-  lines.push(...feeLines(svc, ctx, orders, units));
+  lines.push(...feeLines(svc, ctx, grouping, units));
 
   lines.push(svc.domesticIncluded
     ? L('domestic-shipping', 'Domestic shipping', 0, 'included in the service fee', 'fixed', svc.sourceUrl)
