@@ -1,0 +1,205 @@
+{
+  "category": "tcg-singles",
+  "labelJa": "トレカ（単カード）",
+  "labelEn": "Trading cards (singles)",
+  "checkedOn": "2026-09-06",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "www.pokeninjapan.store",
+      "url": "https://www.pokeninjapan.store/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5198,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.7%, multiples of 100: 36%, of 500: 4%. Adopted. product_type=Single has 2,743 rows of which 99.2% are 50 g; product_type=PSA has 1,602 rows on two values, 100 g and 250 g. These are packed shipping weights, not measurements.",
+      "reasonJa": "distinct比 0.7%, 100の倍数 36%, 500の倍数 4%。採用。product_type=Single が 2,743件で 99.2% が 50g、product_type=PSA が 1,602件で 100g/250g の2値。梱包込みの発送重量で、実測ではない"
+    },
+    {
+      "domain": "japanmaster.myshopify.com",
+      "url": "https://japanmaster.myshopify.com/products.json?limit=250&page=1",
+      "products": 500,
+      "variantsWithGrams": 491,
+      "verdict": "usable",
+      "reason": "distinct=10 (2.0%), top value 39%. Adopted. There is no product_type, so singles were isolated by rarity words in the title (sar/sr/ur/hr/ar/csr/promo/parallel/leader), giving n=358 of which 86% are 100 g. Thirteen outliers put a single card at 1,000 g, so the values lean toward shipping bands.",
+      "reasonJa": "distinct=10 (2.0%), 最頻値 39%。採用。product_type が無いのでタイトルのレアリティ語(sar/sr/ur/hr/ar/csr/promo/parallel/leader)で単カードを切り出し n=358、86% が 100g。1枚で 1,000g の外れ値が13件あり、値は送料区分寄り"
+    },
+    {
+      "domain": "onepiece.pokeninjapan.store",
+      "url": "https://onepiece.pokeninjapan.store/products.json?limit=250&page=1",
+      "products": 1114,
+      "variantsWithGrams": 1122,
+      "verdict": "pseudo",
+      "reason": "distinct=8, top value 97% of all rows. Not adopted: all 1,084 Single rows are 50 g, and it is the same operator as pokeninjapan, so it is not independent evidence.",
+      "reasonJa": "distinct=8, 最頻値が全体の 97%。不採用。Single 1,084件が全部 50g。pokeninjapan と同一運営で独立した証拠にならない"
+    },
+    {
+      "domain": "zenpan-japan.com",
+      "url": "https://zenpan-japan.com/products.json?limit=250&page=1",
+      "products": 3249,
+      "variantsWithGrams": 3248,
+      "verdict": "pseudo",
+      "reason": "distinct=77, top value 64% of all rows. Not adopted, but Pokémon TCG (1,959 rows) and One Piece TCG (336 rows) both have a median of 50 g, which independently supports the 50 g packed value.",
+      "reasonJa": "distinct=77, 最頻値が全体の 64%。不採用。ただし Pokémon TCG 1,959件・One Piece TCG 336件がいずれも中央値 50g で、50g という梱包込み値を独立に裏づける"
+    },
+    {
+      "domain": "tcg-corner.com",
+      "url": "https://tcg-corner.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 4726,
+      "verdict": "pseudo",
+      "reason": "distinct=18, top value 77% of all rows. Not adopted: singles sit on three values, 2 g / 3 g / 4 g — the card itself, with no packing.",
+      "reasonJa": "distinct=18, 最頻値が全体の 77%。不採用。単カードが 2g/3g/4g の3値で、梱包を含まないカード単体の重量"
+    },
+    {
+      "domain": "omotenashitcg.com",
+      "url": "https://omotenashitcg.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5380,
+      "verdict": "pseudo",
+      "reason": "distinct=65, top value 86% of all rows. Not adopted: Card Games has 4,872 rows almost all at 2 g, the bare card.",
+      "reasonJa": "distinct=65, 最頻値が全体の 86%。不採用。Card Games 4,872件がほぼ全部 2g（カード単体）"
+    },
+    {
+      "domain": "cardotaku.com",
+      "url": "https://cardotaku.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5005,
+      "verdict": "pseudo",
+      "reason": "distinct=100, top value 94% of all rows. Not adopted: every single is 3 g, the bare card.",
+      "reasonJa": "distinct=100, 最頻値が全体の 94%。不採用。単カードが全部 3g（カード単体）"
+    },
+    {
+      "domain": "yugi-market.com",
+      "url": "https://yugi-market.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5041,
+      "verdict": "pseudo",
+      "reason": "distinct=29, top value 89% of all rows. Not adopted: 4,470 singles at 5 g, the bare card.",
+      "reasonJa": "distinct=29, 最頻値が全体の 89%。不採用。単カードが 5g で 4,470件（カード単体）"
+    },
+    {
+      "domain": "japantradingcardstore.com",
+      "url": "https://japantradingcardstore.com/products.json?limit=250&page=1",
+      "products": 2658,
+      "variantsWithGrams": 538,
+      "verdict": "pseudo",
+      "reason": "distinct=5, top value 82% of all rows. Not adopted: only 538 of 2,658 rows carry grams, and 82% of those are 1 g.",
+      "reasonJa": "distinct=5, 最頻値が全体の 82%。不採用。2,658件中 538件しか grams が入っておらず、その 82% が 1g"
+    },
+    {
+      "domain": "sakurascardshop.com",
+      "url": "https://sakurascardshop.com/products.json?limit=250&page=1",
+      "products": 156,
+      "variantsWithGrams": 185,
+      "verdict": "usable",
+      "reason": "distinct=31 (16.8%), top value 40%. Usable as a shop, but the stock is almost all sealed product (boxes at 312 g and 454 g) and only about ten singles exist, at 1 g / 2 g / 5 g. Not usable for a line.",
+      "reasonJa": "distinct=31 (16.8%), 最頻値 40%。店としては usable だが在庫がほぼ封入品（BOX 312g・454g）で、単カードは 1g/2g/5g が10件程度しかない。lines には使えず不採用"
+    },
+    {
+      "domain": "poketherapy.com",
+      "url": "https://poketherapy.com/products.json?limit=250&page=1",
+      "products": 123,
+      "variantsWithGrams": 115,
+      "verdict": "usable",
+      "reason": "distinct=15 (13.0%), top value 19%. Usable as a shop, but it carries only booster boxes and bundles — not a single card in the catalogue. Not adopted.",
+      "reasonJa": "distinct=15 (13.0%), 最頻値 19%。店としては usable だが Booster Box / Bundle など封入品のみで単カードが1件も無い。不採用"
+    },
+    {
+      "domain": "japan-figure.com",
+      "url": "https://japan-figure.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 9093,
+      "verdict": "usable",
+      "reason": "distinct=438 (4.8%), top value 9%. Usable as a shop, but product_type='Trading Cards Single Card' has n=24, below our threshold of 50, and its contents are actually decks and card sets. Not adopted.",
+      "reasonJa": "distinct=438 (4.8%), 最頻値 9%。店としては usable だが product_type='Trading Cards Single Card' が n=24 で判定閾値 50 に届かず、中身も実際はデッキ・カードセット。不採用"
+    },
+    {
+      "domain": "tcgrepublic.com",
+      "url": "https://tcgrepublic.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404. The largest singles specialist, but no JSON is available.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404。単カード専門の最大手だが JSON が取れない"
+    },
+    {
+      "domain": "ichiba-japan.com",
+      "url": "https://ichiba-japan.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTTP 403 (HTML), so nothing could be read.",
+      "reasonJa": "products.json が HTTP 403（HTML を返す）。取得不可"
+    },
+    {
+      "domain": "www.fujicardshop.com",
+      "url": "https://www.fujicardshop.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTTP 403, so nothing could be read.",
+      "reasonJa": "products.json が HTTP 403。取得不可"
+    },
+    {
+      "domain": "samuraiswordtokyo.com",
+      "url": "https://samuraiswordtokyo.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but products.json redirects to a blog HTML page and never returns JSON.",
+      "reasonJa": "Shopify だが products.json がブログ HTML にリダイレクトされ JSON を返さない。取得不可"
+    },
+    {
+      "domain": "japan-game-tcg-market.myshopify.com",
+      "url": "https://japan-game-tcg-market.myshopify.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTTP 500, so nothing could be read.",
+      "reasonJa": "products.json が HTTP 500。取得不可"
+    }
+  ],
+  "lines": [
+    {
+      "id": "graded-slab",
+      "labelEn": "Graded slab (PSA/BGS)",
+      "match": [
+        "psa",
+        "bgs",
+        "cgc",
+        "鑑定"
+      ],
+      "medianG": 100,
+      "p25": 100,
+      "p75": 250,
+      "n": 1602,
+      "spread": 2.5,
+      "tier": "estimate"
+    },
+    {
+      "id": "single-card",
+      "labelEn": "Single card, packed",
+      "match": [
+        "シングル",
+        "single card",
+        "1枚",
+        "sar",
+        "csr",
+        "ssr",
+        "パラレル",
+        "parallel"
+      ],
+      "medianG": 50,
+      "p25": 50,
+      "p75": 50,
+      "n": 3101,
+      "spread": 1.0,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": 50,
+  "fallbackTier": "estimate",
+  "notes": "Two shops adopted: www.pokeninjapan.store (suspect) and japanmaster.myshopify.com (usable). grams is an input to a shipping calculator, not a measurement, so measured: false.\n\nThe decisive point here is that shops follow one of two conventions. (A) Shops that record the bare card: tcg-corner 2 g, omotenashitcg 2 g, cardotaku 3 g, yugi-market 5 g, japantradingcardstore 1 g. Four or five shops land independently between 1 and 5 g, so \"a card weighs roughly 1.7 to 5 g\" is corroborated by real data. But every one of them puts the same value on every row, which scores pseudo, so none of them feed a line. (B) Shops that record the packed shipping weight: pokeninjapan's 2,743 Single rows at 50 g, zenpan-japan's Pokémon and One Piece TCG also at a 50 g median, japanmaster's 358 singles at 100 g. Postage needs (B), so the lines are built from (B).\n\nThe 50 g single-card figure matches the expected sleeve, toploader and envelope (the brief's 20-60 g range). But it is the packed weight of one order, not of one card. Treating ten cards as 500 g is wrong: by group (A) each card is 2-5 g, so the increment is essentially paper. The pooled p25 and p75 are both 50, giving a spread of 1.0, only because pokeninjapan's 2,743 rows swamp japanmaster's 358 — real shop-to-shop variation should be read as 50 to 100 g.\n\nThe 100 g and 250 g of graded-slab reflect the PSA slab itself (about 85 g in reality) versus a padded shipping form. japanmaster has thirteen outliers putting one card at 1,000 g, which is a postage class entered verbatim, not a weight.\n\ngraded-slab must be matched first: PSA-graded listings also carry rarity words like 'sar', so testing single-card first would drop graded cards to 50 g. The match words 'psa', 'sar', 'csr' and 'ssr' are short but appear almost nowhere except card titles, so they were kept; 'sr', 'ur' and 'ar' were dropped as too short to be safe.\n\nLimit: pokeninjapan is effectively the only shop with a real body of singles that did not score pseudo. onepiece.pokeninjapan.store is the same operator, so it is not independent verification. tcgrepublic.com, the largest singles specialist, is not Shopify and could not be read.",
+  "notesJa": "採用は www.pokeninjapan.store（suspect）と japanmaster.myshopify.com（usable）の2店。grams は送料計算用の入力値であって実測ではないので measured:false。\n\nこのカテゴリでは店が2つの流儀に割れていて、そこが要点。(A) カード単体の重量を入れる店（tcg-corner 2g、omotenashitcg 2g、cardotaku 3g、yugi-market 5g、japantradingcardstore 1g）。4〜5店が独立に 1〜5g に集まるので、カード1枚が約1.7〜5g というのは実データで裏が取れている。ただしどの店も全件同値で verdict=pseudo になるため lines には採らなかった。(B) 梱包込みの発送重量を入れる店（pokeninjapan の Single 2,743件が 50g、zenpan-japan の Pokémon/One Piece TCG も中央値 50g、japanmaster の単カード 358件が 100g）。送料を見積もる用途で要るのは (B) なので lines は (B) で作った。\n\nsingle-card の 50g は「スリーブ＋トップローダー＋封筒」の想定と合う（依頼の 20〜60g のレンジ内）。ただしこれは1オーダーあたりの梱包込み重量であって1枚あたりではない。10枚まとめ買いを 500g と見るのは誤りで、カード自体は上記(A)より1枚 2〜5g、増分はほぼ紙の重さだけ。pooled の p25=p75=50 で spread 1.0 になっているのは pokeninjapan の 2,743件が japanmaster の 358件を数で圧倒しているためで、実際の店間のばらつきは 50〜100g とみるべき。\n\ngraded-slab の 100g/250g は PSA スラブそのもの（実物は約85g）と、緩衝材込みの発送形態の差とみられる。1枚で1,000g という外れ値が japanmaster に13件あり、これは送料区分をそのまま入れているだけなので実重量ではない。\n\nマッチ順は graded-slab を先に見ること。PSA 鑑定品のタイトルにも 'sar' 等のレアリティ語が入るため、single-card を先に当てると鑑定品が 50g に落ちる。match の 'psa'・'sar'・'csr'・'ssr' は3文字と短いが、トレカのタイトル以外にはほぼ出ない語なので採用した。'sr'・'ur'・'ar' は短すぎて誤爆するので外した。\n\n限界: 単カードの母数がある店で verdict が pseudo にならなかったのは実質 pokeninjapan 1店だけ。onepiece.pokeninjapan.store は同一運営なので独立検証にならない。単カード専門の最大手 tcgrepublic.com は Shopify ではなく取れなかった。"
+}

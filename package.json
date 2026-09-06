@@ -1,10 +1,46 @@
 {
-  "name": "proxy-cost-jp",
+  "name": "proxycost",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Total landed-cost comparison for Japanese proxy buying services",
   "scripts": {
-    "test": "node --test 'test/**/*.test.js'"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare deploy",
+    "weights:fetch": "node scripts/shopify-probe.mjs",
+    "weights:build": "tsx scripts/weights-build.ts",
+    "fees:check": "tsx scripts/fees-check.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "vitest run && playwright test",
+    "preview:build": "node scripts/preview/build.mjs"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "1.20.6",
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "tailwindcss": "4.3.3",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vitest": "^5",
+    "wrangler": "4.129.0"
   }
 }
