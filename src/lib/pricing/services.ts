@@ -1,4 +1,4 @@
-import type { SiteId, Tier } from './types';
+import type { CountryCode, SiteId, Tier } from './types';
 
 export interface FeeModel {
   /** 点あたりの定額手数料（既定）。 */
@@ -62,6 +62,30 @@ export interface OptionalFee {
   tier: Tier;
 }
 
+/**
+ * 代行が販売時点で徴収する輸入税（AU の GST・SG の GST）。
+ *
+ * **確認できた国だけ入れる。入っていない国は「徴収しない」ではなく「確認できていない」。**
+ * 未確認を 0 として扱えば、単に調べていない社が安く見えるだけの表になる。
+ * 画面ではその社のその国の行が「—」になり、excluded に「確認できていない」と出る。
+ */
+export interface PrepaidImportTax {
+  rate: number;
+  /**
+   * 課税ベース。**その社が自分のページで書いているとおりに選ぶ。**
+   *   declared        … 内容品価格（商品代）のみ
+   *   before-shipping … 商品代＋当社手数料（送料は入らない）
+   *   total           … 税を除く支払総額（商品代＋手数料＋国内送料＋梱包＋国際送料）
+   */
+  base: 'declared' | 'before-shipping' | 'total';
+  /** 画面に出す1行（英語）。その社の原文の言い方に寄せる。 */
+  note: string;
+  tier: Tier;
+  sourceUrl: string;
+  /** 一次情報を当たった日。 */
+  checkedOn: string;
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -83,6 +107,11 @@ export interface Service {
   emsMarkup: number;
   emsMarkupTier: Tier;
   optional: OptionalFee[];
+  /**
+   * 受取国ごとの前徴収税。**確認できた国だけ。** 未確認の国は欄ごと無い。
+   * 「無い」と「0」を区別できるように、ここに 0 を置くことはしない。
+   */
+  prepaidImportTax?: Partial<Record<CountryCode, PrepaidImportTax>>;
   /** アフィリエイト報酬を払うか。**順位計算には一切使わない。** */
   paysUs: boolean;
   referralNote: string | null;
@@ -113,6 +142,19 @@ export const SERVICES: Service[] = [
       { key: 'unpacking', label: 'Unpacking / removing original box', amountYen: 1000, note: 'per parcel', tier: 'fixed' },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
     ],
+    // 豪州の GST は自社で徴収すると公式に書いている（確認日 2026-09-06）。原文:
+    // 「effective March 24th, 2023, we will be charging 10% of the declared value for
+    //  parcels containing Low-Value Goods (1000 AUD or less) bound for Australia as GST,
+    //  in addition to international shipping and insurance fees」
+    // → **課税ベースは declared value（内容品価格）**で、送料・手数料は入らない。
+    // シンガポールについては同じページにも料金ページにも記載が無い。**だから書かない。**
+    prepaidImportTax: {
+      AU: {
+        rate: 0.10, base: 'declared', tier: 'fixed',
+        note: '10% of the declared value, charged with the shipping fee',
+        sourceUrl: 'https://neokyo.com/en/shipping', checkedOn: '2026-09-06',
+      },
+    },
     // 最もよく最安になる会社が、報酬を払わない。それでも順位は総額のみで決める。
     paysUs: false,
     referralNote: 'pays us nothing',
@@ -149,6 +191,20 @@ export const SERVICES: Service[] = [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
     ],
+    // 料金ページの「To Australian customers」（確認日 2026-09-06、直アクセスは 403 なので
+    // r.jina.ai 経由で本文を取得）。原文:「we are required to collect 10% GST for all parcels
+    // sent to Australia with a total value of 1,000 AUD or less … GST will be applied to
+    // parcels where the declared value is equal to or lower than 1,000 AUD. If it applies,
+    // the tax will be charged at the same time as the international shipping fee」
+    // → ベースは declared value。同ページに欧州の VAT 任意前払いの記載はあるが、
+    // **シンガポールの記載は無い。**
+    prepaidImportTax: {
+      AU: {
+        rate: 0.10, base: 'declared', tier: 'fixed',
+        note: '10% of the declared value, charged with the international shipping fee',
+        sourceUrl: 'https://zenmarket.jp/en/fees.aspx', checkedOn: '2026-09-06',
+      },
+    },
     paysUs: true,
     referralNote: 'pays us ¥100 if you sign up',
   },
@@ -185,6 +241,27 @@ export const SERVICES: Service[] = [
       { key: 'repack', label: 'Repacking', amountYen: 1500, note: 'from ¥1,500', tier: 'fixed' },
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: '3 photos', tier: 'fixed' },
     ],
+    // 公式配信の翻訳ファイル（確認日 2026-09-06）。原文:
+    //  help_fee_780「For sales with a customs value under 1,000 AUD, 10% of the total order
+    //   value (Charge 1(item price) + Charge 2 before GST is added) will be collected as GST.」
+    //  help_fee_824「from January 1, 2024, if the total value of the items on the invoice is
+    //   less than 400 SGD, 9% of the total cost (Charge 1 + Charge 2 before GST is added)
+    //   required to deliver the parcel will be collected as GST on behalf of the customer.」
+    //  help_fee_826「GST will not be collected in advance for Surface shipments」
+    // → 5社で唯一、AU と SG の**両方**を明記している。Charge 1 + Charge 2 は
+    //   商品代＋手数料＋送料の全額なので base は total。
+    prepaidImportTax: {
+      AU: {
+        rate: 0.10, base: 'total', tier: 'fixed',
+        note: '10% of Charge 1 + Charge 2 (items, fees and shipping) before GST',
+        sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt', checkedOn: '2026-09-06',
+      },
+      SG: {
+        rate: 0.09, base: 'total', tier: 'fixed',
+        note: '9% of Charge 1 + Charge 2 before GST — not prepaid on surface mail',
+        sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt', checkedOn: '2026-09-06',
+      },
+    },
     paysUs: true,
     referralNote: 'pays us a % of your purchase',
   },
@@ -213,6 +290,29 @@ export const SERVICES: Service[] = [
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
       { key: 'customs-doc', label: 'Customs clearance handling', amountYen: 2800, note: 'when required', tier: 'fixed' },
     ],
+    // 豪州（確認日 2026-09-06）:「Please pay the 10% GST along with the total price of the
+    // goods, Buyee's service fee, and other optional fees during handling.」
+    // → **この文に送料は挙がっていない。** 徴収は「handling（購入手続き）」の時点で、
+    //   国際送料が決まる前。だから base は before-shipping（商品代＋当社手数料）。
+    // シンガポール（確認日 2026-09-06）:「Please pay the 9% GST along with the total price of
+    // the goods, Buyee's service fee, and other optional fees during handling.」に加え、
+    // 課税対象として「the value of goods shown on the invoice, Buyee's service fees,
+    // optional service fees, domestic/international shipping costs, consumer tax, etc.」を
+    // 挙げている。**こちらは送料が明記されている**ので base は total。
+    // 「GST will not be collected in advance for shipments sent to Singapore by Japan Post
+    //  by sea」＝航空便（この計算機の EMS）は前徴収の対象。
+    prepaidImportTax: {
+      AU: {
+        rate: 0.10, base: 'before-shipping', tier: 'fixed',
+        note: "10% of the goods, Buyee's service fee and optional fees, paid at checkout",
+        sourceUrl: 'https://buyee.jp/helpcenter/guide/au-gst?lang=en', checkedOn: '2026-09-06',
+      },
+      SG: {
+        rate: 0.09, base: 'total', tier: 'fixed',
+        note: "9% of the goods, Buyee's fees and shipping — air mail only, not sea",
+        sourceUrl: 'https://buyee.jp/helpcenter/guide/sg-gst?lang=en', checkedOn: '2026-09-06',
+      },
+    },
     paysUs: true,
     referralNote: 'pays us a % of your purchase',
   },
@@ -256,6 +356,20 @@ export const SERVICES: Service[] = [
     emsMarkup: 0,
     emsMarkupTier: 'fixed',
     optional: [],
+    // 豪州（確認日 2026-09-06、https://www.jauce.com/australian-gst）。原文:
+    //「If the total amount including the item price, domestic and international
+    //  packing/delivery fees, our service fee, and optional fees is less than A$1,000,
+    //  GST is collected by JAUCE during the shipment order and sent to ATO.」
+    // → ベースは支払総額（total）。
+    // **監査時点では Jauce は「未取得」だったが、料金ページの「To customers in Australia」
+    //   から辿って一次情報を取れた。** シンガポールの案内は同サイトに無い（/singapore-gst は 404）。
+    prepaidImportTax: {
+      AU: {
+        rate: 0.10, base: 'total', tier: 'fixed',
+        note: '10% of the item price, our fees and the packing/delivery fees',
+        sourceUrl: 'https://www.jauce.com/australian-gst', checkedOn: '2026-09-06',
+      },
+    },
     // 報酬の有無を確認できていない。払うと書けないので払わない扱いにする。
     paysUs: false,
     referralNote: null,

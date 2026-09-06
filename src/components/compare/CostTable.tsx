@@ -15,8 +15,13 @@ export function CostTable({ result }: { result: CompareResult }) {
   for (const r of rows) {
     for (const l of r.lines) if (!keys.includes(l.key)) keys.push(l.key);
   }
-  const labelOf = (key: string) =>
-    rows.flatMap((r) => r.lines).find((l) => l.key === key)?.label ?? key;
+  // 同じ費目でも社ごとに文言が違うことがある（徴収を確認できた社／できていない社）。
+  // 行見出しは全列に掛かるので、**金額を持っている行の文言を優先する。**
+  // 「確認できていない」は、その社の列の「—」と行展開の内訳のほうで読ませる。
+  const labelOf = (key: string) => {
+    const ls = rows.flatMap((r) => r.lines).filter((l) => l.key === key);
+    return (ls.find((l) => l.amount != null) ?? ls[0])?.label ?? key;
+  };
 
   return (
     <section className="mt-10 hidden lg:block" aria-label="Cost breakdown">

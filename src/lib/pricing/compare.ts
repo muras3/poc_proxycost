@@ -85,8 +85,17 @@ function taxLines(
 
   const vatLabel = cc === 'US' ? 'Sales tax'
     : cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
+  // AU（≤A$1,000）と SG（<S$400）は、**国境ではなく代行が販売時点で徴収する**帯がある。
+  // その帯で税関側の行に金額を出すと、代行が取る分と二重に積むことになる。
+  // 実際にいくら取られるかは社ごとに違うので、社ごとの行（prepaid-import-tax）が持つ。
+  const sellerCollects = c.sellerCollectsBelow != null && declared <= c.sellerCollectsBelow;
   if (c.vatRate == null) {
     out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl));
+  } else if (sellerCollects) {
+    out.push(L('vat', vatLabel, 0,
+      `under the ${c.ccy} ${c.sellerCollectsBelow} threshold`
+      + ' — collected at checkout by the service, not at the border',
+      'fixed', c.sourceUrl));
   } else if (c.vatFreeLimit && declared <= c.vatFreeLimit) {
     out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold`, 'fixed', c.sourceUrl));
   } else {
@@ -201,6 +210,52 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
   return out;
 }
 
+/**
+ * 代行が販売時点で徴収する輸入税（AU/SG）。**確認できた社だけ金額を出す。**
+ *
+ * 未確認の社を 0 として扱ってはいけない。それをやると、単に我々が調べていない社が
+ * その国で 9〜10% 安く見えるだけの表になり、順位が「調査量の差」で決まる。
+ * だから未確認の社は null（画面では「—」）にして、**ラベル自体に「確認できていない」と書く**
+ * ——ラベルはそのまま excluded に並び、総額から何が抜けているかの一覧になる。
+ */
+function prepaidImportTaxLine(
+  svc: Service, cc: CompareInput['country'],
+  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number; shippingKnown: boolean },
+): Line | null {
+  const c = COUNTRIES[cc];
+  if (c.sellerCollectsBelow == null || a.declared > c.sellerCollectsBelow) return null;
+
+  const taxName = cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
+  const p = svc.prepaidImportTax?.[cc];
+  if (!p) {
+    // **社名をラベルに入れない。** このラベルは費目の見出しとして全社の列に
+    // 掛かる場所（デスクトップの内訳表）にも出るので、そこで特定の社を名指しすると
+    // 他社の金額にまで「Neokyo は確認できていない」と書くことになる。
+    // 行の中では「this service」で一意に読める。
+    return L('prepaid-import-tax',
+      `${taxName} collected at checkout`
+      + ' — we could not confirm whether this service collects it',
+      null,
+      `${c.name} makes the seller collect ${taxName} below ${c.ccy} ${c.sellerCollectsBelow}.`
+      + ` ${svc.name} does not say on its own pages whether it does, so we do not put a number here.`,
+      'none', c.sourceUrl);
+  }
+
+  const base = p.base === 'declared' ? a.itemsYen
+    : p.base === 'before-shipping' ? a.preTaxYen - a.shippingYen
+    : a.preTaxYen;
+  // 送料込みのベースなのに国際送料が取れていない行では、税額も出せない。
+  // 送料抜きの額で掛けたら、その社だけ税が安く出る。
+  if (!a.shippingKnown && p.base !== 'declared') {
+    return L('prepaid-import-tax', `${taxName} collected at checkout`, null,
+      `${(p.rate * 100).toFixed(0)}% of a total we cannot complete —`
+      + ' we have no published EMS rate for this parcel',
+      'none', p.sourceUrl);
+  }
+  return L('prepaid-import-tax', `${taxName} collected at checkout`,
+    Math.round(base * p.rate), p.note, p.tier, p.sourceUrl);
+}
+
 function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const items = ctx.items;
   const orders = items.length;
@@ -270,7 +325,21 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
   // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
   const domCharged = svc.domesticIncluded ? 0 : domYen;
+  // 税を除く支払総額と、そのうちの送料。代行が前徴収する税の課税ベースに使う。
+  // **税の行を積む前に測る**（社の原文がそろって「before GST」と書いている）。
+  const preTaxYen = sum(lines);
+  const shippingYen = lines
+    .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'ems')
+    .reduce((acc, l) => acc + (l.amount ?? 0), 0);
   lines.push(...taxLines(ctx.cc, { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
+  const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
+    itemsYen,
+    declared: itemsYen / rateFor(COUNTRIES[ctx.cc].ccy),
+    preTaxYen,
+    shippingYen,
+    shippingKnown: emsYen != null,
+  });
+  if (prepaid) lines.push(prepaid);
 
   const total = sum(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
