@@ -11,6 +11,10 @@ import {
   RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
 } from '@/lib/pricing/rates';
 import { TierLegend, tierClass, tierTitle } from '@/lib/ui/tiers';
+// **この節の数字は手で書かない。**measured.test.ts が compare() で測り直して縛る。
+import {
+  CONFIDENCE_SPLIT, CROSSOVER_G, GB_SPLIT, MEASURED_BASKET, WEIGHT_SHIFT, yen,
+} from './measured';
 
 export const metadata: Metadata = {
   title: 'Sources and method — proxycost',
@@ -29,25 +33,6 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
     </h2>
   );
 }
-
-// DESIGN-NOTES §1 の測定。5点 × ¥3,000 を米国へ送った場合の内訳。
-// 5点 × ¥3,000・600g/点・米国宛で1位（Neokyo ¥37,528）の内訳。
-// 合計が上の WEIGHT_SHIFT の 600g 行と一致すること。片方だけ直すと嘘になる。
-const CONFIDENCE_SPLIT = [
-  { what: 'Published price lists — the fee exists and the amount is printed', yen: 17550, share: '47%' },
-  { what: 'The fee certainly applies, the amount is our estimate — domestic and international shipping', yen: 16700, share: '45%' },
-  { what: 'Second-hand figures — US duty 12.5%, USPS handling $9.35', yen: 3278, share: '9%' },
-];
-
-// 5点 × ¥3,000・ヤフオク・米国宛の実測（2026-09-06、docs/audit/measured-2026-09-06.md）。
-// **1位は重量で動く。** 以前ここには「動かない」と書いてあったが、費目を一次情報に
-// 直したあとの再測定で否定された。数字を手で書き換えるときは必ず compare() で測り直すこと。
-const WEIGHT_SHIFT = [
-  { weight: '200 g', total: '¥31,128', delta: '−17%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', total: '¥37,528', delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', total: '¥52,828', delta: '+41%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', total: '¥74,478', delta: '+98%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
-];
 
 export default function SourcesPage() {
   return (
@@ -218,19 +203,21 @@ export default function SourcesPage() {
           </thead>
           <tbody>
             {CONFIDENCE_SPLIT.map((r) => (
-              <tr key={r.share} className="border-b border-neutral-100 dark:border-neutral-900">
+              <tr key={r.tier} className="border-b border-neutral-100 dark:border-neutral-900">
                 <td className="py-2 pr-2 text-neutral-700 dark:text-neutral-300">{r.what}</td>
-                <td className="px-2 py-2 text-right tabular-nums">¥{r.yen.toLocaleString('en-US')}</td>
+                <td className="px-2 py-2 text-right tabular-nums">{yen(r.yen)}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{r.share}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          About half of a total is inference. For the United Kingdom the split is 47% published
-          against 53% inferred. A tool that printed ¥33,528 in large type would be claiming a
-          precision it does not have, so the calculator rounds totals to ¥100 and prints the gap
-          between companies to the yen instead.
+          About half of a total is inference. For the United Kingdom the split is{' '}
+          {GB_SPLIT.publishedShare} published against {GB_SPLIT.inferredShare} inferred — a
+          published VAT rate moves weight onto the known side. A tool that printed{' '}
+          {yen(WEIGHT_SHIFT.find((r) => r.perItemG === MEASURED_BASKET.weightG)!.totalYen)} in
+          large type would be claiming a precision it does not have, so the calculator rounds
+          totals to ¥100 and prints the gap between companies to the yen instead.
         </p>
       </section>
 
@@ -254,7 +241,7 @@ export default function SourcesPage() {
             {WEIGHT_SHIFT.map((r) => (
               <tr key={r.weight} className="border-b border-neutral-100 dark:border-neutral-900">
                 <td className="py-2 pr-2 tabular-nums">{r.weight}</td>
-                <td className="px-2 py-2 text-right tabular-nums">{r.total}</td>
+                <td className="px-2 py-2 text-right tabular-nums">{yen(r.totalYen)}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{r.delta}</td>
                 <td className="px-2 py-2">{r.cheapest}</td>
                 <td className="px-2 py-2">{r.last}</td>
@@ -269,9 +256,11 @@ export default function SourcesPage() {
           five-fold weight error in all seven destinations. It does not. That claim came from an
           earlier version of this calculator that rounded parcels above 15 kg down to the 15 kg
           price, billed a Buyee fee that does not exist, and treated Neokyo&rsquo;s ¥350 as if it
-          included domestic postage. Once those were corrected, the crossovers landed at 1,150 g for
-          two items, 1,325 g for three and 1,625 g for five — ordinary weights for the things people
-          buy through a proxy.
+          included domestic postage. Once those were corrected, the crossovers landed at{' '}
+          {CROSSOVER_G[2]!.toLocaleString('en-US')} g for two items,{' '}
+          {CROSSOVER_G[3]!.toLocaleString('en-US')} g for three and{' '}
+          {CROSSOVER_G[5]!.toLocaleString('en-US')} g for five — ordinary weights for the things
+          people buy through a proxy.
         </p>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           So the calculator tells you when your result sits near a crossover, and the weight you type
