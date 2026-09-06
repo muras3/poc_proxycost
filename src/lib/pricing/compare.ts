@@ -66,7 +66,14 @@ function taxLines(
     out.push(L('duty', 'Duty', Math.round(dutyYen),
       `${c.ccy} ${c.flatDutyPerItem} flat × ${plural(a.units, 'item')}`, c.dutyTier, c.sourceUrl));
   } else if (declared <= c.dutyFreeLimit) {
-    out.push(L('duty', 'Duty', 0, `under the ${c.ccy} ${c.dutyFreeLimit} threshold`, 'fixed', c.sourceUrl));
+    // **限度が無い国（SG）に「限度」の文言を出すな。** `Infinity` を文字列に混ぜると
+    // `under the SGD Infinity threshold` になり、画面に意味不明な単語が出ていた。
+    // 限度が無いのは「際限なく免税」なのではなく、この品目に関税が無いということ。
+    out.push(L('duty', 'Duty', 0,
+      Number.isFinite(c.dutyFreeLimit)
+        ? `under the ${c.ccy} ${c.dutyFreeLimit} threshold`
+        : 'no duty on this category',
+      'fixed', c.sourceUrl));
   } else if (c.dutyRate != null) {
     dutyYen = baseYen * c.dutyRate;
     out.push(L('duty', 'Duty', Math.round(dutyYen),
