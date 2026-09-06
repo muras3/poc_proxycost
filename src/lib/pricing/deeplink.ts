@@ -40,26 +40,37 @@ export const DEEP_LINKS: Record<string, Partial<Record<SiteId, DeepLink>>> = {
       note: '実在ID2件で 200、タイトルが出品ごとに異なる。架空IDでは 404',
     },
   },
-  // 以下は形が分かっていても**この環境から検証できていない**。各社が自動アクセスを
-  // 弾くため（ZenMarket は Cloudflare の 403、Jauce は 503、Neokyo は候補パスが
-  // いずれも 404 で形自体が不明）。検証できるまで有効にしない。
+  jauce: {
+    'yahoo-auctions': {
+      // Jauce は cookie を持たない要求を /except_bot_access.php?target=… に 302 で流す。
+      // **これは JS チャレンジではなく、OK を1回押すだけの素の POST フォーム**で、
+      // 押した先はいま渡した出品そのもの（フォームの target が出品URLを名指ししている）。
+      // 押すと jauceNotBod cookie が付き、以後は直接開く。**利用者は1クリック挟むが、
+      // 着く先はその出品**で、トップページに落とすより明確に良い。
+      pattern: 'https://www.jauce.com/auction/{id}',
+      verified: true,
+      checkedOn: '2026-09-06',
+      note: '実在ID2件（c1243386818 / d1243516400）で 200、title がそれぞれの出品名。'
+        + '架空IDでは 404「Not found」。間に挟まる bot ゲートは OK を1回押すだけの POST フォーム',
+    },
+  },
+  // 以下は形が分かっていても**この環境から検証できていない**。検証できるまで有効にしない。
   // `npm run deeplinks:check -- <出品ID>` を普通のネットワークから走らせれば判定できる。
   zenmarket: {
     'yahoo-auctions': {
       pattern: 'https://zenmarket.jp/en/auction.aspx?itemCode={id}',
       verified: false,
+      // 2026-09-06 再挑戦: UA・Accept・リダイレクト追従を変えても、/en/ 配下は全て 403
+      // （cf-mitigated: challenge）。実在IDも架空IDも同じ 403 なので**2条件のどちらも見えない**。
+      // Cloudflare が素通しするのは静的拡張子と /api/... だけで、そこに出品ページは無い。
+      note: '未検証。HTTP 403（Cloudflare の managed challenge）。実在IDと架空IDが同じ応答を返すので判別できない',
       checkedOn: '2026-09-06',
-      note: '未検証。HTTP 403（Cloudflare）で確認できなかった',
     },
   },
-  jauce: {
-    'yahoo-auctions': {
-      pattern: 'https://www.jauce.com/auction/{id}',
-      verified: false,
-      checkedOn: '2026-09-06',
-      note: '未検証。bot チェックページに飛ぶ。ただしそのページ自身がこのURLを遷移先として提示する',
-    },
-  },
+  // Neokyo の出品ページは `/{lang}/product/{store}/{id}` の形（robots.txt が
+  // `Disallow: */product/`・`Allow: */product/mercari/` と書いている）。だが
+  // /en/product/yahoo/… /yahooAuction/… /auction/… はいずれも Cloudflare の 403 で、
+  // **形が当たっているのか外れているのかすら区別できない。**当て推量では埋めない。
   neokyo: {},
 };
 

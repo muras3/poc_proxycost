@@ -167,6 +167,11 @@ export default function SourcesPage() {
                 {s.serviceName} shipping page
               </a>
               {`, read ${s.checkedOn}`}
+              {/* 保存版から読んだ社は、いつ採られた写しかまで書く。「read 2026-09-06」だけだと
+                  9か月前の内容を今日の実測に見せてしまう（shipping-methods.ts の capturedOn）。 */}
+              {s.capturedOn
+                ? ` on an archived copy captured ${s.capturedOn}, because the live page blocks us`
+                : ''}
               {s.note ? ` — ${s.note}` : '.'}
             </li>
           ))}

@@ -22,7 +22,7 @@ import {
 } from './helpers';
 import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
 import {
-  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_SECOND_HAND, nameList,
+  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_SECOND_HAND, ALTERNATIVE_SHIPPING_VERIFIED, nameList,
 } from '../src/lib/pricing/shipping-methods';
 
 /**
@@ -566,15 +566,23 @@ test('19. the ranking says out loud that only EMS was priced, and that cheaper m
   for (const s of ALTERNATIVE_SHIPPING) expect(text).toContain(s.serviceName);
 
   // 原文を読めていない社は点線で描く（docs/UI-DESIGN.md §6。線種は数字以外にも適用する）。
+  // **点線の有無は表が決める。**いま全社の原文に届いているなら点線は1つも無いのが正しく、
+  // 逆に届いていない社が居るのに実線で描かれていたら、確度の差を黙って消したことになる。
   const secondHand = note.getByTitle(TITLE.unverified);
-  await expect(secondHand).toHaveCount(1);
-  expect((await secondHand.innerText()).trim()).toBe(nameList(ALTERNATIVE_SHIPPING_SECOND_HAND));
-  const deco = await secondHand.evaluate((el) => {
-    const st = getComputedStyle(el);
-    return { line: st.textDecorationLine, style: st.textDecorationStyle };
-  });
-  expect(deco.style).toBe('dotted');
-  expect(deco.line).toContain('underline');
+  const expectedDotted = ALTERNATIVE_SHIPPING_SECOND_HAND.length ? 1 : 0;
+  await expect(secondHand).toHaveCount(expectedDotted);
+  if (expectedDotted) {
+    expect((await secondHand.innerText()).trim()).toBe(nameList(ALTERNATIVE_SHIPPING_SECOND_HAND));
+    const deco = await secondHand.evaluate((el) => {
+      const st = getComputedStyle(el);
+      return { line: st.textDecorationLine, style: st.textDecorationStyle };
+    });
+    expect(deco.style).toBe('dotted');
+    expect(deco.line).toContain('underline');
+  } else {
+    // 点線が無いときは「一次情報で読めた社」として全社が名指しされていること。
+    expect(text).toContain(nameList(ALTERNATIVE_SHIPPING_VERIFIED));
+  }
 
   // 総額を読む前に目に入る位置（順位表の上）に居ること。
   const noteBox = (await note.boundingBox())!;
@@ -626,6 +634,13 @@ test('21. the disclosure links to the methods we did not price, named company by
     await expect(li.getByRole('link', { name: `${s.serviceName} shipping page` }))
       .toHaveAttribute('href', s.sourceUrl);
     await expect(li).toContainText(s.checkedOn);
+    // 保存版から読んだ社は、その写しがいつ採られたかまで出す。読んだ日だけだと
+    // 9か月前の内容を今日の実測に見せてしまう。
+    if (s.capturedOn) {
+      await expect(li, `${s.serviceName} の写しの採取日が /sources に無い`)
+        .toContainText(s.capturedOn);
+      await expect(li).toContainText('archived copy');
+    }
   }
 });
 
