@@ -1,86 +1,90 @@
-import { SERVICES, BUYEE_PLANS, depositSurcharge, packingFee } from './fees.js';
+import {
+  SERVICES, BUYEE_PLANS, depositSurcharge, packingFee, ASSUMED_DOMESTIC_SHIPPING,
+} from './fees.js';
 
-// 買い物 1 回ぶんの条件。
-//   items: [{ price, domesticShipping }]  domesticShipping は「送料込み」出品なら 0
-//   weightKg: まとめた後の梱包重量
-//   internationalShipping: 国際送料（v1 はユーザー入力）
-//   zenTier: ZenMarket の 1 点あたり手数料（出品元で 300〜800 と幅がある）
-//   buyeePlan: 'lite' | 'inspection' | 'standard' | 'insured'
+// 買い物 1 回ぶん。
+//   items: [{ price, domesticShipping, freeShipping }]   1 行 = 1 出品
+//   internationalShipping: 利用者の見積り。0 なら総額は「国際送料を除く」
+//   overWeightKg: 2kg を超える場合の梱包重量（Neokyo の梱包超過に効く）
+//   buyeePlan: 既定は lite（最も安い前提でも Buyee が最高額、という事実のほうが強い）
 
-function line(label, amount, note) {
-  return note ? { label, amount, note } : { label, amount };
+const domOf = (i) => (i.freeShipping ? 0 : (i.domesticShipping ?? ASSUMED_DOMESTIC_SHIPPING));
+
+function line(label, amount, note, est) {
+  return { label, amount, note, est: Boolean(est) };
 }
 
-function neokyo({ items, weightKg, internationalShipping }) {
-  const s = SERVICES.neokyo;
-  const goods = items.reduce((a, i) => a + i.price, 0);
-  const service = s.serviceFeePerItem * items.length;
-  const pack = packingFee(weightKg, s.packing);
-  return {
-    name: s.name,
-    source: s.source,
-    breakdown: [
-      line('Item price', goods),
-      line('Service fee', service, `¥350 x ${items.length} items (domestic shipping included)`),
-      line('Packing', pack, weightKg <= 2 ? 'up to 2kg' : `2kg + ${Math.ceil(weightKg - 2)}kg`),
-      line('International shipping', internationalShipping, 'carrier price, no markup'),
+export function compare({ items, internationalShipping = 0, overWeightKg = 0, buyeePlan = 'lite' }) {
+  const n = items.length;
+  if (!n) return [];
+
+  const goods = items.reduce((a, i) => a + (i.price || 0), 0);
+  const dom = items.reduce((a, i) => a + domOf(i), 0);
+  const domIsEstimated = items.some((i) => !i.freeShipping && i.domesticShipping == null);
+  const freeCount = items.filter((i) => i.freeShipping).length;
+  const intl = internationalShipping || 0;
+  const intlEst = intl > 0;
+
+  const neo = SERVICES.neokyo;
+  const pack = packingFee(overWeightKg || 1, neo.packing);
+  const neokyo = {
+    key: 'neokyo',
+    name: neo.name,
+    source: neo.source,
+    why: `¥350 per item covers domestic shipping. Packing ¥${pack.toLocaleString('en-US')} is the only extra.`,
+    lines: [
+      line('Items', goods),
+      line('Service fee', 350 * n, `¥350 × ${n} — domestic shipping included`),
+      line('Packing', pack, overWeightKg > 2 ? `2kg + ${Math.ceil(overWeightKg - 2)}kg` : 'up to 2kg'),
+      line('International shipping', intl, intlEst ? 'your estimate' : 'not included', intlEst),
     ],
-    total: goods + service + pack + internationalShipping,
   };
-}
 
-function zenmarket({ items, internationalShipping, zenTier }) {
-  const s = SERVICES.zenmarket;
-  const goods = items.reduce((a, i) => a + i.price, 0);
-  const service = zenTier * items.length;
-  const domestic = items.reduce((a, i) => a + (i.domesticShipping || 0), 0);
-  // 入金手数料は商品代・手数料・送料を含めた入金額全体にかかる。
-  const subtotal = goods + service + domestic + internationalShipping;
-  const deposit = Math.round(depositSurcharge(subtotal, s.depositFeeRate));
-  return {
-    name: s.name,
-    source: s.source,
-    breakdown: [
-      line('Item price', goods),
-      line('Service fee', service, `¥${zenTier} x ${items.length} items`),
-      line('Domestic shipping', domestic, 'charged separately'),
-      line('International shipping', internationalShipping),
-      line('Deposit fee', deposit, '3.5% of the total you top up'),
+  const zen = SERVICES.zenmarket;
+  const zenSub = goods + zen.serviceFeePerItem * n + dom + intl;
+  const zenDeposit = Math.round(depositSurcharge(zenSub, zen.depositFeeRate));
+  const zenmarket = {
+    key: 'zenmarket',
+    name: zen.name,
+    source: zen.source,
+    why: `Per-item fee is highest, but domestic shipping is free on ${freeCount} of ${n} item${n > 1 ? 's' : ''}. `
+       + `The 3.5% deposit fee applies to the whole amount.`,
+    lines: [
+      line('Items', goods),
+      line('Service fee', zen.serviceFeePerItem * n, `¥${zen.serviceFeePerItem} × ${n} — Yahoo! Auctions tier`),
+      line('Domestic shipping', dom, 'seller’s rate, charged as-is', domIsEstimated),
+      line('International shipping', intl, intlEst ? 'your estimate' : 'not included', intlEst),
+      line('Deposit fee', zenDeposit, '3.5% of everything you top up'),
     ],
-    total: subtotal + deposit,
   };
-}
 
-function buyee({ items, internationalShipping, buyeePlan = 'lite' }) {
-  const s = SERVICES.buyee;
-  const goods = items.reduce((a, i) => a + i.price, 0);
-  const n = items.length;              // 注文ごとに個別処理される
-  const service = s.serviceFeePerOrder * n;
-  const domesticService = s.domesticServiceFeePerOrder * n;
-  const domestic = items.reduce((a, i) => a + (i.domesticShipping || 0), 0);
+  const bue = SERVICES.buyee;
   const plan = BUYEE_PLANS[buyeePlan] * n;
-  return {
-    name: s.name,
-    source: s.source,
-    breakdown: [
-      line('Item price', goods),
-      line('Purchase fee', service, `¥500 x ${n} orders`),
-      line('Domestic delivery service fee', domesticService, `¥500 x ${n} orders — charged per order, not per parcel`),
-      line('Domestic shipping', domestic),
-      line('Guarantee plan', plan, buyeePlan),
-      line('International shipping', internationalShipping),
+  const buyee = {
+    key: 'buyee',
+    name: bue.name,
+    source: bue.source,
+    why: `Every listing is a separate order: ¥1,000 in fixed fees per item before shipping.`,
+    lines: [
+      line('Items', goods),
+      line('Purchase fee', bue.serviceFeePerOrder * n, `¥500 × ${n} order${n > 1 ? 's' : ''}`),
+      line('Domestic delivery service fee', bue.domesticServiceFeePerOrder * n,
+           `¥500 × ${n} order${n > 1 ? 's' : ''} — per order, not per parcel`),
+      line('Domestic shipping', dom, 'seller’s rate', domIsEstimated),
+      ...(plan ? [line('Guarantee plan', plan, buyeePlan)] : []),
+      line('International shipping', intl, intlEst ? 'your estimate' : 'not included', intlEst),
     ],
-    total: goods + service + domesticService + domestic + plan + internationalShipping,
   };
-}
 
-export function compare(input) {
-  const zenTier = input.zenTier ?? 800;   // ヤフオク/メルカリは上限側
-  const results = [
-    neokyo(input),
-    zenmarket({ ...input, zenTier }),
-    buyee(input),
-  ].sort((a, b) => a.total - b.total);
-  const cheapest = results[0];
-  return results.map((r) => ({ ...r, diffFromCheapest: r.total - cheapest.total }));
+  const rows = [neokyo, zenmarket, buyee]
+    .map((s) => ({ ...s, total: s.lines.reduce((a, l) => a + l.amount, 0) }))
+    .sort((a, b) => a.total - b.total);
+
+  return rows.map((r, i) => ({
+    ...r,
+    cheapest: i === 0,
+    diff: r.total - rows[0].total,
+    diffVs: rows[0].name,
+    hasEstimate: r.lines.some((l) => l.est && l.amount > 0),
+  }));
 }
