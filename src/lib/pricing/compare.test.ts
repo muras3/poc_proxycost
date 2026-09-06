@@ -207,8 +207,17 @@ describe('a parcel above the published EMS table drops out of the comparison', (
 // 実測: docs/audit/measured-2026-09-06.md
 // ─────────────────────────────────────────────────────────────────────────────
 describe('rank stability is measured, not assumed — and it is often false', () => {
-  test('**600 g per item is unstable in all seven countries — this is the spec, not a bug**', () => {
-    for (const cc of COUNTRIES_ALL) {
+  test('**600 g per item is unstable in five of the seven countries — this is the spec, not a bug**', () => {
+    // **AU と SG だけが安定側にいる。理由は税の徴収者が違うこと。**
+    // どちらも低額品の GST を国境ではなく代行が販売時点で徴収する国で、その課税ベースが
+    // 社ごとに違う（Neokyo・ZenMarket は内容品価格のみ、FROM JAPAN・Jauce・Buyee は
+    // 手数料や送料も含む）。重くすると送料を課税ベースに入れている社ほど税も増えるので、
+    // 1/3〜3倍では1位が動かなかった。
+    // **SG の安定は我々の無知にも助けられている。** 徴収を確認できたのは Buyee と
+    // FROM JAPAN だけで、残る3社の行には税が乗っていない（その3社の総額は税のぶん低い）。
+    // 確認できる社が増えれば、ここは不安定に転じうる。
+    const stable: CountryCode[] = ['AU', 'SG'];
+    for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c))) {
       const r = compare({ items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(false);
       // **不安定だと言うだけでは足りない。誰に替わるかを名指しすること。**
@@ -220,6 +229,12 @@ describe('rank stability is measured, not assumed — and it is often false', ()
       expect(note, cc).not.toContain('see the weight steps');
       const named = SERVICES.some((s) => note.includes(s.name));
       expect(named, `${cc}: note names no company — ${note}`).toBe(true);
+    }
+    for (const cc of stable) {
+      const r = compare({ items: items(5, 600), country: cc });
+      expect(r.rankStable, cc).toBe(true);
+      expect(r.rankStabilityNote, cc).toBe(
+        'Neokyo stays cheapest even if we are off by 3x on weight.');
     }
   });
 
@@ -703,16 +718,21 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     const totals = Object.fromEntries(COUNTRIES_ALL.map((cc) => [
       cc, compare({ items: items(5, 600), country: cc }).rows.map((r) => r.total),
     ]));
-    // AU・CA・SG がびた一文動いていないのは、この籠がどの国でも免税限度の下に
-    // いて、通貨建ての費目（米国の通関手数料・EU の定額関税）を持たないため。
+    // CA がびた一文動いていないのは、この籠が免税限度の下にいて、
+    // 通貨建ての費目（米国の通関手数料・EU の定額関税）を持たないため。
+    // **AU と SG は T15（代行の前徴収 GST）で動いた。** 費目モデルが変わったので
+    // ここが動くのは正しい。AU は5社とも徴収を明記しているので全行に税が乗り、
+    // 課税ベースの違い（内容品価格のみ／総額）で並びまで変わった。
+    // SG は徴収を確認できた Buyee・FROM JAPAN にだけ税が乗り、他3社は「—」なので
+    // **その3社の総額は税のぶん低いまま**（excluded にそう書いてある）。
     expect(totals).toEqual({
       US: [37586, 38536, 40036, 40331, 42066, 63130],
       GB: [40121, 41071, 42571, 42801, 44528, 66256],
       DE: [41373, 42323, 43823, 44053, 45780, 60602],
       FR: [41699, 42649, 44149, 44379, 46106, 61069],
-      AU: [35040, 35990, 37490, 37720, 39447, 53000],
+      AU: [33950, 36630, 36740, 36900, 40543, 51000],
       CA: [33745, 34695, 36195, 36425, 38152, 51000],
-      SG: [28500, 29450, 30950, 31036, 32747, 41500],
+      SG: [28500, 31036, 32101, 32747, 33736, 45235],
     });
   });
 });
