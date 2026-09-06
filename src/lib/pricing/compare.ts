@@ -429,6 +429,10 @@ export function compare({ items, country }: CompareInput): CompareResult {
     const first = base.find((r) => r.comparable);
     const stable = !!first && winners.every((w) => w.id === null || w.id === first.id);
     const outOfTable = winners.some((w) => w.id === null || w.shrank);
+    // 表の中央値や仮置きを「あなたがくれた重量」と呼ぶのは嘘。出どころを知らない
+    // 呼び出し側（origin 未設定）と利用者入力だけ「you gave us」と言う。
+    const ours = items.some((i) => i.weightOrigin === 'table' || i.weightOrigin === 'assumed');
+    const basis = ours ? 'our weight estimate' : 'the weight you gave us';
     return {
       ...empty,
       rows: base,
@@ -452,7 +456,7 @@ export function compare({ items, country }: CompareInput): CompareResult {
                     // 「唯一値段が付く社」を「最安」と書かない。
                     ? `${name} is the only one we can still price`
                     : `${name} is cheapest`;
-                return `at ${word} the weight you gave us, ${label}`;
+                return `at ${word} ${basis}, ${label}`;
               })
               .join('; ')
           }.`,
