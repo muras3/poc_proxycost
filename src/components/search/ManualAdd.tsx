@@ -9,7 +9,7 @@ import type { Draft } from '@/components/compare/useCompare';
  * 手入力の口。**これが無いと詰む経路がある** —
  * Brave のキーが未設定なら検索は使えず、URL 取得も相手が JSON-LD も OG も
  * 出していなければ落ちる。そのとき利用者に残る道がこれしかない。
- * 重量表に載らない商品名を入れれば、重量不明として EMS の段ごとの総額に落ちる。
+ * 重量表に載らない商品名を入れれば、重量は 1,000 g の仮置きになり、カートでそう名乗る。
  */
 export function ManualAdd({ onAdd }: { onAdd: (d: Draft) => void }) {
   const [open, setOpen] = useState(false);

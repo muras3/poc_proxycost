@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { WEIGHT_CATEGORIES, WEIGHTS_CHECKED_ON } from '@/data/weights';
+import { ASSUMED_WEIGHT_G } from '@/lib/pricing/weights';
+import { grams } from '@/lib/ui/format';
 import { WeightTable } from '@/components/weights/WeightTable';
 import { SourceCards } from '@/components/weights/SourceCards';
 import { TierLegend } from '@/lib/ui/tiers';
@@ -14,7 +16,8 @@ export const metadata: Metadata = {
 
 const ISSUES = 'https://github.com/muras3/poc_proxycost/issues';
 
-// 実データが無いカテゴリ。**推定で埋めない。**計算機は段ごとの総額に落ちる。
+// 実データが無いカテゴリ。**データをでっち上げない。**計算機は 1,000 g を「仮置き」と
+// 名乗って入れ、その場で直してもらう（docs/UI-DESIGN.md §4）。
 // 他のエージェントが WEIGHT_CATEGORIES に追記しうるので、id が入ってきたら自動で消える。
 const NOT_COVERED = [
   { id: 'instruments', label: 'Musical instruments', why: 'the one catalogue we probed put 180 kg on every guitar' },
@@ -65,9 +68,10 @@ export default function WeightsPage() {
       <section className="mt-12">
         <h2 className="text-lg font-semibold tracking-tight">Not covered</h2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          We have no weight data we trust for these. The calculator does not invent one: it shows the
-          total at every EMS weight step instead, so you can read your own row once you know what the
-          parcel weighs.
+          We have no weight data we trust for these. The calculator does not pretend otherwise: it
+          starts such an item at an assumed {grams(ASSUMED_WEIGHT_G)}, labels it as assumed right next
+          to the weight box, and tells you when that one number is what decides the cheapest option.
+          Type the real weight there and the ranking follows.
         </p>
         {missing.length > 0 ? (
           <ul className="mt-3 space-y-1 text-sm">
