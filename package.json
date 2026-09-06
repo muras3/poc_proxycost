@@ -14,7 +14,7 @@
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
     "cf:deploy": "opennextjs-cloudflare deploy",
-    "weights:fetch": "tsx scripts/weights-fetch.ts",
+    "weights:fetch": "node scripts/shopify-probe.mjs",
     "weights:build": "tsx scripts/weights-build.ts",
     "fees:check": "tsx scripts/fees-check.ts",
     "test:e2e": "playwright test",
