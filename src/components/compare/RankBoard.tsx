@@ -48,7 +48,7 @@ export function RankBoard({ result }: { result: CompareResult }) {
                 aria-expanded={isOpen}
                 className="flex w-full items-start gap-3 py-3 text-left"
               >
-                <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-400 num">{row.rank}</span>
+                <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-500 dark:text-neutral-400 num">{row.rank}</span>
 
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-baseline gap-x-2">

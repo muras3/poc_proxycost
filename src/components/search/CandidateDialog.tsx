@@ -54,7 +54,7 @@ export function CandidateDialog({
                     loading="lazy"
                   />
                 ) : (
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-neutral-200 text-[10px] text-neutral-400 dark:border-neutral-700">
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-neutral-200 text-[10px] text-neutral-500 dark:text-neutral-400 dark:border-neutral-700">
                     no image
                   </span>
                 )}

@@ -64,7 +64,7 @@ export function CostTable({ result }: { result: CompareResult }) {
                   const l = r.lines.find((x) => x.key === key);
                   return (
                     <td key={r.id} className="py-1.5 pl-3 text-right num">
-                      {l ? <Amount amount={l.amount} tier={l.tier} /> : <span className="text-neutral-400">—</span>}
+                      {l ? <Amount amount={l.amount} tier={l.tier} /> : <span className="text-neutral-500 dark:text-neutral-400">—</span>}
                     </td>
                   );
                 })}

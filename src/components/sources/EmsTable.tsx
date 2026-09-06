@@ -26,7 +26,7 @@ export function EmsTable() {
                 return (
                   <th key={z} scope="col" className="px-1 py-2 text-right font-medium sm:px-2">
                     <span className="block">Zone {z}</span>
-                    <span className="block font-normal text-neutral-400">
+                    <span className="block font-normal text-neutral-500 dark:text-neutral-400">
                       {names.length > 0 ? names.join(', ') : 'not in our list'}
                     </span>
                   </th>
