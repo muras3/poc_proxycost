@@ -401,7 +401,45 @@ function weightSensitivityFor(
   return out;
 }
 
+/**
+ * 入口の入力検査。**壊れた入力は投げる。空の結果を返さない。**
+ *
+ * どちらにするかの判断: 空の結果は「まだ何も入れていない」状態と画面で見分けが
+ * 付かない。順位表が黙って消え、なぜ消えたのか誰にも分からないまま「比較できない」
+ * とだけ読まれる。このツールの価値は数字の正しさだけなので、壊れた入力を黙って
+ * 飲むのは「持っていない数字を 0 と書く」のと同じ種類の嘘になる。
+ * 投げれば、テストと開発中に必ず気付く場所で止まる。
+ *
+ * ここに NaN / Infinity / qty=0 が来るのは利用者の操作ではなく呼び出し側の不具合である。
+ * 計算機の UI は数値欄を toYen() に通し、価格の無い項目を compare() に渡さない
+ * （src/components/compare/useCompare.ts）。つまりこれは利用者に見せるエラーではなく、
+ * 我々が直すべき不具合の通報である。
+ */
+function assertUsableInput({ items, country }: CompareInput): void {
+  if (!COUNTRIES[country]) {
+    throw new RangeError(`compare(): unknown destination country ${String(country)}`);
+  }
+  for (const i of items) {
+    const bad = (field: string, v: unknown) =>
+      new RangeError(`compare(): item ${i.id} has an unusable ${field}: ${String(v)}`);
+    // 価格は 0 を許す（送料込みの ¥0 出品ではなく、価格未取得の項目を
+    // 呼び出し側が 0 で置いている場合がある）。負とNaNとInfinityは許さない。
+    if (!Number.isFinite(i.priceYen) || i.priceYen < 0) throw bad('price', i.priceYen);
+    // 0個の注文は存在しない。小数個も存在しない。
+    if (!Number.isInteger(i.qty) || i.qty < 1) throw bad('quantity', i.qty);
+    // 重量は null（不明＝段に落とす）か、正の有限値。0g の小包は無い。
+    if (i.weightG != null && (!Number.isFinite(i.weightG) || i.weightG <= 0)) {
+      throw bad('weight', i.weightG);
+    }
+    if (i.domesticShippingYen != null
+      && (!Number.isFinite(i.domesticShippingYen) || i.domesticShippingYen < 0)) {
+      throw bad('domestic shipping', i.domesticShippingYen);
+    }
+  }
+}
+
 export function compare({ items, country }: CompareInput): CompareResult {
+  assertUsableInput({ items, country });
   const currency = {
     code: COUNTRIES[country].ccy,
     rate: rateFor(COUNTRIES[country].ccy),
