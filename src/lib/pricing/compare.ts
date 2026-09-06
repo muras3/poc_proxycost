@@ -202,8 +202,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     ? netPerItem.map((g) => grossG(g))
     : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
 
-  // **表の外（15kg 超）の重量では料金を持っていない。丸めない。**
-  // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
+  // **表の外（30kg 超）の重量では料金を持っていない。丸めない。**
+  // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた
+  // （当時は表を 15kg までしか転記していなかった）。
   const each = parcelGross.map((g) => emsFor(g, zone));
   const overMax = each.some((e) => e.overMax);
   const emsYen: number | null = overMax
@@ -355,7 +356,7 @@ export function compare({ items, country }: CompareInput): CompareResult {
   if (!hasUnknownWeight) {
     const base = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: 1 });
     // 一番大きく一番弱い数字（重量）を 1/3・3倍 に振って、1位が動くか見る。
-    // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（15kg）を
+    // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（30kg）を
     // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
     // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
     const winners = [1 / 3, 3].map((sc) => {
