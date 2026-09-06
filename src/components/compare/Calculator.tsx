@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AdSlot } from '@/components/chrome/AdSlot';
 import { ManualAdd } from '@/components/search/ManualAdd';
 import { SearchBox } from '@/components/search/SearchBox';
@@ -9,11 +9,10 @@ import type { CountryCode, Item } from '@/lib/pricing/types';
 import { ConsolidationCallout } from './ConsolidationCallout';
 import { CostTable } from './CostTable';
 import { CountryPicker } from './CountryPicker';
-import { ItemList } from './ItemList';
+import { ItemList, type ItemListHandle } from './ItemList';
 import { OptionalExtras } from './OptionalExtras';
 import { RankBoard, Summary } from './RankBoard';
 import { StabilityNote } from './StabilityNote';
-import { WeightStepTable } from './WeightStepTable';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
 import { useCompare, type Draft } from './useCompare';
 
@@ -26,6 +25,14 @@ export function Calculator() {
   // URL 取得で確定値になった項目の取得日。Item に日付欄が無いのでここで持つ。
   // 追加は必ずクライアント側の操作なので、SSR と食い違わない。
   const [readOn, setReadOn] = useState<Record<string, string>>({});
+  // StabilityNote の「Check the weights」→ カートの重量入力へ。
+  // 1位を決めている品（decisive）があればそこへ、無ければ先頭の品へ。
+  const cart = useRef<ItemListHandle>(null);
+  function checkWeights() {
+    const decisive = items.find((i) => result.weightSensitivity[i.id]?.decisive);
+    const target = decisive ?? items[0];
+    if (target) cart.current?.focusWeight(target.id);
+  }
 
   function onAdd(draft: Draft) {
     if (draft.priceTier === 'fixed') {
@@ -61,6 +68,8 @@ export function Calculator() {
         items={items}
         readOn={readOn}
         unpriced={unpriced}
+        sensitivity={result.weightSensitivity}
+        ref={cart}
         onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
         onRemove={(id: string) => dispatch({ type: 'remove', id })}
       />
@@ -84,7 +93,7 @@ export function Calculator() {
               </p>
             )}
             <Summary result={result} />
-            <StabilityNote result={result} />
+            <StabilityNote result={result} onCheckWeights={checkWeights} />
           </div>
 
           <div className="mt-4">
@@ -96,7 +105,9 @@ export function Calculator() {
             <ConsolidationCallout result={result} />
           </div>
 
-          {result.bands && <WeightStepTable result={result} />}
+          {/* 段ごとの総額の表（WeightStepTable）はここに居たが外した。カートの全点に
+              重量が入って直せる今、「重量が X なら総額は」に答えるのは重量欄そのもの。
+              全点を同じ重量に置く表は、全点が不明だったときにしか意味が無かった。 */}
 
           <CostTable result={result} />
 
