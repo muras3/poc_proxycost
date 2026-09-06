@@ -20,6 +20,13 @@ export interface FeeModel {
   paymentInsideJapanSites?: SiteId[];
   /** 注文あたりの定額手数料（Buyee）。 */
   perOrderYen?: number;
+  /**
+   * 同一サイト・同一店舗の複数点が1注文になるか（Buyee のショッピング）。
+   * **その社が自分のページで「同じ店なら1回」と書いているときだけ true。**
+   * 店舗は出品URLから引く（`shops.ts`）。URL から引けない点はまとめない
+   * ＝その点は1点＝1注文のまま課金し、行の note にそう書く。
+   */
+  ordersGroupedByShop?: boolean;
   /** 商品代に対する率（Jauce の 8%。唯一の従価型）。 */
   adValoremRate?: number;
   /** 注文あたりの保証プラン料（Buyee。Lite を選べば ¥0）。 */
@@ -275,7 +282,13 @@ export const SERVICES: Service[] = [
     // **「Domestic handling ¥500」は存在しない費目だった。**（あれは日本国内の住所へ
     // 届けるサービスの料金）。実体は保証プランで、Standard ¥500（推奨）/ Insured ¥500 /
     // Inspection ¥300 / **Lite ¥0** から注文ごとに選ぶ。既定は推奨の Standard を積む。
-    fee: { perOrderYen: 500, protectionPlanPerOrderYen: 500, tier: 'fixed' },
+    // ショッピングは**店舗ごとに1注文**。原文（購入手数料の項、2026-09-06 取得）:
+    // 「Shopping: Order / flat rate ¥500 * Even if multiple purchases are from the same
+    //  store, it is a flat rate of ¥500.」
+    // オークション・フリマは「One successful bid or purchase / flat rate ¥500」なので出品ごと。
+    fee: {
+      perOrderYen: 500, protectionPlanPerOrderYen: 500, ordersGroupedByShop: true, tier: 'fixed',
+    },
     domesticIncluded: false,
     deposit: null,
     packing: null,
