@@ -24,7 +24,7 @@ export interface ProductResponse {
   site?: SiteId;
   siteName?: string;
   imageUrl?: string | null;
-  /** 出品が送料込みか。読めなければ undefined。順位の唯一の逆転条件なので推測しない。 */
+  /** 出品が送料込みか。読めなければ undefined。総額に直接効くので推測しない。 */
   freeShipping?: boolean;
   reason?: string;
 }

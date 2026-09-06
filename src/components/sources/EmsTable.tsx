@@ -17,7 +17,9 @@ export function EmsTable() {
     <div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[22rem] border-collapse text-[11px] sm:text-xs">
-          <caption className="sr-only">EMS prices from Japan, all 27 weight steps by zone</caption>
+          <caption className="sr-only">
+            EMS prices from Japan, all {EMS_TABLE.length} weight steps by zone
+          </caption>
           <thead>
             <tr className="border-b border-neutral-300 text-left text-neutral-500 dark:border-neutral-700">
               <th scope="col" className="py-2 pr-2 font-medium">Up to</th>

@@ -1,5 +1,5 @@
 import { COUNTRIES } from './countries';
-import { EMS_ZONE, EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
+import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
 import { rateFor, RATES_AS_OF } from './rates';
 import { outboundFor } from './deeplink';
 import { SERVICES, type Service } from './services';
@@ -50,7 +50,11 @@ function taxLines(
   const rate = rateFor(c.ccy);
   const cif = a.itemsYen + a.domYen + a.emsYen;
   const baseYen = c.base === 'CIF' ? cif : a.itemsYen;
-  const declared = baseYen / rate;
+  // **免税限度は intrinsic value（商品代）で測る。** 英国の £135 も EU の €150 も
+  // 運賃・保険を除いた値で判定する規定で、送料込みの CIF で測ると £110〜135 の帯を
+  // 必ず誤判定する。しかも社ごとに送料が違うので、同じ商品で社ごとに限度をまたぐ／
+  // またがないが分かれ、順位が歪む。課税ベース自体は従来どおり CIF / FOB。
+  const declared = a.itemsYen / rate;
   const out: Line[] = [];
 
   let dutyYen = 0;
@@ -115,31 +119,39 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
   const f = svc.fee;
   const out: Line[] = [];
   const free = new Set(f.freeForSites ?? []);
+  const chargeable = ctx.items.filter((i) => !free.has(i.site));
 
-  // Jauce のベータ無料は出品元サイトで決まるので、点数を課金対象で割る。
-  const chargeableUnits = ctx.items
-    .filter((i) => !free.has(i.site))
-    .reduce((a, i) => a + i.qty, 0);
-  const chargeableYen = ctx.items
-    .filter((i) => !free.has(i.site))
-    .reduce((a, i) => a + i.priceYen * i.qty, 0);
-  const freeUnits = units - chargeableUnits;
+  // **同一商品を複数個買っても手数料は1回**の社は、点数ではなく品数で数える。
+  // Neokyo / ZenMarket / FROM JAPAN が自社ページで明記している。
+  const countOf = (i: (typeof ctx.items)[number]) => (f.chargedPerDistinctItem ? 1 : i.qty);
+  const chargeableUnits = chargeable.reduce((a, i) => a + countOf(i), 0);
+  const freeUnits = units - chargeable.reduce((a, i) => a + i.qty, 0);
+  const chargeableYen = chargeable.reduce((a, i) => a + i.priceYen * i.qty, 0);
+  const rateFor = (i: (typeof ctx.items)[number]) =>
+    f.perItemBySite?.[i.site] ?? f.perItemYen ?? 0;
 
   if (f.perOrderYen != null) {
     out.push(L('purchase-fee', 'Purchase fee', f.perOrderYen * orders,
       `¥${f.perOrderYen} × ${plural(orders, 'order')}`, f.tier, svc.sourceUrl));
   }
-  if (f.domesticServicePerOrderYen != null) {
-    out.push(L('domestic-handling', 'Domestic handling',
-      f.domesticServicePerOrderYen * orders,
-      `¥${f.domesticServicePerOrderYen} × ${plural(orders, 'order')}`, f.tier, svc.sourceUrl));
+  if (f.protectionPlanPerOrderYen != null) {
+    out.push(L('protection-plan', 'Protection plan', f.protectionPlanPerOrderYen * orders,
+      `Standard plan, ¥${f.protectionPlanPerOrderYen} × ${plural(orders, 'order')}`
+      + ' — the Lite plan is ¥0',
+      f.tier, svc.sourceUrl));
   }
   if (f.perItemYen != null) {
-    const note = `¥${f.perItemYen} × ${chargeableUnits}`
-      + (svc.domesticIncluded ? ', domestic shipping incl.' : '')
+    // サイトごとに額が違う社では、実際に当てた額を内訳の説明に出す。
+    const amounts = chargeable.map((i) => rateFor(i) * countOf(i));
+    const total = amounts.reduce((a, b) => a + b, 0);
+    const distinct = [...new Set(chargeable.map((i) => rateFor(i)))].sort((a, b) => a - b);
+    const note = (distinct.length > 1
+      ? `${distinct.map((v) => `¥${v}`).join(' / ')} by shop, ${chargeableUnits} charged`
+      : `¥${distinct[0] ?? f.perItemYen} × ${chargeableUnits}`)
+      + (f.chargedPerDistinctItem && units > chargeableUnits + freeUnits
+        ? ' (same item counted once)' : '')
       + (freeUnits > 0 ? ` (${freeUnits} free — Rakuten / Yahoo! Shopping beta)` : '');
-    out.push(L('service-fee', 'Service fee', f.perItemYen * chargeableUnits, note,
-      f.tier, svc.sourceUrl));
+    out.push(L('service-fee', 'Service fee', total, note, f.tier, svc.sourceUrl));
   }
   if (f.adValoremRate != null) {
     out.push(L('ad-valorem', 'Commission',
@@ -148,10 +160,22 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
       + (freeUnits > 0 ? ' (Rakuten / Yahoo! Shopping free in beta)' : ''),
       f.tier, svc.sourceUrl));
   }
+  if (f.bankFeePerOrderYen != null) {
+    out.push(L('bank-fee', 'Banking fee', f.bankFeePerOrderYen * orders,
+      `¥${f.bankFeePerOrderYen} per payment — once per seller per day`,
+      f.bankFeeTier ?? 'unverified', svc.sourceUrl));
+  }
   if (f.paymentInsideJapanYen != null) {
+    // **課される出品サイトが限られる社がある。** FROM JAPAN はヤフオクの落札1件ごとだけ。
+    const sites = f.paymentInsideJapanSites;
+    const n = sites
+      ? ctx.items.filter((i) => sites.includes(i.site)).length
+      : orders;
     out.push(L('payment-inside-jp', 'Payment fee inside Japan',
-      f.paymentInsideJapanYen * orders,
-      `¥${f.paymentInsideJapanYen} × ${plural(orders, 'order')} — per order or per item is not stated`,
+      f.paymentInsideJapanYen * n,
+      sites
+        ? `¥${f.paymentInsideJapanYen} × ${plural(n, 'auction')} — Yahoo! Auctions only`
+        : `¥${f.paymentInsideJapanYen} × ${plural(n, 'order')}`,
       f.paymentInsideJapanTier ?? 'unverified', svc.sourceUrl));
   }
   return out;
@@ -178,17 +202,19 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     ? netPerItem.map((g) => grossG(g))
     : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
 
-  let emsYen = 0;
-  let stepLabel = '';
-  if (split) {
-    emsYen = parcelGross.reduce((a, g) => a + emsFor(g, zone).yen, 0);
-    stepLabel = `${plural(parcels, 'parcel')}`;
-  } else {
-    const e = emsFor(parcelGross[0]!, zone);
-    emsYen = e.yen;
-    stepLabel = `1 parcel, ${formatStep(e.stepG)} step`;
-  }
-  emsYen = Math.round(emsYen * (1 + svc.emsMarkup));
+  // **表の外（30kg 超）の重量では料金を持っていない。丸めない。**
+  // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた
+  // （当時は表を 15kg までしか転記していなかった）。
+  const each = parcelGross.map((g) => emsFor(g, zone));
+  const overMax = each.some((e) => e.overMax);
+  const emsYen: number | null = overMax
+    ? null
+    : Math.round(each.reduce((a, e) => a + (e.yen ?? 0), 0) * (1 + svc.emsMarkup));
+  const stepLabel = overMax
+    ? `over ${formatStep(EMS_MAX_GRAMS)} — no published rate`
+    : split
+      ? `${plural(parcels, 'parcel')}`
+      : `1 parcel, ${formatStep(each[0]!.stepG!)} step`;
 
   const priceEstimated = items.some((i) => i.priceTier === 'estimate');
   const lines: Line[] = [
@@ -209,8 +235,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 
   lines.push(L('ems', `EMS to ${COUNTRIES[ctx.cc].name}`, emsYen,
     `zone ${zone}, ${stepLabel}`
-    + (svc.emsMarkup === 0 ? ', published rate' : `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`),
-    'estimate', EMS_SOURCE_URL));
+    + (overMax ? '' : svc.emsMarkup === 0 ? ', published rate' : `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`),
+    overMax ? 'none' : 'estimate', EMS_SOURCE_URL));
 
   // 入金手数料は送金合計額に対する率なので gross-up。
   // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
@@ -221,7 +247,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       svc.deposit.tier, svc.sourceUrl));
   }
 
-  lines.push(...taxLines(ctx.cc, { itemsYen, domYen, emsYen, units, parcels }));
+  // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
+  // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
+  const domCharged = svc.domesticIncluded ? 0 : domYen;
+  lines.push(...taxLines(ctx.cc, { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
 
   const total = sum(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
@@ -264,17 +293,33 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       .filter((x) => x.link.direct)
       .map((x) => ({ itemId: x.item.id, title: x.item.title, url: x.link.url })),
     approximate,
+    // 国際送料が取れていない行は、取れている行と総額を比べられない。
+    comparable: emsYen != null,
+    notComparableReason: emsYen == null
+      ? `Japan Post publishes no EMS rate above ${formatStep(EMS_MAX_GRAMS)} in our table, so this total is missing its largest line`
+      : null,
   };
 }
 
-/** 総額の昇順で順位を付ける。**報酬額（paysUs）は一切参照しない。** */
+/**
+ * 総額の昇順で順位を付ける。**報酬額（paysUs）は一切参照しない。**
+ * 比べられない行（国際送料が取れていない）は末尾に回し、順位も差額も付けない。
+ * 最大の費目が欠けた総額を、揃っている総額と並べたら順位が嘘になる。
+ */
 function rank(rows: Row[]): Row[] {
-  const sorted = [...rows].sort(
-    (a, b) => a.total - b.total || a.serviceName.localeCompare(b.serviceName));
-  const low = sorted[0]?.total ?? 0;
-  return sorted.map((r, i) => ({
-    ...r, rank: i + 1, diff: r.total - low, cheapest: r.total === low,
-  }));
+  const byTotal = (a: Row, b: Row) =>
+    a.total - b.total || a.serviceName.localeCompare(b.serviceName);
+  const ok = rows.filter((r) => r.comparable).sort(byTotal);
+  const notOk = rows.filter((r) => !r.comparable).sort(byTotal);
+  const low = ok[0]?.total ?? 0;
+  return [
+    ...ok.map((r, i) => ({
+      ...r, rank: i + 1, diff: r.total - low, cheapest: r.total === low,
+    })),
+    ...notOk.map((r, i) => ({
+      ...r, rank: ok.length + i + 1, diff: 0, cheapest: false,
+    })),
+  ];
 }
 
 function rowsFor(ctx: Ctx): Row[] {
@@ -310,18 +355,49 @@ export function compare({ items, country }: CompareInput): CompareResult {
 
   if (!hasUnknownWeight) {
     const base = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: 1 });
-    // 一番大きく一番弱い数字（重量）を 1/3・3倍・5倍 に振って、1位が動くか見る。
-    const winners = [1 / 3, 3, 5].map((s) =>
-      rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: s })[0]?.id);
-    const first = base[0];
-    const stable = !!first && winners.every((w) => w === first.id);
+    // 一番大きく一番弱い数字（重量）を 1/3・3倍 に振って、1位が動くか見る。
+    // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（30kg）を
+    // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
+    // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
+    const baseComparable = base.filter((r) => r.comparable).length;
+    const winners = [1 / 3, 3].map((sc) => {
+      const rows = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: sc });
+      const comparable = rows.filter((r) => r.comparable);
+      // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
+      // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
+      // 値段が付く唯一の社というだけ。そう書かないと嘘になる。
+      return { id: comparable[0]?.id ?? null, shrank: comparable.length < baseComparable };
+    });
+    const first = base.find((r) => r.comparable);
+    const stable = !!first && winners.every((w) => w.id === null || w.id === first.id);
+    const outOfTable = winners.some((w) => w.id === null || w.shrank);
     return {
       ...empty,
       rows: base,
       rankStable: stable,
-      rankStabilityNote: stable
-        ? `${first?.label ?? ''} stays cheapest even if we are off by 5x on weight.`
-        : 'The cheapest option changes if the weight estimate is off — see the weight steps.',
+      rankStabilityNote: !first
+        ? 'No published EMS rate covers this parcel, so we cannot compare these totals.'
+        : stable
+          ? `${first.label} stays cheapest even if we are off by 3x on weight.`
+            + (outOfTable ? ' Beyond that the parcel leaves the published EMS table.' : '')
+          // **不安定なときに「段の表を見ろ」と言ってはいけない。** 重量が分かって
+          // いるときは段の表を出していないので、画面に無いものを指すことになる。
+          // どの倍率で誰に替わるかは winners に持っているので、それを名指しする。
+          : `The cheapest option changes with the weight: ${
+            ['a third of', 'three times']
+              .map((word, i) => {
+                const w = winners[i]!;
+                const name = w.id == null ? null : base.find((r) => r.id === w.id)?.label ?? w.id;
+                const label = name == null
+                  ? 'no published EMS rate covers the parcel'
+                  : w.shrank
+                    // 「唯一値段が付く社」を「最安」と書かない。
+                    ? `${name} is the only one we can still price`
+                    : `${name} is cheapest`;
+                return `at ${word} the weight you gave us, ${label}`;
+              })
+              .join('; ')
+          }.`,
       hasUnknownWeight: false,
     };
   }

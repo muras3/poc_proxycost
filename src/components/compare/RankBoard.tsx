@@ -12,6 +12,8 @@ const rel = (paysUs: boolean) =>
   paysUs ? 'sponsored nofollow noopener noreferrer' : 'nofollow noopener noreferrer';
 
 function diffText(row: Row, result: CompareResult): string {
+  // 比較できない行に差額を出したら、比べられるかのように見える。
+  if (!row.comparable) return 'NOT COMPARABLE';
   if (result.rowDiffRange) {
     const r = result.rowDiffRange[row.id];
     if (r) return r[0] === 0 && r[1] === 0 ? 'CHEAPEST' : `+${yenRange(r)}`;
@@ -29,15 +31,16 @@ function totalText(row: Row, result: CompareResult): string {
 
 /**
  * 画面の主役。**最大の文字は総額ではなく差額。**
- * 重量を1/3〜5倍に外しても順位は動かないが総額は −19%〜+85% 動く
- * （docs/DESIGN-NOTES.md §1）。確かな方を大きく出す。
+ * 差額は総額より確かなので、確かな方を大きく出す。
+ * **ただし順位そのものは重量で動く**（docs/DESIGN-NOTES.md §1）。
+ * 動く条件では StabilityNote がそう書く。
  */
 export function RankBoard({ result }: { result: CompareResult }) {
   const [open, setOpen] = useState<string | null>(null);
   const rows = result.rows;
   if (!rows.length) return null;
   const cheapest = rows[0]!;
-  const maxDiff = rows[rows.length - 1]!.diff;
+  const maxDiff = Math.max(0, ...rows.filter((r) => r.comparable).map((r) => r.diff));
 
   return (
     <section aria-label="Ranking">
@@ -65,6 +68,12 @@ export function RankBoard({ result }: { result: CompareResult }) {
                   <span className="mt-0.5 block text-xs text-neutral-500">
                     {row.referralNote ?? 'pays us nothing'}
                   </span>
+                  {/* なぜ比べられないのかを、その場に書く。黙って末尾に置かない。 */}
+                  {!row.comparable && row.notComparableReason && (
+                    <span className="mt-0.5 block text-xs text-amber-700 dark:text-amber-400">
+                      {row.notComparableReason}
+                    </span>
+                  )}
                   {row.excluded.length > 0 && (
                     <span className={`mt-0.5 block text-xs ${tierClass.none}`}>
                       excl. {row.excluded.join(', ').toLowerCase()}
@@ -75,15 +84,21 @@ export function RankBoard({ result }: { result: CompareResult }) {
                 {/* 差額が主役。総額はその下に小さく添える。 */}
                 <span className="shrink-0 text-right">
                   <span
-                    className={`block text-lg font-semibold num ${
-                      row.cheapest ? 'text-emerald-700 dark:text-emerald-400' : ''
+                    className={`block font-semibold num ${
+                      !row.comparable
+                        ? 'text-xs text-neutral-500'
+                        : row.cheapest
+                          ? 'text-lg text-emerald-700 dark:text-emerald-400'
+                          : 'text-lg'
                     }`}
                   >
                     {diffText(row, result)}
                   </span>
-                  <span className="mt-1 block">
-                    <DiffBar diff={row.diff} max={maxDiff} />
-                  </span>
+                  {row.comparable && (
+                    <span className="mt-1 block">
+                      <DiffBar diff={row.diff} max={maxDiff} />
+                    </span>
+                  )}
                   <span className="mt-1 block text-xs text-neutral-500 num">
                     approx. total {totalText(row, result)}
                   </span>
@@ -140,13 +155,19 @@ export function RankBoard({ result }: { result: CompareResult }) {
 }
 
 export function Summary({ result }: { result: CompareResult }) {
-  const rows = result.rows;
+  // 比較できない行を混ぜて「一番安い」と言ってはいけない。
+  const rows = result.rows.filter((r) => r.comparable);
   if (rows.length < 2) return null;
   const first = rows[0]!;
   const rest = rows.slice(1, 4);
+  // **段が割れているときに1社を言い切らない。** 重量不明のとき rows は代表段
+  // （真ん中）の順位でしかなく、軽い段では別の社が最安になることがある。
+  // 直下の StabilityNote が打ち消していても、一番大きい文が断定していたら嘘になる。
+  const midBand = result.bands?.[Math.floor(result.bands.length / 2)];
+  const qualify = !result.rankStable && midBand ? ` at ${midBand.label}` : '';
   return (
     <p className="text-sm">
-      <strong>{first.serviceName} is cheapest.</strong>{' '}
+      <strong>{first.serviceName} is cheapest{qualify}.</strong>{' '}
       {rest.map((r, i) => (
         <span key={r.id}>
           {/* 重量が不明なときは差額も幅になる。1点に丸めて言い切らない。 */}

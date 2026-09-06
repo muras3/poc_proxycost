@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   title: 'Sources and method — proxycost',
   description:
     'Every fee, EMS price and import tax the calculator uses, with the page it was read from and '
-    + 'the date. Plus what we measured: about half of a total is inferred, and the ranking still holds.',
+    + 'the date. Plus what we measured: about half of a total is inferred, and the ranking itself '
+    + 'changes with the weight.',
 };
 
 const ZENMARKET_INVOICE = 'https://nyamo.life/archives/zenmarket.html';
@@ -25,18 +26,22 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
 }
 
 // DESIGN-NOTES §1 の測定。5点 × ¥3,000 を米国へ送った場合の内訳。
+// 5点 × ¥3,000・600g/点・米国宛で1位（Neokyo ¥37,528）の内訳。
+// 合計が上の WEIGHT_SHIFT の 600g 行と一致すること。片方だけ直すと嘘になる。
 const CONFIDENCE_SPLIT = [
-  { what: 'Published price lists — the fee exists and the amount is printed', yen: 16750, share: '50%' },
-  { what: 'The fee certainly applies, the amount is our estimate — domestic and international shipping', yen: 13500, share: '40%' },
-  { what: 'Second-hand figures — US duty 12.5%, USPS handling $9.35', yen: 3278, share: '10%' },
+  { what: 'Published price lists — the fee exists and the amount is printed', yen: 17550, share: '47%' },
+  { what: 'The fee certainly applies, the amount is our estimate — domestic and international shipping', yen: 16700, share: '45%' },
+  { what: 'Second-hand figures — US duty 12.5%, USPS handling $9.35', yen: 3278, share: '9%' },
 ];
 
-// 重量を 1/3〜5倍 に外しても順位は動かない（7カ国すべてで）。
+// 5点 × ¥3,000・ヤフオク・米国宛の実測（2026-09-06、docs/audit/measured-2026-09-06.md）。
+// **1位は重量で動く。** 以前ここには「動かない」と書いてあったが、費目を一次情報に
+// 直したあとの再測定で否定された。数字を手で書き換えるときは必ず compare() で測り直すこと。
 const WEIGHT_SHIFT = [
-  { weight: '200 g', total: '¥27,128', delta: '−19%' },
-  { weight: '600 g (our estimate)', total: '¥33,528', delta: '0%' },
-  { weight: '1,500 g', total: '¥48,828', delta: '+46%' },
-  { weight: '3,000 g', total: '¥62,178', delta: '+85%' },
+  { weight: '200 g', total: '¥31,128', delta: '−17%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '600 g (our estimate)', total: '¥37,528', delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '1,500 g', total: '¥52,828', delta: '+41%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '3,000 g', total: '¥74,478', delta: '+98%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
 ];
 
 export default function SourcesPage() {
@@ -50,10 +55,10 @@ export default function SourcesPage() {
           <div className="rounded-lg border border-neutral-300 p-4 dark:border-neutral-700">
             <h2 className="text-sm font-semibold">What we stand behind</h2>
             <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-              The order of the companies, and the gap between them. Those come from published fee
-              tables and one published postage table, and they survive being wrong about the weight
-              by a factor of five. If we say one service costs ¥2,950 more than another for your
-              basket, that is the number to act on.
+              The order of the companies, and the gap between them, <em>for the weight you gave
+              us</em>. Those come from published fee tables and one published postage table. If we
+              say one service costs ¥1,500 more than another for your basket, that is the number to
+              act on — and it is decided by the total alone, never by which company pays us.
             </p>
           </div>
           <div className="rounded-lg border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
@@ -61,8 +66,9 @@ export default function SourcesPage() {
             <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
               The total. About half of it is inferred — the weight of your parcel, the domestic
               postage inside Japan, and what your customs will do. That is why totals are rounded and
-              carry a <span className={tierClass.estimate}>~</span>. Confirm the total on the proxy
-              site before you pay.
+              carry a <span className={tierClass.estimate}>~</span>. And because the weight is a
+              guess, <strong>we do not promise the order holds if that guess is wrong</strong> —
+              see below. Confirm the total on the proxy site before you pay.
             </p>
           </div>
         </div>
@@ -185,8 +191,8 @@ export default function SourcesPage() {
       <section className="mt-12">
         <H2 id="stability">What happens when the weight guess is wrong</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          Same basket, same destination, with the per-item weight moved from a third of our estimate
-          to five times it:
+          Five items at ¥3,000 from Yahoo! Auctions to the United States, with the per-item weight
+          moved from a third of our estimate to five times it:
         </p>
         <table className="mt-4 w-full max-w-3xl border-collapse text-sm">
           <thead>
@@ -204,17 +210,28 @@ export default function SourcesPage() {
                 <td className="py-2 pr-2 tabular-nums">{r.weight}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{r.total}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{r.delta}</td>
-                <td className="px-2 py-2">Neokyo</td>
-                <td className="px-2 py-2">Buyee, default</td>
+                <td className="px-2 py-2">{r.cheapest}</td>
+                <td className="px-2 py-2">{r.last}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          The total moves by 85%. The first place and the last place do not move at all, and they do
-          not move in any of the seven destinations either. The estimate lands on every company at
-          once, so it cancels out of the comparison. That is the whole reason this site leads with
-          the ranking and the gap rather than with the total.
+          The total nearly doubles, and <strong>the first place changes too.</strong> Neokyo is
+          cheapest up to about 1.6 kg per item; above that FROM JAPAN is. At 1,500 g the two are
+          ¥50 apart — a tenth of a percent. We used to claim here that the ranking survived a
+          five-fold weight error in all seven destinations. It does not. That claim came from an
+          earlier version of this calculator that rounded parcels above 15 kg down to the 15 kg
+          price, billed a Buyee fee that does not exist, and treated Neokyo&rsquo;s ¥350 as if it
+          included domestic postage. Once those were corrected, the crossovers landed at 1,150 g for
+          two items, 1,325 g for three and 1,625 g for five — ordinary weights for the things people
+          buy through a proxy.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          So the calculator tells you when your result sits near a crossover, and the weight you type
+          in matters more than any other number on the page. What still holds is that the ranking is
+          decided by the total alone: some of these companies pay us and some do not, and that never
+          moves a row.
         </p>
       </section>
 

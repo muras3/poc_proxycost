@@ -298,7 +298,8 @@ function ItemRow({
           )}
         </p>
 
-        {/* 国内送料。¥0（送料込み出品）は順位が入れ替わる唯一の条件（DESIGN-NOTES §1）。 */}
+        {/* 国内送料。送料込み出品は全社に等しく効くので1位は動かないが、
+            送金合計に率で乗る費目を持つ社（ZenMarket 3.5%）が中位で得をする。 */}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
           <label className="flex items-center gap-1">
             <input

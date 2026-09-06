@@ -95,9 +95,10 @@ test.describe('/sources — the fee, postage and tax tables', () => {
     await open(page, '/sources');
     const ems = page.locator('table').filter({ hasText: /500 g|Up to/ }).first();
     await expect(ems).toBeVisible();
-    // 日本郵便の公表料金は全27段。抜くと「段で決まる」という説明が成り立たない。
+    // 日本郵便の公表料金は全42段・30kg まで。抜くと「段で決まる」という説明が成り立たない。
+    // 27 を期待していた頃の表は 15kg で切れており、それ自体が転記漏れだった。
     const rows = await ems.locator('tbody tr').count();
-    expect(rows, 'EMS table must publish all 27 steps').toBe(27);
+    expect(rows, 'EMS table must publish all 42 steps').toBe(42);
     const body = await page.locator('main').innerText();
     expect(body).toMatch(/post\.japanpost\.jp|Japan Post/i);
     expect(body).toMatch(/\d{4}-\d{2}-\d{2}/);
