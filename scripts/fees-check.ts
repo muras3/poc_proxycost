@@ -54,6 +54,14 @@ const NOTICE_PAGE = 'https://www.post.japanpost.jp/service/send/oversea/informat
 /** 増えたお知らせのうち、料金に触れていそうなものを目立たせる語。**選り分けはしない。** */
 const FEE_WORDS = ['料金', '改定', '値上げ', '値下げ', '運賃'];
 
+/**
+ * issue に並べるお知らせの上限。
+ * 週次なら増えるのは数件だが、**data/fee-pages.json は Action では更新されない**
+ * ので、記録を人が更新しないまま放っておくと差分は溜まり続ける。全部貼ると
+ * issue が読めなくなるので、件数だけ添えて一覧に送る。
+ */
+const MAX_NOTICES = 20;
+
 type Watch = 'text' | 'value' | 'notices';
 
 interface Target { url: string; note: string; watch: Watch }
@@ -291,12 +299,18 @@ for (const t of targets()) {
       continue;
     }
     const fresh = newNotices(notices, prev?.mark);
-    for (const n of fresh) {
+    for (const n of fresh.slice(0, MAX_NOTICES)) {
       const hit = FEE_WORDS.some((w) => n.title.includes(w));
       const link = n.url.startsWith('http') ? n.url : `https://www.post.japanpost.jp${n.url}`;
       changed.push(
         `- ${hit ? '**料金に触れている疑い** ' : ''}日本郵便のお知らせ ${n.date}`
         + `［${n.type}］${hit ? `**${n.title}**` : n.title}: ${link}`,
+      );
+    }
+    if (fresh.length > MAX_NOTICES) {
+      changed.push(
+        `- 日本郵便のお知らせ 他 ${fresh.length - MAX_NOTICES} 件（前回の記録 ${prev?.mark} が古いほど溜まる。`
+        + `読んだら data/fee-pages.json を更新すること）: ${NOTICE_PAGE}`,
       );
     }
     next[t.url] = { url: t.url, mark: latestMark(notices), checkedOn: today, note: t.note };
