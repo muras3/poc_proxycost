@@ -1,9 +1,12 @@
 import { COUNTRIES } from './countries';
 import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
-import { rateFor, RATES_AS_OF } from './rates';
+import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import { SERVICES, type Service } from './services';
-import type { Band, CompareInput, CompareResult, Item, Line, Row, Tier } from './types';
+import { ASSUMED_WEIGHT_RANGE_G } from './weights';
+import type {
+  Band, CompareInput, CompareResult, Item, Line, Row, Tier, WeightSensitivity,
+} from './types';
 
 // 出品ページに重量は書いていない。以下は仮定であって実測ではない。
 export const ASSUMED_DOMESTIC_SHIPPING_YEN = 800; // 実勢 ¥150〜1,500 の中の仮定
@@ -338,16 +341,71 @@ function rowsFor(ctx: Ctx): Row[] {
   return rank(out);
 }
 
+/** この点の重量を動かして見る幅。動かす根拠が無い点は null。 */
+function sensitivityRange(item: Item): [number, number] | null {
+  // 利用者が入れた重量は、その人が知っている数字。我々に幅を当てる根拠が無い。
+  if (item.weightOrigin === 'user') return null;
+  // 表に当たらなかった仮置きは、何も知らないので段表と同じ 500 g〜10 kg で見る。
+  if (item.weightOrigin === 'assumed') return ASSUMED_WEIGHT_RANGE_G;
+  // 表のラインは P25–P75（真ん中の50%）。幅が無いライン（P25=P75）は動かしても同じ。
+  const r = item.weightRangeG;
+  return r && r[0] < r[1] ? r : null;
+}
+
+/**
+ * 1点ずつ、その点の重量だけを典型的な幅の両端に置いて1位が替わるかを見る。
+ * rankStable（全点を ×1/3・×3）は「重量の推定がまとめて外れたら」を答え、こちらは
+ * 「**どの品の**重量を確かめれば順位が固まるか」を答える。14ラインで P25–P75 が
+ * 1位の交差点を跨ぐ（docs/DESIGN-NOTES.md §1）ので、カートの中で効く品を名指しする。
+ * 両端の2点しか見ない（rankStable と同じ規則）。
+ */
+function weightSensitivityFor(
+  items: Item[], cc: CompareInput['country'], base: Row[],
+): Record<string, WeightSensitivity> {
+  const out: Record<string, WeightSensitivity> = {};
+  const first = base.find((r) => r.comparable);
+  if (!first) return out;
+  const baseComparable = base.filter((r) => r.comparable).length;
+
+  for (const item of items) {
+    const range = sensitivityRange(item);
+    if (!range) continue;
+    const at = (g: number) => {
+      const rows = rowsFor({
+        items: items.map((i) => (i.id === item.id ? { ...i, weightG: g } : i)),
+        cc, assumeUnknownG: null, weightScale: 1,
+      });
+      const comparable = rows.filter((r) => r.comparable);
+      return { winner: comparable[0] ?? null, shrank: comparable.length < baseComparable };
+    };
+    const lo = at(range[0]);
+    const hi = at(range[1]);
+    out[item.id] = {
+      lowG: range[0],
+      highG: range[1],
+      winnerAtLow: lo.winner?.label ?? null,
+      winnerAtHigh: hi.winner?.label ?? null,
+      onlyPricedAtLow: lo.shrank,
+      onlyPricedAtHigh: hi.shrank,
+      // 「比べられなくなった」端は「替わった」に数えない（rankStable と同じ）。
+      decisive: [lo, hi].some((w) => w.winner != null && w.winner.id !== first.id),
+    };
+  }
+  return out;
+}
+
 export function compare({ items, country }: CompareInput): CompareResult {
   const currency = {
     code: COUNTRIES[country].ccy,
     rate: rateFor(COUNTRIES[country].ccy),
     asOf: RATES_AS_OF,
+    fetchedOn: RATES_FETCHED_ON,
+    sourceUrl: RATES_SOURCE_URL,
   };
   const empty: CompareResult = {
     rows: [], bands: null, rowTotalRange: null, rowDiffRange: null,
     rankStable: true, rankStabilityNote: '', totalRangeYen: null,
-    currency, hasUnknownWeight: false,
+    currency, hasUnknownWeight: false, weightSensitivity: {},
   };
   if (!items.length) return empty;
 
@@ -399,10 +457,13 @@ export function compare({ items, country }: CompareInput): CompareResult {
               .join('; ')
           }.`,
       hasUnknownWeight: false,
+      weightSensitivity: weightSensitivityFor(items, country, base),
     };
   }
 
   // 重量不明。EMS の段ごとに総額を出す。1つの数字を押し付けない。
+  // **計算機の UI はもうここに来ない**（表に当たらなければ仮置きを入れて、そう書く）。
+  // null を渡す呼び出し側のために残す。
   const bands: Band[] = [];
   for (const stepG of UNKNOWN_WEIGHT_STEPS_G) {
     const rows = rowsFor({ items, cc: country, assumeUnknownG: stepG, weightScale: 1 });
@@ -448,5 +509,7 @@ export function compare({ items, country }: CompareInput): CompareResult {
     totalRangeYen: [Math.min(...totals), Math.max(...totals)],
     currency,
     hasUnknownWeight: true,
+    // 重量が無い点がある間は、1点ずつ動かす基準の重量も無い。
+    weightSensitivity: {},
   };
 }
