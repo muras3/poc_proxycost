@@ -14,6 +14,7 @@ import {
   readRanking,
   rowCells,
   stepTable,
+  type RankRow,
 } from './helpers';
 
 /**
@@ -46,6 +47,16 @@ async function taxRowsOf(li: Locator): Promise<{ label: string; cells: string[] 
   return out;
 }
 
+/** 行の開示文から報酬の有無を読む。'pays us nothing' 以外は我々に報酬を払う社。 */
+const paysUs = (r: RankRow) => !/pays us nothing/.test(r.text);
+
+/** 社名（と variant）で順位を引く。居なければその場で落とす。 */
+function rankOf(rows: RankRow[], name: string, variant: string | null = null): number {
+  const row = rows.find((r) => r.name === name && r.variant === variant);
+  expect(row, `${name}${variant ? `, ${variant}` : ''} is not in the ranking`).toBeTruthy();
+  return row!.rank;
+}
+
 // ────────────────────────────────────────────────────────────────
 // desktop / mobile 共通
 // ────────────────────────────────────────────────────────────────
@@ -70,17 +81,56 @@ test('1. the ranking is sorted by total, ascending, and so are the gaps', async 
   }
 });
 
-test('2. the cheapest row pays us nothing — money never buys rank', async ({ page }) => {
+test('2. rank is decided by the total alone — paying us buys neither the top spot nor safety from the bottom', async ({ page }) => {
   await gotoCompare(page);
+
+  // 順位の根拠を画面が名乗っていること。**「1位が誰か」ではなく「何で並べたか」**が主張の中身。
+  await expect(page.getByText(/ranked by the total that reaches your door/i)).toBeVisible();
+  await expect(page.getByText(/pay us and some do not — that never moves a row/i)).toBeVisible();
+
   const rows = await readRanking(page);
+  expect(rows.length).toBeGreaterThanOrEqual(5);
 
-  // Neokyo は報酬を払わない。それでも1位に出る。ここが崩れたら製品の主張が崩れる。
-  expect(rows[0]!.text).toContain('pays us nothing');
+  // 報酬の有無は全行が名乗る。名乗らない行があると混在を確かめようがない。
+  for (const r of rows) expect(r.text, `${r.name} does not disclose the referral`).toMatch(/pays us/);
 
-  // 「報酬を払う社が下位にいる」ことも併せて見る（そもそも払う社が居ないと主張にならない）。
-  const paying = rows.filter((r) => /pays us ¥/.test(r.text));
+  // 並びは総額の昇順そのもの。報酬で並べ替えられていないことを、画面の並びで見る。
+  const key = (r: RankRow) => `${r.name}${r.variant ? `/${r.variant}` : ''}`;
+  expect(rows.map(key)).toEqual([...rows].sort((a, b) => a.total - b.total).map(key));
+
+  // 1位が1位である理由は総額が最小であること。CHEAPEST もそこにだけ付く。
+  expect(rows[0]!.total).toBe(Math.min(...rows.map((r) => r.total)));
+  expect(rows[0]!.cheapest).toBe(true);
+  expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
+
+  const paying = rows.filter(paysUs);
+  const free = rows.filter((r) => !paysUs(r));
   expect(paying.length).toBeGreaterThan(0);
-  for (const r of paying) expect(r.rank).toBeGreaterThan(1);
+  expect(free.length).toBeGreaterThan(0);
+
+  // **払う社と払わない社が混ざって並ぶ。**払う社が上に固まっていたら、この順に
+  // 報酬が効いていることになる。上下どちらの向きの並びも実在することで否定する。
+  expect(free.some((f) => paying.some((p) => p.rank > f.rank)), 'every paying row sits above every free row').toBe(true);
+  expect(paying.some((p) => free.some((f) => f.rank > p.rank)), 'every free row sits above every paying row').toBe(true);
+
+  // 既定の2点では1位も最下位も我々に報酬を払う社（2026-09-06 の実測）。
+  // **これは「払う社が勝つ」という主張ではない。**払っていても最安なら1位に出るし、
+  // 払っていても高ければ最下位に落ちる、という同じ規則の両端である。
+  expect(paysUs(rows[0]!), 'the top row does not pay us — the interesting case is not exercised').toBe(true);
+  expect(paysUs(rows[rows.length - 1]!), 'paying us kept a row off the bottom').toBe(true);
+
+  // 1点に減らすと最下位は報酬を払わない社に替わる。最下位も報酬では決まっていない。
+  const rowsBefore = await rankButtons(page).count();
+  await openCart(page);
+  await cart(page).getByRole('button', { name: /^Remove / }).last().click();
+  await expect(cart(page).getByRole('listitem')).toHaveCount(1);
+  await expect(rankButtons(page)).toHaveCount(rowsBefore - 1);
+
+  const single = await readRanking(page);
+  expect(paysUs(single[single.length - 1]!), 'the bottom row still pays us — both sides must be able to land there').toBe(false);
+  expect(isNonDecreasing(single.map((r) => r.total))).toBe(true);
+  expect(single[0]!.total).toBe(Math.min(...single.map((r) => r.total)));
+  expect(single[0]!.cheapest).toBe(true);
 });
 
 test('3. what we do not have shows as — , never as ¥0', async ({ page }) => {
@@ -136,10 +186,52 @@ test('5. an item with no weight data falls to a total per EMS weight step', asyn
   const section = stepTable(page);
   await expect(section).toHaveCount(1);
 
-  // **各段の最安が同じ列に縦に並ぶこと** = 順位が重量に対して頑健、の可視化。
-  const winners = await cheapestColumnPerStep(page);
-  expect(winners.length).toBeGreaterThan(1);
-  expect(new Set(winners).size, `cheapest moves between steps: ${winners.join(', ')}`).toBe(1);
+  const steps = await readStepTable(page);
+  expect(steps.length).toBeGreaterThan(1);
+
+  // どの段にも数字が出る。**空でも ¥0 でもない。**段を出す以上、全部の段で出す。
+  for (const s of steps) {
+    expect(s.cells.length, `${s.label} has no cells`).toBeGreaterThan(0);
+    for (const cell of s.cells) {
+      expect(cell, `${s.label} has a cell without a number`).toMatch(/~¥[\d,]+/);
+    }
+    for (const t of s.totals) expect(t, `${s.label} shows a total of ${t}`).toBeGreaterThan(0);
+  }
+
+  // 重くなれば高くなる。段をまたいで単調（同額は許す。段の刻みは料金表の刻み）。
+  const lows = steps.map((s) => Math.min(...s.totals));
+  const highs = steps.map((s) => Math.max(...s.totals));
+  expect(isNonDecreasing(lows), `the cheapest total is not monotone: ${lows.join(', ')}`).toBe(true);
+  expect(isNonDecreasing(highs), `the dearest total is not monotone: ${highs.join(', ')}`).toBe(true);
+  // 全段同額だと単調は自明に真になる。実際に上がっていること。
+  expect(lows[lows.length - 1]).toBeGreaterThan(lows[0]!);
+  // デスクトップは社ごとの列があるので、列単位でも単調であること。
+  const cols = steps[0]!.totals.length;
+  if (cols > 2) {
+    for (let i = 0; i < cols; i++) {
+      const col = steps.map((s) => s.totals[i]!);
+      expect(isNonDecreasing(col), `column ${i} is not monotone: ${col.join(', ')}`).toBe(true);
+    }
+  }
+
+  // **最安の社は段によって替わる。これが仕様。**
+  // 「どの段でも同じ社が最安」は 2026-09-06 の実測で否定された
+  // （docs/DESIGN-NOTES.md §1、docs/audit/measured-2026-09-06.md）。
+  // 軽い段と重い段で勝者が違うのは、重量に非線形に効く費目があるため。
+  const winners = steps.map((s) => s.cheapest);
+  expect(new Set(winners).size, `the cheapest never moves between steps: ${winners.join(', ')}`)
+    .toBeGreaterThan(1);
+  expect(winners[0], 'the lightest and the heaviest step have the same winner')
+    .not.toBe(winners[winners.length - 1]);
+
+  // 替わるという事実が**利用者に届いていること。**段ごとの勝者を名指しで出す。
+  const note = page.getByText(/The cheapest option changes with weight/).first();
+  await expect(note).toBeVisible();
+  const noteText = (await note.innerText()).replace(/\s+/g, ' ');
+  for (const s of steps) {
+    expect(noteText, `the note does not say who is cheapest at ${s.label}`)
+      .toContain(`${s.label}: ${s.cheapest}`);
+  }
 
   // 段表の数字は全部推定なので、確定値と同じ見た目になっていないこと。
   // デスクトップ用とモバイル用の2つの表が DOM に居るので、見えている方だけを見る。
@@ -159,28 +251,70 @@ test('5. an item with no weight data falls to a total per EMS weight step', asyn
   }
 });
 
-/** 段の表から、各段で最安のセルが何列目かを読む。 */
-async function cheapestColumnPerStep(page: Page): Promise<number[]> {
+interface StepRow {
+  /** '500 g' / '1 kg'。EMS 料金表の段そのもの。 */
+  label: string;
+  /** その段で最安と示されている社。デスクトップは塗られた列の見出し、モバイルは Cheapest 欄。 */
+  cheapest: string;
+  /** 段の行から読める総額。デスクトップは社ごと、モバイルは幅の両端。 */
+  totals: number[];
+  /** 金額セルの生テキスト。空欄・'—' を見つけるのに使う。 */
+  cells: string[];
+}
+
+/** 段の表を読む。デスクトップ（社ごとの列）とモバイル（3列）の両方に対応する。 */
+async function readStepTable(page: Page): Promise<StepRow[]> {
   const section = stepTable(page);
-  const wide = section.getByRole('table').first();
-  if (await wide.isVisible()) {
-    // デスクトップ: 列 = 会社。最安セルは塗られている（背景色でしか区別できない）。
-    return wide.locator('tbody tr').evaluateAll((trs) =>
+  // 隠れている側の表は role で拾われないので、見えている表がそのまま取れる。
+  const table = section.getByRole('table').first();
+  await expect(table).toBeVisible();
+  const wide = (await headerCells(table))[0] === 'Weight / item';
+
+  if (wide) {
+    // 列 = 会社。見出しの1行目が社名（2行目に variant が付くことがある）。
+    const names = await table.locator('thead th').evaluateAll((ths) =>
+      ths.slice(1).map((th) => (th.firstChild?.textContent ?? '').trim()),
+    );
+    const raw = await table.locator('tbody tr').evaluateAll((trs) =>
       trs.map((tr) => {
         const tds = Array.from(tr.querySelectorAll('td'));
-        return tds.findIndex((td) => {
-          const bg = getComputedStyle(td).backgroundColor;
-          return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
-        });
+        return {
+          label: (tds[0]?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+          cells: tds.slice(1).map((td) => (td.textContent ?? '').replace(/\s+/g, ' ').trim()),
+          // 最安セルは背景色でしか区別できない。クラス名ではなく computed style で見る。
+          win: tds.slice(1).findIndex((td) => {
+            const bg = getComputedStyle(td).backgroundColor;
+            return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
+          }),
+        };
       }),
     );
+    return raw.map((r) => {
+      expect(r.win, `no cheapest cell is marked on the ${r.label} step`).toBeGreaterThanOrEqual(0);
+      return { label: r.label, cheapest: names[r.win] ?? '', totals: r.cells.map(parseYen), cells: r.cells };
+    });
   }
-  // モバイル: 'Cheapest' 列に社名がそのまま出る。列番号の代わりに社名を返す。
-  const names = await section.getByRole('row').evaluateAll((trs) =>
-    trs.slice(1).map((tr) => tr.querySelectorAll('td')[1]?.textContent?.trim() ?? ''),
+
+  // モバイル: 段 / 最安（社名＋その額）/ 幅。社ごとの内訳は出ないので幅の両端を読む。
+  const raw = await table.locator('tbody tr').evaluateAll((trs) =>
+    trs.map((tr) => {
+      const tds = Array.from(tr.querySelectorAll('td'));
+      const spans = Array.from(tds[1]?.querySelectorAll('span') ?? []);
+      return {
+        label: (tds[0]?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+        cheapest: (spans[0]?.textContent ?? '').trim(),
+        low: (spans[1]?.textContent ?? '').trim(),
+        range: (tds[2]?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      };
+    }),
   );
-  const uniq = [...new Set(names)];
-  return names.map((n) => uniq.indexOf(n));
+  return raw.map((r) => {
+    const [lo, hi] = r.range.replace(/[−—]/g, '–').split('–');
+    const totals = [parseYen(r.low), parseYen(hi ?? lo ?? '')];
+    // 幅の下限は、その段の最安と同じ数字であること。
+    expect(parseYen(lo ?? ''), `${r.label}: the range does not start at the cheapest`).toBe(totals[0]);
+    return { label: r.label, cheapest: r.cheapest, totals, cells: [r.low, r.range] };
+  });
 }
 
 test('6. one more of an item raises the total', async ({ page }) => {
@@ -202,28 +336,96 @@ test('6. one more of an item raises the total', async ({ page }) => {
   }
 });
 
-test('7. seller-paid shipping on a single item flips the cheapest row', async ({ page }) => {
+/**
+ * 5点 × ¥3,000 × 200 g・米国。監査の実測がある組み合わせ
+ * （docs/audit/measured-2026-09-06.md）。重量表に当たらない名前で入れて、
+ * 重量は手で 200 g と教える。
+ */
+const HANDMADE = ['mystery lot A', 'mystery lot B', 'mystery lot C', 'mystery lot D', 'mystery lot E'];
+
+/** 重量不明の項目に、画面から重量を教える。 */
+async function tellWeight(page: Page, title: string, gramsValue: number): Promise<void> {
+  const li = cart(page).getByRole('listitem').filter({ hasText: title });
+  await li.getByRole('button', { name: 'I know the weight' }).click();
+  await li.getByRole('textbox', { name: `Weight in grams of ${title}` }).fill(String(gramsValue));
+  await li.getByRole('button', { name: 'Save' }).click();
+  await expect(li.getByText(`${gramsValue} g`)).toBeVisible();
+}
+
+test('7. seller-paid shipping takes the same domestic shipping off every row — the cheapest row does not move, a middle row does', async ({ page }) => {
   await gotoCompare(page);
   await openCart(page);
 
-  // 1点だけにする。Buyee の consolidated / default が畳まれて行数も減る。
-  const rowsBefore = await rankButtons(page).count();
-  await cart(page).getByRole('button', { name: /^Remove / }).last().click();
-  await expect(cart(page).getByRole('listitem')).toHaveCount(1);
-  await expect(rankButtons(page)).toHaveCount(rowsBefore - 1);
+  // 例の2点を捨てて、実測と同じカートを手で組む。
+  const removes = cart(page).getByRole('button', { name: /^Remove / });
+  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
+
+  await page.getByRole('button', { name: 'Or add an item by hand' }).click();
+  for (const name of HANDMADE) {
+    await page.getByLabel('Item name').fill(name);
+    await page.getByLabel('Price ¥').fill('3000');
+    await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+  }
+  await openCart(page);
+  await expect(cart(page).getByRole('listitem')).toHaveCount(HANDMADE.length);
+  for (const name of HANDMADE) await tellWeight(page, name, 200);
 
   const before = await readRanking(page);
+  expect(before).toHaveLength(6);
   expect(before[0]!.name).toBe('Neokyo');
+  expect(rankOf(before, 'ZenMarket')).toBe(4);
+  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(3);
 
-  // 国内送料が消えると、それを込みで課金する Neokyo の優位が消える。
-  await cart(page).getByRole('checkbox', { name: 'shipping included by seller' }).check();
+  // 国内送料が無くなる前の内訳。仮定の ~¥800 × 5点。
+  const liBefore = await openRankRow(page, 0);
+  expect((await rowCells(costRow(liBefore, /^Domestic shipping/)))[1]).toBe('~¥4,000');
+  await openRankRow(page, 0); // 閉じる
+
+  // 5点すべてを送料込み出品にする。
+  const boxes = cart(page).getByRole('checkbox', { name: 'shipping included by seller' });
+  await expect(boxes).toHaveCount(HANDMADE.length);
+  for (let i = 0; i < HANDMADE.length; i++) await boxes.nth(i).check();
+
   await expect
-    .poll(async () => (await readRanking(page))[0]!.name)
-    .toBe('FROM JAPAN');
-
+    .poll(async () => (await readRanking(page))[0]!.total)
+    .toBeLessThan(before[0]!.total);
   const after = await readRanking(page);
-  expect(after[0]!.total).toBeLessThan(before[0]!.total);
+
+  // 国内送料は消えた。**「未取得」ではなく確定した ¥0** として出る。
+  const liAfter = await openRankRow(page, 0);
+  expect((await rowCells(costRow(liAfter, /^Domestic shipping/)))[1]).toBe('¥0');
+  await openRankRow(page, 0);
+
+  // **1位は動かない。**旧テストはここで Neokyo → FROM JAPAN に替わると主張していたが、
+  // Neokyo の ¥350 に国内送料は含まれない（公式は「商品代＋国内送料」に加算する形）。
+  // 5社とも国内送料は別建てなので、送料込み出品は全社に等しく効く
+  // （docs/DESIGN-NOTES.md §1「逆転条件」）。
+  expect(after[0]!.name, 'seller-paid shipping moved the cheapest row').toBe(before[0]!.name);
+  expect(after[0]!.name).toBe('Neokyo');
+  expect(after[1]!.name).toBe(before[1]!.name);
   expect(isNonDecreasing(after.map((r) => r.total))).toBe(true);
+
+  // 全社が同じ国内送料（~¥800 × 5点）のぶん下がる。総額は ¥100 丸めなので誤差を許す。
+  const DOMESTIC = 4000;
+  const dropOf = (name: string, variant: string | null = null) => {
+    const b = before.find((r) => r.name === name && r.variant === variant);
+    const a = after.find((r) => r.name === name && r.variant === variant);
+    expect(b && a, `${name} disappeared from the ranking`).toBeTruthy();
+    return b!.total - a!.total;
+  };
+  for (const r of after) {
+    const drop = dropOf(r.name, r.variant);
+    expect(drop, `${r.name} did not lose the domestic shipping`).toBeGreaterThanOrEqual(DOMESTIC - 100);
+  }
+  // 送金合計に率で乗る費目を持つ社は、その率のぶん余計に下がる（ZenMarket の入金手数料 3.5%）。
+  expect(dropOf('ZenMarket')).toBeGreaterThanOrEqual(DOMESTIC + 100);
+  // 定額の費目しか持たない社は、国内送料ちょうどしか下がらない。
+  expect(dropOf('Neokyo')).toBeLessThanOrEqual(DOMESTIC + 100);
+
+  // **動くのは中位。**国内送料が消えた分だけ率の費目が軽くなり、
+  // ZenMarket が Buyee, consolidated を抜いて 4位 → 3位に上がる。
+  expect(rankOf(after, 'ZenMarket')).toBe(3);
+  expect(rankOf(after, 'Buyee', 'consolidated')).toBe(4);
 });
 
 test('8. editing a price marks that number as ours, not theirs', async ({ page }) => {

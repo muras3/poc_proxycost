@@ -34,21 +34,28 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
     ? WEIGHT_CATEGORIES.filter((c) => c.category === categoryId)
     : WEIGHT_CATEGORIES;
 
-  // 語が長いラインを先に当てる（'1/7' より 'pop up parade' を優先する）。
-  const candidates = search
-    .flatMap((cat) => cat.lines.map((line) => ({ cat, line })))
-    .sort((a, b) => longest(b.line.match) - longest(a.line.match));
-
-  for (const { cat, line } of candidates) {
-    if (line.match.some((m) => matches(t, m))) {
-      return {
-        grams: line.medianG,
-        tier: line.tier,
-        source: describe(cat, line),
-        categoryId: cat.category,
-        lineId: line.id,
-      };
+  // **実際に当たった語**が長いものを採る。行が持つ最長語で並べると、
+  // 'ねんどろいど CD' が cd（3文字で命中）ではなく nendoroid 行の
+  // 最長語 'ねんどろいど' に負ける、といった取り違えが起きる。
+  let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
+  for (const cat of search) {
+    for (const line of cat.lines) {
+      for (const m of line.match) {
+        if (!matches(t, m)) continue;
+        const hit = m.trim().length;
+        if (!best || hit > best.hit) best = { cat, line, hit };
+      }
     }
+  }
+  if (best) {
+    const { cat, line } = best;
+    return {
+      grams: line.medianG,
+      tier: line.tier,
+      source: describe(cat, line),
+      categoryId: cat.category,
+      lineId: line.id,
+    };
   }
 
   if (categoryId) {
@@ -81,9 +88,6 @@ function matches(title: string, raw: string): boolean {
   return new RegExp(`(?<![a-z0-9])${esc}(?![a-z0-9])`, 'i').test(title);
 }
 
-function longest(xs: string[]): number {
-  return xs.reduce((a, x) => Math.max(a, x.length), 0);
-}
 
 export function categoryById(id: string): WeightCategory | undefined {
   return WEIGHT_CATEGORIES.find((c) => c.category === id);

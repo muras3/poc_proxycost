@@ -50,7 +50,7 @@ export interface Item {
   weightTier: Tier;
   /** 重量の出所（'1/7 scale · n=647 · Solaris Japan' など）。 */
   weightSource?: string | null;
-  /** 出品が送料込みか。順位の唯一の逆転条件（docs/DESIGN-NOTES.md §1）。 */
+  /** 出品が送料込みか。全社に等しく効くので1位は動かない（docs/DESIGN-NOTES.md §1）。 */
   freeShipping?: boolean;
   domesticShippingYen?: number | null;
   qty: number;
@@ -89,6 +89,14 @@ export interface Row {
   itemLinks: { itemId: string; title: string; url: string }[];
   /** 総額に推定が混じっているか。混じっていれば画面で `~` を付ける。 */
   approximate: boolean;
+  /**
+   * 他の行と総額を比べてよいか。
+   * **最大の費目（国際送料）が取れていない行を、取れている行と並べたら順位は嘘になる。**
+   * false の行は順位から外し、末尾に理由つきで置く。
+   */
+  comparable: boolean;
+  /** comparable が false の理由（英語、画面にそのまま出す）。 */
+  notComparableReason: string | null;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */
