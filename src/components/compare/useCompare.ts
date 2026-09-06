@@ -2,7 +2,7 @@
 
 import { useMemo, useReducer } from 'react';
 import { compare } from '@/lib/pricing/compare';
-import { resolveWeight } from '@/lib/pricing/weights';
+import { weightFieldsFor } from '@/lib/pricing/weights';
 import { siteById } from '@/lib/search/sites';
 import type { CompareResult, CountryCode, Item, SiteId } from '@/lib/pricing/types';
 
@@ -38,9 +38,11 @@ type Action =
   | { type: 'country'; country: CountryCode };
 
 function itemFromDraft(draft: Draft, id: string): Item {
-  // 重量はタイトルから引く。当たらなければ null のまま入れる。
-  // ここでフォールバックを入れると「1つの数字を押し付ける」ことになる。
-  const w = resolveWeight(draft.title);
+  // 重量はタイトルから引く。当たらなければ仮置き（ASSUMED_WEIGHT_G）を 'assumed' として入れる。
+  // 以前は null のまま入れて段ごとの総額に落としていたが、重量の推定誤差で1位が替わる
+  // 以上、利用者に直してもらうしかなく、直す欄は最初から数字が入っている方が動線として
+  // 軽い。押し付けにしないのは画面の仕事（出どころを書き、効く品を名指しする）。
+  const w = weightFieldsFor(draft.title);
   return {
     id,
     title: draft.title,
@@ -55,9 +57,7 @@ function itemFromDraft(draft: Draft, id: string): Item {
     site: draft.site,
     url: draft.url ?? null,
     imageUrl: draft.imageUrl ?? null,
-    weightG: w.grams,
-    weightTier: w.tier,
-    weightSource: w.source,
+    ...w,
     ...(draft.freeShipping === undefined ? {} : { freeShipping: draft.freeShipping }),
     qty: 1,
   };

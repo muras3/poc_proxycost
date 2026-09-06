@@ -41,9 +41,18 @@ export function cart(page: Page): Locator {
   return page.getByRole('region', { name: 'Cart' });
 }
 
-export function stepTable(page: Page): Locator {
-  return page.getByRole('region', { name: 'Totals by weight step' });
+/** カートの1品の行。タイトルで引く。 */
+export function cartItem(page: Page, title: string): Locator {
+  return cart(page).getByRole('listitem').filter({ hasText: title });
 }
+
+/** その品の重量入力。常に数字が入っていて、常に直せる。 */
+export function weightBox(page: Page, title: string): Locator {
+  return cartItem(page, title).getByRole('textbox', { name: `Weight in grams of ${title}` });
+}
+
+/** 「この品の重量だけで1位が替わる」の名指し。compare() の weightSensitivity が出す。 */
+export const DECIDES = /This weight decides the cheapest/;
 
 export function breakdownTable(page: Page): Locator {
   return page.getByRole('region', { name: 'Cost breakdown' });
@@ -158,4 +167,19 @@ export async function headerCells(scope: Locator): Promise<string[]> {
 /** 昇順（同値は許す）か。総額は ¥100 丸めなので同値が出うる。 */
 export function isNonDecreasing(xs: number[]): boolean {
   return xs.every((x, i) => i === 0 || xs[i - 1]! <= x);
+}
+
+/**
+ * 「EMS でしか比べていない」の常時開示（`EmsOnlyNote`）。
+ * 順位が出ているあいだは畳まれも消えもしない、という約束をここで引く。
+ */
+export function emsOnlyNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /Compared using Japan Post EMS only/ });
+}
+
+/** その要素が「開かないと読めない」場所に居ないか。畳まれた開示は開示ではない。 */
+export async function isCollapsed(target: Locator): Promise<boolean> {
+  return target.evaluate(
+    (el) => !!el.closest('details:not([open]), [aria-expanded="false"], [hidden]'),
+  );
 }

@@ -1,9 +1,12 @@
 import { COUNTRIES } from './countries';
 import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
-import { rateFor, RATES_AS_OF } from './rates';
+import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import { SERVICES, type Service } from './services';
-import type { Band, CompareInput, CompareResult, Item, Line, Row, Tier } from './types';
+import { ASSUMED_WEIGHT_RANGE_G } from './weights';
+import type {
+  Band, CompareInput, CompareResult, Item, Line, Row, Tier, WeightSensitivity,
+} from './types';
 
 // 出品ページに重量は書いていない。以下は仮定であって実測ではない。
 export const ASSUMED_DOMESTIC_SHIPPING_YEN = 800; // 実勢 ¥150〜1,500 の中の仮定
@@ -63,7 +66,14 @@ function taxLines(
     out.push(L('duty', 'Duty', Math.round(dutyYen),
       `${c.ccy} ${c.flatDutyPerItem} flat × ${plural(a.units, 'item')}`, c.dutyTier, c.sourceUrl));
   } else if (declared <= c.dutyFreeLimit) {
-    out.push(L('duty', 'Duty', 0, `under the ${c.ccy} ${c.dutyFreeLimit} threshold`, 'fixed', c.sourceUrl));
+    // **限度が無い国（SG）に「限度」の文言を出すな。** `Infinity` を文字列に混ぜると
+    // `under the SGD Infinity threshold` になり、画面に意味不明な単語が出ていた。
+    // 限度が無いのは「際限なく免税」なのではなく、この品目に関税が無いということ。
+    out.push(L('duty', 'Duty', 0,
+      Number.isFinite(c.dutyFreeLimit)
+        ? `under the ${c.ccy} ${c.dutyFreeLimit} threshold`
+        : 'no duty on this category',
+      'fixed', c.sourceUrl));
   } else if (c.dutyRate != null) {
     dutyYen = baseYen * c.dutyRate;
     out.push(L('duty', 'Duty', Math.round(dutyYen),
@@ -75,8 +85,17 @@ function taxLines(
 
   const vatLabel = cc === 'US' ? 'Sales tax'
     : cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
+  // AU（≤A$1,000）と SG（<S$400）は、**国境ではなく代行が販売時点で徴収する**帯がある。
+  // その帯で税関側の行に金額を出すと、代行が取る分と二重に積むことになる。
+  // 実際にいくら取られるかは社ごとに違うので、社ごとの行（prepaid-import-tax）が持つ。
+  const sellerCollects = c.sellerCollectsBelow != null && declared <= c.sellerCollectsBelow;
   if (c.vatRate == null) {
     out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl));
+  } else if (sellerCollects) {
+    out.push(L('vat', vatLabel, 0,
+      `under the ${c.ccy} ${c.sellerCollectsBelow} threshold`
+      + ' — collected at checkout by the service, not at the border',
+      'fixed', c.sourceUrl));
   } else if (c.vatFreeLimit && declared <= c.vatFreeLimit) {
     out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold`, 'fixed', c.sourceUrl));
   } else {
@@ -97,6 +116,16 @@ function taxLines(
       Math.round(c.clearanceFeePerParcel * rateFor(c.clearanceCcy) * a.parcels),
       `${c.clearanceCcy} ${c.clearanceFeePerParcel} × ${plural(a.parcels, 'parcel')}`,
       c.clearanceTier, c.sourceUrl));
+  }
+
+  // 関税の事前納付（米国）。**「発生するが額を知らない」を画面に出すための行。**
+  // 額を持っていないので null。0 と書けば「無料」という嘘になり、行ごと省けば
+  // 「そんな費目は無い」という嘘になる。excluded に名前が載るのが目的。
+  // 閾値は郵便物1個の内容品価格なので、個口に割ってから測る。割り切れない分は
+  // **費目を出す側に倒す**（持っている情報を隠すより、余分に開示するほうが安全）。
+  const dp = c.dutyPrepayment;
+  if (dp && declared / a.parcels <= dp.upTo) {
+    out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl));
   }
   return out;
 }
@@ -181,6 +210,52 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
   return out;
 }
 
+/**
+ * 代行が販売時点で徴収する輸入税（AU/SG）。**確認できた社だけ金額を出す。**
+ *
+ * 未確認の社を 0 として扱ってはいけない。それをやると、単に我々が調べていない社が
+ * その国で 9〜10% 安く見えるだけの表になり、順位が「調査量の差」で決まる。
+ * だから未確認の社は null（画面では「—」）にして、**ラベル自体に「確認できていない」と書く**
+ * ——ラベルはそのまま excluded に並び、総額から何が抜けているかの一覧になる。
+ */
+function prepaidImportTaxLine(
+  svc: Service, cc: CompareInput['country'],
+  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number; shippingKnown: boolean },
+): Line | null {
+  const c = COUNTRIES[cc];
+  if (c.sellerCollectsBelow == null || a.declared > c.sellerCollectsBelow) return null;
+
+  const taxName = cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
+  const p = svc.prepaidImportTax?.[cc];
+  if (!p) {
+    // **社名をラベルに入れない。** このラベルは費目の見出しとして全社の列に
+    // 掛かる場所（デスクトップの内訳表）にも出るので、そこで特定の社を名指しすると
+    // 他社の金額にまで「Neokyo は確認できていない」と書くことになる。
+    // 行の中では「this service」で一意に読める。
+    return L('prepaid-import-tax',
+      `${taxName} collected at checkout`
+      + ' — we could not confirm whether this service collects it',
+      null,
+      `${c.name} makes the seller collect ${taxName} below ${c.ccy} ${c.sellerCollectsBelow}.`
+      + ` ${svc.name} does not say on its own pages whether it does, so we do not put a number here.`,
+      'none', c.sourceUrl);
+  }
+
+  const base = p.base === 'declared' ? a.itemsYen
+    : p.base === 'before-shipping' ? a.preTaxYen - a.shippingYen
+    : a.preTaxYen;
+  // 送料込みのベースなのに国際送料が取れていない行では、税額も出せない。
+  // 送料抜きの額で掛けたら、その社だけ税が安く出る。
+  if (!a.shippingKnown && p.base !== 'declared') {
+    return L('prepaid-import-tax', `${taxName} collected at checkout`, null,
+      `${(p.rate * 100).toFixed(0)}% of a total we cannot complete —`
+      + ' we have no published EMS rate for this parcel',
+      'none', p.sourceUrl);
+  }
+  return L('prepaid-import-tax', `${taxName} collected at checkout`,
+    Math.round(base * p.rate), p.note, p.tier, p.sourceUrl);
+}
+
 function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const items = ctx.items;
   const orders = items.length;
@@ -250,7 +325,21 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
   // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
   const domCharged = svc.domesticIncluded ? 0 : domYen;
+  // 税を除く支払総額と、そのうちの送料。代行が前徴収する税の課税ベースに使う。
+  // **税の行を積む前に測る**（社の原文がそろって「before GST」と書いている）。
+  const preTaxYen = sum(lines);
+  const shippingYen = lines
+    .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'ems')
+    .reduce((acc, l) => acc + (l.amount ?? 0), 0);
   lines.push(...taxLines(ctx.cc, { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
+  const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
+    itemsYen,
+    declared: itemsYen / rateFor(COUNTRIES[ctx.cc].ccy),
+    preTaxYen,
+    shippingYen,
+    shippingKnown: emsYen != null,
+  });
+  if (prepaid) lines.push(prepaid);
 
   const total = sum(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
@@ -338,16 +427,109 @@ function rowsFor(ctx: Ctx): Row[] {
   return rank(out);
 }
 
+/** この点の重量を動かして見る幅。動かす根拠が無い点は null。 */
+function sensitivityRange(item: Item): [number, number] | null {
+  // 利用者が入れた重量は、その人が知っている数字。我々に幅を当てる根拠が無い。
+  if (item.weightOrigin === 'user') return null;
+  // 表に当たらなかった仮置きは、何も知らないので段表と同じ 500 g〜10 kg で見る。
+  if (item.weightOrigin === 'assumed') return ASSUMED_WEIGHT_RANGE_G;
+  // 表のラインは P25–P75（真ん中の50%）。幅が無いライン（P25=P75）は動かしても同じ。
+  const r = item.weightRangeG;
+  return r && r[0] < r[1] ? r : null;
+}
+
+/**
+ * 1点ずつ、その点の重量だけを典型的な幅の両端に置いて1位が替わるかを見る。
+ * rankStable（全点を ×1/3・×3）は「重量の推定がまとめて外れたら」を答え、こちらは
+ * 「**どの品の**重量を確かめれば順位が固まるか」を答える。14ラインで P25–P75 が
+ * 1位の交差点を跨ぐ（docs/DESIGN-NOTES.md §1）ので、カートの中で効く品を名指しする。
+ * 両端の2点しか見ない（rankStable と同じ規則）。
+ */
+function weightSensitivityFor(
+  items: Item[], cc: CompareInput['country'], base: Row[],
+): Record<string, WeightSensitivity> {
+  const out: Record<string, WeightSensitivity> = {};
+  const first = base.find((r) => r.comparable);
+  if (!first) return out;
+  const baseComparable = base.filter((r) => r.comparable).length;
+
+  for (const item of items) {
+    const range = sensitivityRange(item);
+    if (!range) continue;
+    const at = (g: number) => {
+      const rows = rowsFor({
+        items: items.map((i) => (i.id === item.id ? { ...i, weightG: g } : i)),
+        cc, assumeUnknownG: null, weightScale: 1,
+      });
+      const comparable = rows.filter((r) => r.comparable);
+      return { winner: comparable[0] ?? null, shrank: comparable.length < baseComparable };
+    };
+    const lo = at(range[0]);
+    const hi = at(range[1]);
+    out[item.id] = {
+      lowG: range[0],
+      highG: range[1],
+      winnerAtLow: lo.winner?.label ?? null,
+      winnerAtHigh: hi.winner?.label ?? null,
+      onlyPricedAtLow: lo.shrank,
+      onlyPricedAtHigh: hi.shrank,
+      // 「比べられなくなった」端は「替わった」に数えない（rankStable と同じ）。
+      decisive: [lo, hi].some((w) => w.winner != null && w.winner.id !== first.id),
+    };
+  }
+  return out;
+}
+
+/**
+ * 入口の入力検査。**壊れた入力は投げる。空の結果を返さない。**
+ *
+ * どちらにするかの判断: 空の結果は「まだ何も入れていない」状態と画面で見分けが
+ * 付かない。順位表が黙って消え、なぜ消えたのか誰にも分からないまま「比較できない」
+ * とだけ読まれる。このツールの価値は数字の正しさだけなので、壊れた入力を黙って
+ * 飲むのは「持っていない数字を 0 と書く」のと同じ種類の嘘になる。
+ * 投げれば、テストと開発中に必ず気付く場所で止まる。
+ *
+ * ここに NaN / Infinity / qty=0 が来るのは利用者の操作ではなく呼び出し側の不具合である。
+ * 計算機の UI は数値欄を toYen() に通し、価格の無い項目を compare() に渡さない
+ * （src/components/compare/useCompare.ts）。つまりこれは利用者に見せるエラーではなく、
+ * 我々が直すべき不具合の通報である。
+ */
+function assertUsableInput({ items, country }: CompareInput): void {
+  if (!COUNTRIES[country]) {
+    throw new RangeError(`compare(): unknown destination country ${String(country)}`);
+  }
+  for (const i of items) {
+    const bad = (field: string, v: unknown) =>
+      new RangeError(`compare(): item ${i.id} has an unusable ${field}: ${String(v)}`);
+    // 価格は 0 を許す（送料込みの ¥0 出品ではなく、価格未取得の項目を
+    // 呼び出し側が 0 で置いている場合がある）。負とNaNとInfinityは許さない。
+    if (!Number.isFinite(i.priceYen) || i.priceYen < 0) throw bad('price', i.priceYen);
+    // 0個の注文は存在しない。小数個も存在しない。
+    if (!Number.isInteger(i.qty) || i.qty < 1) throw bad('quantity', i.qty);
+    // 重量は null（不明＝段に落とす）か、正の有限値。0g の小包は無い。
+    if (i.weightG != null && (!Number.isFinite(i.weightG) || i.weightG <= 0)) {
+      throw bad('weight', i.weightG);
+    }
+    if (i.domesticShippingYen != null
+      && (!Number.isFinite(i.domesticShippingYen) || i.domesticShippingYen < 0)) {
+      throw bad('domestic shipping', i.domesticShippingYen);
+    }
+  }
+}
+
 export function compare({ items, country }: CompareInput): CompareResult {
+  assertUsableInput({ items, country });
   const currency = {
     code: COUNTRIES[country].ccy,
     rate: rateFor(COUNTRIES[country].ccy),
     asOf: RATES_AS_OF,
+    fetchedOn: RATES_FETCHED_ON,
+    sourceUrl: RATES_SOURCE_URL,
   };
   const empty: CompareResult = {
     rows: [], bands: null, rowTotalRange: null, rowDiffRange: null,
     rankStable: true, rankStabilityNote: '', totalRangeYen: null,
-    currency, hasUnknownWeight: false,
+    currency, hasUnknownWeight: false, weightSensitivity: {},
   };
   if (!items.length) return empty;
 
@@ -371,6 +553,10 @@ export function compare({ items, country }: CompareInput): CompareResult {
     const first = base.find((r) => r.comparable);
     const stable = !!first && winners.every((w) => w.id === null || w.id === first.id);
     const outOfTable = winners.some((w) => w.id === null || w.shrank);
+    // 表の中央値や仮置きを「あなたがくれた重量」と呼ぶのは嘘。出どころを知らない
+    // 呼び出し側（origin 未設定）と利用者入力だけ「you gave us」と言う。
+    const ours = items.some((i) => i.weightOrigin === 'table' || i.weightOrigin === 'assumed');
+    const basis = ours ? 'our weight estimate' : 'the weight you gave us';
     return {
       ...empty,
       rows: base,
@@ -394,15 +580,18 @@ export function compare({ items, country }: CompareInput): CompareResult {
                     // 「唯一値段が付く社」を「最安」と書かない。
                     ? `${name} is the only one we can still price`
                     : `${name} is cheapest`;
-                return `at ${word} the weight you gave us, ${label}`;
+                return `at ${word} ${basis}, ${label}`;
               })
               .join('; ')
           }.`,
       hasUnknownWeight: false,
+      weightSensitivity: weightSensitivityFor(items, country, base),
     };
   }
 
   // 重量不明。EMS の段ごとに総額を出す。1つの数字を押し付けない。
+  // **計算機の UI はもうここに来ない**（表に当たらなければ仮置きを入れて、そう書く）。
+  // null を渡す呼び出し側のために残す。
   const bands: Band[] = [];
   for (const stepG of UNKNOWN_WEIGHT_STEPS_G) {
     const rows = rowsFor({ items, cc: country, assumeUnknownG: stepG, weightScale: 1 });
@@ -448,5 +637,7 @@ export function compare({ items, country }: CompareInput): CompareResult {
     totalRangeYen: [Math.min(...totals), Math.max(...totals)],
     currency,
     hasUnknownWeight: true,
+    // 重量が無い点がある間は、1点ずつ動かす基準の重量も無い。
+    weightSensitivity: {},
   };
 }

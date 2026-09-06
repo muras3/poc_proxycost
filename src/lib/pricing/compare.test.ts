@@ -141,7 +141,7 @@ describe('ranking uses the total and nothing else', () => {
   test('each country reports its own currency at the fixed rate', () => {
     const seen = COUNTRIES_ALL.map((cc) => compare({ items: items(1, 600), country: cc }).currency.code);
     expect(seen).toEqual(['USD', 'GBP', 'EUR', 'EUR', 'AUD', 'CAD', 'SGD']);
-    expect(compare({ items: items(1, 600), country: 'US' }).currency.rate).toBe(150);
+    expect(compare({ items: items(1, 600), country: 'US' }).currency.rate).toBe(156.25);
   });
 });
 
@@ -207,8 +207,17 @@ describe('a parcel above the published EMS table drops out of the comparison', (
 // 実測: docs/audit/measured-2026-09-06.md
 // ─────────────────────────────────────────────────────────────────────────────
 describe('rank stability is measured, not assumed — and it is often false', () => {
-  test('**600 g per item is unstable in all seven countries — this is the spec, not a bug**', () => {
-    for (const cc of COUNTRIES_ALL) {
+  test('**600 g per item is unstable in five of the seven countries — this is the spec, not a bug**', () => {
+    // **AU と SG だけが安定側にいる。理由は税の徴収者が違うこと。**
+    // どちらも低額品の GST を国境ではなく代行が販売時点で徴収する国で、その課税ベースが
+    // 社ごとに違う（Neokyo・ZenMarket は内容品価格のみ、FROM JAPAN・Jauce・Buyee は
+    // 手数料や送料も含む）。重くすると送料を課税ベースに入れている社ほど税も増えるので、
+    // 1/3〜3倍では1位が動かなかった。
+    // **SG の安定は我々の無知にも助けられている。** 徴収を確認できたのは Buyee と
+    // FROM JAPAN だけで、残る3社の行には税が乗っていない（その3社の総額は税のぶん低い）。
+    // 確認できる社が増えれば、ここは不安定に転じうる。
+    const stable: CountryCode[] = ['AU', 'SG'];
+    for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c))) {
       const r = compare({ items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(false);
       // **不安定だと言うだけでは足りない。誰に替わるかを名指しすること。**
@@ -220,6 +229,12 @@ describe('rank stability is measured, not assumed — and it is often false', ()
       expect(note, cc).not.toContain('see the weight steps');
       const named = SERVICES.some((s) => note.includes(s.name));
       expect(named, `${cc}: note names no company — ${note}`).toBe(true);
+    }
+    for (const cc of stable) {
+      const r = compare({ items: items(5, 600), country: cc });
+      expect(r.rankStable, cc).toBe(true);
+      expect(r.rankStabilityNote, cc).toBe(
+        'Neokyo stays cheapest even if we are off by 3x on weight.');
     }
   });
 
@@ -284,18 +299,19 @@ describe('rank stability is measured, not assumed — and it is often false', ()
 // 免税限度は intrinsic value（商品代のみ）で測る。CIF で測ると帯を誤判定する。
 // ─────────────────────────────────────────────────────────────────────────────
 describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
-  test('GBP 135 is measured on the item price alone — GBP 190/¥ → ¥25,650', () => {
+  test('GBP 135 is measured on the item price alone — GBP 211.40/¥ → ¥28,539', () => {
     const dutyAt = (priceYen: number) =>
       compare({ items: items(1, 500, priceYen), country: 'GB' }).rows
         .map((r) => line(r, 'duty').amount);
-    // 商品代 ¥25,650 = £135.0。送料込みなら £145 相当だが、判定には混ぜない。
-    expect(dutyAt(25650)).toEqual([0, 0, 0, 0, 0]);
-    expect(dutyAt(25700)).toEqual([null, null, null, null, null]);
+    // 商品代 ¥28,539 = £135.0。送料込みなら £150 相当だが、判定には混ぜない。
+    // **境界は為替そのもの。**転記前の ¥190/£ では ¥25,650 に置かれていた（約 ¥2,900 手前）。
+    expect(dutyAt(28539)).toEqual([0, 0, 0, 0, 0]);
+    expect(dutyAt(28540)).toEqual([null, null, null, null, null]);
   });
 
   test('SGD 400 likewise: GST stays 0 while CIF is over but the goods are not', () => {
     const rows = compare({ items: items(1, 600, 46000), country: 'SG' }).rows;
-    // 商品代 SGD 396.6 < 400。CIF は 433.6 で超えているが、限度は商品代で測る。
+    // 商品代 SGD 373.0 < 400。CIF は社により 413〜466 で超えているが、限度は商品代で測る。
     for (const r of rows) expect(line(r, 'vat').amount, r.id).toBe(0);
     // 商品代自体が超えれば課税され、そのときの課税ベースは CIF。
     const over = compare({ items: items(1, 600, 50000), country: 'SG' }).rows;
@@ -316,7 +332,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
     const row = compare({ items: items(2, 600), country: 'DE' }).rows[0]!;
     const duty = line(row, 'duty');
     expect(duty.note).toBe('EUR 3 flat × 2 items');
-    expect(duty.amount).toBe(Math.round(3 * 2 * 163));
+    expect(duty.amount).toBe(Math.round(3 * 2 * 181.59));
   });
 
   test('a FOB country taxes the goods only: domestic shipping never enters US duty', () => {
@@ -400,9 +416,9 @@ describe('Buyee splits parcels by order', () => {
     const dflt = byId(rows, 'buyee:default');
     expect(line(consolidated, 'ems').amount).toBe(9100);
     expect(line(dflt, 'ems').amount).toBe(17970);
-    // USD 9.35 × ¥150 × 3個口を最後に一度だけ丸める（¥1,403 の3倍ではない）。
-    expect(line(consolidated, 'clearance').amount).toBe(1403);
-    expect(line(dflt, 'clearance').amount).toBe(4208);
+    // USD 9.35 × ¥156.25 × 3個口を最後に一度だけ丸める（¥1,461 の3倍ではない）。
+    expect(line(consolidated, 'clearance').amount).toBe(1461);
+    expect(line(dflt, 'clearance').amount).toBe(4383);
     expect(line(dflt, 'clearance').note).toBe('USD 9.35 × 3 parcels');
     expect(dflt.total).toBeGreaterThan(consolidated.total);
   });
@@ -436,6 +452,139 @@ describe('Buyee splits parcels by order', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 重量不明。1つの数字を押し付けず、EMS の段ごとに出す。
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 1点ずつ: どの品の重量を確かめれば1位が固まるか。
+// 14ラインで P25–P75 が1位の交差点を跨ぐ（docs/DESIGN-NOTES.md §1）ので、
+// 「重量が効く」だけでなく「**この品の**重量が効く」と名指しできなければならない。
+// 数値は 2026-09-06 に compare() を走らせて得たもの。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('one item at a time: whose weight decides the winner', () => {
+  const table = (id: string, weightG: number, range: [number, number], over: Partial<Item> = {}) =>
+    item({ id, weightG, weightOrigin: 'table', weightRangeG: range, ...over });
+  const assumed = (id: string, over: Partial<Item> = {}) =>
+    item({ id, weightG: 1000, weightOrigin: 'assumed', weightRangeG: null, ...over });
+  const user = (id: string, weightG: number) =>
+    item({ id, weightG, weightOrigin: 'user', weightRangeG: null });
+
+  // 既定の2点: 1/7 フィギュア ¥12,800（全件 1,500 g）+ ねんどろいど ¥4,200（380–600 g）。
+  const EXAMPLE = [
+    table('i0', 1500, [1500, 1500], { priceYen: 12800 }),
+    table('i1', 439, [380, 600], { priceYen: 4200, site: 'mercari' }),
+  ];
+
+  test('the example cart: FROM JAPAN wins, and the Nendoroid range does not move it', () => {
+    const r = compare({ items: EXAMPLE, country: 'US' });
+    expect(r.rankStable).toBe(true);
+    expect(r.rows[0]!.id).toBe('fromjapan');
+    // 幅の無いライン（P25=P75）は動かしても同じなので、見ない。
+    expect(r.weightSensitivity['i0']).toBeUndefined();
+    expect(r.weightSensitivity['i1']).toEqual({
+      lowG: 380, highG: 600,
+      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN',
+      onlyPricedAtLow: false, onlyPricedAtHigh: false,
+      decisive: false,
+    });
+  });
+
+  test('add one item off the table and **two** weights start deciding: the assumed one and the Nendoroid', () => {
+    const r = compare({ items: [...EXAMPLE, assumed('i2')], country: 'US' });
+    expect(r.rows[0]!.id).toBe('neokyo');
+    expect(r.rankStable).toBe(false);
+    // 仮置きは 500 g〜10 kg で見る。軽ければ Neokyo、重ければ FROM JAPAN。
+    expect(r.weightSensitivity['i2']).toEqual({
+      lowG: 500, highG: 10000,
+      winnerAtLow: 'Neokyo', winnerAtHigh: 'FROM JAPAN',
+      onlyPricedAtLow: false, onlyPricedAtHigh: false,
+      decisive: true,
+    });
+    // **ねんどろいどの真ん中50%（380–600 g）だけで1位が替わる。** 表の精度を上げても消えない。
+    expect(r.weightSensitivity['i1']).toMatchObject({
+      lowG: 380, highG: 600, winnerAtLow: 'Neokyo', winnerAtHigh: 'FROM JAPAN', decisive: true,
+    });
+  });
+
+  test('a single item off the table: the weight does not matter, and we say so instead of nagging', () => {
+    const r = compare({ items: [assumed('i2')], country: 'US' });
+    expect(r.rankStable).toBe(true);
+    expect(r.weightSensitivity['i2']).toMatchObject({
+      lowG: 500, highG: 10000, winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN', decisive: false,
+    });
+  });
+
+  test('two K-Pop photobooks (800–1,600 g each): either one alone flips the winner', () => {
+    const r = compare({
+      items: [table('a', 1000, [800, 1600]), table('b', 1000, [800, 1600])], country: 'US',
+    });
+    for (const id of ['a', 'b']) {
+      expect(r.weightSensitivity[id], id).toMatchObject({
+        winnerAtLow: 'Neokyo', winnerAtHigh: 'FROM JAPAN', decisive: true,
+      });
+    }
+  });
+
+  test('kendo armour: no single item flips it within its quartiles, but the cart as a whole is unstable', () => {
+    // 胴 1,500–7,500 g（spread 5.0）ですら、他の2点を固定すると1位は FROM JAPAN のまま。
+    // 一方 ×1/3 では Neokyo に替わる。2つの判定は別の問いに答えている。
+    const r = compare({
+      items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
+      country: 'US',
+    });
+    expect(r.rows[0]!.id).toBe('fromjapan');
+    expect(r.weightSensitivity['do']!.decisive).toBe(false);
+    expect(r.weightSensitivity['hakama']!.decisive).toBe(false);
+    expect(r.weightSensitivity['tare']).toBeUndefined();
+    expect(r.rankStable).toBe(false);
+    // 表から引いた重量を「あなたがくれた重量」とは呼ばない。
+    expect(r.rankStabilityNote).toContain('at a third of our weight estimate, Neokyo is cheapest');
+    expect(r.rankStabilityNote).not.toContain('you gave us');
+  });
+
+  test('a weight the user typed is theirs: we do not second-guess it', () => {
+    const r = compare({ items: [user('a', 200), user('b', 200)], country: 'US' });
+    expect(r.weightSensitivity).toEqual({});
+  });
+
+  test('when the heavy end leaves the EMS table, the survivor is named as the only one priced, not as cheapest', () => {
+    // 和弓 7 kg × 3 + 仮置き1点。仮置きを 10 kg にすると同梱行が 30 kg を超え、
+    // 注文ごとに分ける Buyee default だけが値段を持つ。
+    const r = compare({
+      items: [
+        table('y0', 7000, [7000, 7000], { priceYen: 30000 }),
+        table('y1', 7000, [7000, 7000], { priceYen: 30000 }),
+        table('y2', 7000, [7000, 7000], { priceYen: 30000 }),
+        assumed('p'),
+      ],
+      country: 'US',
+    });
+    expect(r.weightSensitivity['p']).toEqual({
+      lowG: 500, highG: 10000,
+      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'Buyee, default',
+      onlyPricedAtLow: false, onlyPricedAtHigh: true,
+      decisive: true,
+    });
+  });
+
+  test('with an unknown weight in the cart there is no base weight to move, so the map is empty', () => {
+    const r = compare({ items: [item({ id: 'a', weightG: null, weightTier: 'none' })], country: 'US' });
+    expect(r.bands).not.toBeNull();
+    expect(r.weightSensitivity).toEqual({});
+  });
+
+  test('the sensitivity map never contradicts a direct run at that weight', () => {
+    for (const cc of COUNTRIES_ALL) {
+      const items = [...EXAMPLE, assumed('i2')];
+      const r = compare({ items, country: cc });
+      for (const [id, s] of Object.entries(r.weightSensitivity)) {
+        for (const [g, expected] of [[s.lowG, s.winnerAtLow], [s.highG, s.winnerAtHigh]] as const) {
+          const moved = items.map((i) => (i.id === id ? { ...i, weightG: g } : i));
+          const direct = winnerOf(compare({ items: moved, country: cc }).rows);
+          expect(direct?.label ?? null, `${cc} ${id} at ${g} g`).toBe(expected);
+        }
+      }
+    }
+  });
+});
+
 describe('unknown weight falls back to EMS steps', () => {
   const unknown = (n: number) => compare({
     items: Array.from({ length: n }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
@@ -507,38 +656,46 @@ describe('unknown weight falls back to EMS steps', () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 実測の回帰（docs/audit/measured-2026-09-06.md）。ここが動いたら費目モデルが変わった。
+//
+// **注意: 為替の転記（T13b）でこの表は audit ログと ¥58〜1,100 ずれている。**
+// audit ログは ¥150/USD・¥163/EUR・¥190/GBP という転記前の値で走らせた記録で、
+// 記録なので直さない。差の中身は米国の通関手数料（USD 9.35 → ¥1,403 が ¥1,461）と
+// EU の定額関税（EUR 3 → ¥489 が ¥545）で、費目モデルは動いていない。
+// **7か国どれも順位は変わらなかった**（変わるのは免税限度の境界のほう。上の
+// 「GBP 135 …」を見よ）。
 // ─────────────────────────────────────────────────────────────────────────────
-describe('measured totals — 2026-09-06', () => {
+describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04', () => {
   test('5 items x ¥3,000, 200 g each, to the US', () => {
     const rows = compare({ items: items(5, 200), country: 'US' }).rows;
     expect(rows.map((r) => [r.id, r.total])).toEqual([
-      ['neokyo', 31128],
-      ['fromjapan', 32378],
-      ['buyee:consolidated', 33878],
-      ['zenmarket', 33952],
-      ['jauce', 35411],
-      ['buyee:default', 53788],
+      ['neokyo', 31186],
+      ['fromjapan', 32436],
+      ['buyee:consolidated', 33936],
+      ['zenmarket', 34010],
+      ['jauce', 35469],
+      ['buyee:default', 54080],
     ]);
   });
 
   test('the same basket at 600 g, 1,500 g and 3,000 g — the top two swap on the way', () => {
     const board = (w: number) =>
       compare({ items: items(5, w), country: 'US' }).rows.map((r) => [r.id, r.total]);
-    expect(board(600).slice(0, 2)).toEqual([['neokyo', 37528], ['fromjapan', 38478]]);
+    expect(board(600).slice(0, 2)).toEqual([['neokyo', 37586], ['fromjapan', 38536]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
-    expect(board(1500).slice(0, 2)).toEqual([['neokyo', 52828], ['fromjapan', 52878]]);
-    expect(board(3000).slice(0, 2)).toEqual([['fromjapan', 74478], ['neokyo', 75778]]);
-    expect(board(600)[5]).toEqual(['buyee:default', 62838]);
+    // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
+    expect(board(1500).slice(0, 2)).toEqual([['neokyo', 52886], ['fromjapan', 52936]]);
+    expect(board(3000).slice(0, 2)).toEqual([['fromjapan', 74536], ['neokyo', 75836]]);
+    expect(board(600)[5]).toEqual(['buyee:default', 63130]);
   });
 
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
     const rows = compare({ items: items(1, 500, 5000), country: 'US' }).rows;
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
-      ['FROM JAPAN', 13548],
-      ['Neokyo', 13698],
-      ['Buyee', 13848],
-      ['ZenMarket', 14069],
-      ['Jauce', 14910],
+      ['FROM JAPAN', 13606],
+      ['Neokyo', 13756],
+      ['Buyee', 13906],
+      ['ZenMarket', 14127],
+      ['Jauce', 14968],
     ]);
   });
 
@@ -547,11 +704,11 @@ describe('measured totals — 2026-09-06', () => {
     // FROM JAPAN はヤフオク限定の ¥200 が消える。
     const rows = compare({ items: items(1, 500, 5000, { site: 'rakuten' }), country: 'US' }).rows;
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
-      ['FROM JAPAN', 13348],
-      ['Neokyo', 13698],
-      ['ZenMarket', 13759],
-      ['Buyee', 13848],
-      ['Jauce', 14078],
+      ['FROM JAPAN', 13406],
+      ['Neokyo', 13756],
+      ['ZenMarket', 13817],
+      ['Buyee', 13906],
+      ['Jauce', 14136],
     ]);
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(0);
     expect(line(byId(rows, 'jauce'), 'ad-valorem').amount).toBe(0);
@@ -561,14 +718,21 @@ describe('measured totals — 2026-09-06', () => {
     const totals = Object.fromEntries(COUNTRIES_ALL.map((cc) => [
       cc, compare({ items: items(5, 600), country: cc }).rows.map((r) => r.total),
     ]));
+    // CA がびた一文動いていないのは、この籠が免税限度の下にいて、
+    // 通貨建ての費目（米国の通関手数料・EU の定額関税）を持たないため。
+    // **AU と SG は T15（代行の前徴収 GST）で動いた。** 費目モデルが変わったので
+    // ここが動くのは正しい。AU は5社とも徴収を明記しているので全行に税が乗り、
+    // 課税ベースの違い（内容品価格のみ／総額）で並びまで変わった。
+    // SG は徴収を確認できた Buyee・FROM JAPAN にだけ税が乗り、他3社は「—」なので
+    // **その3社の総額は税のぶん低いまま**（excluded にそう書いてある）。
     expect(totals).toEqual({
-      US: [37528, 38478, 39978, 40273, 42008, 62838],
-      GB: [39950, 40900, 42400, 42630, 44357, 65400],
-      DE: [41041, 41991, 43491, 43721, 45448, 60270],
-      FR: [41364, 42314, 43814, 44044, 45771, 60734],
-      AU: [35040, 35990, 37490, 37720, 39447, 53000],
+      US: [37586, 38536, 40036, 40331, 42066, 63130],
+      GB: [40121, 41071, 42571, 42801, 44528, 66256],
+      DE: [41373, 42323, 43823, 44053, 45780, 60602],
+      FR: [41699, 42649, 44149, 44379, 46106, 61069],
+      AU: [33950, 36630, 36740, 36900, 40543, 51000],
       CA: [33745, 34695, 36195, 36425, 38152, 51000],
-      SG: [28500, 29450, 30950, 31036, 32747, 41500],
+      SG: [28500, 31036, 32101, 32747, 33736, 45235],
     });
   });
 });

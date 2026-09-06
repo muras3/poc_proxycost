@@ -1,11 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
+import { flushSync } from 'react-dom';
 import { ASSUMED_DOMESTIC_SHIPPING_YEN } from '@/lib/pricing/compare';
-import type { Item, SiteId } from '@/lib/pricing/types';
+import { weightFieldsFor } from '@/lib/pricing/weights';
+import type { Item, SiteId, WeightSensitivity } from '@/lib/pricing/types';
 import { Amount, tierClass, tierTitle } from '@/lib/ui/tiers';
 import { grams } from '@/lib/ui/format';
+
+/** 重量入力の DOM id。StabilityNote の「Check the weights」がここへフォーカスを飛ばす。 */
+export function weightInputId(itemId: string): string {
+  return `weight-${itemId}`;
+}
+
+/** 親（StabilityNote の「Check the weights」）から呼ぶ命令。 */
+export interface ItemListHandle {
+  /** その品の重量入力へフォーカスを飛ばす。カートが畳まれていれば開いてから。 */
+  focusWeight(itemId: string): void;
+}
 
 /** サイト名はロゴでなくドメイン表記のテキスト（docs/UI-DESIGN.md §2）。 */
 const SITE_NAMES: Record<SiteId, string> = {
@@ -34,11 +47,16 @@ export interface ItemListProps {
   readOn: Record<string, string>;
   /** 価格をまだ貰えていない項目の id。価格欄は空のまま開く（docs/UI-DESIGN.md §2）。 */
   unpriced: string[];
+  /** 項目 id → その品の重量だけで1位が替わるか（compare() の weightSensitivity）。 */
+  sensitivity: Record<string, WeightSensitivity>;
   onPatch: (id: string, patch: Partial<Item>) => void;
   onRemove: (id: string) => void;
+  ref?: Ref<ItemListHandle>;
 }
 
-export function ItemList({ items, readOn, unpriced, onPatch, onRemove }: ItemListProps) {
+export function ItemList({
+  items, readOn, unpriced, sensitivity, onPatch, onRemove, ref,
+}: ItemListProps) {
   // モバイルではカートを畳む（docs/UI-DESIGN.md §7.2）。lg 以上では常に開く。
   const [open, setOpen] = useState(false);
   const count = items.length;
@@ -50,6 +68,20 @@ export function ItemList({ items, readOn, unpriced, onPatch, onRemove }: ItemLis
       setOpen(true);
     }
   }, [count]);
+
+  // 「Check the weights」から飛んでくる。畳まれたカートの中の入力にはフォーカス
+  // できないので、まず開き、その描画を同期で終えてから focus() する。
+  // クリックのハンドラから呼ばれるので flushSync を使ってよい（描画中ではない）。
+  useImperativeHandle(ref, () => ({
+    focusWeight(itemId: string) {
+      flushSync(() => setOpen(true));
+      const el = document.getElementById(weightInputId(itemId));
+      if (el instanceof HTMLInputElement) {
+        el.focus();
+        el.select();
+      }
+    },
+  }), []);
 
   if (!count) return null;
 
@@ -79,6 +111,7 @@ export function ItemList({ items, readOn, unpriced, onPatch, onRemove }: ItemLis
             item={item}
             readOn={readOn[item.id] ?? null}
             priceUnknown={unpriced.includes(item.id)}
+            sensitivity={sensitivity[item.id] ?? null}
             onPatch={onPatch}
             onRemove={onRemove}
           />
@@ -88,12 +121,28 @@ export function ItemList({ items, readOn, unpriced, onPatch, onRemove }: ItemLis
   );
 }
 
+/** 1点の重量だけを動かしたときの、片端の結果を1句にする。 */
+function endText(label: string | null, onlyPriced: boolean, g: number): string {
+  // 表の外に出た端を「最安」と書かない（compare() の rankStable と同じ規則）。
+  if (label == null) return `no published EMS rate at ${grams(g)}`;
+  if (onlyPriced) return `only ${label} can still be priced at ${grams(g)}`;
+  return `${label} at ${grams(g)}`;
+}
+
+/** P25–P75 を1句にする。幅が無いラインは「全部同じ値」と書く（0 や空にしない）。 */
+function rangeText([lo, hi]: [number, number]): string {
+  return lo === hi
+    ? `middle half of listings: all ${grams(lo)}`
+    : `middle half of listings: ${grams(lo)}–${grams(hi)}`;
+}
+
 function ItemRow({
-  item, readOn, priceUnknown, onPatch, onRemove,
+  item, readOn, priceUnknown, sensitivity, onPatch, onRemove,
 }: {
   item: Item;
   readOn: string | null;
   priceUnknown: boolean;
+  sensitivity: WeightSensitivity | null;
   onPatch: ItemListProps['onPatch'];
   onRemove: ItemListProps['onRemove'];
 }) {
@@ -103,10 +152,12 @@ function ItemRow({
   const [domestic, setDomestic] = useState(
     item.domesticShippingYen == null ? '' : String(item.domesticShippingYen),
   );
-  const [askWeight, setAskWeight] = useState(false);
-  const [weight, setWeight] = useState('');
+  // 重量欄は常に数字が入っている（表の中央値か仮置きか利用者の値）。空欄で開かない。
+  const [weight, setWeight] = useState(item.weightG == null ? '' : String(item.weightG));
 
   const priceLabel = `Price of ${item.title}`;
+  const weightLabel = `Weight in grams of ${item.title}`;
+  const weightNoteId = `${weightInputId(item.id)}-note`;
 
   function commitPrice(text: string) {
     setPrice(text);
@@ -123,12 +174,26 @@ function ItemRow({
     onPatch(item.id, { domesticShippingYen: toYen(text) });
   }
 
-  function commitWeight() {
-    const g = toYen(weight);
-    if (g == null || g <= 0) return;
-    onPatch(item.id, { weightG: g, weightTier: 'estimate' });
-    setAskWeight(false);
+  function commitWeight(text: string) {
+    setWeight(text);
+    const g = toYen(text);
+    if (g == null || g <= 0) return; // 入力中。0 g の小包は無いので 0 も送らない。
+    // 利用者が入れた数字は利用者のもの。表の出所・幅・リンクは外し、compare() も動かさない。
+    onPatch(item.id, {
+      weightG: g, weightTier: 'estimate', weightOrigin: 'user',
+      weightSource: null, weightRangeG: null, weightLineId: null,
+    });
   }
+
+  function resetWeight() {
+    // 表の中央値（当たらなければ仮置き）に戻す。何に戻るかはボタンの文字に書いてある。
+    const w = weightFieldsFor(item.title);
+    setWeight(String(w.weightG));
+    onPatch(item.id, w);
+  }
+
+  // 「reset to ~439 g」の数字。利用者が上書きした後も、元の推定が何だったかを出す。
+  const estimate = item.weightOrigin === 'user' ? weightFieldsFor(item.title) : null;
 
   return (
     <li className="flex gap-3 py-3">
@@ -244,59 +309,84 @@ function ItemRow({
           )}
         </p>
 
-        {/* 重量。当たらなければ「段ごとの総額」に落ちることを書く。**でっち上げない。** */}
-        <p className="mt-1 text-xs text-neutral-500">
-          {item.weightG == null ? (
-            <>
-              <span className={tierClass.none}>weight unknown</span>
-              {' — we show a total per weight step. '}
-              {askWeight ? (
-                <span className="inline-flex items-center gap-1">
-                  <input
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') commitWeight();
-                    }}
-                    inputMode="numeric"
-                    aria-label={`Weight in grams of ${item.title}`}
-                    placeholder="grams"
-                    className="w-20 rounded border border-neutral-300 bg-transparent px-1.5 py-0.5 text-xs num dark:border-neutral-700"
-                  />
-                  <button type="button" onClick={commitWeight} className="underline">
-                    Save
-                  </button>
-                </span>
-              ) : (
-                <button type="button" onClick={() => setAskWeight(true)} className="underline">
-                  I know the weight
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <Link href="/weights" className="hover:underline">
-                <span className={tierClass[item.weightTier]}>
-                  {item.weightTier === 'estimate' ? '~' : ''}
-                  {grams(item.weightG)}
-                </span>
-                {item.weightSource ? ` · ${item.weightSource}` : ' · entered by you'}
-              </Link>
-              {!item.weightSource && (
-                <>
-                  {' · '}
-                  <button
-                    type="button"
-                    onClick={() => onPatch(item.id, { weightG: null, weightTier: 'none' })}
-                    className="underline"
-                  >
-                    clear
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </p>
+        {/* 重量。**常に数字が入っていて、常に直せる。**出どころ（表のライン／仮置き／利用者）を
+            横に書き、その品の重量だけで1位が替わるなら、その下で名指しする。
+            推定は ~ と琥珀色、利用者編集はさらに ✎（docs/UI-DESIGN.md §6）。 */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-500">
+          <label className="flex items-center gap-1">
+            <span className="sr-only">{weightLabel}</span>
+            <span aria-hidden>weight</span>
+            <span className={tierClass.estimate} title={tierTitle.estimate} aria-hidden>~</span>
+            <input
+              id={weightInputId(item.id)}
+              value={weight}
+              onChange={(e) => commitWeight(e.target.value)}
+              onBlur={() => {
+                // 空欄・0 のまま離れたら元の数字に戻す。重量 0 で計算させない。
+                const g = toYen(weight);
+                if ((g == null || g <= 0) && item.weightG != null) setWeight(String(item.weightG));
+              }}
+              inputMode="numeric"
+              aria-label={weightLabel}
+              aria-describedby={weightNoteId}
+              className={`w-16 rounded border border-neutral-300 bg-transparent px-1.5 py-0.5 text-xs num dark:border-neutral-700 ${tierClass.estimate}`}
+            />
+            <span aria-hidden>g</span>
+            {item.weightOrigin === 'user' && (
+              <span className={tierClass.estimate} title={tierTitle.estimate} aria-label="edited by you">
+                ✎
+              </span>
+            )}
+          </label>
+
+          <span id={weightNoteId} className="min-w-0">
+            {item.weightOrigin === 'user' ? (
+              <>
+                <span className={tierClass.estimate}>entered by you</span>
+                {estimate && (
+                  <>
+                    {' · '}
+                    <button type="button" onClick={resetWeight} className="underline">
+                      {estimate.weightOrigin === 'assumed'
+                        ? `reset to the assumed ~${grams(estimate.weightG!)}`
+                        : `reset to ~${grams(estimate.weightG!)}`}
+                    </button>
+                  </>
+                )}
+              </>
+            ) : item.weightOrigin === 'assumed' ? (
+              <>
+                {/* 何も知らない。そう書く。段表に落とすのをやめた分、ここで言う。 */}
+                <span className={tierClass.estimate}>assumed</span>
+                {' — no weight data for this title. Type it if you know it. '}
+                <Link href="/weights" className="underline">
+                  What we have
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href={item.weightLineId ? `/weights#${item.weightLineId}` : '/weights'}
+                  className="hover:underline"
+                >
+                  {item.weightSource ?? 'our weight table'}
+                </Link>
+                {item.weightRangeG && <> · {rangeText(item.weightRangeG)}</>}
+              </>
+            )}
+          </span>
+        </div>
+
+        {/* この品の重量だけで1位が替わる。記号 ⚠ と色の両方で出す（色だけに頼らない）。
+            数字は compare() が出したもの。ハードコードしない。 */}
+        {sensitivity?.decisive && (
+          <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+            <span aria-hidden>⚠ </span>
+            This weight decides the cheapest:{' '}
+            {endText(sensitivity.winnerAtLow, sensitivity.onlyPricedAtLow, sensitivity.lowG)},{' '}
+            {endText(sensitivity.winnerAtHigh, sensitivity.onlyPricedAtHigh, sensitivity.highG)}.
+          </p>
+        )}
 
         {/* 国内送料。送料込み出品は全社に等しく効くので1位は動かないが、
             送金合計に率で乗る費目を持つ社（ZenMarket 3.5%）が中位で得をする。 */}

@@ -4,8 +4,17 @@ import { FeeTable } from '@/components/sources/FeeTable';
 import { EmsTable } from '@/components/sources/EmsTable';
 import { TaxTable } from '@/components/sources/TaxTable';
 import { SERVICES_CHECKED_ON } from '@/lib/pricing/services';
-import { RATES, RATES_AS_OF } from '@/lib/pricing/rates';
-import { TierLegend, tierClass } from '@/lib/ui/tiers';
+import {
+  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_CHECKED_ON,
+} from '@/lib/pricing/shipping-methods';
+import {
+  RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
+} from '@/lib/pricing/rates';
+import { TierLegend, tierClass, tierTitle } from '@/lib/ui/tiers';
+// **この節の数字は手で書かない。**measured.test.ts が compare() で測り直して縛る。
+import {
+  CONFIDENCE_SPLIT, CROSSOVER_G, GB_SPLIT, MEASURED_BASKET, WEIGHT_SHIFT, yen,
+} from './measured';
 
 export const metadata: Metadata = {
   title: 'Sources and method — proxycost',
@@ -24,25 +33,6 @@ function H2({ id, children }: { id: string; children: React.ReactNode }) {
     </h2>
   );
 }
-
-// DESIGN-NOTES §1 の測定。5点 × ¥3,000 を米国へ送った場合の内訳。
-// 5点 × ¥3,000・600g/点・米国宛で1位（Neokyo ¥37,528）の内訳。
-// 合計が上の WEIGHT_SHIFT の 600g 行と一致すること。片方だけ直すと嘘になる。
-const CONFIDENCE_SPLIT = [
-  { what: 'Published price lists — the fee exists and the amount is printed', yen: 17550, share: '47%' },
-  { what: 'The fee certainly applies, the amount is our estimate — domestic and international shipping', yen: 16700, share: '45%' },
-  { what: 'Second-hand figures — US duty 12.5%, USPS handling $9.35', yen: 3278, share: '9%' },
-];
-
-// 5点 × ¥3,000・ヤフオク・米国宛の実測（2026-09-06、docs/audit/measured-2026-09-06.md）。
-// **1位は重量で動く。** 以前ここには「動かない」と書いてあったが、費目を一次情報に
-// 直したあとの再測定で否定された。数字を手で書き換えるときは必ず compare() で測り直すこと。
-const WEIGHT_SHIFT = [
-  { weight: '200 g', total: '¥31,128', delta: '−17%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', total: '¥37,528', delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', total: '¥52,828', delta: '+41%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', total: '¥74,478', delta: '+98%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
-];
 
 export default function SourcesPage() {
   return (
@@ -140,6 +130,47 @@ export default function SourcesPage() {
           markup that we could find. So the postage line is the same table for everybody, and what
           differs is how many parcels each company sends and how much packing weight it adds.
         </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          EMS is also the only method we price, and it is not the cheapest one on offer. In the{' '}
+          <a
+            className="underline"
+            href="https://www.post.japanpost.jp/int/charge/list/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Japan Post rate tables
+          </a>{' '}
+          we read on {ALTERNATIVE_SHIPPING_CHECKED_ON}, EMS was cheapest at none of the weights we
+          checked: small packet costs 40–50% less than EMS up to 2 kg, and surface mail runs a third
+          to a half of the EMS price above that. Every service below sells methods we leave out, so
+          a real order can come in under the totals on the front page. We quote none of those rates
+          because each company only shows them inside a logged-in quote, and a guessed rate would be
+          an unverified number printed as if it were theirs.
+        </p>
+        <ul className="mt-4 max-w-3xl space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+          {ALTERNATIVE_SHIPPING.map((s) => (
+            <li key={s.serviceId}>
+              <span
+                className={s.tier === 'fixed' ? 'font-semibold' : `font-semibold ${tierClass.unverified}`}
+                title={s.tier === 'fixed' ? undefined : tierTitle.unverified}
+              >
+                {s.serviceName}
+              </span>
+              {' — besides EMS: '}
+              {s.methods.join(', ')}.{' '}
+              <a
+                className="underline"
+                href={s.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {s.serviceName} shipping page
+              </a>
+              {`, read ${s.checkedOn}`}
+              {s.note ? ` — ${s.note}` : '.'}
+            </li>
+          ))}
+        </ul>
         <div className="mt-4">
           <EmsTable />
         </div>
@@ -172,19 +203,21 @@ export default function SourcesPage() {
           </thead>
           <tbody>
             {CONFIDENCE_SPLIT.map((r) => (
-              <tr key={r.share} className="border-b border-neutral-100 dark:border-neutral-900">
+              <tr key={r.tier} className="border-b border-neutral-100 dark:border-neutral-900">
                 <td className="py-2 pr-2 text-neutral-700 dark:text-neutral-300">{r.what}</td>
-                <td className="px-2 py-2 text-right tabular-nums">¥{r.yen.toLocaleString('en-US')}</td>
+                <td className="px-2 py-2 text-right tabular-nums">{yen(r.yen)}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{r.share}</td>
               </tr>
             ))}
           </tbody>
         </table>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          About half of a total is inference. For the United Kingdom the split is 47% published
-          against 53% inferred. A tool that printed ¥33,528 in large type would be claiming a
-          precision it does not have, so the calculator rounds totals to ¥100 and prints the gap
-          between companies to the yen instead.
+          About half of a total is inference. For the United Kingdom the split is{' '}
+          {GB_SPLIT.publishedShare} published against {GB_SPLIT.inferredShare} inferred — a
+          published VAT rate moves weight onto the known side. A tool that printed{' '}
+          {yen(WEIGHT_SHIFT.find((r) => r.perItemG === MEASURED_BASKET.weightG)!.totalYen)} in
+          large type would be claiming a precision it does not have, so the calculator rounds
+          totals to ¥100 and prints the gap between companies to the yen instead.
         </p>
       </section>
 
@@ -208,7 +241,7 @@ export default function SourcesPage() {
             {WEIGHT_SHIFT.map((r) => (
               <tr key={r.weight} className="border-b border-neutral-100 dark:border-neutral-900">
                 <td className="py-2 pr-2 tabular-nums">{r.weight}</td>
-                <td className="px-2 py-2 text-right tabular-nums">{r.total}</td>
+                <td className="px-2 py-2 text-right tabular-nums">{yen(r.totalYen)}</td>
                 <td className="px-2 py-2 text-right tabular-nums">{r.delta}</td>
                 <td className="px-2 py-2">{r.cheapest}</td>
                 <td className="px-2 py-2">{r.last}</td>
@@ -223,9 +256,11 @@ export default function SourcesPage() {
           five-fold weight error in all seven destinations. It does not. That claim came from an
           earlier version of this calculator that rounded parcels above 15 kg down to the 15 kg
           price, billed a Buyee fee that does not exist, and treated Neokyo&rsquo;s ¥350 as if it
-          included domestic postage. Once those were corrected, the crossovers landed at 1,150 g for
-          two items, 1,325 g for three and 1,625 g for five — ordinary weights for the things people
-          buy through a proxy.
+          included domestic postage. Once those were corrected, the crossovers landed at{' '}
+          {CROSSOVER_G[2]!.toLocaleString('en-US')} g for two items,{' '}
+          {CROSSOVER_G[3]!.toLocaleString('en-US')} g for three and{' '}
+          {CROSSOVER_G[5]!.toLocaleString('en-US')} g for five — ordinary weights for the things
+          people buy through a proxy.
         </p>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           So the calculator tells you when your result sits near a crossover, and the weight you type
@@ -265,13 +300,35 @@ export default function SourcesPage() {
         <H2 id="fx">Exchange rates</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           Everything is computed in yen. Conversions shown next to a total are a convenience, at
-          fixed rates read on {RATES_AS_OF}: {Object.entries(RATES).map(([code, rate], i) => (
+          fixed rates: {Object.entries(RATES).map(([code, rate], i) => (
             <span key={code} className="tabular-nums">
-              {i > 0 ? ', ' : ''}¥{rate}/{code}
+              {i > 0 ? ', ' : ''}¥{rateLabel(rate)}/{code}
             </span>
-          ))}. We do not fetch live rates: a live feed is one more thing that can be down, and it
-          would move your total between two page loads for no gain. Your card issuer will use its own
-          rate and add its own margin, which we do not model.
+          ))}.
+        </p>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Those came from the{' '}
+          <a className="underline" href={RATES_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            {RATES_SOURCE_NAME}
+          </a>
+          , which is the reference rate for{' '}
+          <span className="tabular-nums">{RATES_AS_OF}</span>; we read that file and copied the
+          numbers across by hand on <span className="tabular-nums">{RATES_FETCHED_ON}</span>. The two
+          dates differ because the ECB publishes on business days only, and the later one is the day
+          we did the copying — not a day the bank quoted anything.
+          {Object.keys(RATES_STALE).length === 0
+            ? ' All six currencies come out of that one file, so none of them is older than the others.'
+            : ` We could not read ${Object.keys(RATES_STALE).join(', ')} from it; those are still at`
+              + ' their previous value and are not from the date above.'}
+        </p>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          The ECB quotes every currency against the euro, so the yen rates above are cross-rates:
+          yen-per-euro divided by currency-per-euro, rounded to the sen. We do not fetch live rates:
+          a live feed is one more thing that can be down, and it would move your total between two
+          page loads for no gain. Your card issuer will use its own rate and add its own margin,
+          which we do not model. These rates also decide which side of a country&rsquo;s duty-free
+          threshold your goods fall on, so when they go stale the tax line can be wrong, not just the
+          currency next to the total.
         </p>
       </section>
 
