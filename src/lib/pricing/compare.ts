@@ -50,7 +50,11 @@ function taxLines(
   const rate = rateFor(c.ccy);
   const cif = a.itemsYen + a.domYen + a.emsYen;
   const baseYen = c.base === 'CIF' ? cif : a.itemsYen;
-  const declared = baseYen / rate;
+  // **免税限度は intrinsic value（商品代）で測る。** 英国の £135 も EU の €150 も
+  // 運賃・保険を除いた値で判定する規定で、送料込みの CIF で測ると £110〜135 の帯を
+  // 必ず誤判定する。しかも社ごとに送料が違うので、同じ商品で社ごとに限度をまたぐ／
+  // またがないが分かれ、順位が歪む。課税ベース自体は従来どおり CIF / FOB。
+  const declared = a.itemsYen / rate;
   const out: Line[] = [];
 
   let dutyYen = 0;
@@ -115,31 +119,39 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
   const f = svc.fee;
   const out: Line[] = [];
   const free = new Set(f.freeForSites ?? []);
+  const chargeable = ctx.items.filter((i) => !free.has(i.site));
 
-  // Jauce のベータ無料は出品元サイトで決まるので、点数を課金対象で割る。
-  const chargeableUnits = ctx.items
-    .filter((i) => !free.has(i.site))
-    .reduce((a, i) => a + i.qty, 0);
-  const chargeableYen = ctx.items
-    .filter((i) => !free.has(i.site))
-    .reduce((a, i) => a + i.priceYen * i.qty, 0);
-  const freeUnits = units - chargeableUnits;
+  // **同一商品を複数個買っても手数料は1回**の社は、点数ではなく品数で数える。
+  // Neokyo / ZenMarket / FROM JAPAN が自社ページで明記している。
+  const countOf = (i: (typeof ctx.items)[number]) => (f.chargedPerDistinctItem ? 1 : i.qty);
+  const chargeableUnits = chargeable.reduce((a, i) => a + countOf(i), 0);
+  const freeUnits = units - chargeable.reduce((a, i) => a + i.qty, 0);
+  const chargeableYen = chargeable.reduce((a, i) => a + i.priceYen * i.qty, 0);
+  const rateFor = (i: (typeof ctx.items)[number]) =>
+    f.perItemBySite?.[i.site] ?? f.perItemYen ?? 0;
 
   if (f.perOrderYen != null) {
     out.push(L('purchase-fee', 'Purchase fee', f.perOrderYen * orders,
       `¥${f.perOrderYen} × ${plural(orders, 'order')}`, f.tier, svc.sourceUrl));
   }
-  if (f.domesticServicePerOrderYen != null) {
-    out.push(L('domestic-handling', 'Domestic handling',
-      f.domesticServicePerOrderYen * orders,
-      `¥${f.domesticServicePerOrderYen} × ${plural(orders, 'order')}`, f.tier, svc.sourceUrl));
+  if (f.protectionPlanPerOrderYen != null) {
+    out.push(L('protection-plan', 'Protection plan', f.protectionPlanPerOrderYen * orders,
+      `Standard plan, ¥${f.protectionPlanPerOrderYen} × ${plural(orders, 'order')}`
+      + ' — the Lite plan is ¥0',
+      f.tier, svc.sourceUrl));
   }
   if (f.perItemYen != null) {
-    const note = `¥${f.perItemYen} × ${chargeableUnits}`
-      + (svc.domesticIncluded ? ', domestic shipping incl.' : '')
+    // サイトごとに額が違う社では、実際に当てた額を内訳の説明に出す。
+    const amounts = chargeable.map((i) => rateFor(i) * countOf(i));
+    const total = amounts.reduce((a, b) => a + b, 0);
+    const distinct = [...new Set(chargeable.map((i) => rateFor(i)))].sort((a, b) => a - b);
+    const note = (distinct.length > 1
+      ? `${distinct.map((v) => `¥${v}`).join(' / ')} by shop, ${chargeableUnits} charged`
+      : `¥${distinct[0] ?? f.perItemYen} × ${chargeableUnits}`)
+      + (f.chargedPerDistinctItem && units > chargeableUnits + freeUnits
+        ? ' (same item counted once)' : '')
       + (freeUnits > 0 ? ` (${freeUnits} free — Rakuten / Yahoo! Shopping beta)` : '');
-    out.push(L('service-fee', 'Service fee', f.perItemYen * chargeableUnits, note,
-      f.tier, svc.sourceUrl));
+    out.push(L('service-fee', 'Service fee', total, note, f.tier, svc.sourceUrl));
   }
   if (f.adValoremRate != null) {
     out.push(L('ad-valorem', 'Commission',
@@ -148,10 +160,22 @@ function feeLines(svc: Service, ctx: Ctx, orders: number, units: number): Line[]
       + (freeUnits > 0 ? ' (Rakuten / Yahoo! Shopping free in beta)' : ''),
       f.tier, svc.sourceUrl));
   }
+  if (f.bankFeePerOrderYen != null) {
+    out.push(L('bank-fee', 'Banking fee', f.bankFeePerOrderYen * orders,
+      `¥${f.bankFeePerOrderYen} per payment — once per seller per day`,
+      f.bankFeeTier ?? 'unverified', svc.sourceUrl));
+  }
   if (f.paymentInsideJapanYen != null) {
+    // **課される出品サイトが限られる社がある。** FROM JAPAN はヤフオクの落札1件ごとだけ。
+    const sites = f.paymentInsideJapanSites;
+    const n = sites
+      ? ctx.items.filter((i) => sites.includes(i.site)).length
+      : orders;
     out.push(L('payment-inside-jp', 'Payment fee inside Japan',
-      f.paymentInsideJapanYen * orders,
-      `¥${f.paymentInsideJapanYen} × ${plural(orders, 'order')} — per order or per item is not stated`,
+      f.paymentInsideJapanYen * n,
+      sites
+        ? `¥${f.paymentInsideJapanYen} × ${plural(n, 'auction')} — Yahoo! Auctions only`
+        : `¥${f.paymentInsideJapanYen} × ${plural(n, 'order')}`,
       f.paymentInsideJapanTier ?? 'unverified', svc.sourceUrl));
   }
   return out;
