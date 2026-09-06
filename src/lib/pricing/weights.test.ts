@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { WEIGHT_CATEGORIES, categoryById, resolveWeight } from './weights';
+import { UNKNOWN_WEIGHT_STEPS_G } from './ems';
+import {
+  ASSUMED_WEIGHT_G, ASSUMED_WEIGHT_RANGE_G, WEIGHT_CATEGORIES, categoryById, resolveWeight,
+  weightFieldsFor,
+} from './weights';
 
 describe('resolving a weight from a title', () => {
   test('a Nendoroid is 439 g, with the sample behind it', () => {
@@ -16,6 +20,14 @@ describe('resolving a weight from a title', () => {
     const r = resolveWeight('1/7 scale figure');
     expect(r.grams).toBe(1500);
     expect(r.lineId).toBe('scale-1-7');
+  });
+
+  test('a line carries its P25–P75 — the range the winner may move in', () => {
+    // ねんどろいどは 380–600 g。この幅だけで1位が替わるカートが実在する（compare.test.ts）。
+    expect(resolveWeight('Nendoroid Hatsune Miku').rangeG).toEqual([380, 600]);
+    // 1/7 は全件 1,500 g。幅が無いことも幅として返す（0 や null にしない）。
+    expect(resolveWeight('1/7 scale figure').rangeG).toEqual([1500, 1500]);
+    expect(resolveWeight('剣道胴 胴単品').rangeG).toEqual([1500, 7500]);
   });
 
   test('Japanese titles hit the same lines', () => {
@@ -59,6 +71,51 @@ describe('a title we cannot resolve stays unresolved', () => {
     const r = resolveWeight('ぬいぐるみ', 'plushies-we-never-measured');
     expect(r.grams).toBeNull();
     expect(r.tier).toBe('none');
+    expect(r.rangeG).toBeNull();
+  });
+});
+
+// ── 計算機がカートに入れる重量。**null は入れない。**当たらなければ仮置きと名乗る。
+describe('the weight the calculator puts on a cart item', () => {
+  test('a title on the table gets the line: median, P25–P75, origin table, link id', () => {
+    const w = weightFieldsFor('Nendoroid Kagamine Rin (example)');
+    expect(w).toEqual({
+      weightG: 439,
+      weightTier: 'estimate',
+      weightSource: 'Nendoroid · n=426 · 1.6x · www.solarisjapan.com',
+      weightOrigin: 'table',
+      weightRangeG: [380, 600],
+      weightLineId: 'nendoroid',
+    });
+  });
+
+  test('a title off the table gets the assumed weight and says so', () => {
+    const w = weightFieldsFor('plush toy, no weight data');
+    expect(w.weightG).toBe(ASSUMED_WEIGHT_G);
+    expect(w.weightG).not.toBeNull();
+    expect(w.weightG).not.toBe(0);
+    // 仮置きは推定。確定に見せない。'none' は「—」の段階で、数字が入る以上は使わない。
+    expect(w.weightTier).toBe('estimate');
+    expect(w.weightOrigin).toBe('assumed');
+    // 出所・ライン・幅は無い。**でっち上げない。**
+    expect(w.weightSource).toBeNull();
+    expect(w.weightLineId).toBeNull();
+    expect(w.weightRangeG).toBeNull();
+  });
+
+  test('the assumed weight is the 1 kg EMS step, and the range we test it over is the step table', () => {
+    // 1,000 g: 丸い数字なので測った値に見えない。2〜5点で1位が替わる 1,150〜1,625 g のすぐ下に
+    // あるので、×1/3〜×3 の判定（333〜3,000 g）が交差点を必ず跨ぐ（docs/UI-DESIGN.md §4）。
+    expect(ASSUMED_WEIGHT_G).toBe(1000);
+    expect(ASSUMED_WEIGHT_RANGE_G).toEqual([500, 10000]);
+    expect(ASSUMED_WEIGHT_RANGE_G).toEqual([
+      UNKNOWN_WEIGHT_STEPS_G[0], UNKNOWN_WEIGHT_STEPS_G[UNKNOWN_WEIGHT_STEPS_G.length - 1],
+    ]);
+  });
+
+  test('resolveWeight itself still refuses to guess — the assumption lives one layer up', () => {
+    expect(resolveWeight('plush toy, no weight data').grams).toBeNull();
+    expect(weightFieldsFor('plush toy, no weight data').weightG).toBe(ASSUMED_WEIGHT_G);
   });
 });
 

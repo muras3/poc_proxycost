@@ -10,7 +10,7 @@
   },
   "observability": { "enabled": true },
   "kv_namespaces": [
-    // 検索結果・商品ページのキャッシュ。id は本人が wrangler kv namespace create で作って差し替える。
-    { "binding": "CACHE", "id": "PLACEHOLDER_REPLACE_ME" }
+    // 検索結果・商品ページのキャッシュ。`proxycost-CACHE` を Cloudflare 上に作成して割り当てた（2026-09-06）。
+    { "binding": "CACHE", "id": "dafb528f9e39400ea4c9d1e6f61cf589" }
   ]
 }

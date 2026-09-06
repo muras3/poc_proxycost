@@ -1,4 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import {
+  RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL,
+} from '../src/lib/pricing/rates';
+import { cart, gotoCompare, openCart } from './helpers';
 
 // 公開ページ（/weights /sources /privacy）。ここは「計算の中身を全部見せる」ための面なので、
 // 数字が出ていることではなく **出典・件数・取得日・確度が添えてあること** を見る。
@@ -128,6 +132,35 @@ test.describe('/sources — the fee, postage and tax tables', () => {
     expect(body).toMatch(/pay us nothing/i);
   });
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // 為替の出典表示。画面は以前 "fixed rates read on <実装日>" と出していたが、
+  // その日に転記した事実は無かった（docs/audit/gaps.md G3）。**日付と URL が
+  // rates.ts の定数から来ていることを、実際の画面で確かめる。**
+  // ─────────────────────────────────────────────────────────────────────────
+  test('the exchange rates name their source, its reference date and the day we read it',
+    async ({ page }) => {
+      await open(page, '/sources');
+      const fx = page.locator('section').filter({ hasText: /Exchange rates/ }).last();
+      await expect(fx).toBeVisible();
+
+      // 出典そのものへのリンク。踏める URL でなければ「出典」と呼べない。
+      const link = fx.getByRole('link', { name: new RegExp(RATES_SOURCE_NAME, 'i') });
+      await expect(link).toHaveAttribute('href', RATES_SOURCE_URL);
+
+      // 参照日と取得日の両方。片方だけだと、どちらの日付なのか読めない。
+      const text = (await fx.innerText()).replace(/\s+/g, ' ');
+      expect(text, 'the source reference date must be on the page').toContain(RATES_AS_OF);
+      expect(text, 'the day we read it must be on the page').toContain(RATES_FETCHED_ON);
+
+      // 6通貨すべてが銭まで出ていること。¥190/GBP のような丸い数字は転記の顔をしていない。
+      for (const [code, rate] of Object.entries(RATES)) {
+        expect(text, `${code} must be shown to the sen`).toContain(`¥${rate.toFixed(2)}/${code}`);
+      }
+
+      // 「読んだ日」を出典の日付として名乗る言い回しに戻っていないこと。
+      expect(text).not.toMatch(/fixed rates read on/i);
+    });
+
   test('no Japanese prose on an English page', async ({ page }) => {
     await open(page, '/sources');
     await noJapanese(page, '/sources');
@@ -163,16 +196,15 @@ test.describe('navigation between the calculator and its evidence', () => {
     }
   });
 
-  test('a weight chip on the calculator links into the weight table', async ({ page }) => {
-    await open(page, '/');
-    const link = page.getByRole('link', { name: /g ·|kg ·/ }).first();
-    if (await link.count()) {
-      await link.click();
-      await expect(page).toHaveURL(/\/weights/);
-    } else {
-      // チップがリンクでないなら、少なくともヘッダから到達できること。
-      await page.getByRole('banner').getByRole('link', { name: 'Weights' }).click();
-      await expect(page).toHaveURL(/\/weights/);
-    }
+  test('the weight source on the calculator links to that line of the weight table', async ({ page }) => {
+    // カートはモバイルで畳まれているので、hydration を待って開く（helpers の作法）。
+    await gotoCompare(page);
+    await openCart(page);
+    const link = cart(page).getByRole('link', { name: /1\/7 scale/ }).first();
+    await expect(link).toHaveAttribute('href', /\/weights#scale-1-7$/);
+    await link.click();
+    await expect(page).toHaveURL(/\/weights#scale-1-7$/);
+    // 飛んだ先の行が実在すること。無いアンカーは無いリンクと同じ。
+    await expect(page.locator('#scale-1-7')).toBeVisible();
   });
 });

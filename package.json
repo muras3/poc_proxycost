@@ -21,7 +21,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:all": "vitest run && playwright test",
     "preview:build": "node scripts/preview/build.mjs",
-    "deeplinks:check": "tsx scripts/deeplinks-check.ts"
+    "deeplinks:check": "tsx scripts/deeplinks-check.ts",
+    "fx:fetch": "tsx scripts/fx-fetch.ts"
   },
   "dependencies": {
     "next": "16.3.4",
