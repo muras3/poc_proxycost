@@ -12,6 +12,9 @@ export interface Draft {
   site: SiteId;
   url?: string | null;
   imageUrl?: string | null;
+  /** 出品ページから読めたときだけ入る。読めなければ undefined のまま。
+   *  **順位の唯一の逆転条件**なので、推測で埋めずに利用者のトグルに委ねる。 */
+  freeShipping?: boolean;
 }
 
 interface State {
@@ -50,6 +53,7 @@ function itemFromDraft(draft: Draft, id: string): Item {
     weightG: w.grams,
     weightTier: w.tier,
     weightSource: w.source,
+    ...(draft.freeShipping === undefined ? {} : { freeShipping: draft.freeShipping }),
     qty: 1,
   };
 }

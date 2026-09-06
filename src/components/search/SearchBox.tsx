@@ -26,7 +26,8 @@ export function SearchBox({ onAdd }: { onAdd: (d: Draft) => void }) {
         const r = await fetch(`/api/product?url=${encodeURIComponent(text)}`);
         const body = (await r.json()) as {
           ok?: boolean; title?: string; priceYen?: number | null;
-          site?: Draft['site']; imageUrl?: string | null; reason?: string;
+          site?: Draft['site']; imageUrl?: string | null;
+          freeShipping?: boolean; reason?: string;
         };
         if (!r.ok || !body.ok || !body.title) {
           setNotice(body.reason ?? 'Could not read that page. Add it by hand below.');
@@ -38,6 +39,9 @@ export function SearchBox({ onAdd }: { onAdd: (d: Draft) => void }) {
             site: body.site ?? 'other',
             url: text,
             imageUrl: body.imageUrl ?? null,
+            // ページから読めたときだけ効かせる。読めなければ undefined で、
+            // 利用者がトグルで決める。
+            ...(body.freeShipping === undefined ? {} : { freeShipping: body.freeShipping }),
           });
           setQ('');
         }
