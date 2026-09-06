@@ -16,6 +16,7 @@ import {
   stepTable,
   type RankRow,
 } from './helpers';
+import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
 
 /**
  * 比較画面の E2E。**実際に押して、選んで、打ち込む。**
@@ -632,5 +633,37 @@ test.describe('mobile layout', () => {
     const first = ranking(page).getByRole('listitem').nth(0);
     await expect(first.getByRole('table')).toBeVisible();
     expect(await headerCells(first)).toEqual(['Cost', rows[0]!.name]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 順位の見出しに添える現地通貨換算。**ここは「fixed <実装日>」と出していた。**
+// 転記していない日付を出典日として名乗っていたので（docs/audit/gaps.md G3）、
+// 実際に画面を操作して、出典名・参照日・転記したレートが出ることを見る。
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('the currency line under the winner cites the rate it actually used', () => {
+  const summary = (page: Page) => page.locator('p').filter({ hasText: /is cheapest/ }).first();
+
+  test('the default destination shows the transcribed USD rate and the ECB reference date',
+    async ({ page }) => {
+      await gotoCompare(page);
+      const text = (await summary(page).innerText()).replace(/\s+/g, ' ');
+      expect(text).toContain(`¥${RATES['USD']!.toFixed(2)}/USD`);
+      expect(text).toContain(`ECB reference rate for ${RATES_AS_OF}`);
+      // 出典を名乗らない裸の「fixed <日付>」に戻っていないこと。
+      expect(text).not.toMatch(/\(fixed \d{4}-\d{2}-\d{2}\)/);
+    });
+
+  test('switching the destination switches the quoted rate to that currency', async ({ page }) => {
+    await gotoCompare(page);
+    await page.getByLabel('Ship to').selectOption('GB');
+    await expect(summary(page)).toContainText(`¥${RATES['GBP']!.toFixed(2)}/GBP`);
+    const text = (await summary(page).innerText()).replace(/\s+/g, ' ');
+    expect(text).toContain(`ECB reference rate for ${RATES_AS_OF}`);
+    // £ の概算が、転記したレートで割った値と一致していること。
+    // ¥190/£ のままなら 11% 大きい数字が出る。**そこが利用者に見えていた嘘だった。**
+    const total = parseYen(text.match(/approx\. total ~?(¥[\d,]+)/)![1]!);
+    const shown = Number(text.match(/≈ £([\d,]+)/)![1]!.replace(/,/g, ''));
+    expect(shown).toBe(Math.round(total / RATES['GBP']!));
   });
 });

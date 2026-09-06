@@ -80,7 +80,7 @@
 | B5 | AU：A$1,000 超の IPC A$50＋生物検疫 A$48 | −¥9,702（該当帯） | excluded に「Import Processing Charge + biosecurity (over A$1,000)」 |
 | B6 | GB：≤£135 で VAT と £8 を両方積む。売り手徴収なら £8 は発生しない。Royal Mail £8 自体も未検証 | +¥1,520（過大） | note「Either the proxy charges UK VAT at checkout, or Royal Mail charges VAT + £8 on delivery」。tier `unverified` 維持 |
 | B7 | DE/FR：€3 が代行経由（DSIG か）に当たるか未確定。IOSS 経路では €3 に VAT を掛けない | ±¥93〜98 | €3 の tier を `fixed` → `unverified` に落とし note「EU flat duty for distance sales; applicability to proxy purchases not confirmed」（T17）。Union handling fee（2026-11 予定）は excluded に予告 |
-| B8 | **為替が 4〜12% 陳腐化。`RATES_AS_OF = '2026-09-06'` は転記していない日付** | £表示 +11%、SG 帯で GST ¥4,200 の誤課税 | **転記して日付を正しくする**（T13、P0）。理由は「念のため」ではない：**画面の `fixed 09-06` が虚偽の出典表示**であり、閾値の境界を ¥2,800〜13,400 動かす |
+| B8 | **為替が 4〜12% 陳腐化。`RATES_AS_OF = '2026-09-06'` は転記していない日付** | £表示 +11%、SG 帯で GST ¥4,200 の誤課税 | **転記して日付を正しくする**（T13、P0）。理由は「念のため」ではない：**画面の `fixed 09-06` が虚偽の出典表示**であり、閾値の境界を ¥2,800〜13,400 動かす。**→ T13b 済**: 2026-09-06 に ECB 日次参照レート（参照日 2026-09-04）から転記。GB の境界は ¥25,650→¥28,539、SG は ¥46,400→¥49,332 になり、¥46,400〜49,332 帯の GST 誤課税は消えた |
 | B9 | 国内送料 ¥800 の仮定。実勢サンプル4件は ¥220〜700、Buyee 公表レンジ ¥150〜1,500 | 全社 ±同額 | 据え置き（§6）。note を「~¥800 assumed (Buyee publishes ¥150–1,500). Paste the URL to know.」に |
 | B10 | EMS 行の「published rate」表記。4社は `emsMarkupTier: 'estimate'` なのに断言 | 0（表記の問題） | 表記を「Japan Post published rate; pass-through assumed」に。Buyee・ZM は 2021 実請求で公表額と完全一致（reality R2/R4）、Neokyo は原文「no Neokyo fee on shipping cost」あり → この3社は `fixed` に上げてよい。FJ は根拠なし（T16） |
 | B11 | `approximate` が常に true（EMS 行の tier が固定で 'estimate'）。`~` に情報が無い | 表記 | EMS 行の tier を「料金 fixed／重量 estimate」に分ける（T16） |
@@ -133,6 +133,7 @@
 | T11 | US：Zonos 前払い利用料を null 行で追加（商品 $100〜800）。USPS $9.35 の note を B2 のとおりに | US の excluded に「US import prepayment (Zonos) fee — not published」が出る |
 | T12 | REQUIREMENTS §2・DESIGN-NOTES §1・`compare.ts` の rankStable 文言を同じ主張に揃える（倍率 [1/3, 3]、1位のみ、成立条件「重量 <4.76kg/点（1点）／<5.96kg/点（5点）」）。§1 の 3,000g 行を T1 後の実測で埋める | 3文書に同じ倍率・同じ条件が書かれ、`grep -rn "5x\|5倍" REQUIREMENTS.md docs/` が 0 件 |
 | T13 | 為替を公表仲値から転記し `RATES_AS_OF` を転記日に。`rates.ts` に出典 URL。`SGD Infinity threshold` の表示を消す | 6通貨が出典の当日値と一致。SG duty note が「no duty on this category」 |
+| T13b | **済**（為替の半分）。出典は ECB の euro reference rates（固定 URL・機械可読・6通貨と JPY が同じ1枚）。三菱UFJ銀行の公示相場ページは 404、日銀は USD/JPY のみで 2 日遅れだった。参照日 `RATES_AS_OF` と取得日 `RATES_FETCHED_ON` を分けて持ち、画面（`/sources#fx`・順位の見出し）は両方と出典 URL をこの定数から出す。取得は `npm run fx:fetch`（手動、ライブ取得はプロダクトに入れない） | 6通貨が ECB 2026-09-04 の値と一致（`rates.test.ts` が原文 `ECB_PER_EUR` からの割り戻しと突き合わせる）。E2E 2件が画面の日付・URL・レートを実操作で見る。**`SGD Infinity threshold` の表示は T13 に残っている** |
 
 ### P1（公開直後）
 
@@ -147,6 +148,7 @@
 | T20 | `compare()` 入口で `Number.isFinite` と `qty >= 1` を検査 | NaN／Infinity／qty 0 で例外か空結果。順位表に NaN が混ざらない |
 | T21 | 任意欄の整理：FJ Protection Plan の二重計上を削除、輸出通関 ¥2,800 を Jauce・Neokyo にも、Neokyo 開梱＝1,000＋梱包料、Jauce 割れ物梱包 600+240/kg | 各社の optionalLines が fees.md の原文一覧と一致 |
 | T22 | 監視：`fees-check.ts` に日本郵便の国際郵便お知らせページと為替の出典を追加、jauce の新 URL を登録 | 週次 Action の対象 URL 一覧に 3 件増え、直近実行が全件 200 |
+| T22b | **済**（為替の分）。`fees-check.ts` が ECB の出典を見る。**ハッシュでは見ない**（参照レートは毎日変わるので毎週必ず差分が出て、出た瞬間に意味を失う）。見るのは (a) `rates.ts` の値と出典の値のずれが 2% 以上か、(b) 転記が出典の参照日より 14 日以上古いか、(c) 通貨が出典から消えたか。消えた通貨は据え置いて報せるだけで、推測で埋めない | `npm run fees:check` が「為替は出典の 2026-09-04 値と 2% 以内（転記は 2026-09-04、2026-09-06 確認）」を出す。閾値 2% の根拠は ¥20,000 で ¥400＝実測の籠で1位と2位を分ける ¥50 より大きいこと |
 
 ### P2 / P3
 
