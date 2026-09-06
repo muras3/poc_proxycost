@@ -4,11 +4,15 @@ import { expect, test, type Page } from '@playwright/test';
 // 数字が出ていることではなく **出典・件数・取得日・確度が添えてあること** を見る。
 
 async function open(page: Page, path: string) {
+  // 同意は localStorage にしか無いので、遷移前に入れておく。
+  // バナーの出現を待ってから押す形にすると、hydration の前後で
+  // 出る/消えるが入れ替わる瞬間を掴んで固まる。ここは同意の挙動を
+  // 見るテストではないので、その競合ごと避ける。
+  await page.addInitScript(() => {
+    try { window.localStorage.setItem('proxycost.consent.v1', 'denied'); } catch { /* 使えなくてよい */ }
+  });
   const res = await page.goto(path);
   expect(res?.status(), `${path} should be reachable`).toBe(200);
-  // 同意バナーが操作を邪魔するので先に閉じる。
-  const banner = page.getByRole('dialog', { name: 'Cookie consent' });
-  if (await banner.count()) await banner.getByRole('button', { name: 'Reject' }).click();
 }
 
 const noJapanese = async (page: Page, path: string) => {
