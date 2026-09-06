@@ -90,7 +90,7 @@ function serviceFee(svc: Service): ReactNode {
 }
 
 function domestic(svc: Service): ReactNode {
-  const extra = svc.fee.domesticServicePerOrderYen;
+  const extra = svc.fee.protectionPlanPerOrderYen;
   return (
     <span className="flex flex-col gap-0.5">
       {svc.domesticIncluded ? (

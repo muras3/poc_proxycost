@@ -1,14 +1,29 @@
 import type { SiteId, Tier } from './types';
 
 export interface FeeModel {
-  /** 点あたりの定額手数料。 */
+  /** 点あたりの定額手数料（既定）。 */
   perItemYen?: number;
+  /** 出品サイトで額が変わる社（ZenMarket）。無い site は perItemYen。 */
+  perItemBySite?: Partial<Record<SiteId, number>>;
+  /**
+   * 同一商品を複数個買っても手数料は1回か。
+   * Neokyo / ZenMarket / FROM JAPAN は自社ページで明記している。
+   * Buyee は注文ごとなのでこの欄を使わない。
+   */
+  chargedPerDistinctItem?: boolean;
+  /** 従価料率が変わる社（Jauce の場外店舗）。 */
+  adValoremBySite?: Partial<Record<SiteId, number>>;
+  /** 支払ごとの銀行手数料（Jauce ¥300）。出品者×日ごとだが、注文ごとで近似する。 */
+  bankFeePerOrderYen?: number;
+  bankFeeTier?: Tier;
+  /** 支払手数料が課される出品サイト。空なら全サイト。 */
+  paymentInsideJapanSites?: SiteId[];
   /** 注文あたりの定額手数料（Buyee）。 */
   perOrderYen?: number;
   /** 商品代に対する率（Jauce の 8%。唯一の従価型）。 */
   adValoremRate?: number;
-  /** 注文あたりの国内配送サービス料（Buyee）。 */
-  domesticServicePerOrderYen?: number;
+  /** 注文あたりの保証プラン料（Buyee。Lite を選べば ¥0）。 */
+  protectionPlanPerOrderYen?: number;
   /** 日本国内での支払手数料（FROM JAPAN ¥200）。点か注文か原文から読めない。 */
   paymentInsideJapanYen?: number;
   paymentInsideJapanTier?: Tier;
@@ -82,8 +97,11 @@ export const SERVICES: Service[] = [
     url: 'https://neokyo.com/',
     sourceUrl: 'https://neokyo.com/en/fees',
     primarySource: true,
-    fee: { perItemYen: 350, tier: 'fixed' },
-    domesticIncluded: true,
+    // 公式の ORDER PAYMENT は「Order and domestic shipping price」の下にプラス記号を置き、
+    // その下が ¥350。つまり（商品代＋国内送料）＋¥350 で、**¥350 に国内送料は含まれない。**
+    // 「同一商品の複数個は1回だけ」も同ページに明記。
+    fee: { perItemYen: 350, chargedPerDistinctItem: true, tier: 'fixed' },
+    domesticIncluded: false,
     deposit: null,
     packing: { perParcelYen: 500, perKgYen: 150, freeUpToG: 2000, mandatory: true, tier: 'fixed' },
     parcelDefault: 'one',
@@ -105,8 +123,15 @@ export const SERVICES: Service[] = [
     url: 'https://zenmarket.jp/',
     sourceUrl: 'https://zenmarket.jp/ja/fees.aspx',
     primarySource: true,
-    // ¥500 と誤っていた履歴がある。ヤフオクは ¥800。
-    fee: { perItemYen: 800, tier: 'fixed' },
+    // 一律 ¥800 ではない。原文は「500 yen … Amazon, Rakuten, and most other stores /
+    // 300 yen … Recommended Stores / 800 yen … all Mercari items and JDirectItems Auction bids」。
+    // 「If you buy 3 identical T-shirts, our service fee will still be the same」も明記。
+    fee: {
+      perItemYen: 500,
+      perItemBySite: { 'yahoo-auctions': 800, mercari: 800 },
+      chargedPerDistinctItem: true,
+      tier: 'fixed',
+    },
     domesticIncluded: false,
     deposit: {
       flatYen: 0, rate: 0.035, tier: 'fixed',
@@ -136,10 +161,13 @@ export const SERVICES: Service[] = [
     primarySource: true,
     fee: {
       perItemYen: 500,
+      chargedPerDistinctItem: true,
       // 「5%」「$50超10%」は別サービス FROM USA の料金で、日本商品には適用されない。
+      // ¥200 は **ヤフオクの落札1件ごと限定**。2023-01-31 11:00 JST 以降、
+      // それ以外の支払手数料は廃止された。原文に per auction と書いてある。
       paymentInsideJapanYen: 200,
-      // 点ごとか注文ごとか原文から読めない。注文ごとと解釈している。
-      paymentInsideJapanTier: 'unverified',
+      paymentInsideJapanSites: ['yahoo-auctions'],
+      paymentInsideJapanTier: 'fixed',
       tier: 'fixed',
     },
     domesticIncluded: false,
@@ -167,7 +195,10 @@ export const SERVICES: Service[] = [
     sourceUrl: 'https://buyee.jp/helpcenter/guide/fees?lang=en',
     primarySource: true,
     // ¥500 は「注文ごと」であって「点ごと」ではない。
-    fee: { perOrderYen: 500, domesticServicePerOrderYen: 500, tier: 'fixed' },
+    // **「Domestic handling ¥500」は存在しない費目だった。**（あれは日本国内の住所へ
+    // 届けるサービスの料金）。実体は保証プランで、Standard ¥500（推奨）/ Insured ¥500 /
+    // Inspection ¥300 / **Lite ¥0** から注文ごとに選ぶ。既定は推奨の Standard を積む。
+    fee: { perOrderYen: 500, protectionPlanPerOrderYen: 500, tier: 'fixed' },
     domesticIncluded: false,
     deposit: null,
     packing: null,
@@ -189,15 +220,25 @@ export const SERVICES: Service[] = [
     id: 'jauce',
     name: 'Jauce',
     url: 'https://www.jauce.com/',
-    sourceUrl: 'https://www.jauce.com/fee',
+    // /fee は 404。原文はこちら。
+    sourceUrl: 'https://www.jauce.com/japan_auction_detail',
     primarySource: true,
     fee: {
-      // 5社で唯一の従価型。¥400/点 + 落札価格の 8%。
+      // 5社で唯一の従価型。ヤフオクは ¥400/点 + 落札価格の 8%。
+      // **場外店舗（駿河屋・まんだらけ・ZOZO・HMV・とらのあな等）は ¥1,000 + 8%。**
       perItemYen: 400,
+      perItemBySite: {
+        'suruga-ya': 1000, mandarake: 1000, zozo: 1000, hmv: 1000, toranoana: 1000,
+        'amazon-jp': 1000, other: 1000,
+      },
       adValoremRate: 0.08,
-      // 楽天と Yahoo!ショッピングはサービス料がベータで無料。
+      // 楽天と Yahoo!ショッピングはサービス料がベータで無料（原文で現在も有効）。
       freeForSites: ['rakuten', 'yahoo-shopping'],
-      freeForSitesTier: 'unverified',
+      freeForSitesTier: 'fixed',
+      // 「Banking fee: JPY 300 flat per payment」。出品者×日ごとに1回なので
+      // 注文ごとで近似する。公式の計算例（落札50,000→合計54,820）にも入っている。
+      bankFeePerOrderYen: 300,
+      bankFeeTier: 'fixed',
       tier: 'fixed',
     },
     domesticIncluded: false,
