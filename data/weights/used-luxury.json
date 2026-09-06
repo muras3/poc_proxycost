@@ -1,0 +1,312 @@
+{
+  "category": "used-luxury",
+  "labelJa": "中古ブランド品",
+  "labelEn": "Used luxury goods",
+  "checkedOn": "2026-09-06",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "www.tokyourluxury.com",
+      "url": "https://www.tokyourluxury.com/products.json?limit=250&page=1",
+      "products": 1673,
+      "variantsWithGrams": 129,
+      "verdict": "usable",
+      "reason": "distinct=126 (97.7%), top value 2%, multiples of 100: 2%. Adopted as the core of the lines. Values run 47 g to 1,876 g with 1 g precision (866 g, 675 g, 89 g, 615 g), which reads as each item actually being put on a scale. Second-hand designer bags only. Note that only 129 of 1,673 products carry grams — the weighing appears to have started partway through.",
+      "reasonJa": "distinct=126 (97.7%), 最頻値 2%, 100の倍数 2%。採用（lines の中核）。47g〜1,876g で 1g 刻みの端数（866g / 675g / 89g / 615g）が並び、一点ごとに秤で量った値とみてよい。中古ブランドバッグ専業。ただし grams があるのは 1,673件中 129件だけで、重量入力は途中から始めた運用らしい"
+    },
+    {
+      "domain": "www.rookjapan.com",
+      "url": "https://www.rookjapan.com/products.json?limit=250&page=1",
+      "products": 4313,
+      "variantsWithGrams": 3813,
+      "verdict": "usable",
+      "reason": "distinct=262 (6.9%), top value 5%, multiples of 100: 8%. Adopted for the watch line only. product_type=Luxury Watch has n=834, median 839 g, spread 1.47x, with values that move per model (762 g, 1,120 g). It is a watch shop selling mostly new stock, not a second-hand designer shop, and the values look like packed weight including the presentation box.",
+      "reasonJa": "distinct=262 (6.9%), 最頻値 5%, 100の倍数 8%。腕時計ラインにのみ採用。product_type=Luxury Watch が n=834・中央値 839g・ばらつき 1.47x で、機種ごとに端数（762g / 1,120g）が動く。ただし新品中心の時計店で中古ブランド品店ではない。値は化粧箱込みの梱包重量とみられる"
+    },
+    {
+      "domain": "luxlux.jp",
+      "url": "https://luxlux.jp/products.json?limit=250&page=1",
+      "products": 1860,
+      "variantsWithGrams": 1854,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.3%, multiples of 100: 100%, of 500: 100%. Numbers not adopted: only five values exist (1,000 / 3,000 / 6,000 / 9,000 / 18,000 g), which is a shipping band table — a 6 kg handbag is not a physical weight. The ordering of the bands (wallets and accessories 1 kg < shoulder 3 kg < handbag and tote 6 kg < boston 9 kg) does match tokyourluxury's measured ordering, so it was used to corroborate how the lines are split.",
+      "reasonJa": "distinct比 0.3%, 100の倍数 100%, 500の倍数 100%。数値は不採用。1,000/3,000/6,000/9,000/18,000g の5値しかなく送料区分そのもの（ハンドバッグ 6kg は物理重量としてあり得ない）。ただし区分の並び（財布・アクセ 1kg < ショルダー 3kg < ハンドバッグ・トート 6kg < ボストン 9kg）は tokyourluxury の実測順と一致し、ライン分けの裏づけに使った"
+    },
+    {
+      "domain": "gracejapanluxuybrand.myshopify.com",
+      "url": "https://gracejapanluxuybrand.myshopify.com/products.json?limit=250&page=1",
+      "products": 3221,
+      "variantsWithGrams": 1032,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.8%, multiples of 100: 100%, of 500: 100%. Numbers not adopted: steps of 1,000 / 2,000 / 3,000 / 4,000 g. product_type is in Japanese (shoulder bag 3 kg / handbag 3 kg / wallet 2 kg / watch 2 kg / necklace 1 kg), and it too was used only to corroborate the ordering.",
+      "reasonJa": "distinct比 0.8%, 100の倍数 100%, 500の倍数 100%。数値は不採用。1,000/2,000/3,000/4,000g の段。product_type が日本語（ショルダーバッグ 3kg / ハンドバッグ 3kg / 財布 2kg / 時計 2kg / ネックレス 1kg）で、これも順序の裏づけにのみ使った"
+    },
+    {
+      "domain": "luxuness.com",
+      "url": "https://luxuness.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5000,
+      "verdict": "pseudo",
+      "reason": "distinct=1, top value 100% of all rows. Not adopted: all 5,000 rows are a constant 500 g.",
+      "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。5,000件すべて 500g の定数"
+    },
+    {
+      "domain": "world.reclo.jp",
+      "url": "https://world.reclo.jp/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5000,
+      "verdict": "pseudo",
+      "reason": "distinct=1, top value 100% of all rows. Not adopted: bags, wallets, wrist watches and shoes are all 3,000 g.",
+      "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。bag / Wallet / Wrist Watch / shoes まで全部 3,000g"
+    },
+    {
+      "domain": "brandoffbuyingclub.com",
+      "url": "https://brandoffbuyingclub.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5000,
+      "verdict": "pseudo",
+      "reason": "distinct=1, top value 100% of all rows. Not adopted: everything is 3,000 g. Row counts and the per-product_type breakdown match world.reclo.jp exactly, so it is the same catalogue on another domain and must not be counted as a second shop.",
+      "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。全件 3,000g。件数も product_type 別内訳も world.reclo.jp と完全一致で、同一カタログの別ドメイン。独立した2店として数えてはいけない"
+    },
+    {
+      "domain": "hannari-shop.net",
+      "url": "https://hannari-shop.net/products.json?limit=250&page=1",
+      "products": 244,
+      "variantsWithGrams": 86,
+      "verdict": "pseudo",
+      "reason": "distinct=1, top value 100% of all rows. Not adopted: mens watches and shoulder bags alike are 1,000 g.",
+      "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。Mens Watches も Shoulder Bag も全部 1,000g"
+    },
+    {
+      "domain": "www.ippojapanwatch.com",
+      "url": "https://www.ippojapanwatch.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 4477,
+      "verdict": "pseudo",
+      "reason": "distinct=1, top value 100% of all rows. Not adopted: watches and spare bracelet links are all 300 g.",
+      "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。時計もバンドの駒も全部 300g"
+    },
+    {
+      "domain": "cjluxury.com",
+      "url": "https://cjluxury.com/products.json?limit=250&page=1",
+      "products": 477,
+      "variantsWithGrams": 7,
+      "verdict": "insufficient",
+      "reason": "Only n=7 weighted rows, below our threshold of 50.",
+      "reasonJa": "n=7 < 50。不採用。grams があるのはネックレス7件だけで全部 20g"
+    },
+    {
+      "domain": "vintagelacharme.com",
+      "url": "https://vintagelacharme.com/products.json?limit=250&page=1",
+      "products": 2570,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+      "reasonJa": "n=0。Shopify だが grams が全件 0（重量未入力）"
+    },
+    {
+      "domain": "dct-ep-vintageluxurystore.com",
+      "url": "https://dct-ep-vintageluxurystore.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+      "reasonJa": "n=0。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "amorevintagejapan.com",
+      "url": "https://amorevintagejapan.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+      "reasonJa": "n=0。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "myluxury-store.com",
+      "url": "https://myluxury-store.com/products.json?limit=250&page=1",
+      "products": 4419,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "A second-hand luxury watch shop. Shopify, but grams is 0 on every row.",
+      "reasonJa": "n=0。中古高級時計店。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "weeklyluxdrop.com",
+      "url": "https://weeklyluxdrop.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+      "reasonJa": "n=0。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "brandstreettokyo.com",
+      "url": "https://brandstreettokyo.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+      "reasonJa": "n=0。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "jash.co.jp",
+      "url": "https://jash.co.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns {\"products\":[]} — the public JSON is switched off. tomodachi.fun and arigatousharejapan.biz behave identically and belong to the same wholesale group.",
+      "reasonJa": "products.json が {\"products\":[]} を返す（公開JSONを止めている）。tomodachi.fun / arigatousharejapan.biz も同じ挙動で、いずれも同系列の卸サイト"
+    },
+    {
+      "domain": "brandbagworld.com",
+      "url": "https://brandbagworld.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns 404 — not a Shopify store. j-ports.com, vintagequeenjapan.com, brandluxjp.com, sekinevintage.com, timepeaks.com, luxjpn.com, www.thewatchcompany.com, watchnian.com and brashel.jp also return 404; atlantisvintagetokyo.com and www.daikokuya78.com return 403; shop.zenplus.jp, zenluxe.jp, allu-official.com, gc-yukizaki.com and store.komehyo.jp are not Shopify.",
+      "reasonJa": "products.json が 404（Shopify ではない）。j-ports.com / vintagequeenjapan.com / brandluxjp.com / sekinevintage.com / timepeaks.com / luxjpn.com / www.thewatchcompany.com / watchnian.com / brashel.jp も同様に 404、atlantisvintagetokyo.com と www.daikokuya78.com は 403、shop.zenplus.jp / zenluxe.jp / allu-official.com / gc-yukizaki.com / store.komehyo.jp は Shopify でない"
+    }
+  ],
+  "lines": [
+    {
+      "id": "boston-duffle",
+      "labelEn": "Boston / duffle / travel bag",
+      "match": [
+        "boston bag",
+        "keepall",
+        "duffle",
+        "duffel",
+        "ボストンバッグ",
+        "キーポル",
+        "旅行バッグ"
+      ],
+      "medianG": 1025,
+      "p25": 874,
+      "p75": 1085,
+      "n": 8,
+      "spread": 1.24,
+      "tier": "estimate"
+    },
+    {
+      "id": "tote",
+      "labelEn": "Tote bag",
+      "match": [
+        "tote",
+        "トートバッグ",
+        "トートバック"
+      ],
+      "medianG": 805,
+      "p25": 690,
+      "p75": 897,
+      "n": 25,
+      "spread": 1.3,
+      "tier": "estimate"
+    },
+    {
+      "id": "shoulder-crossbody",
+      "labelEn": "Shoulder / crossbody bag",
+      "match": [
+        "shoulder bag",
+        "crossbody",
+        "cross body",
+        "messenger bag",
+        "body bag",
+        "ショルダーバッグ",
+        "ショルダーバック",
+        "斜めがけ",
+        "ボディバッグ",
+        "メッセンジャーバッグ"
+      ],
+      "medianG": 657,
+      "p25": 475,
+      "p75": 860,
+      "n": 34,
+      "spread": 1.81,
+      "tier": "estimate"
+    },
+    {
+      "id": "handbag",
+      "labelEn": "Handbag / top-handle bag",
+      "match": [
+        "handbag",
+        "hand bag",
+        "top handle",
+        "ハンドバッグ",
+        "ハンドバック",
+        "トップハンドル",
+        "手提げバッグ"
+      ],
+      "medianG": 576,
+      "p25": 439,
+      "p75": 690,
+      "n": 15,
+      "spread": 1.57,
+      "tier": "estimate"
+    },
+    {
+      "id": "pouch-clutch",
+      "labelEn": "Pouch / clutch / vanity",
+      "match": [
+        "clutch",
+        "pochette",
+        "pouch",
+        "vanity case",
+        "クラッチバッグ",
+        "ポシェット",
+        "ポーチ",
+        "バニティ"
+      ],
+      "medianG": 329,
+      "p25": 155,
+      "p75": 425,
+      "n": 13,
+      "spread": 2.74,
+      "tier": "estimate"
+    },
+    {
+      "id": "wallet-small-leather",
+      "labelEn": "Wallet / small leather goods",
+      "match": [
+        "wallet",
+        "card case",
+        "card holder",
+        "key case",
+        "coin case",
+        "財布",
+        "カードケース",
+        "キーケース",
+        "コインケース",
+        "名刺入れ"
+      ],
+      "medianG": 235,
+      "p25": 182,
+      "p75": 353,
+      "n": 23,
+      "spread": 1.94,
+      "tier": "estimate"
+    },
+    {
+      "id": "luxury-watch",
+      "labelEn": "Luxury wristwatch (boxed)",
+      "match": [
+        "腕時計",
+        "wristwatch",
+        "wrist watch",
+        "ウォッチ",
+        "watch"
+      ],
+      "medianG": 839,
+      "p25": 762,
+      "p75": 1120,
+      "n": 834,
+      "spread": 1.47,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": 584,
+  "fallbackTier": "estimate",
+  "notes": "Two shops adopted. The numbers rest on www.tokyourluxury.com — second-hand designer bags only, n=129, distinct ratio 97.7% — where values run from 47 g to 1,876 g with odd figures throughout, which reads as each item having been weighed. No second-hand shop carried real watch weights, so watches are stood in for by www.rookjapan.com's product_type Luxury Watch (n=834).\n\nThree limits. (1) tokyourluxury's values are most likely the item alone, without padding or a box — an LV Mini Papillon at 89 g. Used as a shipping weight they need packing added, which is what measured: false means here. (2) The per-line n is thin, between 8 and 34; boston at n=8 and pouch at n=13 are especially uncertain. (3) The 839 g watch figure comes from a shop selling mostly new watches with the presentation box, which is a different object from a used watch shipped without one (a Rolex head alone is around 150 g). None of these three could be filled in from another shop.\n\nMost second-hand luxury shops are useless here: luxuness is a flat 500 g, world.reclo and brandoffbuyingclub a flat 3,000 g, hannari a flat 1,000 g, and many Shopify shops simply leave grams at 0 (vintagelacharme, dct-ep, amorevintagejapan, myluxury-store, weeklyluxdrop, brandstreettokyo). On the other hand, the shipping bands at luxlux.jp and gracejapanluxuybrand order themselves as wallet < shoulder < handbag and tote < boston, which matches tokyourluxury's measured ordering — so the way the lines are cut is corroborated by two independent sources even though their numbers are not.\n\nfallbackG 584 is the median of all 129 tokyourluxury rows.",
+  "notesJa": "採用は2店。数値の中核は www.tokyourluxury.com（中古ブランドバッグ専業、n=129、distinct比 97.7%）で、47〜1,876g の端数が並ぶことから一点ごとの実測に近い。時計だけは中古ブランド品店に実測値が無かったので www.rookjapan.com の product_type=Luxury Watch（n=834）で代用した。限界は3つ。(1) tokyourluxury の値は商品そのものの重量で、緩衝材・箱を含まない可能性が高い（LV ミニパピヨンが 89g）。発送重量として使うなら梱包分の上乗せが要る。measured:false はこの意味。(2) バッグ各ラインの n は 8〜34 と薄い。ボストン n=8、ポーチ n=13 は特に不確か。(3) 腕時計 839g は化粧箱込みの新品時計店の値で、箱なしで送られる中古実物（ロレックスの時計単体は 150g 前後）とは別物。この 3 点は他店では埋められなかった。中古ブランド品店の大半（luxuness 全件 500g、world.reclo/brandoffbuyingclub 全件 3,000g、hannari 全件 1,000g）は一律の擬似値で、Shopify でも grams を 0 のまま運用する店（vintagelacharme, dct-ep, amorevintagejapan, myluxury-store, weeklyluxdrop, brandstreettokyo）が多い。一方 luxlux.jp と gracejapanluxuybrand の送料区分は、財布 < ショルダー < ハンドバッグ・トート < ボストン という順序が tokyourluxury の実測順と一致しており、ライン分けの切り方自体は2系統で裏が取れている。fallbackG 584 は tokyourluxury 全 129件の中央値"
+}
