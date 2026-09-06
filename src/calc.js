@@ -90,16 +90,16 @@ function buildRow(svc, variant, { items, cc, stepOffset }) {
   if (svc.perOrder != null) {
     lines.push(L('Purchase fee', svc.perOrder * n, `¥${svc.perOrder} × ${n} order${n > 1 ? 's' : ''}`));
     lines.push(L('Domestic handling', svc.domesticServicePerOrder * n,
-      `¥${svc.domesticServicePerOrder} × ${n} order${n > 1 ? 's' : ''} — charged per order`));
+      `¥${svc.domesticServicePerOrder} × ${n} orders, per order`));
   } else {
     lines.push(L('Service fee', svc.perItem * n, `¥${svc.perItem} × ${n}`
-      + (svc.domesticIncluded ? ' — domestic shipping included' : ''),
+      + (svc.domesticIncluded ? ', shipping incl.' : ''),
       svc.perItemVerified === false ? 'unverified' : 'fixed'));
   }
 
   lines.push(svc.domesticIncluded
     ? L('Domestic shipping', 0, 'included in the service fee')
-    : L('Domestic shipping', domYen, domEst ? `~¥${ASSUMED_DOMESTIC_SHIPPING} each where the buyer pays`
+    : L('Domestic shipping', domYen, domEst ? `~¥${ASSUMED_DOMESTIC_SHIPPING} each, buyer pays`
         : 'from each listing', domEst ? 'estimate' : 'fixed'));
 
   if (svc.packing) {
@@ -114,7 +114,7 @@ function buildRow(svc, variant, { items, cc, stepOffset }) {
   if (svc.depositRate) {
     const base = lines.reduce((a, l) => a + (l.amount || 0), 0);
     lines.push(L('Deposit fee', Math.round(base / (1 - svc.depositRate) - base),
-      `${(svc.depositRate * 100).toFixed(1)}% of everything you top up`));
+      `${(svc.depositRate * 100).toFixed(1)}% of the whole payment`));
   }
 
   lines.push(...taxOf(cc, { itemsYen, domYen, emsYen, n, parcels }));
