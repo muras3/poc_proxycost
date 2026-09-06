@@ -3,6 +3,7 @@
 import { useMemo, useReducer } from 'react';
 import { compare } from '@/lib/pricing/compare';
 import { resolveWeight } from '@/lib/pricing/weights';
+import { siteById } from '@/lib/search/sites';
 import type { CompareResult, CountryCode, Item, SiteId } from '@/lib/pricing/types';
 
 export interface Draft {
@@ -46,7 +47,11 @@ function itemFromDraft(draft: Draft, id: string): Item {
     // 価格が無い項目は unpriced に入り比較から外れるので、この 0 は
     // 総額にも画面にも出ない（Item.priceYen が number なだけの置き場）。
     priceYen: draft.priceYen ?? 0,
-    priceTier: draft.priceYen == null ? 'estimate' : draft.priceTier,
+    // **オークションの現在価格は確定値ではない。** 落札価格は後で決まる。
+    // 確定色で出すと「この額を払う」と読めてしまう。
+    priceTier: draft.priceYen == null || siteById(draft.site).kind === 'auction'
+      ? 'estimate'
+      : draft.priceTier,
     site: draft.site,
     url: draft.url ?? null,
     imageUrl: draft.imageUrl ?? null,
