@@ -112,6 +112,15 @@ export interface Service {
   consolidationOnRequest: boolean;
   /** 国際送料のマークアップ。0 = EMS 公表料金そのまま。 */
   emsMarkup: number;
+  /**
+   * **マークアップの確度であって、重量の確度ではない。**
+   * EMS の料金表そのものは日本郵便の公表値（一次情報）なので、EMS 行の tier は
+   * 「その社が公表額をそのまま転嫁しているか」だけを表す。重量が推定であることは
+   * Items 行の重量 tier と `Row.approximate` が別に持つ（docs/COMPLETENESS.md T16）。
+   *   fixed      … その社自身が「上乗せしない」と書いている
+   *   unverified … 実請求（二次情報）が公表額と一致した。社の記述は無い
+   *   estimate   … 我々の仮定。裏付けが無いか、実請求と食い違う
+   */
   emsMarkupTier: Tier;
   optional: OptionalFee[];
   /**
@@ -144,7 +153,9 @@ export const SERVICES: Service[] = [
     parcelVerified: true,
     consolidationOnRequest: false,
     emsMarkup: 0,
-    emsMarkupTier: 'estimate',
+    // 原文（fees、2026-09-06 取得）:「We do not charge any Neokyo fee on shipping cost,
+    // you pay the actual provider price.」— 社自身が上乗せ無しと書いている。
+    emsMarkupTier: 'fixed',
     optional: [
       { key: 'unpacking', label: 'Unpacking / removing original box', amountYen: 1000, note: 'per parcel', tier: 'fixed' },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
@@ -193,6 +204,10 @@ export const SERVICES: Service[] = [
     parcelVerified: false,
     consolidationOnRequest: false,
     emsMarkup: 0,
+    // **上げられない。** 料金ページ（Arquivo.pt 2025-11-27 の写し）は国際送料を
+    // 「Always pay」と書くだけで、公表額そのままとは書いていない。実請求は
+    // 1件が公表額と完全一致（R2 ¥2,700）、1件はどの段とも一致しない（R3 ¥4,021）。
+    // 一致しない実例がある以上、これは我々の仮定である（docs/audit/reality.md §3.4）。
     emsMarkupTier: 'estimate',
     optional: [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
@@ -240,6 +255,8 @@ export const SERVICES: Service[] = [
     parcelVerified: true,
     consolidationOnRequest: false,
     emsMarkup: 0,
+    // 会員ランクで国際送料が %OFF になると自社の翻訳ファイルに書いてあるが、率が
+    // テンプレ変数のままで読めない（docs/audit/fees.md §3）。上乗せ 0 は我々の仮定。
     emsMarkupTier: 'estimate',
     optional: [
       { key: 'protection', label: 'Product Protection Plan', amountYen: 500, note: 'per item', tier: 'fixed' },
@@ -297,7 +314,10 @@ export const SERVICES: Service[] = [
     parcelVerified: true,
     consolidationOnRequest: true,
     emsMarkup: 0,
-    emsMarkupTier: 'estimate',
+    // 社の記述は無い（料金ページは見積りツールに飛ばすだけ）。根拠は実請求1件で、
+    // イタリア宛 9kg の国際送料 ¥15,300 が当時の第3地帯 9.0kg 段と1円違わず一致した
+    // （docs/audit/reality.md R4）。**一次情報ではないので点線で描く。**
+    emsMarkupTier: 'unverified',
     optional: [
       { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },

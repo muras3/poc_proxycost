@@ -20,8 +20,8 @@ export const metadata: Metadata = {
   title: 'Sources and method — proxycost',
   description:
     'Every fee, EMS price and import tax the calculator uses, with the page it was read from and '
-    + 'the date. Plus what we measured: about half of a total is inferred, and the ranking itself '
-    + 'changes with the weight.',
+    + 'the date. Plus what we measured: the largest line is a published EMS rate looked up with a '
+    + 'weight we guessed, and the ranking itself changes with that weight.',
 };
 
 const ZENMARKET_INVOICE = 'https://nyamo.life/archives/zenmarket.html';
@@ -54,9 +54,10 @@ export default function SourcesPage() {
           <div className="rounded-lg border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
             <h2 className="text-sm font-semibold">What we do not stand behind</h2>
             <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-              The total. About half of it is inferred — the weight of your parcel, the domestic
-              postage inside Japan, and what your customs will do. That is why totals are rounded and
-              carry a <span className={tierClass.estimate}>~</span>. And because the weight is a
+              The total. The EMS rate in it is published by Japan Post, but the weight we look it
+              up with is a guess — and so is the domestic postage inside Japan, and what your
+              customs will do. That is why totals are rounded and carry a{' '}
+              <span className={tierClass.estimate}>~</span>. And because the weight is a
               guess, <strong>we do not promise the order holds if that guess is wrong</strong> —
               see below. Confirm the total on the proxy site before you pay.
             </p>
@@ -217,9 +218,10 @@ export default function SourcesPage() {
           </tbody>
         </table>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          About half of a total is inference. For the United Kingdom the split is{' '}
-          {GB_SPLIT.publishedShare} published against {GB_SPLIT.inferredShare} inferred — a
-          published VAT rate moves weight onto the known side. A tool that printed{' '}
+          Most of a total is printed somewhere — but the biggest printed line, EMS, is picked by a
+          weight we estimated, so the share above is not a promise about the total. For the United
+          Kingdom the split is {GB_SPLIT.publishedShare} published against{' '}
+          {GB_SPLIT.inferredShare} inferred — a published VAT rate moves more onto the known side. A tool that printed{' '}
           {yen(WEIGHT_SHIFT.find((r) => r.perItemG === MEASURED_BASKET.weightG)!.totalYen)} in
           large type would be claiming a precision it does not have, so the calculator rounds
           totals to ¥100 and prints the gap between companies to the yen instead.
