@@ -85,7 +85,10 @@
 
 ## 6. 法務・コンプライアンス
 
-- **駿河屋は robots.txt が `Disallow: /` で全面禁止。**直接叩かない
+- **駿河屋の robots.txt は全面禁止ではない。**`User-agent: *` は `Allow: /` で、
+  `Content-Signal: search=yes,ai-train=no,use=reference`。禁止されているのは AI 学習系
+  クローラ（ClaudeBot / GPTBot / CCBot / Bytespider 等）のみ。**プロダクト自身のクローラは
+  許可される。**（Claude が 403 を食らうのは ClaudeBot が名指しで禁止されているため）
 - データ収集は robots.txt を尊重し、KV でキャッシュして再取得を避ける
 - 重量は事実であり著作物ではない。著作権法30条の4（情報解析）にも該当
 - 収集した生カタログは再配布せず、**そこから導いた集計のみを持つ**
@@ -110,14 +113,46 @@
 
 | | |
 |---|---|
-| 代行5社が誰なのか | 「世界で利用頻度が高い順トップ5」と決めたが未調査 |
+| 利用規模の第2指標 | Trustpilot 件数のみで判断している。アプリDL数・SimilarWeb は未取得 |
 | インバウンド人気カテゴリ トップ20 | 未調査 |
-| FROM JAPAN の料金体系 | 定額 ¥500/点 か率 5〜10% か未確定。**列が丸ごと誤りの可能性** |
-| ZenMarket / FROM JAPAN の同梱の既定挙動 | 未確認（公式が 403） |
-| Brave Search API が画像を返すか | 未確認。返らなければ候補は文字のみ |
-| 駿河屋が Brave のインデックスにあるか | robots 全面禁止のため**存在しない可能性が高い** |
+| FROM JAPAN の決済手数料 ¥200 | 点ごとか注文ごとか、原文から読めない |
+| ZenMarket の同梱挙動の公式原文 | 準一次のみ。Cloudflare 403 で原文未確認（挙動自体は他3社と同じ「貯めて1個口」型と強く示唆） |
+
+| Brave の $5/1,000 プランに storage rights が含まれるか | **公式に明記が無い。**含まれないと検索結果をキャッシュできず、1検索ごとに必ず課金される。**Brave に問い合わせが必要** |
+| EC の商品ページで Brave が thumbnail / product.price を返すか | スキーマには存在するが型が `any?` で**返る保証の記載が無い。実測必須** |
 | モバイルで5列をどう見せるか | 横スクロールのままか、2列＋展開か |
 | 名前・ドメイン | `proxycost` は仮 |
+
+## 8.5 調査で確定したこと（2026-09-06）
+
+**代行5社**（Trustpilot のレビュー件数・評点、確認日 2026-09-06）:
+
+| | 件数 | 評点 |
+|---|---:|---:|
+| Neokyo | 10,112 | 4.6 |
+| ZenMarket | 9,530 | 4.0 |
+| Buyee | 8,058 | 3.6 |
+| FROM JAPAN | 2,093 | 4.4 |
+| Jauce | 1,138 | 4.4 |
+
+対象5社は **Buyee / ZenMarket / Neokyo / FROM JAPAN / Jauce**。
+※ Trustpilot 件数は「レビュー収集の熱心さ」の代理でもあり、規模の指標としては偏る。
+Buyee はヤフオク公式提携で客が来るためレビューを集める必要が薄い。
+
+**FROM JAPAN の料金**（公式配信の翻訳ファイル `/translate/en_help.txt` から原文取得）:
+Handling Fee **¥500/点**（`500 yen per item`）／Product Protection Plan ¥500/点／
+**Payment Fees Inside Japan ¥200**／保管60日無料／Export Clearance Fee ¥2,800（20万円超）／
+コンビニ払い ¥1,000／再梱包 ¥1,500〜／写真 ¥500(3枚)。
+**「5%」「$50超10%」は別サービス FROM USA の料金で、日本商品には適用されない。**
+
+**同梱の既定挙動**：Buyee のみ「既定で注文ごとに別送、申請すると無料で同梱」。
+Neokyo（45日）・FROM JAPAN（60日、一次原文取得）・ZenMarket（60日、準一次）は
+いずれも「貯めて選択 → 1個口」型。**Buyee だけが外れ値。**
+
+**Brave Search API**：`site:` 演算子、Goggles、`country=JP` / `search_lang=ja` は使える。
+`thumbnail` と `product.price` / `offers[].price` / `gtin13` はスキーマに存在するが
+型が `any?` で返却保証の記載が無い。`availability`（在庫）は**取得不可**。
+1クエリ最大20件（offset 9 まで＝実質200件）。$5/1,000 requests、月$5クレジット、50 QPS。
 
 ## 9. 工程と日数
 
