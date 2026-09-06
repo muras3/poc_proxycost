@@ -81,7 +81,12 @@ export interface Row {
   /** アフィリエイト報酬の有無。**順位計算には一切使わない。** */
   paysUs: boolean;
   referralNote: string | null;
+  /** その社を開くリンク。1点だけで直接開けるならその出品を、そうでなければ社のトップ。 */
   outboundUrl: string;
+  /** outboundUrl が出品を直接開くか。false なら画面でそう書く。 */
+  outboundDirect: boolean;
+  /** 複数点のとき、出品ごとに直接開けるリンク（開けないものは含めない）。 */
+  itemLinks: { itemId: string; title: string; url: string }[];
   /** 総額に推定が混じっているか。混じっていれば画面で `~` を付ける。 */
   approximate: boolean;
 }

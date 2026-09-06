@@ -7,6 +7,10 @@ import type { CompareResult, Row } from '@/lib/pricing/types';
 import { DiffBar } from './DiffBar';
 import { RowBreakdown } from './RowBreakdown';
 
+/** 報酬を払う社だけ sponsored。払わない社に付けると虚偽の開示になる。 */
+const rel = (paysUs: boolean) =>
+  paysUs ? 'sponsored nofollow noopener noreferrer' : 'nofollow noopener noreferrer';
+
 function diffText(row: Row, result: CompareResult): string {
   if (result.rowDiffRange) {
     const r = result.rowDiffRange[row.id];
@@ -48,7 +52,7 @@ export function RankBoard({ result }: { result: CompareResult }) {
                 aria-expanded={isOpen}
                 className="flex w-full items-start gap-3 py-3 text-left"
               >
-                <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-400 num">{row.rank}</span>
+                <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-500 dark:text-neutral-400 num">{row.rank}</span>
 
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-baseline gap-x-2">
@@ -89,14 +93,42 @@ export function RankBoard({ result }: { result: CompareResult }) {
               {isOpen && (
                 <div className="pb-4">
                   <RowBreakdown row={row} cheapest={cheapest} />
-                  <a
-                    href={row.outboundUrl}
-                    target="_blank"
-                    rel={row.paysUs ? 'sponsored nofollow noopener noreferrer' : 'nofollow noopener noreferrer'}
-                    className="mt-3 inline-block rounded bg-neutral-900 px-3 py-1.5 text-xs text-white dark:bg-neutral-100 dark:text-neutral-900"
-                  >
-                    Open {row.serviceName} →
-                  </a>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <a
+                      href={row.outboundUrl}
+                      target="_blank"
+                      rel={rel(row.paysUs)}
+                      className="inline-block rounded bg-neutral-900 px-3 py-1.5 text-xs text-white dark:bg-neutral-100 dark:text-neutral-900"
+                    >
+                      {row.outboundDirect
+                        ? `Open this listing on ${row.serviceName} →`
+                        : `Open ${row.serviceName} →`}
+                    </a>
+                    {/* 直接開けないなら黙って落とさず、何をすることになるかを書く。 */}
+                    {!row.outboundDirect && row.itemLinks.length === 0 && (
+                      <span className="text-xs text-neutral-500">
+                        you will paste the listing URL there
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 複数点のときは出品ごとに直接開けるものを並べる。 */}
+                  {row.itemLinks.length > 1 && (
+                    <ul className="mt-2 space-y-1">
+                      {row.itemLinks.map((l) => (
+                        <li key={l.itemId} className="text-xs">
+                          <a
+                            href={l.url}
+                            target="_blank"
+                            rel={rel(row.paysUs)}
+                            className="underline"
+                          >
+                            Open “{l.title.slice(0, 48)}” on {row.serviceName} →
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
             </li>

@@ -1,9 +1,15 @@
 name: ci
 
+# **pull_request だけで焚く。** push でも焚くと、PR にプッシュするたび
+# 同じコミットを2回検証することになる（E2E だけで1回4分）。
+# concurrency group を分けても event が違えば別 group になるので効かない。
+# main への push は deploy.yml が受け持つ。
 on:
   pull_request:
-  push:
-    branches-ignore: [main]
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   check:
