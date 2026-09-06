@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEEP_LINKS, listingIdFrom, outboundFor } from './deeplink';
+import { DEEP_LINKS, listingIdFrom, outboundFor, verifiedDeepLinkCount } from './deeplink';
 import type { Item } from './types';
 
 const item = (over: Partial<Item> = {}): Item => ({
@@ -47,14 +47,26 @@ describe('outboundFor', () => {
     const buyee = outboundFor('buyee', 'https://buyee.jp/', item());
     expect(buyee.direct).toBe(true);
     expect(buyee.url).toBe('https://buyee.jp/item/yahoo/auction/s1243168909');
+
+    // 2026-09-06 に 2条件を満たした（実在ID2件で 200・題名が別、架空IDで 404）。
+    const jauce = outboundFor('jauce', 'https://www.jauce.com/', item());
+    expect(jauce.direct).toBe(true);
+    expect(jauce.url).toBe('https://www.jauce.com/auction/s1243168909');
   });
 
   it('**未検証の組み合わせはトップに落とす。** 404 に飛ばす方がトップより悪い', () => {
-    for (const id of ['zenmarket', 'jauce', 'neokyo']) {
+    for (const id of ['zenmarket', 'neokyo']) {
       const r = outboundFor(id, `https://${id}.example/`, item());
       expect(r.direct, `${id} は未検証なので直接開いてはいけない`).toBe(false);
       expect(r.url).toBe(`https://${id}.example/`);
     }
+  });
+
+  it('**verified が false の社は、形を持っていても使わない。**', () => {
+    // ZenMarket は pattern を持っている。それでも直接開かないことが要点。
+    expect(DEEP_LINKS.zenmarket?.['yahoo-auctions']?.pattern).toContain('zenmarket.jp');
+    expect(DEEP_LINKS.zenmarket?.['yahoo-auctions']?.verified).toBe(false);
+    expect(outboundFor('zenmarket', 'https://zenmarket.jp/', item()).direct).toBe(false);
   });
 
   it('URL を持たない項目（検索や手入力）はトップに落とす', () => {
@@ -81,6 +93,15 @@ describe('DEEP_LINKS の整合', () => {
         expect(d.note.length, `${svc}/${site} に根拠が無い`).toBeGreaterThan(10);
       }
     }
+  });
+
+  it('検証できた組み合わせの数が、表の verified と一致する', () => {
+    const counted = Object.values(DEEP_LINKS)
+      .flatMap((bySite) => Object.values(bySite))
+      .filter((d) => d?.verified).length;
+    expect(verifiedDeepLinkCount()).toBe(counted);
+    // fromjapan / buyee / jauce の3件。**減ったら直接開ける社が黙って減っている。**
+    expect(verifiedDeepLinkCount()).toBe(3);
   });
 
   it('pattern には必ず {id} が入っている', () => {
