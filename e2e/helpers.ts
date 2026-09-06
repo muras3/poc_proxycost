@@ -1,0 +1,161 @@
+import { expect, type Locator, type Page } from '@playwright/test';
+
+/**
+ * 比較画面を実際に操作するための道具箱。
+ * セレクタは role / label / text だけで書く。クラス名は見た目の都合で変わるので当てにしない
+ * （唯一の例外は確度の下線を computed style で見る箇所。そこは spec 側に置いた）。
+ */
+
+/** ConsentBanner が localStorage に置く鍵。 */
+export const CONSENT_KEY = 'proxycost.consent.v1';
+
+/** 順位に出る会社名。行の見出しからどの社かを引くのに使う。 */
+const SERVICE_NAMES = ['FROM JAPAN', 'ZenMarket', 'Neokyo', 'Buyee', 'Jauce'] as const;
+
+export interface RankRow {
+  /** 1 始まり。画面上の並び順。 */
+  rank: number;
+  /** 'Neokyo' / 'Buyee' など。 */
+  name: string;
+  /** 'consolidated' / 'default' / null。 */
+  variant: string | null;
+  /** `approx. total ~¥33,500` から読んだ数字。幅表示のときは下限。 */
+  total: number;
+  /** 最安との差額。最安行は 0。 */
+  diff: number;
+  cheapest: boolean;
+  /** 行の生テキスト。'pays us nothing' の判定などに使う。 */
+  text: string;
+}
+
+export function ranking(page: Page): Locator {
+  return page.getByRole('region', { name: 'Ranking' });
+}
+
+/** 順位リストの各行の見出しボタン。開閉はこれを押す。 */
+export function rankButtons(page: Page): Locator {
+  return ranking(page).getByRole('button');
+}
+
+export function cart(page: Page): Locator {
+  return page.getByRole('region', { name: 'Cart' });
+}
+
+export function stepTable(page: Page): Locator {
+  return page.getByRole('region', { name: 'Totals by weight step' });
+}
+
+export function breakdownTable(page: Page): Locator {
+  return page.getByRole('region', { name: 'Cost breakdown' });
+}
+
+/** '¥33,500' / '~¥33,500' / '¥1,000 – 2,000' から最初の数字を取る。 */
+export function parseYen(text: string): number {
+  const m = text.replace(/[−–—]/g, '-').match(/-?[\d,]+/);
+  if (!m) throw new Error(`no number in ${JSON.stringify(text)}`);
+  return Number(m[0].replace(/,/g, ''));
+}
+
+/**
+ * 同意バナーが出るのを待ってから選ぶ。
+ * バナーは useEffect でしか出ないので、**出たこと自体が hydration 完了の証拠**になる。
+ * SSR された順位リストは押しても動かない時間帯があるため、この待ちを全テストの入口にする。
+ */
+export async function gotoCompare(
+  page: Page,
+  opts: { consent?: 'denied' | 'granted' | 'leave' } = {},
+): Promise<void> {
+  await page.goto('/');
+  const banner = page.getByRole('dialog', { name: 'Cookie consent' });
+  await expect(banner).toBeVisible();
+  const choice = opts.consent ?? 'denied';
+  if (choice !== 'leave') {
+    await banner.getByRole('button', { name: choice === 'denied' ? 'Reject' : 'Accept' }).click();
+    await expect(banner).toBeHidden();
+  }
+  await expect(rankButtons(page).first()).toBeVisible();
+}
+
+/**
+ * カートはモバイルで畳まれている。中身が見えていなければ開く。
+ * lg 以上では見出しの `Cart (n)` が `pointer-events-none` になっていて押せないので、
+ * aria-expanded ではなく**中身が見えているか**で判断する。
+ */
+export async function openCart(page: Page): Promise<Locator> {
+  const c = cart(page);
+  const first = c.getByRole('listitem').first();
+  if (!(await first.isVisible())) {
+    await c.getByRole('button', { name: /^Cart \(/ }).click();
+  }
+  await expect(first).toBeVisible();
+  return c;
+}
+
+/** 順位リストを読む。数字は決め打ちせず、関係だけを検証するための材料にする。 */
+export async function readRanking(page: Page): Promise<RankRow[]> {
+  const buttons = rankButtons(page);
+  await expect(buttons.first()).toBeVisible();
+  const n = await buttons.count();
+  const out: RankRow[] = [];
+  for (let i = 0; i < n; i++) {
+    const text = (await buttons.nth(i).innerText()).replace(/\s+/g, ' ').trim();
+    const totalMatch = text.match(/approx\. total\s*~?(¥[\d,]+)/);
+    if (!totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
+    const cheapest = /(^|\s)CHEAPEST(\s|$)/.test(text);
+    const diffMatch = text.match(/\+¥([\d,]+)/);
+    const name = SERVICE_NAMES.find((s) => text.includes(s));
+    if (!name) throw new Error(`row ${i} has no known service name: ${text}`);
+    const variant = text.includes('consolidated') ? 'consolidated'
+      : text.includes('default') ? 'default' : null;
+    out.push({
+      rank: i + 1,
+      name,
+      variant,
+      total: parseYen(totalMatch[1]!),
+      diff: cheapest ? 0 : parseYen(diffMatch?.[1] ?? '0'),
+      cheapest,
+      text,
+    });
+  }
+  return out;
+}
+
+/** 行を開く。開いた `li` を返す。既に開いていればそのまま。 */
+export async function openRankRow(page: Page, index: number): Promise<Locator> {
+  const button = rankButtons(page).nth(index);
+  if ((await button.getAttribute('aria-expanded')) !== 'true') {
+    await button.click();
+  }
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  const li = ranking(page).getByRole('listitem').nth(index);
+  await expect(li.getByRole('table')).toBeVisible();
+  return li;
+}
+
+/** 開いた行の2列比較から、費目名（左端セル）で1行を引く。 */
+export function costRow(li: Locator, label: string | RegExp): Locator {
+  return li.getByRole('row').filter({ has: li.page().getByRole('cell', { name: label }) });
+}
+
+/** 表の1行を、セルの文字列の配列にする。 */
+export async function rowCells(row: Locator): Promise<string[]> {
+  const cells = row.getByRole('cell');
+  const n = await cells.count();
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) out.push((await cells.nth(i).innerText()).replace(/\s+/g, ' ').trim());
+  return out;
+}
+
+/** 表の見出し行を文字列の配列にする。 */
+export async function headerCells(scope: Locator): Promise<string[]> {
+  const cells = scope.getByRole('columnheader');
+  const n = await cells.count();
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) out.push((await cells.nth(i).innerText()).replace(/\s+/g, ' ').trim());
+  return out;
+}
+
+/** 昇順（同値は許す）か。総額は ¥100 丸めなので同値が出うる。 */
+export function isNonDecreasing(xs: number[]): boolean {
+  return xs.every((x, i) => i === 0 || xs[i - 1]! <= x);
+}
