@@ -51,12 +51,21 @@ describe('step boundaries', () => {
     expect(emsStepIndex(15000)).toBe(26);
   });
 
-  test('over 15 kg is rounded into the top step instead of being dropped', () => {
-    expect(emsStepIndex(15001)).toBe(EMS_MAX_INDEX);
-    expect(emsStepIndex(30000)).toBe(EMS_MAX_INDEX);
-    expect(emsStepIndex(1_000_000)).toBe(EMS_MAX_INDEX);
-    expect(emsFor(99999, 4).yen).toBe(emsFor(15000, 4).yen);
-    expect(emsFor(99999, 4).stepG).toBe(15000);
+  test('**over 15 kg has no published rate here — it must not be rounded down**', () => {
+    // 以前は最上段に丸めていた。20kg の小包を 15kg の料金で見せることになり、
+    // 「持っていない数字を安い側に丸めて出す」ことになっていた。
+    expect(emsStepIndex(15000)).toBe(EMS_MAX_INDEX);
+    expect(emsStepIndex(15001)).toBe(-1);
+    expect(emsStepIndex(30000)).toBe(-1);
+
+    const over = emsFor(99999, 4);
+    expect(over.overMax).toBe(true);
+    expect(over.yen).toBeNull();
+    expect(over.stepG).toBeNull();
+
+    const at = emsFor(15000, 4);
+    expect(at.overMax).toBe(false);
+    expect(at.yen).toBe(39100);
   });
 
   test('the zone column is read straight off the table', () => {
@@ -96,7 +105,7 @@ describe('zones and labels', () => {
   });
 
   test('the US is more expensive than Singapore at the same weight', () => {
-    expect(emsFor(1000, EMS_ZONE.US).yen).toBeGreaterThan(emsFor(1000, EMS_ZONE.SG).yen);
+    expect(emsFor(1000, EMS_ZONE.US).yen!).toBeGreaterThan(emsFor(1000, EMS_ZONE.SG).yen!);
   });
 
   test('labels read as grams below a kilo and kilos above', () => {

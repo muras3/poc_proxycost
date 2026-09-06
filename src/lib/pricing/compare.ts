@@ -1,5 +1,5 @@
 import { COUNTRIES } from './countries';
-import { EMS_ZONE, EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
+import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
 import { rateFor, RATES_AS_OF } from './rates';
 import { outboundFor } from './deeplink';
 import { SERVICES, type Service } from './services';
@@ -178,17 +178,18 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     ? netPerItem.map((g) => grossG(g))
     : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
 
-  let emsYen = 0;
-  let stepLabel = '';
-  if (split) {
-    emsYen = parcelGross.reduce((a, g) => a + emsFor(g, zone).yen, 0);
-    stepLabel = `${plural(parcels, 'parcel')}`;
-  } else {
-    const e = emsFor(parcelGross[0]!, zone);
-    emsYen = e.yen;
-    stepLabel = `1 parcel, ${formatStep(e.stepG)} step`;
-  }
-  emsYen = Math.round(emsYen * (1 + svc.emsMarkup));
+  // **表の外（15kg 超）の重量では料金を持っていない。丸めない。**
+  // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
+  const each = parcelGross.map((g) => emsFor(g, zone));
+  const overMax = each.some((e) => e.overMax);
+  const emsYen: number | null = overMax
+    ? null
+    : Math.round(each.reduce((a, e) => a + (e.yen ?? 0), 0) * (1 + svc.emsMarkup));
+  const stepLabel = overMax
+    ? `over ${formatStep(EMS_MAX_GRAMS)} — no published rate`
+    : split
+      ? `${plural(parcels, 'parcel')}`
+      : `1 parcel, ${formatStep(each[0]!.stepG!)} step`;
 
   const priceEstimated = items.some((i) => i.priceTier === 'estimate');
   const lines: Line[] = [
@@ -209,8 +210,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 
   lines.push(L('ems', `EMS to ${COUNTRIES[ctx.cc].name}`, emsYen,
     `zone ${zone}, ${stepLabel}`
-    + (svc.emsMarkup === 0 ? ', published rate' : `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`),
-    'estimate', EMS_SOURCE_URL));
+    + (overMax ? '' : svc.emsMarkup === 0 ? ', published rate' : `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`),
+    overMax ? 'none' : 'estimate', EMS_SOURCE_URL));
 
   // 入金手数料は送金合計額に対する率なので gross-up。
   // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
@@ -221,7 +222,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       svc.deposit.tier, svc.sourceUrl));
   }
 
-  lines.push(...taxLines(ctx.cc, { itemsYen, domYen, emsYen, units, parcels }));
+  // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
+  // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
+  const domCharged = svc.domesticIncluded ? 0 : domYen;
+  lines.push(...taxLines(ctx.cc, { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
 
   const total = sum(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
@@ -264,17 +268,33 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       .filter((x) => x.link.direct)
       .map((x) => ({ itemId: x.item.id, title: x.item.title, url: x.link.url })),
     approximate,
+    // 国際送料が取れていない行は、取れている行と総額を比べられない。
+    comparable: emsYen != null,
+    notComparableReason: emsYen == null
+      ? `Japan Post publishes no EMS rate above ${formatStep(EMS_MAX_GRAMS)} in our table, so this total is missing its largest line`
+      : null,
   };
 }
 
-/** 総額の昇順で順位を付ける。**報酬額（paysUs）は一切参照しない。** */
+/**
+ * 総額の昇順で順位を付ける。**報酬額（paysUs）は一切参照しない。**
+ * 比べられない行（国際送料が取れていない）は末尾に回し、順位も差額も付けない。
+ * 最大の費目が欠けた総額を、揃っている総額と並べたら順位が嘘になる。
+ */
 function rank(rows: Row[]): Row[] {
-  const sorted = [...rows].sort(
-    (a, b) => a.total - b.total || a.serviceName.localeCompare(b.serviceName));
-  const low = sorted[0]?.total ?? 0;
-  return sorted.map((r, i) => ({
-    ...r, rank: i + 1, diff: r.total - low, cheapest: r.total === low,
-  }));
+  const byTotal = (a: Row, b: Row) =>
+    a.total - b.total || a.serviceName.localeCompare(b.serviceName);
+  const ok = rows.filter((r) => r.comparable).sort(byTotal);
+  const notOk = rows.filter((r) => !r.comparable).sort(byTotal);
+  const low = ok[0]?.total ?? 0;
+  return [
+    ...ok.map((r, i) => ({
+      ...r, rank: i + 1, diff: r.total - low, cheapest: r.total === low,
+    })),
+    ...notOk.map((r, i) => ({
+      ...r, rank: ok.length + i + 1, diff: 0, cheapest: false,
+    })),
+  ];
 }
 
 function rowsFor(ctx: Ctx): Row[] {
@@ -310,18 +330,27 @@ export function compare({ items, country }: CompareInput): CompareResult {
 
   if (!hasUnknownWeight) {
     const base = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: 1 });
-    // 一番大きく一番弱い数字（重量）を 1/3・3倍・5倍 に振って、1位が動くか見る。
-    const winners = [1 / 3, 3, 5].map((s) =>
-      rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: s })[0]?.id);
-    const first = base[0];
-    const stable = !!first && winners.every((w) => w === first.id);
+    // 一番大きく一番弱い数字（重量）を 1/3・3倍 に振って、1位が動くか見る。
+    // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（15kg）を
+    // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
+    // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
+    const winners = [1 / 3, 3].map((sc) => {
+      const rows = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: sc });
+      return rows.find((r) => r.comparable)?.id ?? null;
+    });
+    const first = base.find((r) => r.comparable);
+    const stable = !!first && winners.every((w) => w === null || w === first.id);
+    const outOfTable = winners.some((w) => w === null);
     return {
       ...empty,
       rows: base,
       rankStable: stable,
-      rankStabilityNote: stable
-        ? `${first?.label ?? ''} stays cheapest even if we are off by 5x on weight.`
-        : 'The cheapest option changes if the weight estimate is off — see the weight steps.',
+      rankStabilityNote: !first
+        ? 'No published EMS rate covers this parcel, so we cannot compare these totals.'
+        : stable
+          ? `${first.label} stays cheapest even if we are off by 3x on weight.`
+            + (outOfTable ? ' Beyond that the parcel leaves the published EMS table.' : '')
+          : 'The cheapest option changes if the weight estimate is off — see the weight steps.',
       hasUnknownWeight: false,
     };
   }

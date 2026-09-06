@@ -24,8 +24,10 @@ const line = (row: Row, key: string) =>
 const sumLines = (row: Row) => row.lines.reduce((a, l) => a + (l.amount ?? 0), 0);
 
 // ── 手で検証済みの総額。ここが動いたら engine が変わったということ。
+// 3,000g/点 は docs/DESIGN-NOTES.md に ¥62,178 と載っていたが、**あれは同梱後 18.3kg を
+// 15kg の料金に丸めた値だった。** 公表表の外なので、いまは総額を出さない。
 describe('verified totals — 5 items x ¥3,000 to the US', () => {
-  const CASES: [number, number][] = [[200, 27128], [600, 33528], [1500, 48828], [3000, 62178]];
+  const CASES: [number, number][] = [[200, 27128], [600, 33528], [1500, 48828]];
 
   test.each(CASES)('%i g per item → ¥%i', (weightG, total) => {
     const r = compare({ items: items(5, weightG), country: 'US' });
@@ -34,6 +36,14 @@ describe('verified totals — 5 items x ¥3,000 to the US', () => {
     expect(r.rows[r.rows.length - 1]!.label).toBe('Buyee, default');
     expect(r.hasUnknownWeight).toBe(false);
     expect(r.bands).toBeNull();
+  });
+
+  test('3,000 g per item leaves the published EMS table — we stop instead of rounding down', () => {
+    const r = compare({ items: items(5, 3000), country: 'US' });
+    const neokyo = byId(r.rows, 'neokyo');
+    expect(neokyo.comparable).toBe(false);
+    expect(line(neokyo, 'ems').amount).toBeNull();
+    expect(neokyo.excluded).toContain('EMS to United States');
   });
 
   test('the whole board is fixed at 200 g', () => {
@@ -50,20 +60,40 @@ describe('verified totals — 5 items x ¥3,000 to the US', () => {
 });
 
 describe('every country ranks the same way', () => {
-  test.each(COUNTRIES_ALL)('%s: Neokyo cheapest, Buyee default last', (cc) => {
-    for (const weightG of [200, 600, 1500, 3000]) {
+  // 実測した範囲: 5点・¥3,000 で 100g〜2,400g/点 は7カ国とも Neokyo が1位、
+  // Buyee default が最下位。3,000g/点 で同梱後 18.3kg となり公表表（15kg）を超える。
+  test.each(COUNTRIES_ALL)('%s: Neokyo cheapest and Buyee default last, up to 2.4 kg per item', (cc) => {
+    for (const weightG of [200, 600, 1500, 2400]) {
       const r = compare({ items: items(5, weightG), country: cc });
-      expect(r.rows[0]!.serviceName).toBe('Neokyo');
+      expect(r.rows[0]!.serviceName, `${cc} @ ${weightG}g`).toBe('Neokyo');
       expect(r.rows[r.rows.length - 1]!.label).toBe('Buyee, default');
     }
   });
 
-  test.each(COUNTRIES_ALL)('%s: the winner survives a 5x weight error at 200 g and 600 g', (cc) => {
+  test.each(COUNTRIES_ALL)(
+    '%s: **above the published EMS table the comparison stops, it does not silently flip**',
+    (cc) => {
+      // 5点 × 3,000g = 15,000g、梱包後 18.3kg。同梱する社は公表料金が無い。
+      const r = compare({ items: items(5, 3000), country: cc });
+      const blocked = r.rows.filter((row) => !row.comparable);
+      expect(blocked.length, '1個口の社は比較不能になるはず').toBeGreaterThan(0);
+      for (const row of blocked) {
+        expect(row.lines.find((l) => l.key === 'ems')!.amount).toBeNull();
+        expect(row.notComparableReason).toContain('EMS');
+        expect(row.cheapest, '比較不能な行を最安にしてはいけない').toBe(false);
+      }
+      // 注文ごとに分ける Buyee default だけが表の範囲に収まる。
+      const top = r.rows.find((row) => row.comparable)!;
+      expect(top.label).toBe('Buyee, default');
+    },
+  );
+
+  test.each(COUNTRIES_ALL)('%s: the winner survives a 3x weight error at 200 g and 600 g', (cc) => {
     for (const weightG of [200, 600]) {
       const r = compare({ items: items(5, weightG), country: cc });
-      expect(r.rankStable).toBe(true);
+      expect(r.rankStable, `${cc} @ ${weightG}g`).toBe(true);
       expect(r.rankStabilityNote).toContain('Neokyo');
-      expect(r.rankStabilityNote).toContain('5x');
+      expect(r.rankStabilityNote).toContain('3x');
     }
   });
 
@@ -207,13 +237,17 @@ describe('Buyee splits parcels by order', () => {
 
 // ── 送料込み出品が唯一の逆転条件。境界を固定する。
 describe('free domestic shipping is the one thing that flips the winner', () => {
+  // **比較可能な行だけを見る。** 公表表の外に出た行を1位に数えたら順位が嘘になる。
   const winner = (n: number, weightG: number, freeShipping: boolean) =>
-    compare({ items: items(n, weightG, 3000, { freeShipping }), country: 'US' }).rows[0]!.serviceId;
+    compare({ items: items(n, weightG, 3000, { freeShipping }), country: 'US' })
+      .rows.find((r) => r.comparable)!.serviceId;
 
-  test('paid domestic shipping: Neokyo wins everywhere on the grid', () => {
+  test('paid domestic shipping: Neokyo wins wherever the parcel stays inside the EMS table', () => {
     for (const n of [1, 2, 3, 5]) {
       for (const w of [200, 600, 1000, 1500, 2000, 3000]) {
-        expect(winner(n, w, false)).toBe('neokyo');
+        // 5点 × 3,000g は同梱後 18.3kg で表の外。そこだけ Buyee の分割が残る。
+        const expected = n === 5 && w === 3000 ? 'buyee' : 'neokyo';
+        expect(winner(n, w, false), `n=${n} w=${w}`).toBe(expected);
       }
     }
   });
