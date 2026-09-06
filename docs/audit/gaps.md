@@ -755,3 +755,159 @@ $ grep -rn "prohibited\|shippable\|restricted\|dangerous\|lithium\|hazmat" src/l
 `services.ts` も `countries.ts` も `ems.ts` も、その8か月間、
 存在しない配送手段の料金で総額を出し続ける形になっていた。
 `scripts/fees-check.ts` はそれを検知できない。料金表は変わっていなかったからである。
+
+---
+
+## 8. 追記 2026-09-06：ZenMarket の原文を取りに行った記録
+
+**この節は監査ではなく、取得の記録である。**上の §5 が「ZenMarket の一切のページ ／
+Cloudflare 403」と書いた項目を取りに行った。**配送方式は取れた。**取れなかったものは
+何をどう試して何が返ってきたかをそのまま残す。次に行く人が同じ道を二度歩かないため。
+
+### 8.1 結論
+
+| 対象 | 結果 |
+|---|---|
+| ZenMarket の配送方式一覧 | **取れた。** Arquivo.pt の 2025-11-27 の写しから原文に到達。`shipping-methods.ts` を `fixed` に |
+| ZenMarket 出品ページの直リンク | **取れない。**実在IDも架空IDも同じ 403 で、2条件のどちらも見えない |
+| Neokyo 出品ページの直リンク | **取れない。**形の候補が全て 403 で、当たっているかも分からない |
+| Jauce 出品ページの直リンク | **取れた。**2条件を満たしたので `verified: true` |
+
+### 8.2 ZenMarket の生きたページに何が起きているか
+
+`https://zenmarket.jp/en/shipping.aspx` は **403 + `cf-mitigated: challenge`** を返す。
+本文は Cloudflare の managed challenge（`Just a moment...` / `challenge-platform` /
+`window._cf_chl_opt`）で、**JS を実行しないと通れない**。UA、`Accept`、`Accept-Language`、
+`sec-ch-ua-*`、`Sec-Fetch-*`、リダイレクト追従を変えても全て 403（5,7xx バイト）。
+
+**チャレンジは全パスに掛かっているのではない。**同じ日に叩いた結果:
+
+| パス | 応答 | 出どころ |
+|---|---|---|
+| `/robots.txt` | 200 | 素通し |
+| `/favicon.ico` | 200 | 素通し |
+| `/Scripts/x.js`・`/Content/x.css`・`/images/x.png` | 404 | **オリジン**（`x-frame-options: SameOrigin` 等のオリジンヘッダ付き） |
+| `/api/v1`・`/api/shipping`・`/api/calc`・`/en/api/shipping` | 404 | オリジン |
+| `/en/shipping.aspx`・`/en/calc.aspx`・`/en/`・`/sitemap.xml`・`/apis`・`/ajax`・`/services` | 403 | チャレンジ |
+
+つまり **Cloudflare が素通しするのは「静的拡張子」と `/api/...` だけ**で、そこに
+HTML ページは1枚も無い。`/api/` 以下は 20 通りほど名前を当ててみたが全て 404
+（`/api/en/shipping` だけ 302 だが、行き先は `/api/` で、`/api/en/zzzz` も同じ 302 を返す
+＝存在するエンドポイントではない）。
+
+`zenmarket.zendesk.com` も `discover-en.zenmarket.jp` も `www.zenmarket.jp` も
+`zenplus.jp` も同じ Cloudflare の後ろで、`/hc/en-us` は 403（`cf-mitigated: challenge`）。
+Zendesk の Help Center API（`/api/v2/help_center/en-us/articles.json`）は 404＝未開設。
+
+### 8.3 効かなかった経路（何が返ってきたか）
+
+| 経路 | 結果 |
+|---|---|
+| Playwright の本物の Chromium で開く | **この環境では不可。**ブラウザからの外向き通信が `ERR_CONNECTION_RESET`（`example.com` すら開けない）。`--proxy-server` と CA を渡しても同じ |
+| `web.archive.org` | **403 `x-block-reason: hostname_blocked`。この作業環境の egress ポリシーによる遮断で、Wayback 側の問題ではない。**`http://` でも同じ。`archive.org/wayback/available` は通り、2026-08-27 の 200 スナップショットが在ることまでは分かる。**普通のネットワークからなら読めるはず** |
+| `archive.ph` / `archive.today` | 同じく `x-block-reason: hostname_blocked` |
+| `timetravel.mementoweb.org` | DNS 解決せず |
+| `r.jina.ai` 経由のテキスト抽出 | 403。**生きたページを踏みに行くので Cloudflare に同じく弾かれる** |
+| urlscan.io | 検索は通る（zenmarket.jp の scan が 102 件）。**だが `shipping.aspx` の scan は 0 件**で、結果の DOM とリソース一覧は匿名では 403（`You're not logged in!`） |
+| Common Crawl の index | `index.commoncrawl.org` が 503 を返し続ける（`upstream connect error`）。`data.commoncrawl.org` は 200 だが、そこから引くには index が要る |
+| 検索エンジンの要約 | **採らない。**二次情報であり、`fixed` の根拠にできない（§5 の原則） |
+
+### 8.4 効いた経路：Arquivo.pt（ポルトガル web アーカイブ）
+
+`https://arquivo.pt/wayback/cdx?url=zenmarket.jp/en/shipping.aspx&output=json` が
+**`20251127063048` / status 200 / 56,432 バイト**を返す。`…/wayback/<timestamp>id_/<url>`
+で**改変なしの生バイト**が取れる（288KB、ZenMarket のカテゴリナビと FAQ がそのまま入っている）。
+
+読めた原文（そのまま引く）:
+
+> What international shipping methods are available?
+> We offer you the following shipping methods for international shipping, which can be
+> divided into two categories: Postal Service and Courier.
+> **Postal Service: EMS, AVIA, Surface**
+> **Courier: FedEx, UPS, DHL, SF Express, ECMS Express**
+> - SF Express is available mainly for Asian regions such as Taiwan, Hong Kong, etc.
+> - ECMS Express is only available for Taiwan, Hong Kong, Malaysia, Thailand, Singapore,
+>   South Korea, Australia, Vietnam & the Philippines.
+> - The information is as of December 2022 and might be altered or revised.
+
+同ページは別の場所で `AVIA Small Packet`（2kg 未満・60cm・三辺 90cm）と
+`AVIA (standard)` を書き分けている。**SAL はこのページのどこにも無い。**
+配送方式の停止・休止の記載も無い。
+
+**それまで置いてあった3項目（`Airmail small packet (AVIA)` / `Surface mail` /
+`DHL / FedEx / UPS`）は、SF Express と ECMS Express を落としていた。**
+読めないことを理由に少なめに書くのは、その社の選択肢を実際より狭く見せる。
+
+### 8.5 Arquivo.pt には ZenMarket の他のページも在る（次に行く人へ）
+
+`?url=zenmarket.jp/en/&matchType=prefix` で 200 の写しが引ける主なもの:
+
+| ページ | 写しの日付 | §8 のどれに効くか |
+|---|---|---|
+| `fees.aspx` | 2025-11-27 | 手数料・入金手数料 |
+| `help.aspx` | **2025-12-10** | 同梱・保管・会員 |
+| `calc.aspx` | 2025-11-27 | 送料計算機 |
+| `weight.aspx` | 2025-11-27 | 重量の扱い |
+| `payment.aspx` | 2025-11-27 | 入金手数料・通貨 |
+| `recommendedshops.aspx` / `othershops.aspx` | 2025-11-27 | ¥300 の推奨店の判定手段（T4） |
+| `prohibited_items.aspx` | 2025-11-27 | 禁制品（G9・T27） |
+| `useragreement.aspx` / `responsibility.aspx` | 2025-11-27 | 補償・免責 |
+
+**写しは写しである。**`checkedOn`（読んだ日）と採取日は別物として持つこと
+（`shipping-methods.ts` の `capturedOn`）。読んだ日だけを書けば、9か月前の内容を
+今日の実測のように見せることになる。
+
+### 8.6 出品ページの直リンク
+
+**Jauce は 2条件を満たした。**`https://www.jauce.com/auction/{id}` は cookie を持たない
+要求を `/except_bot_access.php?target=…` に 302 で流すが、その中身は
+**`<form method="post">` に `type` / `target` / `submit_button` があるだけの素の HTML** で、
+JS チャレンジではない（JS は hidden の `type` に `submit` を入れるだけ）。
+利用者が OK を押すのと同じ POST を1回出すと `jauceNotBod` cookie が付き、その出品に着く。
+
+- 実在 `c1243386818` → 200 / `◇◎OLYMPUS XA F.ZUIKO 35mm F2.8 …`
+- 実在 `d1243516400` → 200 / `OLYMPUS オリンパス AF-10 QUARTZ DATE …`
+- 架空 `z9999999999` → **404 `Not found`**
+
+**ZenMarket は 2条件のどちらも見えない。**実在IDも架空IDも同じ 403（`Just a moment...`、
+5,803 バイト）なので、「その出品に着くか」も「架空IDを弾くか」も判定できない。
+形（`/en/auction.aspx?itemCode={id}`）は Arquivo.pt に
+`.../en/auction.aspx?itemCode=d496192012` の写しが在ることから実在するらしいと分かるが、
+**「実在する形」と「その出品に着く」は別の主張**なので `verified: false` のままにした。
+
+**Neokyo は形自体が不明。**`robots.txt` が `Disallow: */product/` と
+`Allow: */product/mercari/`（Googlebot 向け）を書いているので
+`/{lang}/product/{store}/{id}` の形らしいが、`/en/product/yahoo/…`・
+`/en/product/yahooAuction/…`・`/en/product/auction/…` はいずれも Cloudflare の 403 で、
+**形が当たっているのか外れているのかすら区別できない。**当て推量では埋めない。
+（Neokyo は `/en/shipping`・`/robots.txt`・`/sitemap*.xml` は 200 で読める。
+チャレンジが掛かるのはトップと商品ページ。sitemap に商品 URL は1件も無い。）
+
+### 8.7 `deeplinks:check` を2経路にした理由
+
+**各社の bot 対策が見ているものが違う。**
+
+- Jauce の WAF は **node/undici の TLS 指紋**を `503 "server is busy.\ngcp."` で弾く。
+  ヘッダを何に変えても 503。同じ回線の `curl` は 302 を返す。
+- Buyee の AWS WAF は逆に **`curl` を 202 の JS チャレンジ**（`awsWafCookieDomainList`）に送る。
+  `fetch` は通る。
+
+片方の経路だけでは、その社が「何を返しても同じ」に見えて 2条件のどちらも確かめられない。
+そこで `fetch` → 駄目なら `curl` の順に叩くようにした。**判定の条件は一切変えていない。**
+変えたのは (a) 判定できる応答まで届く手段の数、(b) **200 で返ってくる bot の壁**
+（Jauce のゲートは 200 / 894 バイト）を出品ページと取り違えない検出、
+(c) 自分で相手のレート制限を踏まないための 5 秒間隔。
+
+> (c) は実害が出てから入れた。詰めて叩いた結果 Buyee が 403 を返すようになり、
+> **その 403 を「検証できない」と読んで `verified: false` に落としかけた。**
+> 相手を詰まらせて出させた応答を、相手の性質として記録してはいけない。
+
+### 8.8 ついでに分かった、他の項目に効くこと
+
+- **`pe.usps.com`（Postal Explorer）は 200 で読める。** §8 が要ると書いている
+  **IMM 712 Customs Clearance and Delivery Fee は `https://pe.usps.com/text/imm/immc7_002.htm`**。
+  `www.usps.com/international/international-mail-manual.htm` は 404 なので、そちらを見ていた人は
+  「読めない」と結論していたはず。**$9.35 の保留（§7）を解く鍵はここに在る。**
+- Royal Mail（`www.royalmail.com` 403 / `personal.help.royalmail.com` 接続不可）、
+  La Poste（403）、Deutsche Post（404）、Canada Post（404）は今日も取れない。
+- `iras.gov.sg` は 200（OVR 登録事業者の確認に使える）。

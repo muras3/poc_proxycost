@@ -129,7 +129,7 @@
 | T7 | Buyee「Domestic handling」を「Guarantee plan (Standard, Buyee's default) ¥500 / order」に改名。任意欄に「Lite plan: −¥500 / order (no compensation)」 | 行キー・ラベル・note が変わり、Lite の減額が optionalLines に出る |
 | T8 | 免税限度の判定基準を商品代（intrinsic value）に（GB/DE/FR）。限度超で関税 null の行は excluded に「duty above €150 not included」 | DE で ¥18,650→¥18,651 の境界が全社同時に起きる（社ごとにずれない）。商品 £120＋送料で GB が閾値以下と判定される |
 | T9 | オークション（`Site.kind === 'auction'`）の価格を `priceTier: 'estimate'` に。note「current bid — final price is decided at auction end」 | ヤフオク出品を追加すると Items 行が `~` で出る。Jauce の ad-valorem 行に同じ note |
-| T10 | **済**。「EMS 比較」の範囲を Verdict 直下に明示。`EmsOnlyNote` が Summary / StabilityNote の直下に常時1行出す（畳まない・条件を付けない）。文言は `src/lib/pricing/shipping-methods.ts`（各社の非EMS方式・出典 URL・確認日）から作り、原文に届かなかった ZenMarket は §6 の点線で描く。`/sources#ems` に社ごとの方式一覧と出典を置き、開示から直リンク | 「Compared using Japan Post EMS only. …（5社）… all sell cheaper ways to send the same parcel (small packet, surface mail, couriers) that we do not price, so a real order can come in under the totals below.」が順位表の上に常時出る。E2E 10件（desktop / mobile 各5）が、タップ0回で読めること・国を変えても品を足しても行を開いても消えないこと・カートを空にすると順位と一緒に消えること・リンク先が社ごとの方式と出典日を出すことを実操作で見る |
+| T10 | **済**。「EMS 比較」の範囲を Verdict 直下に明示。`EmsOnlyNote` が Summary / StabilityNote の直下に常時1行出す（畳まない・条件を付けない）。文言は `src/lib/pricing/shipping-methods.ts`（各社の非EMS方式・出典 URL・確認日）から作り、原文に届かなかった社は §6 の点線で描く。`/sources#ems` に社ごとの方式一覧と出典を置き、開示から直リンク（**2026-09-06 追記: ZenMarket の原文に Arquivo.pt の写し経由で到達したので、点線の社は 0 件になった。**写しから読んだ社は `capturedOn` を持ち、`/sources#ems` に採取日を出す。`gaps.md` §8） | 「Compared using Japan Post EMS only. …（5社）… all sell cheaper ways to send the same parcel (small packet, surface mail, couriers) that we do not price, so a real order can come in under the totals below.」が順位表の上に常時出る。E2E 10件（desktop / mobile 各5）が、タップ0回で読めること・国を変えても品を足しても行を開いても消えないこと・カートを空にすると順位と一緒に消えること・リンク先が社ごとの方式と出典日を出すことを実操作で見る |
 | T11 | US：Zonos 前払い利用料を null 行で追加（商品 $100〜800）。USPS $9.35 の note を B2 のとおりに | US の excluded に「US import prepayment (Zonos) fee — not published」が出る |
 | T12 | REQUIREMENTS §2・DESIGN-NOTES §1・`compare.ts` の rankStable 文言を同じ主張に揃える（倍率 [1/3, 3]、1位のみ、成立条件「重量 <4.76kg/点（1点）／<5.96kg/点（5点）」）。§1 の 3,000g 行を T1 後の実測で埋める | 3文書に同じ倍率・同じ条件が書かれ、`grep -rn "5x\|5倍" REQUIREMENTS.md docs/` が 0 件 |
 | T13 | 為替を公表仲値から転記し `RATES_AS_OF` を転記日に。`rates.ts` に出典 URL。`SGD Infinity threshold` の表示を消す | 6通貨が出典の当日値と一致。SG duty note が「no duty on this category」 |
@@ -196,10 +196,11 @@
 
 | 項目 | 状態（2026-09-06） | 試したこと・手がかり |
 |---|---|---|
-| ZenMarket 公式（直） | 403（Cloudflare） | **Wayback 2026-07-25 が使える**（§0）。同梱の既定挙動・配送方式一覧・SG GST はこのスナップショットで未確認 |
+| ZenMarket 公式（直） | 403（Cloudflare の managed challenge。**JS を実行しないと通れない**） | **写しなら読める。**(a) Wayback 2026-07-25（§0）。(b) **Arquivo.pt に 2025-11-27 の写しが一式ある**（`fees` `help`(2025-12-10) `calc` `weight` `payment` `recommendedshops` `othershops` `prohibited_items` `useragreement`）。取り方と URL は `docs/audit/gaps.md` §8.5。**配送方式一覧はこれで取得済み。**同梱の既定挙動・SG GST は未確認のまま |
+| ZenMarket 公式（直）を live で読む道 | **無い。**素通しは静的拡張子と `/api/...` だけで、そこに HTML は無い | UA・Accept・sec-ch-ua・リダイレクトの総当たり、`r.jina.ai`、urlscan、Common Crawl、Playwright の実 Chromium まで試した記録が `gaps.md` §8.2–8.3 |
 | Royal Mail の £8 立替手数料 | 403／503 | royalmail.com、help.royalmail.com、価格表 PDF |
 | Deutsche Post／DHL（DE）、La Poste（FR）の通関立替手数料 | 404／未着手 | deutschepost.de、zoll.de 英語ページ |
-| USPS が DDP 前払い郵便物に $9.35 を課すか | 未取得 | USPS IMM 712 の DDP に関する条文。§7 の保留を解く鍵 |
+| USPS が DDP 前払い郵便物に $9.35 を課すか | **原文の場所が判明。まだ読んでいない** | **`https://pe.usps.com/text/imm/immc7_002.htm`（IMM 712 Customs Clearance and Delivery Fee）が 200 で読める**（2026-09-06 確認）。`www.usps.com/…/international-mail-manual.htm` は 404 なので、そちらを見ると「読めない」に見える。§7 の保留を解く鍵 |
 | Zonos の1件あたり利用料 | 額が非公開 | Zonos Docs は「vary by post」。日本郵便 PDF も額を書かない |
 | Neokyo・Jauce・ZenMarket(SG) の OVR／GST 登録 | 未取得 | 各社の SG／AU 向け案内ページ。IRAS の OVR 登録事業者検索 |
 | Neokyo の週次保管料の額、Jauce の月次保管料の額 | ページに額が無い | fees／FAQ とも「size による」 |
@@ -218,3 +219,6 @@
 | FJ の総額つき実請求 | 0 件（部分 1 件） | 比較記事は互いに矛盾し出典が無く不採用 |
 | 2024 年以降の全社の内訳つき実請求 | 0 件 | 日・英・繁中で検索 |
 | Jauce の同一オークション複数個の手数料 | 記載なし | japan_auction_detail |
+| ZenMarket の出品ページ直リンクの検証 | **不可（判定不能）** | 実在IDも架空IDも同じ 403 を返すので、2条件のどちらも見えない。形が実在することだけは Arquivo.pt の `auction.aspx?itemCode=…` の写しから分かるが、「形が在る」と「その出品に着く」は別（`gaps.md` §8.6） |
+| Neokyo の出品ページの URL の形 | **不明** | `robots.txt` の `Disallow: */product/` から `/{lang}/product/{store}/{id}` らしいが、候補パスは全て Cloudflare 403 で当否すら見えない。sitemap に商品 URL は 0 件（`gaps.md` §8.6） |
+| Royal Mail / La Poste / Deutsche Post / Canada Post | 403 / 403 / 404 / 404（2026-09-06 も同じ） | 上の各行のとおり |
