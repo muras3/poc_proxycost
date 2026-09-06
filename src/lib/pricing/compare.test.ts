@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
+import { SERVICES } from './services';
 import { EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G } from './ems';
 import type { CountryCode, Item, Row } from './types';
 
@@ -210,9 +211,26 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     for (const cc of COUNTRIES_ALL) {
       const r = compare({ items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(false);
-      expect(r.rankStabilityNote, cc)
-        .toBe('The cheapest option changes if the weight estimate is off — see the weight steps.');
+      // **不安定だと言うだけでは足りない。誰に替わるかを名指しすること。**
+      // 以前この文言は 'see the weight steps' と書いていたが、重量が分かって
+      // いるときは段の表を出していない。画面に無いものを指していた。
+      const note = r.rankStabilityNote!;
+      expect(note, cc).toContain('at a third of the weight you gave us');
+      expect(note, cc).toContain('at three times the weight you gave us');
+      expect(note, cc).not.toContain('see the weight steps');
+      const named = SERVICES.some((s) => note.includes(s.name));
+      expect(named, `${cc}: note names no company — ${note}`).toBe(true);
     }
+  });
+
+  test('**「唯一値段が付く社」を「最安」と書かない**', () => {
+    // 3,000 g/点。×3 すると同梱する社が EMS 公表表（30kg）を出て脱落し、
+    // 注文ごとに分ける Buyee default だけが残る。安いのではなく、値段が付く
+    // 唯一の社というだけ。ここを取り違えると、費目が欠けた行を薦めることになる。
+    const r = compare({ items: items(5, 3000), country: 'US' });
+    expect(r.rankStable).toBe(false);
+    expect(r.rankStabilityNote).toContain('is the only one we can still price');
+    expect(r.rankStabilityNote).not.toContain('Buyee, default is cheapest');
   });
 
   test('200 g per item is stable, and the note names the winner and the 3x span', () => {

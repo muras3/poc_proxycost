@@ -31,8 +31,9 @@ function totalText(row: Row, result: CompareResult): string {
 
 /**
  * 画面の主役。**最大の文字は総額ではなく差額。**
- * 重量を1/3〜5倍に外しても順位は動かないが総額は −19%〜+85% 動く
- * （docs/DESIGN-NOTES.md §1）。確かな方を大きく出す。
+ * 差額は総額より確かなので、確かな方を大きく出す。
+ * **ただし順位そのものは重量で動く**（docs/DESIGN-NOTES.md §1）。
+ * 動く条件では StabilityNote がそう書く。
  */
 export function RankBoard({ result }: { result: CompareResult }) {
   const [open, setOpen] = useState<string | null>(null);
@@ -159,9 +160,14 @@ export function Summary({ result }: { result: CompareResult }) {
   if (rows.length < 2) return null;
   const first = rows[0]!;
   const rest = rows.slice(1, 4);
+  // **段が割れているときに1社を言い切らない。** 重量不明のとき rows は代表段
+  // （真ん中）の順位でしかなく、軽い段では別の社が最安になることがある。
+  // 直下の StabilityNote が打ち消していても、一番大きい文が断定していたら嘘になる。
+  const midBand = result.bands?.[Math.floor(result.bands.length / 2)];
+  const qualify = !result.rankStable && midBand ? ` at ${midBand.label}` : '';
   return (
     <p className="text-sm">
-      <strong>{first.serviceName} is cheapest.</strong>{' '}
+      <strong>{first.serviceName} is cheapest{qualify}.</strong>{' '}
       {rest.map((r, i) => (
         <span key={r.id}>
           {/* 重量が不明なときは差額も幅になる。1点に丸めて言い切らない。 */}

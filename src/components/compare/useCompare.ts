@@ -14,7 +14,7 @@ export interface Draft {
   url?: string | null;
   imageUrl?: string | null;
   /** 出品ページから読めたときだけ入る。読めなければ undefined のまま。
-   *  **順位の唯一の逆転条件**なので、推測で埋めずに利用者のトグルに委ねる。 */
+   *  総額に直接効くので、推測で埋めずに利用者のトグルに委ねる。 */
   freeShipping?: boolean;
 }
 

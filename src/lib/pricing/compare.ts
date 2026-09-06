@@ -359,13 +359,18 @@ export function compare({ items, country }: CompareInput): CompareResult {
     // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（30kg）を
     // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
     // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
+    const baseComparable = base.filter((r) => r.comparable).length;
     const winners = [1 / 3, 3].map((sc) => {
       const rows = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: sc });
-      return rows.find((r) => r.comparable)?.id ?? null;
+      const comparable = rows.filter((r) => r.comparable);
+      // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
+      // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
+      // 値段が付く唯一の社というだけ。そう書かないと嘘になる。
+      return { id: comparable[0]?.id ?? null, shrank: comparable.length < baseComparable };
     });
     const first = base.find((r) => r.comparable);
-    const stable = !!first && winners.every((w) => w === null || w === first.id);
-    const outOfTable = winners.some((w) => w === null);
+    const stable = !!first && winners.every((w) => w.id === null || w.id === first.id);
+    const outOfTable = winners.some((w) => w.id === null || w.shrank);
     return {
       ...empty,
       rows: base,
@@ -375,7 +380,24 @@ export function compare({ items, country }: CompareInput): CompareResult {
         : stable
           ? `${first.label} stays cheapest even if we are off by 3x on weight.`
             + (outOfTable ? ' Beyond that the parcel leaves the published EMS table.' : '')
-          : 'The cheapest option changes if the weight estimate is off — see the weight steps.',
+          // **不安定なときに「段の表を見ろ」と言ってはいけない。** 重量が分かって
+          // いるときは段の表を出していないので、画面に無いものを指すことになる。
+          // どの倍率で誰に替わるかは winners に持っているので、それを名指しする。
+          : `The cheapest option changes with the weight: ${
+            ['a third of', 'three times']
+              .map((word, i) => {
+                const w = winners[i]!;
+                const name = w.id == null ? null : base.find((r) => r.id === w.id)?.label ?? w.id;
+                const label = name == null
+                  ? 'no published EMS rate covers the parcel'
+                  : w.shrank
+                    // 「唯一値段が付く社」を「最安」と書かない。
+                    ? `${name} is the only one we can still price`
+                    : `${name} is cheapest`;
+                return `at ${word} the weight you gave us, ${label}`;
+              })
+              .join('; ')
+          }.`,
       hasUnknownWeight: false,
     };
   }

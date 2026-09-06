@@ -50,7 +50,7 @@ export interface Item {
   weightTier: Tier;
   /** 重量の出所（'1/7 scale · n=647 · Solaris Japan' など）。 */
   weightSource?: string | null;
-  /** 出品が送料込みか。順位の唯一の逆転条件（docs/DESIGN-NOTES.md §1）。 */
+  /** 出品が送料込みか。全社に等しく効くので1位は動かない（docs/DESIGN-NOTES.md §1）。 */
   freeShipping?: boolean;
   domesticShippingYen?: number | null;
   qty: number;
