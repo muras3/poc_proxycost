@@ -168,3 +168,18 @@ export async function headerCells(scope: Locator): Promise<string[]> {
 export function isNonDecreasing(xs: number[]): boolean {
   return xs.every((x, i) => i === 0 || xs[i - 1]! <= x);
 }
+
+/**
+ * 「EMS でしか比べていない」の常時開示（`EmsOnlyNote`）。
+ * 順位が出ているあいだは畳まれも消えもしない、という約束をここで引く。
+ */
+export function emsOnlyNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /Compared using Japan Post EMS only/ });
+}
+
+/** その要素が「開かないと読めない」場所に居ないか。畳まれた開示は開示ではない。 */
+export async function isCollapsed(target: Locator): Promise<boolean> {
+  return target.evaluate(
+    (el) => !!el.closest('details:not([open]), [aria-expanded="false"], [hidden]'),
+  );
+}
