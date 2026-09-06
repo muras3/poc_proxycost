@@ -5,7 +5,8 @@ import { useSyncExternalStore } from 'react';
 const KEY = 'proxycost.consent.v1';
 const EVENT = 'proxycost:consent';
 
-export type Consent = 'granted' | 'denied' | null;
+/** 'unknown' はサーバ側＝まだ利用者の選択を知りようがない状態。 */
+export type Consent = 'granted' | 'denied' | null | 'unknown';
 
 function read(): Consent {
   try {
@@ -29,10 +30,13 @@ function subscribe(cb: () => void) {
 /**
  * 同意はブラウザ側にしか無い外部ストア。effect で setState すると
  * カスケード再描画になるので useSyncExternalStore で読む。
- * サーバ側は常に null（＝未選択）を返し、hydration 後に実値へ切り替わる。
+ *
+ * サーバ側は 'unknown' を返す。ここで null（＝未選択）を返すと、
+ * **既に選択済みの再訪者にも一瞬バナーが描画されて hydration 後に消える。**
+ * 選択済みの相手に同意を訊き直す見た目になるので、知らないうちは何も出さない。
  */
 export function useConsent(): Consent {
-  return useSyncExternalStore(subscribe, read, () => null);
+  return useSyncExternalStore(subscribe, read, () => 'unknown' as const);
 }
 
 export function setConsent(v: Exclude<Consent, null>) {
@@ -45,6 +49,7 @@ export function setConsent(v: Exclude<Consent, null>) {
 }
 
 export function ConsentBanner() {
+  // null（未選択）のときだけ訊く。'unknown'（サーバ側）では何も出さない。
   const consent = useConsent();
   if (consent !== null) return null;
 
