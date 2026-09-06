@@ -5,8 +5,10 @@ import {
   cartItem,
   costRow,
   DECIDES,
+  emsOnlyNote,
   gotoCompare,
   headerCells,
+  isCollapsed,
   isNonDecreasing,
   openCart,
   openRankRow,
@@ -19,6 +21,9 @@ import {
   type RankRow,
 } from './helpers';
 import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
+import {
+  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_SECOND_HAND, nameList,
+} from '../src/lib/pricing/shipping-methods';
 
 /**
  * 比較画面の E2E。**実際に押して、選んで、打ち込む。**
@@ -528,6 +533,102 @@ test('18. a single item: the weight does not decide anything, so we do not nag',
   expect((await readRanking(page))[0]!.name).toBe(before[0]!.name);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// T10: 比較の範囲（EMS 限定）の常時開示。
+// この表は「全社を日本郵便の EMS で送ったら」の総額でしかない。各社はもっと安い方式を
+// 実際に売っていて、我々はそれを price していない（docs/audit/gaps.md G1・§2）。
+// **黙っていれば、実際より高い表を「これが全部です」と出していることになる。**
+// 畳まれていないこと・順位が出ている限り必ず居ることを、押して確かめる。
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('19. the ranking says out loud that only EMS was priced, and that cheaper methods exist', async ({ page }) => {
+  await gotoCompare(page);
+  const note = emsOnlyNote(page);
+
+  // 何も押していない状態で、もう読める。
+  await expect(note).toHaveCount(1);
+  await expect(note).toBeVisible();
+  expect(await isCollapsed(note), '開示が「開かないと読めない」場所に居る').toBe(false);
+
+  const text = (await note.innerText()).replace(/\s+/g, ' ');
+  // (1) EMS でしか比べていないこと。
+  expect(text).toMatch(/Japan Post EMS only/);
+  // (2) もっと安い手段が実在すること、それを我々が値付けしていないこと、
+  //     そして誤差の向き（総額は高く出ている）まで。
+  expect(text).toMatch(/cheaper ways to send the same parcel/);
+  expect(text).toMatch(/small packet/);
+  expect(text).toMatch(/surface mail/);
+  expect(text).toMatch(/couriers/);
+  expect(text).toMatch(/we do not price/);
+  expect(text).toMatch(/under the totals below/);
+
+  // 5社とも名指しする。1社でも落ちれば「その社は EMS しか無い」と読めてしまう。
+  for (const s of ALTERNATIVE_SHIPPING) expect(text).toContain(s.serviceName);
+
+  // 原文を読めていない社は点線で描く（docs/UI-DESIGN.md §6。線種は数字以外にも適用する）。
+  const secondHand = note.getByTitle(TITLE.unverified);
+  await expect(secondHand).toHaveCount(1);
+  expect((await secondHand.innerText()).trim()).toBe(nameList(ALTERNATIVE_SHIPPING_SECOND_HAND));
+  const deco = await secondHand.evaluate((el) => {
+    const st = getComputedStyle(el);
+    return { line: st.textDecorationLine, style: st.textDecorationStyle };
+  });
+  expect(deco.style).toBe('dotted');
+  expect(deco.line).toContain('underline');
+
+  // 総額を読む前に目に入る位置（順位表の上）に居ること。
+  const noteBox = (await note.boundingBox())!;
+  const rankBox = (await ranking(page).boundingBox())!;
+  expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(rankBox.y + 1);
+});
+
+test('20. the disclosure stays through real use, and it comes and goes with the ranking', async ({ page }) => {
+  await gotoCompare(page);
+  const note = emsOnlyNote(page);
+  await expect(note).toBeVisible();
+
+  // 行き先を変える（総額も税も全部変わる）。
+  await page.getByLabel('Ship to').selectOption('GB');
+  await expect(note).toBeVisible();
+
+  // 品を足す。
+  await addByHand(page, 'mystery lot Z', 4000);
+  await expect(note).toBeVisible();
+
+  // 行を開く。開いた内訳の中に複製されもしない。
+  await openRankRow(page, 1);
+  await expect(note).toHaveCount(1);
+  await expect(note).toBeVisible();
+
+  // カートを空にすれば順位が消える。**順位だけ残って開示が消えることも、
+  // 開示だけ残って宙に浮くことも無い。**
+  await emptyCart(page);
+  await expect(ranking(page)).toHaveCount(0);
+  await expect(note).toHaveCount(0);
+
+  // 戻せば両方戻る。
+  await addByHand(page, 'mystery lot Z', 4000);
+  await expect(ranking(page)).toHaveCount(1);
+  await expect(note).toBeVisible();
+});
+
+test('21. the disclosure links to the methods we did not price, named company by company', async ({ page }) => {
+  await gotoCompare(page);
+  await emsOnlyNote(page).getByRole('link', { name: /small packet/ }).click();
+  await expect(page).toHaveURL(/\/sources#ems$/);
+  await expect(page.getByRole('heading', { name: 'EMS postage from Japan' })).toBeVisible();
+
+  for (const s of ALTERNATIVE_SHIPPING) {
+    const li = page.getByRole('listitem').filter({ hasText: `${s.serviceName} — besides EMS:` });
+    await expect(li, `${s.serviceName} の非EMS方式が /sources に無い`).toHaveCount(1);
+    for (const m of s.methods) await expect(li).toContainText(m);
+    // 出典 URL と読んだ日が付いていること。付いていなければただの主張になる。
+    await expect(li.getByRole('link', { name: `${s.serviceName} shipping page` }))
+      .toHaveAttribute('href', s.sourceUrl);
+    await expect(li).toContainText(s.checkedOn);
+  }
+});
+
 // ────────────────────────────────────────────────────────────────
 // desktop 専用
 // ────────────────────────────────────────────────────────────────
@@ -552,6 +653,16 @@ test.describe('desktop layout', () => {
     const rows = await readRanking(page);
     for (let i = 0; i < rows.length; i++) {
       expect(headers[i + 1]).toContain(rows[i]!.name);
+    }
+  });
+
+  test('the EMS-only disclosure holds for every destination, and there is only ever one', async ({ page }) => {
+    await gotoCompare(page);
+    const note = emsOnlyNote(page);
+    for (const code of ['GB', 'DE', 'FR', 'AU', 'CA', 'SG', 'US']) {
+      await page.getByLabel('Ship to').selectOption(code);
+      await expect(note, `${code} で開示が消えた`).toHaveCount(1);
+      await expect(note).toBeVisible();
     }
   });
 
@@ -643,6 +754,28 @@ test.describe('mobile layout', () => {
     const first = ranking(page).getByRole('listitem').nth(0);
     await expect(first.getByRole('table')).toBeVisible();
     expect(await headerCells(first)).toEqual(['Cost', rows[0]!.name]);
+  });
+
+  test('the EMS-only disclosure is readable on a phone without opening anything', async ({ page }) => {
+    await gotoCompare(page);
+    const note = emsOnlyNote(page);
+
+    // タップ0回で読める。畳んだ開示は、読まれない開示と同じ。
+    await expect(note).toBeVisible();
+    expect(await isCollapsed(note)).toBe(false);
+
+    // 幅に収まっている（横スクロールの外に逃がさない）。
+    const box = (await note.boundingBox())!;
+    const width = await page.evaluate(() => window.innerWidth);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+
+    // 行を開いてもカートを開いても居続ける。
+    await openRankRow(page, 0);
+    await expect(note).toBeVisible();
+    await openCart(page);
+    await expect(note).toBeVisible();
   });
 });
 

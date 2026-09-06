@@ -5,9 +5,12 @@ import { EmsTable } from '@/components/sources/EmsTable';
 import { TaxTable } from '@/components/sources/TaxTable';
 import { SERVICES_CHECKED_ON } from '@/lib/pricing/services';
 import {
+  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_CHECKED_ON,
+} from '@/lib/pricing/shipping-methods';
+import {
   RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
 } from '@/lib/pricing/rates';
-import { TierLegend, tierClass } from '@/lib/ui/tiers';
+import { TierLegend, tierClass, tierTitle } from '@/lib/ui/tiers';
 
 export const metadata: Metadata = {
   title: 'Sources and method — proxycost',
@@ -142,6 +145,47 @@ export default function SourcesPage() {
           markup that we could find. So the postage line is the same table for everybody, and what
           differs is how many parcels each company sends and how much packing weight it adds.
         </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          EMS is also the only method we price, and it is not the cheapest one on offer. In the{' '}
+          <a
+            className="underline"
+            href="https://www.post.japanpost.jp/int/charge/list/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Japan Post rate tables
+          </a>{' '}
+          we read on {ALTERNATIVE_SHIPPING_CHECKED_ON}, EMS was cheapest at none of the weights we
+          checked: small packet costs 40–50% less than EMS up to 2 kg, and surface mail runs a third
+          to a half of the EMS price above that. Every service below sells methods we leave out, so
+          a real order can come in under the totals on the front page. We quote none of those rates
+          because each company only shows them inside a logged-in quote, and a guessed rate would be
+          an unverified number printed as if it were theirs.
+        </p>
+        <ul className="mt-4 max-w-3xl space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+          {ALTERNATIVE_SHIPPING.map((s) => (
+            <li key={s.serviceId}>
+              <span
+                className={s.tier === 'fixed' ? 'font-semibold' : `font-semibold ${tierClass.unverified}`}
+                title={s.tier === 'fixed' ? undefined : tierTitle.unverified}
+              >
+                {s.serviceName}
+              </span>
+              {' — besides EMS: '}
+              {s.methods.join(', ')}.{' '}
+              <a
+                className="underline"
+                href={s.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {s.serviceName} shipping page
+              </a>
+              {`, read ${s.checkedOn}`}
+              {s.note ? ` — ${s.note}` : '.'}
+            </li>
+          ))}
+        </ul>
         <div className="mt-4">
           <EmsTable />
         </div>
