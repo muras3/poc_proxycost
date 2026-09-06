@@ -1,0 +1,420 @@
+{
+  "category": "food-tea-sake",
+  "labelJa": "食品・茶・酒",
+  "labelEn": "Food, tea and sake",
+  "checkedOn": "2026-09-06",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "www.saketora.com",
+      "url": "https://www.saketora.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 4955,
+      "verdict": "usable",
+      "reason": "distinct=929 (18.7%), top value 2%, multiples of 100: 17%. Adopted. Sake specialist; product_type splits into sake / shochu / beer / wine / whisky / umeshu, and bottle size appears in the title, so 720 ml, 1800 ml and 300 ml could be separated.",
+      "reasonJa": "distinct=929 (18.7%), 最頻値 2%, 100の倍数 17%。採用。日本酒専門で product_type が 日本酒/焼酎/ビール/ワイン/ウイスキー/梅酒 に分かれる。容量表記が商品タイトルに入るので 720ml / 1800ml / 300ml を切り出せた"
+    },
+    {
+      "domain": "japanesetaste.com",
+      "url": "https://japanesetaste.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5070,
+      "verdict": "usable",
+      "reason": "distinct=1010 (19.9%), top value 1%, multiples of 100: 2%. Adopted. A 20% distinct ratio is the best of everything we probed. product_type is hierarchical ('grocery / food / sauces & condiments'), so food can be isolated.",
+      "reasonJa": "distinct=1010 (19.9%), 最頻値 1%, 100の倍数 2%。採用。distinct比 20% は今回叩いた中で最良。product_type が 'grocery / food / sauces & condiments' のように階層化されていて食品だけ抜ける"
+    },
+    {
+      "domain": "www.sugoimart.com",
+      "url": "https://www.sugoimart.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 4988,
+      "verdict": "usable",
+      "reason": "distinct=408 (8.2%), top value 4%, multiples of 100: 6%. Adopted. Mostly small single items (convenience-store snacks, cup noodles); it supplied the bulk of the snack line.",
+      "reasonJa": "distinct=408 (8.2%), 最頻値 4%, 100の倍数 6%。採用。コンビニ菓子・カップ麺など小型単品が中心で、菓子ラインの母数を作った"
+    },
+    {
+      "domain": "bokksumarket.com",
+      "url": "https://bokksumarket.com/products.json?limit=250&page=1",
+      "products": 638,
+      "variantsWithGrams": 595,
+      "verdict": "usable",
+      "reason": "distinct=146 (24.5%), top value 6%, multiples of 100: 3%. Adopted. Snacks n=425, median 91 g — independently consistent with sugoimart's 70 g.",
+      "reasonJa": "distinct=146 (24.5%), 最頻値 6%, 100の倍数 3%。採用。菓子 n=425 で中央値 91g、sugoimart の 70g と独立に整合した"
+    },
+    {
+      "domain": "www.japanesegreenteashops.com",
+      "url": "https://www.japanesegreenteashops.com/products.json?limit=250&page=1",
+      "products": 507,
+      "variantsWithGrams": 507,
+      "verdict": "usable",
+      "reason": "distinct=109 (21.5%), top value 7%, multiples of 100: 6%. Adopted. Tea n=125, median 125 g, spread 1.7x.",
+      "reasonJa": "distinct=109 (21.5%), 最頻値 7%, 100の倍数 6%。採用。茶 n=125 で中央値 125g、ばらつき 1.7x"
+    },
+    {
+      "domain": "www.akazuki.com",
+      "url": "https://www.akazuki.com/products.json?limit=250&page=1",
+      "products": 1000,
+      "variantsWithGrams": 1802,
+      "verdict": "usable",
+      "reason": "distinct=60 (3.3%), top value 15%, multiples of 100: 69%. Adopted but weighted lightly: values cluster on 100 / 300 / 500, so it reads closer to suspect than the verdict suggests. Only product_type='food' (n=119) is food; the rest is tableware and homeware.",
+      "reasonJa": "distinct=60 (3.3%), 最頻値 15%, 100の倍数 69%。採用したが重みは軽い。100/300/500 の丸め値が多く、判定は usable でも実質 suspect 寄り。食品は product_type='food' n=119 のみで、大半は食器・雑貨"
+    },
+    {
+      "domain": "global.fukujuen.com",
+      "url": "https://global.fukujuen.com/products.json?limit=250&page=1",
+      "products": 82,
+      "variantsWithGrams": 88,
+      "verdict": "usable",
+      "reason": "distinct=20 (22.7%), top value 16%, multiples of 100: 10%. Adopted. Fukujuen of Kyoto, tea only. Tea n=79, median 120 g.",
+      "reasonJa": "distinct=20 (22.7%), 最頻値 16%, 100の倍数 10%。採用。京都・福寿園の茶専門。茶 n=79 で中央値 120g"
+    },
+    {
+      "domain": "ippodotea.com",
+      "url": "https://ippodotea.com/products.json?limit=250&page=1",
+      "products": 82,
+      "variantsWithGrams": 81,
+      "verdict": "usable",
+      "reason": "distinct=46 (56.8%), top value 9%, multiples of 100: 0%. Adopted. A 57% distinct ratio is the highest of any shop. Tea n=65, median 88 g.",
+      "reasonJa": "distinct=46 (56.8%), 最頻値 9%, 100の倍数 0%。採用。distinct比 57% は全店で最高。茶 n=65 で中央値 88g"
+    },
+    {
+      "domain": "www.chadoteahouse.com",
+      "url": "https://www.chadoteahouse.com/products.json?limit=250&page=1",
+      "products": 76,
+      "variantsWithGrams": 75,
+      "verdict": "usable",
+      "reason": "distinct=25 (33.3%), top value 23%, multiples of 100: 13%. Adopted. Tea n=70, median 110 g, spread 1.4x.",
+      "reasonJa": "distinct=25 (33.3%), 最頻値 23%, 100の倍数 13%。採用。茶 n=70 で中央値 110g、ばらつき 1.4x"
+    },
+    {
+      "domain": "www.japanesegreenteain.com",
+      "url": "https://www.japanesegreenteain.com/products.json?limit=250&page=1",
+      "products": 38,
+      "variantsWithGrams": 54,
+      "verdict": "usable",
+      "reason": "distinct=36 (66.7%), top value 9%, multiples of 100: 0%. Adopted. Small sample, but tea n=43 with median 109 g agrees with the other tea specialists.",
+      "reasonJa": "distinct=36 (66.7%), 最頻値 9%, 100の倍数 0%。採用。件数は少ないが茶 n=43 で中央値 109g、他の茶専門店と一致"
+    },
+    {
+      "domain": "www.kurashu.jp",
+      "url": "https://www.kurashu.jp/products.json?limit=250&page=1",
+      "products": 44,
+      "variantsWithGrams": 66,
+      "verdict": "usable",
+      "reason": "distinct=24 (36.4%), top value 21%, multiples of 100: 62%. Adopted. Unlike saketora the bottle size sits in the variant title. 720 ml n=37 has median 1,890 g — heavier than saketora, which marks the upper end of shop-to-shop variation.",
+      "reasonJa": "distinct=24 (36.4%), 最頻値 21%, 100の倍数 62%。採用。容量が variant title 側にあるのが saketora と違う点。720ml の n=37 で中央値 1,890g と saketora より重く、店間差の上限を示す"
+    },
+    {
+      "domain": "wabisabi-store.jp",
+      "url": "https://wabisabi-store.jp/products.json?limit=250&page=1",
+      "products": 212,
+      "variantsWithGrams": 440,
+      "verdict": "usable",
+      "reason": "distinct=74 (16.8%), top value 10%, multiples of 100: 31%. The shop itself is usable, but despite surfacing as a seasoning shop its stock is mostly cosmetics, parasols and school bags, with almost no food rows. Not used for any line.",
+      "reasonJa": "distinct=74 (16.8%), 最頻値 10%, 100の倍数 31%。店としては usable だが、調味料の店として検索に出た割に在庫は化粧品・日傘・ランドセルが中心で、食品の行がほとんど無い。lines には使えず不採用"
+    },
+    {
+      "domain": "www.tippsysake.com",
+      "url": "https://www.tippsysake.com/products.json?limit=250&page=1",
+      "products": 914,
+      "variantsWithGrams": 913,
+      "verdict": "pseudo",
+      "reason": "distinct=92, top value 73% of all rows. Not adopted: 662 of 913 are exactly 1,361 g, which is 3 lb — a constant. It does corroborate the total weight of one 720 ml bottle, since 1,361 g is close to saketora's 1,400 g median.",
+      "reasonJa": "distinct=92, 最頻値が全体の 73%。不採用。913件中 662件が 1,361g ちょうど＝3ポンドの定数。ただしこの 1,361g は saketora の 720ml 中央値 1,400g とほぼ一致するので、720ml 1本の総重量の裏づけにはなる"
+    },
+    {
+      "domain": "jsake.com",
+      "url": "https://jsake.com/products.json?limit=250&page=1",
+      "products": 142,
+      "variantsWithGrams": 140,
+      "verdict": "pseudo",
+      "reason": "distinct=8, top value 66% of all rows. Not adopted: only eight distinct values, which is a shipping band table.",
+      "reasonJa": "distinct=8, 最頻値が全体の 66%。不採用。実質8値しかなく帯別送料の値"
+    },
+    {
+      "domain": "japanesegreenteaonline.com",
+      "url": "https://japanesegreenteaonline.com/products.json?limit=250&page=1",
+      "products": 8,
+      "variantsWithGrams": 8,
+      "verdict": "insufficient",
+      "reason": "Only n=8 weighted rows, below our threshold of 50.",
+      "reasonJa": "n=8 < 50。Shopify で JSON は返るが公開商品が8件しかない"
+    },
+    {
+      "domain": "ujimatchatea.com",
+      "url": "https://ujimatchatea.com/products.json?limit=250&page=1",
+      "products": 23,
+      "variantsWithGrams": 24,
+      "verdict": "insufficient",
+      "reason": "n=24 < 50"
+    },
+    {
+      "domain": "www.o-cha.com",
+      "url": "https://www.o-cha.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "www.hibiki-an.com",
+      "url": "https://www.hibiki-an.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "ikkyu-tea.com",
+      "url": "https://ikkyu-tea.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "www.plazajapan.com",
+      "url": "https://www.plazajapan.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "japan-snack.com",
+      "url": "https://japan-snack.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "the-nihonshu.com",
+      "url": "https://the-nihonshu.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "sakeyoi.com",
+      "url": "https://sakeyoi.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTML (content-type: text/html), so nothing could be read.",
+      "reasonJa": "products.json が HTML を返す（content-type: text/html）。取得不可"
+    },
+    {
+      "domain": "nipponsake.com",
+      "url": "https://nipponsake.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTML (content-type: text/html), so nothing could be read.",
+      "reasonJa": "products.json が HTML を返す（content-type: text/html）。取得不可"
+    },
+    {
+      "domain": "sakeinn.com",
+      "url": "https://sakeinn.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "fetch failed on two attempts — could not connect.",
+      "reasonJa": "fetch failed（2回試行、いずれも接続できず）。取得不可"
+    }
+  ],
+  "lines": [
+    {
+      "id": "sake-1800ml",
+      "labelEn": "Sake / shochu, 1.8L bottle (isshobin)",
+      "match": [
+        "1800ml",
+        "1,800ml",
+        "1.8l",
+        "1800ｍｌ",
+        "一升瓶",
+        "一升"
+      ],
+      "medianG": 3300,
+      "p25": 2200,
+      "p75": 3355,
+      "n": 583,
+      "spread": 1.52,
+      "tier": "estimate"
+    },
+    {
+      "id": "sake-720ml",
+      "labelEn": "Sake / spirits, 700-750ml bottle",
+      "match": [
+        "720ml",
+        "750ml",
+        "700ml",
+        "720ｍｌ",
+        "四合瓶",
+        "四合"
+      ],
+      "medianG": 1420,
+      "p25": 1320,
+      "p75": 1540,
+      "n": 1754,
+      "spread": 1.17,
+      "tier": "estimate"
+    },
+    {
+      "id": "sake-300ml",
+      "labelEn": "Sake, 300ml bottle",
+      "match": [
+        "300ml",
+        "300ｍｌ",
+        "カップ酒"
+      ],
+      "medianG": 607,
+      "p25": 459,
+      "p75": 688,
+      "n": 335,
+      "spread": 1.5,
+      "tier": "estimate"
+    },
+    {
+      "id": "noodle",
+      "labelEn": "Instant and dried noodles",
+      "match": [
+        "ラーメン",
+        "ramen",
+        "うどん",
+        "udon",
+        "焼きそば",
+        "yakisoba",
+        "カップ麺",
+        "instant noodle",
+        "そうめん",
+        "somen",
+        "そば",
+        "soba"
+      ],
+      "medianG": 122,
+      "p25": 89,
+      "p75": 208,
+      "n": 349,
+      "spread": 2.34,
+      "tier": "estimate"
+    },
+    {
+      "id": "snack-sweets",
+      "labelEn": "Snacks, sweets and candy",
+      "match": [
+        "せんべい",
+        "senbei",
+        "rice cracker",
+        "クッキー",
+        "cookie",
+        "チョコレート",
+        "chocolate",
+        "キャンディ",
+        "candy",
+        "グミ",
+        "gummy",
+        "餅",
+        "mochi",
+        "ポッキー",
+        "pocky",
+        "kit kat",
+        "kitkat",
+        "ポテトチップス",
+        "chips",
+        "スナック",
+        "snack",
+        "キャラメル",
+        "caramel",
+        "どら焼き",
+        "dorayaki",
+        "最中",
+        "monaka",
+        "羊羹",
+        "yokan",
+        "饅頭",
+        "manju",
+        "大福",
+        "daifuku",
+        "駄菓子"
+      ],
+      "medianG": 90,
+      "p25": 58,
+      "p75": 180,
+      "n": 2837,
+      "spread": 3.1,
+      "tier": "estimate"
+    },
+    {
+      "id": "seasoning-bottle",
+      "labelEn": "Bottled seasoning (soy sauce, ponzu, mirin)",
+      "match": [
+        "醤油",
+        "soy sauce",
+        "shoyu",
+        "ポン酢",
+        "ponzu",
+        "みりん",
+        "mirin",
+        "めんつゆ",
+        "tsuyu",
+        "ドレッシング",
+        "dressing",
+        "ごま油",
+        "sesame oil",
+        "米酢",
+        "rice vinegar"
+      ],
+      "medianG": 484,
+      "p25": 299,
+      "p75": 777,
+      "n": 186,
+      "spread": 2.6,
+      "tier": "estimate"
+    },
+    {
+      "id": "tea-leaf",
+      "labelEn": "Japanese tea (leaf, matcha, tea bags)",
+      "match": [
+        "抹茶",
+        "matcha",
+        "煎茶",
+        "sencha",
+        "玉露",
+        "gyokuro",
+        "ほうじ茶",
+        "hojicha",
+        "houjicha",
+        "玄米茶",
+        "genmaicha",
+        "番茶",
+        "bancha",
+        "茎茶",
+        "kukicha",
+        "green tea",
+        "茶葉",
+        "ティーバッグ",
+        "tea bag",
+        "teabag"
+      ],
+      "medianG": 113,
+      "p25": 75,
+      "p75": 198,
+      "n": 631,
+      "spread": 2.64,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": 190,
+  "fallbackTier": "estimate",
+  "notes": "Eleven shops adopted (saketora, japanesetaste, sugoimart, bokksumarket, japanesegreenteashops, akazuki, fukujuen, ippodotea, chadoteahouse, japanesegreenteain, kurashu), all with verdict usable. grams is an input to a shipping calculator, not a measurement, so measured: false. Every shop we could reach allowed /products.json for User-agent: * in robots.txt.\n\nSake came out cleanest. Bottle size is in the product title, so cutting on it gives one 720 ml bottle a median of 1,420 g with a spread of 1.17x — the tightest line after 1/7 scale figures (1.0x), tight enough to treat as effectively settled. It corroborates independently: the rejected tippsysake.com has 662 of 913 rows at exactly 1,361 g, which is 3 lb and almost the same figure. It also decomposes sensibly — 720 g of liquid plus roughly 700 g of bottle, label and presentation box. A 1.8 L isshobin is 3,300 g.\n\nTwo traps in the sake data. First, some saketora rows have grams equal to the volume in ml (62 rows, 3.5% of 720 ml) — the bottle's own weight was left out. That does not move the median, but treat any 720 ml under 1,000 g as suspect. Second, most of saketora's stock is case packs ([1CS] 6 bottles, [2CS] 12 bottles); we read the bottle count from the title and divided back to one bottle. Without that the median would be 4,620 g. kurashu.jp's 720 ml median is 1,890 g, 33% heavier than saketora — that is the ceiling of shop-to-shop variation, and it is what a shop that packs heavily for export looks like.\n\nAlcohol cannot be posted to some countries. Japan Post accepts alcoholic drinks but treats them as prohibited depending on the destination: anything over 24% ABV is barred outright as dangerous goods by air, and many destinations bar it below that too (the United States effectively bars alcohol sent to an individual; Australia, New Zealand and several Middle Eastern countries also bar it). For sake-1800ml, sake-720ml and sake-300ml the weight can be produced but the shipment may not be possible at all, so an estimate screen has to answer \"can this go?\" before it answers \"what does it weigh?\".\n\nOn the food side, snacks split by what each shop stocks: sugoimart 70 g, bokksumarket 91 g, japanesegreenteashops 115 g, japanesetaste 240 g, akazuki 300 g. The first two sell single convenience-store bags; the last two sell boxed gift confectionery. The pooled 90 g is pulled toward the first group, and the 3.1x spread reflects exactly that — this line is less dependable than the others.\n\nTea did the opposite: seven shops agreed independently (ippodotea 88 g, japanesegreenteain 109 g, chadoteahouse 110 g, japanesetaste 111 g, fukujuen 120 g, japanesegreenteashops 125 g, sugoimart 141 g). That is the standard Japanese 100 g tin or pouch showing through. The 113 g median can be trusted.\n\nBottled seasoning is thin at n=186 and spans 1 L soy sauce down to 100 ml yuzu kosho, hence the 2.6x spread.\n\nMatch order is sake-1800ml, sake-720ml, sake-300ml, noodle, snack-sweets, seasoning-bottle, tea-leaf. Two reasons: a volume in the title is stronger evidence than any other word, so sake is tested first; and \"soy sauce senbei\" is a snack rather than a seasoning while \"matcha chocolate\" is a snack rather than tea, so snack-sweets must come before seasoning-bottle and tea-leaf.\n\nLimits. The Japanese match words are unverified by this survey: every adopted shop titles its products in English, and the Japanese terms were mapped by hand onto lines that were matched in English. Their hit rate against Japanese auction titles still needs checking. Short words that misfire were left out; 'cd' is an example of one we refused. Chilled, frozen and fresh goods are absent entirely, because Shopify shops that export from Japan stock only ambient goods — fresh fish, wagyu and namagashi cannot be reached by this method at all. fallbackG 190 is the rounded 188 g median of the 2,061 food rows in adopted shops that matched no line.",
+  "notesJa": "採用は11店（saketora / japanesetaste / sugoimart / bokksumarket / japanesegreenteashops / akazuki / fukujuen / ippodotea / chadoteahouse / japanesegreenteain / kurashu）。全店 verdict=usable。grams は送料計算用の入力値であって実測ではないので measured:false。robots.txt は取得できた全店で User-agent:* が /products.json を許可していた。\n\n【酒が一番きれいに出た】容量表記が商品タイトルに入るので、そこで切ると 720ml 1本 = 中央値 1,420g・ばらつき 1.17x になった。フィギュアの 1/7 scale（1.0x）に次ぐ狭さで、実質確定値として扱える。裏づけも取れていて、不採用にした tippsysake.com は 913件中 662件が 1,361g ちょうど（＝3ポンド）で、これは saketora の 1,400g とほぼ同じ。中身 720g ＋ 瓶とラベルと化粧箱で約 700g、という内訳とも合う。1.8L の一升瓶は 3,300g。\n\n【酒の落とし穴】saketora には grams が内容量 ml とそのまま同じ行が混じっている（720ml で 62件・3.5%）。これは瓶の重さを入れ忘れた入力ミスで、その行を採ると実重量の半分になる。中央値には効かないが、単品を引くときは 1,000g 未満の 720ml を疑うこと。もう一つ、saketora はケース販売（[1CS] 6bottle、[2CS] 12bottle）が在庫の大半で、集計時はタイトルから本数を拾って1本あたりに割り戻してある。割り戻さないと中央値が 4,620g になる。kurashu.jp の 720ml は中央値 1,890g と saketora より 33% 重く、これが店間差の上限。海外向けの緩衝梱包を厚くしている店はこのくらい増える。\n\n【酒は EMS で送れない国がある】日本郵便の EMS はアルコール飲料を「引受可能だが宛先国により禁制品」として扱い、アルコール度数24%超は航空危険物として一律不可、24%以下でも宛先国の規制で不可の国が多い（米国は個人宛のアルコール送付が原則不可、豪州・NZ・中東各国なども不可）。sake-1800ml / sake-720ml / sake-300ml の3ラインは、重量が出せても宛先によっては発送自体が成立しない。見積もり画面では重量より先に可否を出す必要がある。\n\n【食品側】菓子は sugoimart 70g / bokksumarket 91g / japanesegreenteashops 115g / japanesetaste 240g / akazuki 300g と店の品揃えで割れる。sugoimart と bokksumarket はコンビニの1袋単品、japanesetaste と akazuki は箱入りの土産菓子が多いため。プールした 90g は前者に引っ張られている。ばらつき 3.1x はそれを反映していて、この線は他より当てにならない。\n\n茶は逆に7店が独立に一致した（ippodotea 88g / japanesegreenteain 109g / chadoteahouse 110g / japanesetaste 111g / fukujuen 120g / japanesegreenteashops 125g / sugoimart 141g）。100g 缶・100g 袋という日本茶の標準包装がそのまま出ている。中央値 113g は信頼してよい。\n\n瓶入り調味料は n=186 と母数が薄い。醤油の 1L ペットボトルから 100ml の柚子胡椒まで入るのでばらつき 2.6x。\n\n【match の当て方】判定順は sake-1800ml → sake-720ml → sake-300ml → noodle → snack-sweets → seasoning-bottle → tea-leaf。理由は2つ。(1) 容量表記は他のどの語より強い証拠なので酒を先に見る。(2) 「醤油せんべい」は調味料ではなく菓子、「抹茶チョコレート」は茶ではなく菓子なので、snack-sweets を seasoning-bottle と tea-leaf より先に置く。\n\n【限界】match に入れた日本語の語は、この調査では検証できていない。採用した店の商品タイトルはすべて英語で、日本語側は英語で当たった商品ラインに対応する語を人手で対応づけただけ。ヤフオクの日本語タイトルでの命中率は別途確かめる必要がある。「そば」は「そばかす」に、「一升」は「一升瓶ケース」以外にも当たりうるが、このカテゴリの出品タイトルでは実害が小さいと判断して残した。'cd' のように短すぎて誤爆する語は入れていない。\n\nもう一つの限界は、生鮮・冷蔵・冷凍がこのデータに一切入っていないこと。海外発送する Shopify 店は常温品しか置かないので、鮮魚・和牛・生菓子の重量はこの手法では取れない。fallbackG=190 は、採用店の食品行のうちどのラインにも当たらなかった 2,061件の中央値 188g を丸めた値。"
+}
