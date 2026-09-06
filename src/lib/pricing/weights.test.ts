@@ -48,6 +48,141 @@ describe('resolving a weight from a title', () => {
   });
 });
 
+// ── docs/audit/logic.md 第5節の誤爆。1つの数字が「確定した重量」として出て
+//    段の表が消えるので、外すと 30 倍ずれたまま画面に残る。null か妥当値で固定する。
+describe('titles that must not be read as a weight (audit logic.md §5)', () => {
+  test('a date or a deadline is not a figure scale', () => {
+    // 1/7(火) は締切、2024/1/8 は発売日。どちらも 1,500 g / 1,300 g のフィギュアではない。
+    expect(resolveWeight('【1/7(火)まで】限定出品 トレカ').grams).toBeNull();
+    expect(resolveWeight('2024/1/8 発売予定 トレーディングカード').grams).toBeNull();
+    expect(resolveWeight('11/4 発送 ポスター').grams).toBeNull();
+  });
+
+  test('a scale without a figure is doll clothing, not the doll', () => {
+    const r = resolveWeight('1/6 ドール 服');
+    expect(r.grams).toBeNull();
+    expect(r.lineId).toBeNull();
+  });
+
+  test('a bonus CD does not turn a Nendoroid into 100 g', () => {
+    const r = resolveWeight('ねんどろいど 初音ミク 初回限定CD付き');
+    expect(r.grams).toBe(439);
+    expect(r.lineId).toBe('nendoroid');
+  });
+
+  test('the machine, the case and the sticker are not the disc', () => {
+    expect(resolveWeight('compact disc player Sony').grams).toBeNull();
+    expect(resolveWeight('Vinyl sticker 10 sheets').grams).toBeNull();
+    expect(resolveWeight('レコード 収納 ラック').grams).toBeNull();
+  });
+
+  test('a cane for the elderly is not a jo staff', () => {
+    expect(resolveWeight('杖 ステッキ 木製 高齢者用').grams).toBeNull();
+  });
+
+  test('a bottle size alone does not say the bottle holds sake', () => {
+    // 700 ml のジュース 24 本を四合瓶 1,420 g として読んでいた。
+    expect(resolveWeight('ジュース 700ml ペットボトル 24本').grams).toBeNull();
+    expect(resolveWeight('ミネラルウォーター 1800ml').grams).toBeNull();
+  });
+
+  test('a rarity code on a badge is not a card', () => {
+    expect(resolveWeight('SSR ウマ娘 缶バッジ 未開封').grams).toBeNull();
+  });
+
+  test('a kids uniform does not get the adult median', () => {
+    // 表の中央値はすべて大人用の実測から取った（sports-goods）。
+    expect(resolveWeight('空手着 上下セット 女児 120cm').grams).toBeNull();
+    expect(resolveWeight('剣道 防具セット ジュニア').grams).toBeNull();
+  });
+
+  test('a record obi strip is not a martial-arts belt', () => {
+    expect(resolveWeight('OBI 帯のみ').grams).toBeNull();
+  });
+
+  test('an assortment box is not one snack', () => {
+    expect(resolveWeight('snack box japan').grams).toBeNull();
+    expect(resolveWeight('お菓子 詰め合わせ').grams).toBeNull();
+  });
+
+  test('a hakama listing still resolves — the guard must not eat the real hits', () => {
+    expect(resolveWeight('袴 単品 男性用').lineId).toBe('hakama');
+    expect(resolveWeight('剣道 袴 27号').lineId).toBe('hakama');
+  });
+});
+
+// ── 誤爆を潰すために当たるべきものまで落としていないか。**両方をここで固定する。**
+describe('titles that must still resolve', () => {
+  test('a graded slab written without a space (PSA10 / BGS9.5) is found', () => {
+    // 出品は 'PSA10' と詰めて書く。英字と数字の切れ目を境界とみなさないと落ちる。
+    for (const t of ['psa10 charizard', 'PSA10 リザードン', 'BGS9.5 リザードン', 'CGC9 pikachu']) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('graded-slab');
+      expect(r.grams).toBe(100);
+    }
+    // 空けて書いても同じ行に当たる。
+    expect(resolveWeight('PSA 10 Charizard').lineId).toBe('graded-slab');
+  });
+
+  test('a word inside a longer word is still not a hit', () => {
+    // 'sculpture' の 'lp'、'11/4' の '1/4'。同じ種類の文字が続く側は境界にしない。
+    expect(resolveWeight('sculpture stand').grams).toBeNull();
+    expect(resolveWeight('mcdonalds toy').grams).toBeNull();
+  });
+
+  test('a scale with its scale word still resolves', () => {
+    expect(resolveWeight('1/4 scale figure').lineId).toBe('scale-1-4');
+    expect(resolveWeight('1/6 スケール フィギュア').lineId).toBe('scale-1-6');
+    expect(resolveWeight('1/8スケール 完成品').lineId).toBe('scale-1-8');
+  });
+
+  test('a bottle size with an actual drink still resolves', () => {
+    expect(resolveWeight('純米大吟醸 1800ml').lineId).toBe('sake-1800ml');
+    expect(resolveWeight('日本酒 720ml 純米').grams).toBe(1420);
+    expect(resolveWeight('梅酒 300ml 瓶').lineId).toBe('sake-300ml');
+  });
+
+  test('a rarity code next to a card word still resolves', () => {
+    expect(resolveWeight('SSR ポケモンカード').lineId).toBe('single-card');
+    expect(resolveWeight('SAR トレカ').grams).toBe(50);
+  });
+
+  test('a jo and an obi with their martial-arts word still resolve', () => {
+    expect(resolveWeight('杖道 杖 樫').lineId).toBe('bokuto');
+    expect(resolveWeight('karate obi black').lineId).toBe('budo-obi');
+  });
+
+  test('kids lines and size-free budo parts survive a kids title', () => {
+    // キッズの行そのもの、および寸法でほとんど変わらない帯・袋には効かせない。
+    expect(resolveWeight('キッズ地下足袋 24cm').lineId).toBe('tabi-sneaker-kids');
+    expect(resolveWeight('剣道 防具袋 子供用').lineId).toBe('budo-bag');
+    expect(resolveWeight('空手帯 子供').lineId).toBe('budo-obi');
+  });
+
+  test('every match word in the table still finds its own line on its own', () => {
+    // 裏付けを要求した語だけが例外。ここが増えたら「絞りすぎ」を疑う。
+    const gated = new Set([
+      '1/4', '1/6', '1/7', '1/8',
+      'sar', 'csr', 'ssr',
+      '1800ml', '1,800ml', '1.8l', '1800ｍｌ', '720ml', '750ml', '700ml', '720ｍｌ', '300ml', '300ｍｌ',
+      'obi', '杖',
+    ]);
+    const missed: string[] = [];
+    for (const c of WEIGHT_CATEGORIES) {
+      for (const l of c.lines) {
+        for (const m of l.match) {
+          if (gated.has(m)) {
+            expect(resolveWeight(m).grams).toBeNull();
+            continue;
+          }
+          if (resolveWeight(m).lineId !== l.id) missed.push(`${c.category}/${l.id}: "${m}"`);
+        }
+      }
+    }
+    expect(missed).toEqual([]);
+  });
+});
+
 // ── 当たらないときに何かを返してはいけない。ここが崩れると総額が嘘になる。
 describe('a title we cannot resolve stays unresolved', () => {
   test('no fallback, no guess, no zero', () => {
