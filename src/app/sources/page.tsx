@@ -4,7 +4,9 @@ import { FeeTable } from '@/components/sources/FeeTable';
 import { EmsTable } from '@/components/sources/EmsTable';
 import { TaxTable } from '@/components/sources/TaxTable';
 import { SERVICES_CHECKED_ON } from '@/lib/pricing/services';
-import { RATES, RATES_AS_OF } from '@/lib/pricing/rates';
+import {
+  RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
+} from '@/lib/pricing/rates';
 import { TierLegend, tierClass } from '@/lib/ui/tiers';
 
 export const metadata: Metadata = {
@@ -265,13 +267,35 @@ export default function SourcesPage() {
         <H2 id="fx">Exchange rates</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           Everything is computed in yen. Conversions shown next to a total are a convenience, at
-          fixed rates read on {RATES_AS_OF}: {Object.entries(RATES).map(([code, rate], i) => (
+          fixed rates: {Object.entries(RATES).map(([code, rate], i) => (
             <span key={code} className="tabular-nums">
-              {i > 0 ? ', ' : ''}¥{rate}/{code}
+              {i > 0 ? ', ' : ''}¥{rateLabel(rate)}/{code}
             </span>
-          ))}. We do not fetch live rates: a live feed is one more thing that can be down, and it
-          would move your total between two page loads for no gain. Your card issuer will use its own
-          rate and add its own margin, which we do not model.
+          ))}.
+        </p>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Those came from the{' '}
+          <a className="underline" href={RATES_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            {RATES_SOURCE_NAME}
+          </a>
+          , which is the reference rate for{' '}
+          <span className="tabular-nums">{RATES_AS_OF}</span>; we read that file and copied the
+          numbers across by hand on <span className="tabular-nums">{RATES_FETCHED_ON}</span>. The two
+          dates differ because the ECB publishes on business days only, and the later one is the day
+          we did the copying — not a day the bank quoted anything.
+          {Object.keys(RATES_STALE).length === 0
+            ? ' All six currencies come out of that one file, so none of them is older than the others.'
+            : ` We could not read ${Object.keys(RATES_STALE).join(', ')} from it; those are still at`
+              + ' their previous value and are not from the date above.'}
+        </p>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          The ECB quotes every currency against the euro, so the yen rates above are cross-rates:
+          yen-per-euro divided by currency-per-euro, rounded to the sen. We do not fetch live rates:
+          a live feed is one more thing that can be down, and it would move your total between two
+          page loads for no gain. Your card issuer will use its own rate and add its own margin,
+          which we do not model. These rates also decide which side of a country&rsquo;s duty-free
+          threshold your goods fall on, so when they go stale the tax line can be wrong, not just the
+          currency next to the total.
         </p>
       </section>
 

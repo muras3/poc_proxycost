@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Amount, tierClass } from '@/lib/ui/tiers';
 import { foreign, yen, yenRange, yenRounded } from '@/lib/ui/format';
+import { rateLabel } from '@/lib/pricing/rates';
 import type { CompareResult, Row } from '@/lib/pricing/types';
 import { DiffBar } from './DiffBar';
 import { RowBreakdown } from './RowBreakdown';
@@ -180,8 +181,11 @@ export function Summary({ result }: { result: CompareResult }) {
         approx. total{' '}
         <Amount amount={first.total} tier={first.approximate ? 'estimate' : 'fixed'} round />
         {' · '}
+        {/* 「fixed <日付>」とだけ出していた頃は、実装日を出典日として名乗る嘘だった。
+            出典名と参照日を出し、詳細は Sources の #fx に送る。 */}
         {foreign(first.total, result.currency.code, result.currency.rate)} at ¥
-        {result.currency.rate}/{result.currency.code} (fixed {result.currency.asOf})
+        {rateLabel(result.currency.rate)}/{result.currency.code} (ECB reference rate for{' '}
+        {result.currency.asOf})
       </span>
     </p>
   );
