@@ -760,6 +760,75 @@ describe('edges', () => {
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(1200);
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // `~`（approximate）が情報を持つこと。EMS 行の tier を丸ごと 'estimate' に固定して
+  // いたころは全行・全国・全重量で常に true で、画面の `~` は何も言っていなかった
+  // （docs/audit/logic.md C4 / COMPLETENESS T16）。
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('the ~ on a total means something', () => {
+    /** 価格・重量・国内送料がすべて確定した入力。**これが作れることが T16 の完了条件。** */
+    const certain = (over: Partial<Item> = {}): Item => item({
+      id: 'a', priceYen: 5000, priceTier: 'fixed',
+      weightG: 600, weightTier: 'fixed', weightOrigin: 'user',
+      domesticShippingYen: 700, ...over,
+    });
+
+    test('a total built only from published numbers is not approximate', () => {
+      // Neokyo は自社ページで「国際送料に上乗せしない」と書いている唯一の社なので、
+      // EMS 行が公表料金として立つ。
+      const row = byId(compare({ items: [certain()], country: 'GB' }).rows, 'neokyo');
+      expect(row.lines.filter((l) => l.tier === 'estimate')).toEqual([]);
+      expect(line(row, 'ems').tier).toBe('fixed');
+      expect(line(row, 'ems').note).toContain('published rate');
+      expect(row.approximate).toBe(false);
+    });
+
+    test('an estimated weight brings the ~ back, even though the EMS rate stays published', () => {
+      // 重量は費目ではないので行の tier には出ない。ここを数えていないと、推定の重量で
+      // 引いた総額が確定値の顔をする。
+      const row = byId(compare({
+        items: [certain({ weightTier: 'estimate' })], country: 'GB',
+      }).rows, 'neokyo');
+      expect(line(row, 'ems').tier).toBe('fixed');
+      expect(row.approximate).toBe(true);
+    });
+
+    test('an assumed domestic postage brings it back too', () => {
+      const row = byId(compare({
+        items: [certain({ domesticShippingYen: null })], country: 'GB',
+      }).rows, 'neokyo');
+      expect(line(row, 'domestic-shipping').tier).toBe('estimate');
+      expect(row.approximate).toBe(true);
+    });
+
+    test('a company that does not publish its markup keeps the ~ on the same input', () => {
+      // FROM JAPAN は会員ランクで国際送料が %OFF になると書いているが率が読めない。
+      // ZenMarket は実請求1件が公表額と一致し1件が一致しない。どちらも我々の仮定。
+      for (const id of ['fromjapan', 'zenmarket']) {
+        const row = byId(compare({ items: [certain()], country: 'GB' }).rows, id);
+        expect(line(row, 'ems').tier, id).toBe('estimate');
+        expect(row.approximate, id).toBe(true);
+      }
+      // Buyee は社の記述が無く、実請求（二次情報）が一致しただけ。点線で描く。
+      const buyee = byId(compare({ items: [certain()], country: 'GB' }).rows, 'buyee');
+      expect(line(buyee, 'ems').tier).toBe('unverified');
+      expect(buyee.approximate).toBe(false);
+    });
+
+    test('the EMS note always says the weight went through our packing allowance', () => {
+      for (const row of compare({ items: [certain()], country: 'US' }).rows) {
+        expect(line(row, 'ems').note, row.id).toContain('after our packing allowance');
+      }
+    });
+
+    test('over the top EMS step there is no rate at all, so the line is neither published nor an estimate', () => {
+      const row = byId(compare({ items: [certain({ weightG: 30000 })], country: 'US' }).rows, 'neokyo');
+      expect(line(row, 'ems').amount).toBeNull();
+      expect(line(row, 'ems').tier).toBe('none');
+      expect(row.comparable).toBe(false);
+    });
+  });
+
   test('an estimated price marks the row approximate', () => {
     const exact = compare({ items: [item({ id: 'a', priceTier: 'fixed', freeShipping: true })], country: 'SG' }).rows;
     const guess = compare({ items: [item({ id: 'a', priceTier: 'estimate', freeShipping: true })], country: 'SG' }).rows;

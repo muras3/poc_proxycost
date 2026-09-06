@@ -329,10 +329,23 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const pack = packingLine(svc, parcelGross);
   if (pack) lines.push(pack);
 
+  // **EMS 行の tier は「料金の出どころ」だけを表す。**
+  // 料金表は日本郵便の公表値（一次情報）で、そこに入れる重量は我々の推定である。
+  // 2つを1つの tier に潰していたので `approximate` が常に true になり、画面の `~` が
+  // 何も言わなくなっていた（docs/audit/logic.md C4）。重量の確度は Items 行の重量 tier
+  // と `Row.approximate` が持つ。**段に入れた重量が梱包後の仮定（×1.2 + 300 g）である
+  // ことは、この行の note に必ず書く**（tier からは読めないので、文字で書く）。
+  const emsTier: Tier = overMax ? 'none' : svc.emsMarkupTier;
+  const markupNote = overMax ? ''
+    : svc.emsMarkup !== 0 ? `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`
+    : svc.emsMarkupTier === 'fixed' ? ', published rate, no markup'
+    : svc.emsMarkupTier === 'unverified' ? ', published rate — the company does not say'
+    : ', we assume the published rate';
   lines.push(L('ems', `EMS to ${COUNTRIES[ctx.cc].name}`, emsYen,
     `zone ${zone}, ${stepLabel}`
-    + (overMax ? '' : svc.emsMarkup === 0 ? ', published rate' : `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`),
-    overMax ? 'none' : 'estimate', EMS_SOURCE_URL));
+    + (overMax ? '' : ' (weight after our packing allowance)')
+    + markupNote,
+    emsTier, EMS_SOURCE_URL));
 
   // 入金手数料は送金合計額に対する率なので gross-up。
   // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
@@ -364,7 +377,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 
   const total = sum(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
-  const approximate = priceEstimated || lines.some((l) => l.tier === 'estimate');
+  // **重量は費目ではないので、行の tier には現れない。** EMS 行が「公表料金」になった今、
+  // 重量が推定であることをここで別に数えないと、推定の重量で引いた総額が確定値の顔をする。
+  // 重量表のライン・仮置き・利用者の入力はすべて tier 'estimate'（weights.ts）なので、
+  // ここが false になるのは呼び出し側が「この重量は確かだ」と言った入力だけ。
+  const weightEstimated = items.some((i) => i.weightTier !== 'fixed');
+  const approximate = priceEstimated || weightEstimated || lines.some((l) => l.tier === 'estimate');
 
   const label = variant === 'consolidated' ? `${svc.name}, consolidated`
     : variant === 'default' ? `${svc.name}, default`

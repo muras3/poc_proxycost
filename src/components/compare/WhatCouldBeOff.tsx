@@ -36,8 +36,8 @@ export function WhatCouldBeOff({ result }: { result: CompareResult }) {
           </li>
         )}
         <li>
-          The order below is what we stand behind. The totals are roughly half inference —
-          weight and shipping dominate them.
+          The order below is what we stand behind. The EMS rate is the published one, but the
+          weight that picks it is ours — and shipping is most of a total.
         </li>
       </ul>
     </section>
