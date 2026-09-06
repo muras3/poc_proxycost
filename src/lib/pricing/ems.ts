@@ -1,6 +1,6 @@
 import type { CountryCode } from './types';
 
-// EMS 日本発（日本郵便 公表料金、全27段）
+// EMS 日本発（日本郵便 公表料金、全42段・30kg まで）
 // https://www.post.japanpost.jp/send/oversea/charge/list-ems/all.html
 // 確認日 2026-09-06。列 = 第1〜第5地帯。第4=米国、第3=ヨーロッパ・オセアニア・カナダ、第2=アジア。
 export const EMS_SOURCE_URL =
@@ -82,5 +82,6 @@ export function formatStep(grams: number): string {
 
 /** 重量が不明なときに提示する段。EMS 表の段からしか取らない
  *  （任意の刻みだと隣の行が同じ総額になり、表が水増しに見える。docs/UI-DESIGN.md §4）。
- *  15kg まで出す意味がないので 5kg で切る。 */
+ *  代行サイトで買う品物は 10kg までにほぼ収まるので、そこで切る。
+ *  超えるときは利用者が実重量を入れる。 */
 export const UNKNOWN_WEIGHT_STEPS_G = [500, 1000, 2000, 3000, 5000, 10000] as const;
