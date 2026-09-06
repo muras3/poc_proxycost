@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "proxycost",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-06",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  "kv_namespaces": [
+    // 検索結果・商品ページのキャッシュ。id は本人が wrangler kv namespace create で作って差し替える。
+    { "binding": "CACHE", "id": "PLACEHOLDER_REPLACE_ME" }
+  ]
+}

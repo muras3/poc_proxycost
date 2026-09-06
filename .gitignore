@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.open-next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+.env*.local
+.wrangler/
+.DS_Store
+.playwright/
+test-results/
+playwright-report/

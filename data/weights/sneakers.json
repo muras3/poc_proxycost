@@ -1,0 +1,388 @@
+{
+  "category": "sneakers",
+  "labelJa": "スニーカー",
+  "labelEn": "Sneakers",
+  "checkedOn": "2026-09-06",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "store.japan-zone.com",
+      "url": "https://store.japan-zone.com/products.json?limit=250&page=1",
+      "products": 553,
+      "variantsWithGrams": 3462,
+      "verdict": "usable",
+      "reason": "distinct=119 (3.4%), top value 9%, multiples of 100: 8%. Traditional and work footwear (jika-tabi, tabi sneakers, setta) shipped worldwide. Values move per model (Marugo Air Jog V 6 = 830 g / V 12 = 1,010 g / III 6 = 730 g; Matsuri Jog 6 = 560 g / 12 = 760 g) and some move per size as well (Soukaido VO-80F 24 cm = 1,360 g up to 29 cm = 1,760 g, about +50 g per 0.5 cm). Packed weights, but they track the product, so adopted.",
+      "reasonJa": "distinct=119 (3.4%), 最頻値 9%, 100の倍数 8%。日本の伝統・作業靴（地下足袋・足袋スニーカー・雪駄）専門で海外発送。値が型番ごとに動く（Marugo Air Jog V 6=830g / V 12=1,010g / III 6=730g、Matsuri Jog 6=560g / 12=760g）。さらに一部はサイズごとにも動く（Soukaido VO-80F 24cm=1,360g → 29cm=1,760g、0.5cm ごとに +50g）。梱包込みの値だが商品差を反映しているので採用"
+    },
+    {
+      "domain": "japan-clothing.com",
+      "url": "https://japan-clothing.com/products.json?limit=250&page=1",
+      "products": 1018,
+      "variantsWithGrams": 1979,
+      "verdict": "usable",
+      "reason": "distinct=58 (2.9%), top value 10%, multiples of 100: 44%. Nine casual sneaker models at 600 / 650 / 700 / 750 / 800 g, one value per model (n=197 variants). Values never move across sizes 36-43, so we read them as per-model weights without a shoebox, and adopted them.",
+      "reasonJa": "distinct=58 (2.9%), 最頻値 10%, 100の倍数 44%。カジュアルスニーカー 9型があり 600/650/700/750/800g と型ごとに値が違う（n=197 variants）。ただしサイズ variant では一切動かない（36〜43 まで全部同じ）ので、靴箱なし・型ごとの実重量に近い値とみて採用"
+    },
+    {
+      "domain": "tabiji.co.jp",
+      "url": "https://tabiji.co.jp/products.json?limit=250&page=1",
+      "products": 94,
+      "variantsWithGrams": 912,
+      "verdict": "suspect",
+      "reason": "distinct ratio 1.2%, multiples of 100: 63%, of 500: 28%. product_type 'tabi sneakers' n=570, but the values are only two — 400 g (46%) and 500 g (45%) — and never move by size (all 30 products flat). Strong smell of a shipping band. It is 2x away from japan-zone's comparable 830 g, so it is recorded for reference only and not used in any line.",
+      "reasonJa": "distinct比 1.2%, 100の倍数 63%, 500の倍数 28%。product_type『足袋スニーカー』n=570 だが値は 400g 46% / 500g 45% の二段しかなく、サイズでも動かない（30商品すべて flat）。帯別送料の匂いが強い。japan-zone の同種（地下足袋スニーカー 830g）と2倍ずれるため line の数値には使わず、参考としてのみ記録"
+    },
+    {
+      "domain": "nubiantokyo.com",
+      "url": "https://nubiantokyo.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 13986,
+      "verdict": "suspect",
+      "reason": "Suspect for the shop as a whole (distinct ratio 0.7%, multiples of 100: 99%), but within product_type 'Footwear' n=2,360 the value 4,000 g covers 2,302 rows — 97.5%, flat across sizes, 390 of 393 products identical. For shoes it is pseudo, so not adopted. Recorded because it documents a major Japanese select shop billing all footwear in a flat 4 kg band.",
+      "reasonJa": "店全体では suspect（distinct比 0.7%, 100の倍数 99%）だが、product_type『Footwear』n=2,360 に限ると 4,000g が 2,302件＝97.5% の事実上の定数（サイズ変化なし、393商品中 390商品が flat）。靴だけ見ると pseudo なので不採用。日本の大手セレクトショップが靴を一律 4kg 帯で課金しているという事実の記録"
+    },
+    {
+      "domain": "kickslab.com",
+      "url": "https://kickslab.com/products.json?limit=250&page=1",
+      "products": 1519,
+      "variantsWithGrams": 20686,
+      "verdict": "pseudo",
+      "reason": "distinct=2, top value 99% of all rows. All 18,915 SNEAKER variants are 3,000 g, as are BOOTS, SANDALS and CAPS & HATS, and nothing moves by size. A flat shipping input, so not adopted.",
+      "reasonJa": "distinct=2, 最頻値が全体の 99%。SNEAKER 18,915 variants が全部 3,000g。BOOTS も SANDALS も CAPS & HATS も 3,000g。サイズでも一切動かない。一律送料の入力値なので不採用"
+    },
+    {
+      "domain": "wormtokyo.com",
+      "url": "https://wormtokyo.com/products.json?limit=250&page=1",
+      "products": 4588,
+      "variantsWithGrams": 4475,
+      "verdict": "pseudo",
+      "reason": "distinct=2, top value 100% of all rows. 4,474 of 4,475 variants are 1,000 g. A second-hand sneaker shop that does ship abroad, but grams is a pure constant, so not adopted.",
+      "reasonJa": "distinct=2, 最頻値が全体の 100%。4,475 variants 中 4,474件が 1,000g。中古スニーカー専門で海外発送もするが grams は完全な定数なので不採用"
+    },
+    {
+      "domain": "kinetics-tokyo.com",
+      "url": "https://kinetics-tokyo.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 31199,
+      "verdict": "pseudo",
+      "reason": "distinct=1, top value 100% of all rows. All 31,199 variants are 100 g, including 14,344 SHOES (MEN). A 100 g shoe is impossible, which is proof the field is not used for shipping. Not adopted.",
+      "reasonJa": "distinct=1, 最頻値が全体の 100%。31,199 variants すべて 100g。SHOES（MEN）14,344件も 100g。靴が 100g はありえず、送料計算を使っていない証拠なので不採用"
+    },
+    {
+      "domain": "sousou.co.jp",
+      "url": "https://sousou.co.jp/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 15245,
+      "verdict": "pseudo",
+      "reason": "distinct=2, top value 100% of all rows. 15,238 rows are 600 g — jika-tabi (n=275), floor cushions and clothing alike. Not adopted.",
+      "reasonJa": "distinct=2, 最頻値が全体の 100%。15,238件が 600g。地下足袋（n=275）も座布団も服も全部 600g なので不採用"
+    },
+    {
+      "domain": "tabifootwear.com",
+      "url": "https://tabifootwear.com/products.json?limit=250&page=1",
+      "products": 70,
+      "variantsWithGrams": 434,
+      "verdict": "pseudo",
+      "reason": "distinct=3, top value 94% of all rows. Hightops, Shoes, Sandals and Mules are all 400 g; only socks differ at 100/200 g. Not adopted.",
+      "reasonJa": "distinct=3, 最頻値が全体の 94%。Hightops も Shoes も Sandals も Mules も全部 400g。靴下だけ 100/200g。不採用"
+    },
+    {
+      "domain": "taiko-shop.com",
+      "url": "https://taiko-shop.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 6245,
+      "verdict": "pseudo",
+      "reason": "distinct=77, but the top value of 490 g covers 69% of all rows. A taiko drum shop that also sells tabi and ninja tabi; the values are packing-class constants. Not adopted.",
+      "reasonJa": "distinct=77 だが最頻値 490g が全体の 69%。和太鼓店で足袋・忍者足袋も扱うが、値は梱包区分の定数。不採用"
+    },
+    {
+      "domain": "komarijp.com",
+      "url": "https://komarijp.com/products.json?limit=250&page=1",
+      "products": 171,
+      "variantsWithGrams": 273,
+      "verdict": "usable",
+      "reason": "Usable for the shop as a whole (knives run 120-298 g and move like real measurements), but product_type 'Tabi shoes' n=104 is a flat 500 g, so for footwear it is a constant. Not used for any line; kept as support for tabiji's 400/500 g band.",
+      "reasonJa": "店全体は usable（包丁が 120〜298g で実測らしく動く）が、product_type『Tabi shoes』n=104 は全件 500g で靴だけ見ると定数。line の数値には使わない。tabiji の 400/500g 帯を裏付ける参考値"
+    },
+    {
+      "domain": "japanesetaste.com",
+      "url": "https://japanesetaste.com/products.json?limit=250&page=1",
+      "products": 5084,
+      "variantsWithGrams": 5156,
+      "verdict": "usable",
+      "reason": "distinct=1,010 (19.6%), so the grams are real, but there is no shoe or footwear product_type at all. Unusable for this category.",
+      "reasonJa": "distinct=1,010 (19.6%) で grams は本物だが、product_type に靴・履物が1つもない。このカテゴリには使えない"
+    },
+    {
+      "domain": "kokorojapanstore.com",
+      "url": "https://kokorojapanstore.com/products.json?limit=250&page=1",
+      "products": 2000,
+      "variantsWithGrams": 2138,
+      "verdict": "usable",
+      "reason": "distinct=343 (16.0%), so the grams are real, but there is no footwear product_type (Foot Patch is a foot-care sheet). Unusable for this category.",
+      "reasonJa": "distinct=343 (16.0%) で grams は本物だが、履物の product_type がない（Foot Patch は足裏シート）。このカテゴリには使えない"
+    },
+    {
+      "domain": "mita-sneakers.co.jp",
+      "url": "https://mita-sneakers.co.jp/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row (n=0, below our threshold of 50). Flat domestic shipping, so no weights are entered.",
+      "reasonJa": "Shopify だが grams が全件 0（n=0 < 50）。国内一律送料で重量を入れていない"
+    },
+    {
+      "domain": "uniontokyo.jp",
+      "url": "https://uniontokyo.jp/products.json?limit=250&page=1",
+      "products": 500,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row (n=0, below our threshold of 50).",
+      "reasonJa": "Shopify だが grams が全件 0（n=0 < 50）"
+    },
+    {
+      "domain": "undefeated.jp",
+      "url": "https://undefeated.jp/products.json?limit=250&page=1",
+      "products": 499,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on every row (n=0, below our threshold of 50).",
+      "reasonJa": "Shopify だが grams が全件 0（n=0 < 50）"
+    },
+    {
+      "domain": "snobasia.com",
+      "url": "https://snobasia.com/products.json?limit=250&page=1",
+      "products": 250,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Shopify and ships abroad, but grams is 0 on every row (n=0, below our threshold of 50).",
+      "reasonJa": "Shopify・海外発送ありだが grams が全件 0（n=0 < 50）"
+    },
+    {
+      "domain": "spingle.jp",
+      "url": "https://spingle.jp/products.json?limit=250&page=1",
+      "products": 841,
+      "variantsWithGrams": 31,
+      "verdict": "insufficient",
+      "reason": "A domestic sneaker maker in Hiroshima. Shopify, but only 31 variants carry grams (n=31, below our threshold of 50).",
+      "reasonJa": "広島の国産スニーカーメーカー。Shopify だが grams が入っているのは 31 variants のみ（n=31 < 50）"
+    },
+    {
+      "domain": "blueover.jp",
+      "url": "https://blueover.jp/products.json?limit=250&page=1",
+      "products": 86,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "A domestic sneaker brand. Shopify, but grams is 0 on every row.",
+      "reasonJa": "国産スニーカーブランド。Shopify だが grams が全件 0"
+    },
+    {
+      "domain": "corlection.com",
+      "url": "https://corlection.com/products.json?limit=250&page=1",
+      "products": 1552,
+      "variantsWithGrams": 2,
+      "verdict": "insufficient",
+      "reason": "Shopify, but grams is 0 on almost every row (n=2, below our threshold of 50).",
+      "reasonJa": "Shopify だが grams がほぼ 0（n=2 < 50）"
+    },
+    {
+      "domain": "shop.moonstar-usa.com",
+      "url": "https://shop.moonstar-usa.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Moonstar's North American arm. All 147 variants on page one have grams of 0, and it ships within the US rather than from Japan.",
+      "reasonJa": "ムーンスターの北米法人。1ページ目 147 variants がすべて grams 0。かつ米国内発送のみで日本発ではない"
+    },
+    {
+      "domain": "www.atmos-tokyo.com",
+      "url": "https://www.atmos-tokyo.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — the shop blocks automated requests, so products.json could not be read.",
+      "reasonJa": "403（bot 遮断）。products.json を取得できず"
+    },
+    {
+      "domain": "abc-mart.net",
+      "url": "https://abc-mart.net/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — not a Shopify store.",
+      "reasonJa": "403（Shopify ではない）"
+    },
+    {
+      "domain": "fascinate-online.com",
+      "url": "https://fascinate-online.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns 404 — not a Shopify store.",
+      "reasonJa": "products.json が 404（Shopify ではない）"
+    },
+    {
+      "domain": "billys-tokyo.net",
+      "url": "https://billys-tokyo.net/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Returns a 404 HTML page — not a Shopify store.",
+      "reasonJa": "404 の HTML（Shopify ではない）"
+    },
+    {
+      "domain": "www.lowtex.jp",
+      "url": "https://www.lowtex.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 404 — not a Shopify store.",
+      "reasonJa": "404（Shopify ではない。自社 EC は 2022年に閉鎖しモール出店のみ）"
+    },
+    {
+      "domain": "1ldkshop.com",
+      "url": "https://1ldkshop.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns 404 — not a Shopify store.",
+      "reasonJa": "products.json が 404（Shopify ではない）"
+    },
+    {
+      "domain": "en.spingle.jp",
+      "url": "https://en.spingle.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "The same catalogue as spingle.jp, with grams almost all 0. Not counted separately to avoid double-counting.",
+      "reasonJa": "spingle.jp と同一カタログ。grams はほぼ 0 で重複のため個別集計せず"
+    },
+    {
+      "domain": "japantrendshop.com",
+      "url": "https://japantrendshop.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — not a Shopify store.",
+      "reasonJa": "403（Shopify ではない）"
+    },
+    {
+      "domain": "zenplus.jp",
+      "url": "https://zenplus.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "HTTP 403 — not a Shopify store.",
+      "reasonJa": "403（Shopify ではない。買い付け代行）"
+    }
+  ],
+  "lines": [
+    {
+      "id": "safety-jikatabi",
+      "labelEn": "Safety jika-tabi boots (steel toe / spike sole)",
+      "match": [
+        "安全地下足袋",
+        "スパイク足袋",
+        "スパイク地下足袋",
+        "鋼製先芯",
+        "先芯入り地下足袋",
+        "安全靴 足袋",
+        "spike tabi",
+        "steel-toe tabi"
+      ],
+      "medianG": 1760,
+      "p25": 1660,
+      "p75": 1960,
+      "n": 190,
+      "spread": 1.18,
+      "tier": "estimate"
+    },
+    {
+      "id": "tabi-sneaker-kids",
+      "labelEn": "Kids tabi sneaker / kids jika-tabi",
+      "match": [
+        "キッズ地下足袋",
+        "子供用地下足袋",
+        "こども地下足袋",
+        "キッズ祭り足袋",
+        "kids jikatabi",
+        "kids tabi"
+      ],
+      "medianG": 360,
+      "p25": 360,
+      "p75": 360,
+      "n": 195,
+      "spread": 1.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "tabi-sneaker",
+      "labelEn": "Tabi sneaker / jika-tabi sneaker (adult)",
+      "match": [
+        "足袋スニーカー",
+        "地下足袋",
+        "エアジョグ",
+        "エアージョグ",
+        "スポーツジョグ",
+        "丸五",
+        "マルゴ",
+        "ラフィート",
+        "jikatabi",
+        "jika-tabi",
+        "tabi sneaker",
+        "air jog",
+        "sports jog"
+      ],
+      "medianG": 830,
+      "p25": 760,
+      "p75": 910,
+      "n": 361,
+      "spread": 1.2,
+      "tier": "estimate"
+    },
+    {
+      "id": "work-tabi",
+      "labelEn": "Work / festival jika-tabi (soft sole)",
+      "match": [
+        "祭り足袋",
+        "祭足袋",
+        "作業足袋",
+        "力王",
+        "荘快堂",
+        "たびぐつ",
+        "rikio",
+        "soukaido"
+      ],
+      "medianG": 560,
+      "p25": 460,
+      "p75": 660,
+      "n": 743,
+      "spread": 1.43,
+      "tier": "estimate"
+    },
+    {
+      "id": "sneaker-casual",
+      "labelEn": "Sneaker, casual / low-cut (shoes only, no box)",
+      "match": [
+        "スニーカー",
+        "ローカット",
+        "ハイカット",
+        "キャンバススニーカー",
+        "sneaker",
+        "sneakers",
+        "trainers"
+      ],
+      "medianG": 750,
+      "p25": 700,
+      "p75": 750,
+      "n": 197,
+      "spread": 1.07,
+      "tier": "unverified"
+    }
+  ],
+  "fallbackG": 750,
+  "fallbackTier": "unverified",
+  "notes": "Two shops adopted (store.japan-zone.com, japan-clothing.com) plus one for reference (tabiji.co.jp). The lines are evaluated top to bottom — jika-tabi must be tested before the generic sneaker line, or it is swallowed by it.\n\nThe biggest limitation: we could not obtain real weights for ordinary athletic shoes — Nike, Adidas, New Balance and the like. More than ten specialists were probed, and every one that fills in grams bills footwear in a flat band: kickslab 3,000 g on all rows, nubiantokyo 4,000 g on 97.5% of Footwear, wormtokyo 1,000 g on all rows, kinetics-tokyo 100 g on all rows, sousou 600 g on all rows. All score pseudo, so none of their numbers were used. mita-sneakers, undefeated.jp, uniontokyo, spingle and blueover are Shopify but leave grams at 0, because flat domestic postage means the field is never needed. atmos and ABC-MART return 403, so products.json cannot be read at all.\n\nDoes grams move across size variants? That was the question for this category.\n(1) Overwhelmingly, no. japan-clothing's sneakers are identical from size 36 to 43 across all nine models; tabiji's tabi sneakers are flat across all 30 products; kickslab, nubian, wormtokyo and kinetics do not even move between products.\n(2) The exception is part of store.japan-zone.com's work footwear. Soukaido VO-80F runs 1,360 g at 24 cm to 1,760 g at 29 cm — about +50 g per half size, 1.29x end to end — and Toraichi Magic Long Safety Boots run 1,980 g at 24.5 cm to 2,280 g at 27 cm. Only 4 of 105 footwear products move with size.\n(3) In practice one weight per product is a fair model, but whether that weight includes the shoebox differs from shop to shop.\n\nBoxed or unboxed:\n(4) japan-clothing's 600-800 g is the true weight of one canvas sneaker with no shoebox (a box adds roughly 250-500 g). kickslab's 3,000 g and nubiantokyo's 4,000 g are bands that assume box, outer carton and headroom. The same word \"sneaker\" spans 750 g to 4,000 g — a factor of 5.3. Auction listings usually ship with the box, so fallbackG 750 will understate a boxed listing, which is why fallbackTier is unverified.\n(5) sneaker-casual's n=197 counts variants; there are really only nine models and five distinct weights behind it. Statistically thin.\n\nOther notes:\n(6) tabi-sneaker takes japan-zone's 830 g. tabiji.co.jp puts the same kind of shoe at 400/500 g, a 2x disagreement, but tabiji has only two bands and scores suspect, so japan-zone wins. komarijp.com's Tabi shoes are a flat 500 g, which supports tabiji's side, but both are constants and neither was used numerically.\n(7) japan-zone is a specialist in traditional and work footwear and does not stock ordinary athletic shoes. The safety-jikatabi, work-tabi and tabi-sneaker lines rest on this one shop with no independent corroboration.\n(8) None of these grams are measurements; they are inputs to a shipping calculator. Hence measured: false.",
+  "notesJa": "採用2店（store.japan-zone.com / japan-clothing.com）＋参考1店（tabiji.co.jp）。lines は上から順に評価する前提で並べてある（『地下足袋』を先に置かないと最後の汎用『スニーカー』に取られる）。\n\n最大の限界：ナイキ・アディダス・ニューバランス等の一般的な運動靴の重量は、実データでは取れなかった。\n専門店を10店以上叩いたが、grams を入れている店はすべて靴を一律の帯で課金していた（kickslab 全件 3,000g / nubiantokyo の Footwear 97.5% が 4,000g / wormtokyo 全件 1,000g / kinetics-tokyo 全件 100g / sousou 全件 600g）。いずれも quality.verdict=pseudo なので数値としては採用していない。mita-sneakers・undefeated.jp・uniontokyo・spingle・blueover は Shopify だが grams が全件 0（国内一律送料で重量欄を使っていない）。atmos・ABC-MART は 403 で products.json 自体が取れない。\n\nサイズ variant で grams が動くか（カテゴリ固有の確認事項）:\n(1) 動かない店が圧倒的多数。japan-clothing のスニーカーは 36〜43 まで全サイズ同一（9型すべて flat）、tabiji の足袋スニーカーも30商品すべて flat、kickslab・nubian・wormtokyo・kinetics は商品間ですら動かない。\n(2) 動く例は store.japan-zone.com の一部の作業靴だけ。Soukaido VO-80F は 24cm=1,360g → 29cm=1,760g（0.5cm ごとに +50g、両端で 1.29倍）、Toraichi Magic Long Safety Boots は 24.5cm=1,980g → 27cm=2,280g。履物 105商品中サイズで動くのは4商品のみ。\n(3) つまり実務上は「1商品1重量」で扱ってよいが、その値が箱込みか箱なしかは店ごとにバラバラ。\n\n箱込み／箱なしの判断:\n(4) japan-clothing のスニーカー 600〜800g は、キャンバス系スニーカー1足の実重量そのもので、靴箱ぶん（+250〜500g 程度）が入っていない。一方 kickslab の 3,000g・nubiantokyo の 4,000g は靴箱＋外装＋余裕を見込んだ帯。同じ『スニーカー』で 750g と 4,000g、5.3倍の開きがある。ヤフオク出品は箱付きで送られることが多いので、fallbackG=750 は箱付き出品に対して過小に出る。だから fallbackTier は unverified にしてある。\n(5) sneaker-casual の n=197 は variant 数で、実際の型数は9型・重量の異なり値は5つしかない。統計としては薄い。\n\nその他:\n(6) tabi-sneaker（地下足袋スニーカー）は japan-zone の 830g を採った。tabiji.co.jp は同種を 400/500g としており2倍ずれる。tabiji は帯が2段しかなく suspect なので japan-zone を優先した。komarijp.com の Tabi shoes も全件 500g で tabiji 側を裏付けるが、どちらも定数なので数値には使っていない。\n(7) japan-zone は伝統・作業履物の専門店で、一般的な運動靴は扱っていない。safety-jikatabi / work-tabi / tabi-sneaker の3ラインはこの店だけが根拠で、他店による裏付けがない。\n(8) grams は全店とも実測ではなく送料計算用の入力値。だから measured:false。"
+}
