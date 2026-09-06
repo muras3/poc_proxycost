@@ -1,0 +1,52 @@
+{
+  "category": "music",
+  "labelJa": "レコード・CD",
+  "labelEn": "Records and CDs",
+  "checkedOn": "2026-09-06",
+  "method": "published-range",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "snowrecords.com",
+      "url": "https://snowrecords.com/",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "suspect",
+      "reason": "Recorded as a range only; the sample count was not kept"
+    }
+  ],
+  "lines": [
+    {
+      "id": "cd",
+      "labelEn": "CD",
+      "match": [
+        "cd",
+        "compact disc"
+      ],
+      "medianG": 100,
+      "p25": 80,
+      "p75": 120,
+      "n": 0,
+      "spread": 1.5,
+      "tier": "estimate"
+    },
+    {
+      "id": "lp",
+      "labelEn": "LP / vinyl",
+      "match": [
+        "lp",
+        "vinyl",
+        "レコード"
+      ],
+      "medianG": 270,
+      "p25": 240,
+      "p75": 300,
+      "n": 0,
+      "spread": 1.25,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": 200,
+  "fallbackTier": "estimate",
+  "notes": "Ranges published by Snow Records (CD 80-120 g, LP 240-300 g). We did not keep the sample count, so n is 0 here. Needs re-fetching."
+}
