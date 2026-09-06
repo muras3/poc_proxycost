@@ -141,7 +141,7 @@ function ItemRow({
           className="h-14 w-14 shrink-0 rounded border border-neutral-200 object-cover dark:border-neutral-800"
         />
       ) : (
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-dashed border-neutral-300 text-[10px] text-neutral-400 dark:border-neutral-700">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded border border-dashed border-neutral-300 text-[10px] text-neutral-500 dark:text-neutral-400 dark:border-neutral-700">
           no image
         </span>
       )}
@@ -166,7 +166,7 @@ function ItemRow({
             type="button"
             onClick={() => onRemove(item.id)}
             aria-label={`Remove ${item.title}`}
-            className="shrink-0 px-1 text-sm text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
+            className="shrink-0 px-1 text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100"
           >
             ✕
           </button>

@@ -15,7 +15,7 @@ export function AdSlot() {
       <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
         Ad · unrelated to the ranking
       </p>
-      <div className="flex h-24 items-center justify-center rounded border border-dashed border-neutral-300 text-xs text-neutral-400 dark:border-neutral-700">
+      <div className="flex h-24 items-center justify-center rounded border border-dashed border-neutral-300 text-xs text-neutral-500 dark:text-neutral-400 dark:border-neutral-700">
         ad slot
       </div>
     </aside>
