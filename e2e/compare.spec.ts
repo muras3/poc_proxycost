@@ -2,7 +2,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
   breakdownTable,
   cart,
+  cartItem,
   costRow,
+  DECIDES,
   gotoCompare,
   headerCells,
   isNonDecreasing,
@@ -13,7 +15,7 @@ import {
   ranking,
   readRanking,
   rowCells,
-  stepTable,
+  weightBox,
   type RankRow,
 } from './helpers';
 import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
@@ -170,153 +172,76 @@ test('4. changing the destination changes the numbers', async ({ page }) => {
   expect(parseYen(amount)).toBeGreaterThan(0);
 });
 
-test('5. an item with no weight data falls to a total per EMS weight step', async ({ page }) => {
+/** 重量表に載らない名前で1点、手で足す。 */
+async function addByHand(page: Page, title: string, priceYen: number): Promise<void> {
+  const form = page.getByRole('button', { name: 'Or add an item by hand' });
+  if (await form.count()) await form.click();
+  await page.getByLabel('Item name').fill(title);
+  await page.getByLabel('Price ¥').fill(String(priceYen));
+  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+}
+
+/** カートを空にする。 */
+async function emptyCart(page: Page): Promise<void> {
+  await openCart(page);
+  const removes = cart(page).getByRole('button', { name: /^Remove / });
+  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
+}
+
+const PLUSH = 'plush toy, no weight data';
+
+test('5. an item with no weight data gets an assumed weight, says so, and is corrected in place', async ({ page }) => {
   await gotoCompare(page);
 
-  // 重量表に載らない語で手入力する。'plush toy' はどのラインにも当たらないので
-  // 重量は null のまま入り、計算は EMS の段ごとの総額に落ちるはず。
-  await page.getByRole('button', { name: 'Or add an item by hand' }).click();
-  await page.getByLabel('Item name').fill('plush toy, no weight data');
-  await page.getByLabel('Price ¥').fill('3000');
-  await page.getByRole('button', { name: 'Add by hand' }).click();
-
+  // 'plush toy' はどのラインにも当たらない。以前は重量 null で「段ごとの総額」に落ちていた。
+  // いまは仮置きの 1,000 g が入り、**仮置きだと名乗り**、その場で直せる。
+  await addByHand(page, PLUSH, 3000);
   const c = await openCart(page);
-  await expect(c.getByText(/weight unknown/i).first()).toBeVisible();
+  const li = cartItem(page, PLUSH);
+  await expect(li.getByText(/assumed/).first()).toBeVisible();
+  await expect(li.getByText(/no weight data for this title/)).toBeVisible();
+  await expect(weightBox(page, PLUSH)).toHaveValue('1000');
+  // 段の表はもう出ない。順位は仮置きで出る。
+  await expect(page.getByRole('region', { name: 'Totals by weight step' })).toHaveCount(0);
+  await expect(c.getByText(/weight unknown/i)).toHaveCount(0);
 
-  // 1つの数字を押し付けない。段ごとの総額が出る。
-  const section = stepTable(page);
-  await expect(section).toHaveCount(1);
+  const assumed = await readRanking(page);
+  expect(assumed.length).toBeGreaterThanOrEqual(5);
+  for (const r of assumed) expect(r.total).toBeGreaterThan(0);
 
-  const steps = await readStepTable(page);
-  expect(steps.length).toBeGreaterThan(1);
+  // **この品の重量が1位を決める**（既定の2点＋仮置き1点、米国。2026-09-06 実測:
+  // 500 g で Neokyo、10 kg で FROM JAPAN）。仮置きの数字を信じるなと、その場で言う。
+  await expect(li.getByText(DECIDES)).toBeVisible();
+  const flag = (await li.getByText(DECIDES).innerText()).replace(/\s+/g, ' ');
+  expect(flag).toMatch(/at 500 g/);
+  expect(flag).toMatch(/at 10 kg/);
+  // 名指しされた2社は違う社であること（同じ社なら「決める」は嘘）。
+  const named = flag.match(/: (.+?) at 500 g, (.+?) at 10 kg\./);
+  expect(named, flag).toBeTruthy();
+  expect(named![1]).not.toBe(named![2]);
 
-  // どの段にも数字が出る。**空でも ¥0 でもない。**段を出す以上、全部の段で出す。
-  for (const s of steps) {
-    expect(s.cells.length, `${s.label} has no cells`).toBeGreaterThan(0);
-    for (const cell of s.cells) {
-      expect(cell, `${s.label} has a cell without a number`).toMatch(/~¥[\d,]+/);
-    }
-    for (const t of s.totals) expect(t, `${s.label} shows a total of ${t}`).toBeGreaterThan(0);
+  // 軽くすれば総額は下がり、重くすれば上がる。
+  await weightBox(page, PLUSH).fill('200');
+  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeLessThan(assumed[0]!.total);
+  const light = await readRanking(page);
+  await weightBox(page, PLUSH).fill('5000');
+  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(assumed[0]!.total);
+  const heavy = await readRanking(page);
+  for (const r of heavy) {
+    const l = light.find((x) => x.name === r.name && x.variant === r.variant);
+    if (l) expect(r.total, `${r.name} did not get dearer with weight`).toBeGreaterThan(l.total);
   }
+  // そして1位が替わる。これが「重量を入れてもらうしかない」理由そのもの。
+  expect(light[0]!.name, 'the winner did not change between 200 g and 5 kg').not.toBe(heavy[0]!.name);
 
-  // 重くなれば高くなる。段をまたいで単調（同額は許す。段の刻みは料金表の刻み）。
-  const lows = steps.map((s) => Math.min(...s.totals));
-  const highs = steps.map((s) => Math.max(...s.totals));
-  expect(isNonDecreasing(lows), `the cheapest total is not monotone: ${lows.join(', ')}`).toBe(true);
-  expect(isNonDecreasing(highs), `the dearest total is not monotone: ${highs.join(', ')}`).toBe(true);
-  // 全段同額だと単調は自明に真になる。実際に上がっていること。
-  expect(lows[lows.length - 1]).toBeGreaterThan(lows[0]!);
-  // デスクトップは社ごとの列があるので、列単位でも単調であること。
-  const cols = steps[0]!.totals.length;
-  if (cols > 2) {
-    for (let i = 0; i < cols; i++) {
-      const col = steps.map((s) => s.totals[i]!);
-      expect(isNonDecreasing(col), `column ${i} is not monotone: ${col.join(', ')}`).toBe(true);
-    }
-  }
-
-  // **最安の社は段によって替わる。これが仕様。**
-  // 「どの段でも同じ社が最安」は 2026-09-06 の実測で否定された
-  // （docs/DESIGN-NOTES.md §1、docs/audit/measured-2026-09-06.md）。
-  // 軽い段と重い段で勝者が違うのは、重量に非線形に効く費目があるため。
-  const winners = steps.map((s) => s.cheapest);
-  expect(new Set(winners).size, `the cheapest never moves between steps: ${winners.join(', ')}`)
-    .toBeGreaterThan(1);
-  expect(winners[0], 'the lightest and the heaviest step have the same winner')
-    .not.toBe(winners[winners.length - 1]);
-
-  // 替わるという事実が**利用者に届いていること。**段ごとの勝者を名指しで出す。
-  const note = page.getByText(/The cheapest option changes with weight/).first();
-  await expect(note).toBeVisible();
-  const noteText = (await note.innerText()).replace(/\s+/g, ' ');
-  for (const s of steps) {
-    expect(noteText, `the note does not say who is cheapest at ${s.label}`)
-      .toContain(`${s.label}: ${s.cheapest}`);
-  }
-
-  // 段表の数字は全部推定なので、確定値と同じ見た目になっていないこと。
-  // デスクトップ用とモバイル用の2つの表が DOM に居るので、見えている方だけを見る。
-  const shown = section.getByText(/^~¥/).locator('visible=true').first();
-  await expect(shown).toBeVisible();
-  // 色は Tailwind v4 が lab() で出すので値で比較しない。確度は色以外の signal で見る。
-  await expect(shown).toHaveAttribute('title', 'Our estimate, not a published figure');
-
-  // 段表に出る金額は例外なく '~' 付き。1つでも裸の ¥ があれば確定値に見える。
-  // getByRole('cell') は隠れている側の表（sm:hidden / hidden sm:block）を拾わない。
-  const money = (await section.getByRole('cell').allInnerTexts())
-    .map((t) => t.replace(/\s+/g, ' ').trim())
-    .filter((t) => t.includes('¥'));
-  expect(money.length).toBeGreaterThan(0);
-  for (const t of money) {
-    expect(t, `a step total is not marked as an estimate: ${t}`).not.toMatch(/(?<!~)¥/);
-  }
+  // 打ち込んだ数字は利用者のもの。✎ と「entered by you」、そして仮置きに戻す道。
+  await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(1);
+  await expect(li.getByText('entered by you')).toBeVisible();
+  await li.getByRole('button', { name: /^reset to the assumed ~1 kg$/ }).click();
+  await expect(weightBox(page, PLUSH)).toHaveValue('1000');
+  await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(0);
+  await expect.poll(async () => (await readRanking(page))[0]!.total).toBe(assumed[0]!.total);
 });
-
-interface StepRow {
-  /** '500 g' / '1 kg'。EMS 料金表の段そのもの。 */
-  label: string;
-  /** その段で最安と示されている社。デスクトップは塗られた列の見出し、モバイルは Cheapest 欄。 */
-  cheapest: string;
-  /** 段の行から読める総額。デスクトップは社ごと、モバイルは幅の両端。 */
-  totals: number[];
-  /** 金額セルの生テキスト。空欄・'—' を見つけるのに使う。 */
-  cells: string[];
-}
-
-/** 段の表を読む。デスクトップ（社ごとの列）とモバイル（3列）の両方に対応する。 */
-async function readStepTable(page: Page): Promise<StepRow[]> {
-  const section = stepTable(page);
-  // 隠れている側の表は role で拾われないので、見えている表がそのまま取れる。
-  const table = section.getByRole('table').first();
-  await expect(table).toBeVisible();
-  const wide = (await headerCells(table))[0] === 'Weight / item';
-
-  if (wide) {
-    // 列 = 会社。見出しの1行目が社名（2行目に variant が付くことがある）。
-    const names = await table.locator('thead th').evaluateAll((ths) =>
-      ths.slice(1).map((th) => (th.firstChild?.textContent ?? '').trim()),
-    );
-    const raw = await table.locator('tbody tr').evaluateAll((trs) =>
-      trs.map((tr) => {
-        const tds = Array.from(tr.querySelectorAll('td'));
-        return {
-          label: (tds[0]?.textContent ?? '').replace(/\s+/g, ' ').trim(),
-          cells: tds.slice(1).map((td) => (td.textContent ?? '').replace(/\s+/g, ' ').trim()),
-          // 最安セルは背景色でしか区別できない。クラス名ではなく computed style で見る。
-          win: tds.slice(1).findIndex((td) => {
-            const bg = getComputedStyle(td).backgroundColor;
-            return bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent';
-          }),
-        };
-      }),
-    );
-    return raw.map((r) => {
-      expect(r.win, `no cheapest cell is marked on the ${r.label} step`).toBeGreaterThanOrEqual(0);
-      return { label: r.label, cheapest: names[r.win] ?? '', totals: r.cells.map(parseYen), cells: r.cells };
-    });
-  }
-
-  // モバイル: 段 / 最安（社名＋その額）/ 幅。社ごとの内訳は出ないので幅の両端を読む。
-  const raw = await table.locator('tbody tr').evaluateAll((trs) =>
-    trs.map((tr) => {
-      const tds = Array.from(tr.querySelectorAll('td'));
-      const spans = Array.from(tds[1]?.querySelectorAll('span') ?? []);
-      return {
-        label: (tds[0]?.textContent ?? '').replace(/\s+/g, ' ').trim(),
-        cheapest: (spans[0]?.textContent ?? '').trim(),
-        low: (spans[1]?.textContent ?? '').trim(),
-        range: (tds[2]?.textContent ?? '').replace(/\s+/g, ' ').trim(),
-      };
-    }),
-  );
-  return raw.map((r) => {
-    const [lo, hi] = r.range.replace(/[−—]/g, '–').split('–');
-    const totals = [parseYen(r.low), parseYen(hi ?? lo ?? '')];
-    // 幅の下限は、その段の最安と同じ数字であること。
-    expect(parseYen(lo ?? ''), `${r.label}: the range does not start at the cheapest`).toBe(totals[0]);
-    return { label: r.label, cheapest: r.cheapest, totals, cells: [r.low, r.range] };
-  });
-}
 
 test('6. one more of an item raises the total', async ({ page }) => {
   await gotoCompare(page);
@@ -344,13 +269,12 @@ test('6. one more of an item raises the total', async ({ page }) => {
  */
 const HANDMADE = ['mystery lot A', 'mystery lot B', 'mystery lot C', 'mystery lot D', 'mystery lot E'];
 
-/** 重量不明の項目に、画面から重量を教える。 */
+/** 仮置きの重量を、画面から実重量に直す。 */
 async function tellWeight(page: Page, title: string, gramsValue: number): Promise<void> {
-  const li = cart(page).getByRole('listitem').filter({ hasText: title });
-  await li.getByRole('button', { name: 'I know the weight' }).click();
-  await li.getByRole('textbox', { name: `Weight in grams of ${title}` }).fill(String(gramsValue));
-  await li.getByRole('button', { name: 'Save' }).click();
-  await expect(li.getByText(`${gramsValue} g`)).toBeVisible();
+  const box = weightBox(page, title);
+  await expect(box).toHaveValue('1000'); // 表に無い名前なので仮置きが入っている
+  await box.fill(String(gramsValue));
+  await expect(cartItem(page, title).getByText('entered by you')).toBeVisible();
 }
 
 test('7. seller-paid shipping takes the same domestic shipping off every row — the cheapest row does not move, a middle row does', async ({ page }) => {
@@ -358,15 +282,8 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   await openCart(page);
 
   // 例の2点を捨てて、実測と同じカートを手で組む。
-  const removes = cart(page).getByRole('button', { name: /^Remove / });
-  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
-
-  await page.getByRole('button', { name: 'Or add an item by hand' }).click();
-  for (const name of HANDMADE) {
-    await page.getByLabel('Item name').fill(name);
-    await page.getByLabel('Price ¥').fill('3000');
-    await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
-  }
+  await emptyCart(page);
+  for (const name of HANDMADE) await addByHand(page, name, 3000);
   await openCart(page);
   await expect(cart(page).getByRole('listitem')).toHaveCount(HANDMADE.length);
   for (const name of HANDMADE) await tellWeight(page, name, 200);
@@ -518,6 +435,99 @@ test('11b. a single listing opens on the proxy directly where we verified it', a
   await expect(li.getByText(/paste the listing URL there/i)).toBeVisible();
 });
 
+const FIGURE = 'Hatsune Miku 1/7 scale figure (example)';
+const NENDOROID = 'Nendoroid Kagamine Rin (example)';
+
+test('16. a weight from our table is shown with its source and spread, can be overwritten, and reset', async ({ page }) => {
+  await gotoCompare(page);
+  await openCart(page);
+  const li = cartItem(page, FIGURE);
+
+  // 表の中央値が入っている。出どころはラインへのリンク、幅は P25–P75。
+  await expect(weightBox(page, FIGURE)).toHaveValue('1500');
+  const source = li.getByRole('link', { name: /1\/7 scale/ });
+  await expect(source).toHaveAttribute('href', /\/weights#scale-1-7$/);
+  await expect(li.getByText(/middle half of listings: all 1\.5 kg/)).toBeVisible();
+  await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(0);
+
+  // 上書きすると総額が動き、数字は利用者のものになる。
+  const before = await readRanking(page);
+  await weightBox(page, FIGURE).fill('3000');
+  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(before[0]!.total);
+  await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(1);
+  await expect(li.getByText('entered by you')).toBeVisible();
+  // 表の出どころは消える。利用者の数字に「n=647」を添えたら出所の偽装になる。
+  await expect(li.getByRole('link', { name: /1\/7 scale/ })).toHaveCount(0);
+
+  // 戻せる。何に戻るかがボタンに書いてある。
+  await li.getByRole('button', { name: /^reset to ~1\.5 kg$/ }).click();
+  await expect(weightBox(page, FIGURE)).toHaveValue('1500');
+  await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(0);
+  await expect(li.getByRole('link', { name: /1\/7 scale/ })).toBeVisible();
+  await expect.poll(async () => (await readRanking(page))[0]!.total).toBe(before[0]!.total);
+});
+
+test('17. when the weight decides the winner, the note says so and takes you to the box that matters', async ({ page }) => {
+  await gotoCompare(page);
+
+  // 既定の2点は FROM JAPAN が ×1/3〜×3 で安定。何も言わず、誰も名指ししない。
+  await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
+  await expect(page.getByText(DECIDES)).toHaveCount(0);
+
+  // 表に無い品を1点足すと不安定になる。
+  await addByHand(page, PLUSH, 3000);
+  const note = page.getByText(/The cheapest option changes with the weight/);
+  await expect(note).toBeVisible();
+  // 表の中央値と仮置きを「あなたがくれた重量」とは呼ばない。
+  await expect(note).toContainText('our weight estimate');
+  await expect(note).not.toContainText('you gave us');
+
+  // **仮置きの品だけでなく、ねんどろいども** P25–P75（380–600 g）だけで1位を替える
+  // （2026-09-06 実測）。表の精度を上げても消えない、だから入力してもらう。
+  await openCart(page);
+  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toBeVisible();
+  await expect(cartItem(page, NENDOROID).getByText(DECIDES)).toBeVisible();
+  await expect(cartItem(page, NENDOROID).getByText(DECIDES)).toContainText('at 380 g');
+  await expect(cartItem(page, NENDOROID).getByText(DECIDES)).toContainText('at 600 g');
+  await expect(cartItem(page, FIGURE).getByText(DECIDES)).toHaveCount(0);
+
+  // モバイルではカートを畳んでおく。ボタンが開いてくれること自体を見る。
+  const toggle = cart(page).getByRole('button', { name: /^Cart \(/ });
+  if (await toggle.isVisible()) {
+    await toggle.click();
+    await expect(cart(page).getByRole('listitem').first()).toBeHidden();
+  }
+
+  // 導線: 押すと、1位を決めている品の重量入力にフォーカスが移る。
+  await page.getByRole('button', { name: 'Check the weights in your cart' }).click();
+  const focused = page.locator(':focus');
+  await expect(focused).toHaveAttribute('aria-label', /^Weight in grams of /);
+  await expect(focused).toBeVisible();
+  const title = ((await focused.getAttribute('aria-label')) ?? '').replace(/^Weight in grams of /, '');
+  await expect(cartItem(page, title).getByText(DECIDES)).toBeVisible();
+});
+
+test('18. a single item: the weight does not decide anything, so we do not nag', async ({ page }) => {
+  await gotoCompare(page);
+  await emptyCart(page);
+  await addByHand(page, PLUSH, 3000);
+  await openCart(page);
+
+  // 仮置きは入るし、仮置きだと名乗る。だが 500 g〜10 kg で1位は動かない（実測）。
+  await expect(weightBox(page, PLUSH)).toHaveValue('1000');
+  await expect(cartItem(page, PLUSH).getByText(/assumed/).first()).toBeVisible();
+  await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
+  await expect(page.getByText(DECIDES)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
+
+  // それでも直せる。直せば総額は動く（1位は動かない）。
+  const before = await readRanking(page);
+  await weightBox(page, PLUSH).fill('8000');
+  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(before[0]!.total);
+  expect((await readRanking(page))[0]!.name).toBe(before[0]!.name);
+});
+
 // ────────────────────────────────────────────────────────────────
 // desktop 専用
 // ────────────────────────────────────────────────────────────────
@@ -642,7 +652,12 @@ test.describe('mobile layout', () => {
 // 実際に画面を操作して、出典名・参照日・転記したレートが出ることを見る。
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('the currency line under the winner cites the rate it actually used', () => {
-  const summary = (page: Page) => page.locator('p').filter({ hasText: /is cheapest/ }).first();
+  // 見出しの1文。順位の直下の別の文（安定性の注記）と取り違えないよう2条件で絞る。
+  const summary = (page: Page) => page
+    .locator('p')
+    .filter({ hasText: /is cheapest/ })
+    .filter({ hasText: /approx\. total/ })
+    .first();
 
   test('the default destination shows the transcribed USD rate and the ECB reference date',
     async ({ page }) => {
@@ -660,10 +675,13 @@ test.describe('the currency line under the winner cites the rate it actually use
     await expect(summary(page)).toContainText(`¥${RATES['GBP']!.toFixed(2)}/GBP`);
     const text = (await summary(page).innerText()).replace(/\s+/g, ' ');
     expect(text).toContain(`ECB reference rate for ${RATES_AS_OF}`);
-    // £ の概算が、転記したレートで割った値と一致していること。
-    // ¥190/£ のままなら 11% 大きい数字が出る。**そこが利用者に見えていた嘘だった。**
+    // £ の概算が、転記したレートで割った値であること。
+    // **¥190/£ のままなら 11% 大きい数字が出る。そこが利用者に見えていた嘘だった。**
+    // 見出しの円は ¥100 に丸めて出るので、その丸め幅（±0.3£）だけ許して比べる。
     const total = parseYen(text.match(/approx\. total ~?(¥[\d,]+)/)![1]!);
     const shown = Number(text.match(/≈ £([\d,]+)/)![1]!.replace(/,/g, ''));
-    expect(shown).toBe(Math.round(total / RATES['GBP']!));
+    expect(Math.abs(shown - total / RATES['GBP']!)).toBeLessThanOrEqual(1);
+    expect(Math.abs(shown - total / 190), 'the pre-transcription ¥190/£ must not fit')
+      .toBeGreaterThan(1);
   });
 });
