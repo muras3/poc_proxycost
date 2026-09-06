@@ -436,6 +436,137 @@ describe('Buyee splits parcels by order', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 重量不明。1つの数字を押し付けず、EMS の段ごとに出す。
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 1点ずつ: どの品の重量を確かめれば1位が固まるか。
+// 14ラインで P25–P75 が1位の交差点を跨ぐ（docs/DESIGN-NOTES.md §1）ので、
+// 「重量が効く」だけでなく「**この品の**重量が効く」と名指しできなければならない。
+// 数値は 2026-09-06 に compare() を走らせて得たもの。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('one item at a time: whose weight decides the winner', () => {
+  const table = (id: string, weightG: number, range: [number, number], over: Partial<Item> = {}) =>
+    item({ id, weightG, weightOrigin: 'table', weightRangeG: range, ...over });
+  const assumed = (id: string, over: Partial<Item> = {}) =>
+    item({ id, weightG: 1000, weightOrigin: 'assumed', weightRangeG: null, ...over });
+  const user = (id: string, weightG: number) =>
+    item({ id, weightG, weightOrigin: 'user', weightRangeG: null });
+
+  // 既定の2点: 1/7 フィギュア ¥12,800（全件 1,500 g）+ ねんどろいど ¥4,200（380–600 g）。
+  const EXAMPLE = [
+    table('i0', 1500, [1500, 1500], { priceYen: 12800 }),
+    table('i1', 439, [380, 600], { priceYen: 4200, site: 'mercari' }),
+  ];
+
+  test('the example cart: FROM JAPAN wins, and the Nendoroid range does not move it', () => {
+    const r = compare({ items: EXAMPLE, country: 'US' });
+    expect(r.rankStable).toBe(true);
+    expect(r.rows[0]!.id).toBe('fromjapan');
+    // 幅の無いライン（P25=P75）は動かしても同じなので、見ない。
+    expect(r.weightSensitivity['i0']).toBeUndefined();
+    expect(r.weightSensitivity['i1']).toEqual({
+      lowG: 380, highG: 600,
+      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN',
+      onlyPricedAtLow: false, onlyPricedAtHigh: false,
+      decisive: false,
+    });
+  });
+
+  test('add one item off the table and **two** weights start deciding: the assumed one and the Nendoroid', () => {
+    const r = compare({ items: [...EXAMPLE, assumed('i2')], country: 'US' });
+    expect(r.rows[0]!.id).toBe('neokyo');
+    expect(r.rankStable).toBe(false);
+    // 仮置きは 500 g〜10 kg で見る。軽ければ Neokyo、重ければ FROM JAPAN。
+    expect(r.weightSensitivity['i2']).toEqual({
+      lowG: 500, highG: 10000,
+      winnerAtLow: 'Neokyo', winnerAtHigh: 'FROM JAPAN',
+      onlyPricedAtLow: false, onlyPricedAtHigh: false,
+      decisive: true,
+    });
+    // **ねんどろいどの真ん中50%（380–600 g）だけで1位が替わる。** 表の精度を上げても消えない。
+    expect(r.weightSensitivity['i1']).toMatchObject({
+      lowG: 380, highG: 600, winnerAtLow: 'Neokyo', winnerAtHigh: 'FROM JAPAN', decisive: true,
+    });
+  });
+
+  test('a single item off the table: the weight does not matter, and we say so instead of nagging', () => {
+    const r = compare({ items: [assumed('i2')], country: 'US' });
+    expect(r.rankStable).toBe(true);
+    expect(r.weightSensitivity['i2']).toMatchObject({
+      lowG: 500, highG: 10000, winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN', decisive: false,
+    });
+  });
+
+  test('two K-Pop photobooks (800–1,600 g each): either one alone flips the winner', () => {
+    const r = compare({
+      items: [table('a', 1000, [800, 1600]), table('b', 1000, [800, 1600])], country: 'US',
+    });
+    for (const id of ['a', 'b']) {
+      expect(r.weightSensitivity[id], id).toMatchObject({
+        winnerAtLow: 'Neokyo', winnerAtHigh: 'FROM JAPAN', decisive: true,
+      });
+    }
+  });
+
+  test('kendo armour: no single item flips it within its quartiles, but the cart as a whole is unstable', () => {
+    // 胴 1,500–7,500 g（spread 5.0）ですら、他の2点を固定すると1位は FROM JAPAN のまま。
+    // 一方 ×1/3 では Neokyo に替わる。2つの判定は別の問いに答えている。
+    const r = compare({
+      items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
+      country: 'US',
+    });
+    expect(r.rows[0]!.id).toBe('fromjapan');
+    expect(r.weightSensitivity['do']!.decisive).toBe(false);
+    expect(r.weightSensitivity['hakama']!.decisive).toBe(false);
+    expect(r.weightSensitivity['tare']).toBeUndefined();
+    expect(r.rankStable).toBe(false);
+    expect(r.rankStabilityNote).toContain('at a third of the weight you gave us, Neokyo is cheapest');
+  });
+
+  test('a weight the user typed is theirs: we do not second-guess it', () => {
+    const r = compare({ items: [user('a', 200), user('b', 200)], country: 'US' });
+    expect(r.weightSensitivity).toEqual({});
+  });
+
+  test('when the heavy end leaves the EMS table, the survivor is named as the only one priced, not as cheapest', () => {
+    // 和弓 7 kg × 3 + 仮置き1点。仮置きを 10 kg にすると同梱行が 30 kg を超え、
+    // 注文ごとに分ける Buyee default だけが値段を持つ。
+    const r = compare({
+      items: [
+        table('y0', 7000, [7000, 7000], { priceYen: 30000 }),
+        table('y1', 7000, [7000, 7000], { priceYen: 30000 }),
+        table('y2', 7000, [7000, 7000], { priceYen: 30000 }),
+        assumed('p'),
+      ],
+      country: 'US',
+    });
+    expect(r.weightSensitivity['p']).toEqual({
+      lowG: 500, highG: 10000,
+      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'Buyee, default',
+      onlyPricedAtLow: false, onlyPricedAtHigh: true,
+      decisive: true,
+    });
+  });
+
+  test('with an unknown weight in the cart there is no base weight to move, so the map is empty', () => {
+    const r = compare({ items: [item({ id: 'a', weightG: null, weightTier: 'none' })], country: 'US' });
+    expect(r.bands).not.toBeNull();
+    expect(r.weightSensitivity).toEqual({});
+  });
+
+  test('the sensitivity map never contradicts a direct run at that weight', () => {
+    for (const cc of COUNTRIES_ALL) {
+      const items = [...EXAMPLE, assumed('i2')];
+      const r = compare({ items, country: cc });
+      for (const [id, s] of Object.entries(r.weightSensitivity)) {
+        for (const [g, expected] of [[s.lowG, s.winnerAtLow], [s.highG, s.winnerAtHigh]] as const) {
+          const moved = items.map((i) => (i.id === id ? { ...i, weightG: g } : i));
+          const direct = winnerOf(compare({ items: moved, country: cc }).rows);
+          expect(direct?.label ?? null, `${cc} ${id} at ${g} g`).toBe(expected);
+        }
+      }
+    }
+  });
+});
+
 describe('unknown weight falls back to EMS steps', () => {
   const unknown = (n: number) => compare({
     items: Array.from({ length: n }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
