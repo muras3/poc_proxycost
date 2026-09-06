@@ -20,6 +20,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # **secrets はステップの if では参照できない**（式の検証で弾かれ、
+      # ワークフロー全体が invalid になる）。job の env なら参照できるので、
+      # ここで真偽値に落としてから if で見る。
+      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,14 +41,14 @@ jobs:
       # Secrets が未設定なだけで main が赤く見えると、ビルドが壊れているのと
       # 区別がつかない。未設定のときは落とさず、何が足りないかを出して飛ばす。
       - name: Deploy
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        if: env.HAS_CLOUDFLARE == 'true'
         run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy skipped — secrets not set
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' || secrets.CLOUDFLARE_ACCOUNT_ID == '' }}
+        if: env.HAS_CLOUDFLARE != 'true'
         run: |
           {
             echo "### デプロイを飛ばした"
