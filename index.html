@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>What it costs to get this from Japan</title>
+<title>Proxycost</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
 :root{
@@ -61,40 +61,42 @@ button.go{font:600 15px/1 "IBM Plex Sans",sans-serif;padding:12px 16px;border-ra
 .legend .e{color:var(--est)}
 .legend .u{border-bottom:1px dotted currentColor}
 
-/* ── rows ── */
-.rows{border-top:1px solid var(--rule-hard)}
-details.row{border-bottom:1px solid var(--rule)}
-details.row>summary{list-style:none;cursor:pointer;padding:12px 0;
-  display:grid;grid-template-columns:1fr auto;column-gap:14px;align-items:baseline}
-details.row>summary::-webkit-details-marker{display:none}
-.nm{font-weight:500;font-size:15.5px}
-.tot{font-size:17px;font-weight:500;white-space:nowrap;text-align:right}
-.tag{grid-column:1;font-size:12px;color:var(--dim);margin-top:2px}
-.vs{grid-column:2;text-align:right;font-size:12.5px;color:var(--dim);margin-top:2px}
-details.row[open]>summary{border-bottom:1px dashed var(--rule)}
-
-.bd{padding:10px 0 16px}
-.bd table{width:100%;border-collapse:collapse;font-size:13.5px}
-.bd td{padding:5px 0;vertical-align:top}
-.bd td+td{text-align:right;white-space:nowrap;padding-left:14px}
-.bd .note{display:block;font-size:11.5px;color:var(--dim);margin-top:1px}
-.bd tr.sum td{border-top:1px solid var(--rule);padding-top:8px;font-weight:600}
-.est{color:var(--est)}
-.unv{border-bottom:1px dotted currentColor}
-.none{color:var(--dim)}
-.fn{font-size:11.5px;color:var(--dim);margin-top:10px;line-height:1.6}
-.open{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
-.open a{font:500 13.5px/1 "IBM Plex Sans",sans-serif;text-decoration:none;
-  color:var(--action);border:1px solid var(--action);border-radius:4px;padding:9px 13px}
-.pay{font-size:12.5px;color:var(--dim)}
-
-.spread{font-size:13.5px;color:var(--dim);margin:12px 0 0}
-.call{border:1px solid var(--rule-hard);border-radius:4px;padding:13px 15px;margin:14px 0 0}
-.call b{display:block;margin-bottom:5px;font-weight:600;font-size:14.5px}
-.call p{margin:0;font-size:13.5px;color:var(--dim)}
-.call cite{display:block;font-style:normal;font-size:11.5px;color:var(--dim);margin-top:7px}
-.rank{font-size:12.5px;color:var(--dim);margin:14px 0 0;max-width:62ch}
-
+/* ── matrix: 会社が列、費目が行 ── */
+.matrixwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;
+  margin-inline:calc(50% - 50vw);padding-inline:max(18px, calc(50vw - 50%))}
+table.matrix{border-collapse:collapse;font-size:13px;min-width:100%}
+table.matrix th,table.matrix td{padding:8px 11px;text-align:right;
+  border-bottom:1px solid var(--rule);vertical-align:top;width:118px;min-width:118px}
+table.matrix td.num>span:first-child{white-space:nowrap;display:block}
+table.matrix th:first-child,table.matrix td:first-child{text-align:left;position:sticky;left:0;
+  background:var(--bg);z-index:1;width:132px;min-width:132px;max-width:132px;
+  box-shadow:1px 0 0 var(--rule);font-size:12.5px}
+table.matrix thead th{border-bottom:1px solid var(--rule-hard);vertical-align:bottom;
+  font-weight:600;font-size:13.5px;line-height:1.3;padding-top:0}
+table.matrix thead th .sub2{display:block;font-weight:400;font-size:10.5px;line-height:1.4;
+  color:var(--dim);margin-top:3px;white-space:normal}
+table.matrix th.best,table.matrix td.best{background:var(--surface)}
+table.matrix thead th.best{border-bottom:2px solid var(--ink);position:relative}
+table.matrix thead th.best .flag{display:block;font-size:10px;letter-spacing:.11em;
+  font-weight:600;color:var(--ink);margin-bottom:4px}
+table.matrix tr.total td.best{font-size:17px}
+table.matrix tr.link td.best a.open{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+table.matrix tr.total td,table.matrix tr.total th{font-weight:600;font-size:15px;
+  border-top:1px solid var(--rule-hard);border-bottom:none;padding-top:10px}
+table.matrix tr.vs td{color:var(--dim);font-size:12px;border-bottom:1px solid var(--rule-hard);
+  padding-top:0;padding-bottom:11px}
+table.matrix tr.link td{border-bottom:none;padding-top:12px}
+table.matrix .note{display:block;font-size:10.5px;line-height:1.4;color:var(--dim);
+  font-weight:400;margin-top:2px;white-space:normal}
+table.matrix a.open{display:inline-block;text-decoration:none;color:var(--action);
+  border:1px solid var(--action);border-radius:4px;padding:7px 10px;font-size:12.5px;font-weight:500}
+table.matrix .pay{display:block;font-size:10.5px;line-height:1.4;color:var(--dim);margin-top:6px;
+  white-space:normal}
+.waiting{border:1px dashed var(--rule-hard);border-radius:4px;padding:14px 16px;margin-top:16px}
+.waiting p{margin:0;font-size:12.5px;color:var(--dim);line-height:1.7}
+details.about{margin-top:34px;border-top:1px solid var(--rule);padding-top:12px}
+details.about>summary{cursor:pointer;list-style:none;font-size:13.5px;color:var(--action)}
+details.about>summary::-webkit-details-marker{display:none}
 /* ── cart ── */
 .cart{margin-top:10px;border-top:1px solid var(--rule)}
 .it{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:center;
@@ -129,32 +131,59 @@ footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--rule);
     </label>
   </div>
 
-  <!-- ══ landing ══ -->
-  <section id="landing">
-    <h1>What it costs to get this from Japan.</h1>
-    <p class="sub">Paste a Yahoo! Auctions link. We add the proxy&rsquo;s fees, domestic and
-      international shipping, and your country&rsquo;s tax for Buyee, ZenMarket, Neokyo and
-      FROM JAPAN, and tell you which is cheapest for this cart.</p>
+  <h1>What it costs to get this from Japan.</h1>
+  <p class="sub">Paste your Yahoo! Auctions links. We add each proxy&rsquo;s fees, domestic and
+    international shipping, and your country&rsquo;s tax, and put the four side by side.</p>
 
-    <div class="form">
-      <input type="url" id="url" placeholder="https://page.auctions.yahoo.co.jp/jp/auction/…"
-             aria-label="Yahoo! Auctions link">
-      <button class="go" id="add">Add it up</button>
-    </div>
-    <p class="hint">We read the price and category from the page. You don&rsquo;t type them.
-      Weight isn&rsquo;t on the page; we guess it from the category and you can change it.</p>
-    <div class="chips">
-      <span>nothing to paste?</span>
-      <button class="chip" data-p="3000" data-w="600" data-t="1/7 figure, boxed" data-c="フィギュア">figure ¥3,000</button>
-      <button class="chip" data-p="5800" data-w="1100" data-f="1" data-t="MG kit, free shipping" data-c="プラモデル">kit ¥5,800</button>
-      <button class="chip" data-p="1400" data-w="50" data-t="graded card" data-c="トレーディングカード">card ¥1,400</button>
-    </div>
+  <div class="form">
+    <input type="url" id="url" placeholder="https://page.auctions.yahoo.co.jp/jp/auction/…"
+           aria-label="Yahoo! Auctions link">
+    <button class="go" id="add">Add it up</button>
+  </div>
+  <div class="chips">
+    <span>nothing to paste?</span>
+    <button class="chip" data-p="3000" data-w="600" data-t="1/7 figure, boxed" data-c="フィギュア">figure ¥3,000</button>
+    <button class="chip" data-p="5800" data-w="1100" data-f="1" data-t="MG kit, free shipping" data-c="プラモデル">kit ¥5,800</button>
+    <button class="chip" data-p="1400" data-w="50" data-t="graded card" data-c="トレーディングカード">card ¥1,400</button>
+  </div>
 
+  <div id="empty">
+    <p class="hint" style="margin-top:16px">We read the price and category from the page. You
+      don&rsquo;t type them. Weight isn&rsquo;t on the page; we guess it from the category and you
+      can change it.</p>
+    <div class="waiting">
+      <p class="mono" id="waitfees"></p>
+    </div>
+  </div>
+
+  <div id="result" class="hide">
+    <p class="answer" id="ans"></p>
+    <p class="fx" id="fx"></p>
+    <p class="stable" id="stab"></p>
+
+    <div class="matrixwrap"><table class="matrix" id="matrix"></table></div>
+    <p class="legend">Plain numbers come from published price lists.
+      <span class="e">~amber</span> are our estimates &mdash; change them in the cart above.
+      <span class="u">Dotted</span> come from second-hand sources. &mdash; means not included.
+      Scroll the table sideways on a narrow screen.</p>
+
+    <div id="callout"></div>
+    <p class="rank">Columns are ordered by total only. Three of these companies pay us a referral
+      fee; Neokyo doesn&rsquo;t. The referral amount is never used in the order.</p>
+
+    <h2>Your cart</h2>
+    <div class="cart" id="cart"></div>
+
+    <h2>What could be off</h2>
+    <ul class="plain" id="off"></ul>
+  </div>
+
+  <details class="about">
+    <summary>How this is worked out</summary>
     <h2>What we add up</h2>
     <p class="sub" style="margin-bottom:6px">For each service, one number: item price + service fee
       + domestic shipping + EMS international shipping + tax and customs fees in your country.</p>
     <p class="hint" id="pricelist"></p>
-
     <h2>What we don&rsquo;t know</h2>
     <ul class="plain">
       <li>Weight. Listings don&rsquo;t say. We guess from the category. It&rsquo;s the biggest number
@@ -162,53 +191,22 @@ footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--rule);
       <li>Whether Buyee, ZenMarket and FROM JAPAN charge exactly Japan Post EMS rates. Neokyo does.
         The others may add a margin; we couldn&rsquo;t confirm.</li>
       <li>Duty rates outside the US, above each country&rsquo;s threshold. We leave duty out and say so.</li>
-      <li>Item origin. Many &ldquo;Japanese&rdquo; items are made in China. US duty depends on it.
-        We apply the Japan rate.</li>
+      <li>Item origin. Many &ldquo;Japanese&rdquo; items are made in China. US duty depends on it.</li>
     </ul>
-
     <h2>Who pays us</h2>
     <ul class="plain">
       <li>ZenMarket, Buyee and FROM JAPAN pay a referral fee if you sign up through our link.
         Neokyo pays nothing.</li>
-      <li>Rankings use the total only; we never look at the referral amount.</li>
       <li>In our 60 test carts, on fees alone, Neokyo was cheapest in 59.
         The company we point to most often pays us nothing.</li>
     </ul>
-
     <h2>Not covered</h2>
     <ul class="plain">
-      <li>Mercari, Suruga-ya and other sites we can&rsquo;t read from a server — you can type the price in.</li>
-      <li>Shipping other than EMS. Insurance. Items a carrier won&rsquo;t take (batteries, aerosols, liquids).</li>
+      <li>Mercari, Suruga-ya and other sites we can&rsquo;t read from a server &mdash; type the price in.</li>
+      <li>Shipping other than EMS. Insurance. Items a carrier won&rsquo;t take.</li>
       <li>Countries other than the seven in the list.</li>
     </ul>
-  </section>
-
-  <!-- ══ result ══ -->
-  <section id="result" class="hide">
-    <p class="answer" id="ans"></p>
-    <p class="fx" id="fx"></p>
-    <p class="stable" id="stab"></p>
-
-    <p class="legend">Plain numbers come from published price lists.
-      <span class="e">~amber</span> are our estimates &mdash; tap to change.
-      <span class="u">Dotted</span> numbers come from second-hand sources.
-      &mdash; means not included.</p>
-
-    <div class="rows" id="rows"></div>
-    <p class="spread" id="spread"></p>
-    <div id="callout"></div>
-    <p class="rank">Rows are sorted by total only. Three of these companies pay us a referral fee;
-      Neokyo doesn&rsquo;t. The referral amount is never used in the sort.</p>
-
-    <h2>Your cart</h2>
-    <div class="cart" id="cart"></div>
-    <div class="form" style="margin-top:12px">
-      <input type="url" id="url2" placeholder="+ Add another link" aria-label="Add another link">
-    </div>
-
-    <h2>What could be off</h2>
-    <ul class="plain" id="off"></ul>
-  </section>
+  </details>
 
   <footer>
     <p>This is an estimate from published price lists, Japan Post EMS rates and the tax rules we
@@ -250,10 +248,21 @@ function amount(l) {
   return `<span class="${t}">${l.tier === 'estimate' ? '~' : ''}${yen(l.amount)}</span>`;
 }
 
+function cell(l, best) {
+  const b = best ? ' best' : '';
+  if (!l) return `<td class="none${b}">&mdash;</td>`;
+  if (l.amount === null) return `<td class="none${b}">&mdash;<span class="note">${l.note || ''}</span></td>`;
+  const t = l.tier === 'estimate' ? 'est' : l.tier === 'unverified' ? 'unv' : '';
+  return `<td class="num${b}"><span class="${t}">${l.tier === 'estimate' ? '~' : ''}${yen(l.amount)}</span>`
+       + `${l.note ? `<span class="note">${l.note}</span>` : ''}</td>`;
+}
+
 function render() {
   const has = items.length > 0;
-  $('landing').classList.toggle('hide', has);
+  $('empty').classList.toggle('hide', has);
   $('result').classList.toggle('hide', !has);
+  $('waitfees').innerHTML = SERVICES.map((v) => v.name).join(' · ')
+    + '<br>Add a listing and the four totals appear side by side.';
   if (!has) return;
 
   const rows = compare({ items, country: cc });
@@ -264,35 +273,30 @@ function render() {
 
   $('ans').innerHTML = `${top.label}, about <span class="num">~${yen(top.total)}</span> delivered.`;
   $('fx').innerHTML = `&asymp; ${c.ccy} ${Math.round(top.total / rate).toLocaleString('en-US')} `
-    + `at ¥${rate}/${c.ccy}, fixed on ${RATES.asOf}. <button type="button">change</button>`;
-  $('stab').textContent = st.stable
-    ? 'The order below doesn’t change if the parcel weighs one step more or less than we guessed.'
-    : `If the parcel is one weight step heavier, ${st.ifHeavier} comes out cheapest. Check the weight guess below.`;
+    + `at ¥${rate}/${c.ccy}, fixed on ${RATES.asOf}.`;
+  $('stab').textContent = (st.stable
+    ? 'The order doesn’t change if the parcel weighs one step more or less than we guessed.'
+    : `If the parcel is one weight step heavier, ${st.ifHeavier} comes out cheapest.`)
+    + ` Spread between first and last column: ${yen(bottom.total - top.total)}, on ${yen(goods)} of items.`;
 
-  $('rows').innerHTML = rows.map((r, i) => `
-    <details class="row"${i === 0 ? ' open' : ''}>
-      <summary>
-        <span class="nm">${r.label}</span>
-        <span class="tot num">~${yen(r.total)}</span>
-        <span class="tag">${r.tag}</span>
-        <span class="vs">${i ? '+' + yen(r.diff) : 'cheapest for this cart'}</span>
-      </summary>
-      <div class="bd">
-        <table>
-          ${r.lines.map((l) => `<tr><td>${l.label}${l.note ? `<span class="note">${l.note}</span>` : ''}</td>
-             <td class="num">${amount(l)}</td></tr>`).join('')}
-          <tr class="sum"><td>Total</td><td class="num">~${yen(r.total)}</td></tr>
-        </table>
-        <div class="open">
-          <a href="${r.svc.url}" rel="${r.svc.referral ? 'sponsored nofollow' : 'nofollow'}" target="_blank">Open ${r.svc.name}</a>
-          <span class="pay">${r.svc.referral || 'no referral fee to us'}</span>
-        </div>
-        ${r.svc.sourceUrl ? `<p class="fn">Fee table: <a href="${r.svc.sourceUrl}">${r.svc.source}</a> · checked ${CHECKED_ON}</p>` : ''}
-      </div>
-    </details>`).join('');
+  // 費目の並びは全社共通。無い行は「—」で残す。
+  const order = [];
+  rows.forEach((r) => r.lines.forEach((l) => { if (!order.includes(l.label)) order.push(l.label); }));
+  const find = (r, label) => r.lines.find((l) => l.label === label);
 
-  $('spread').textContent = `Spread between the top and bottom row: ${yen(bottom.total - top.total)}. `
-    + `Your items cost ${yen(goods)}.`;
+  $('matrix').innerHTML = `
+    <thead><tr><th></th>${rows.map((r, i) => `<th class="${i === 0 ? 'best' : ''}">${
+      i === 0 ? '<span class="flag">CHEAPEST</span>' : ''}${r.label}
+      <span class="sub2">${r.tag}</span></th>`).join('')}</tr></thead>
+    <tbody>
+      ${order.map((label) => `<tr><td>${label}</td>${rows.map((r, i) => cell(find(r, label), i === 0)).join('')}</tr>`).join('')}
+      <tr class="total"><td>Total</td>${rows.map((r, i) => `<td class="num${i === 0 ? ' best' : ''}">~${yen(r.total)}</td>`).join('')}</tr>
+      <tr class="vs"><td></td>${rows.map((r, i) => `<td class="${i === 0 ? 'best' : ''}">${i ? '+' + yen(r.diff) : 'you save ' + yen(rows[rows.length - 1].total - r.total) + ' vs the worst'}</td>`).join('')}</tr>
+      <tr class="link"><td></td>${rows.map((r, i) => `<td class="${i === 0 ? 'best' : ''}">
+        <a class="open" href="${r.svc.url}" rel="${r.svc.referral ? 'sponsored nofollow' : 'nofollow'}"
+           target="_blank">Open ${r.svc.name}</a>
+        <span class="pay">${r.svc.referral || 'no referral fee to us'}</span></td>`).join('')}</tr>
+    </tbody>`;
 
   const cons = rows.find((r) => r.variant === 'consolidated');
   const def = rows.find((r) => r.variant === 'default');
@@ -300,8 +304,8 @@ function render() {
     <div class="call">
       <b>If you use Buyee, request consolidation.</b>
       <p>Buyee ships each order as its own parcel unless you ask it to combine them. Combining is
-      free. For this cart it&rsquo;s the difference between ${yen(cons.total)} and ${yen(def.total)}
-      &mdash; more than switching companies.</p>
+      free. For this cart it&rsquo;s ${yen(cons.total)} against ${yen(def.total)}
+      &mdash; a bigger gap than switching companies.</p>
       <cite>Source: Buyee help center, &ldquo;Package Consolidation Service&rdquo; (checked ${CHECKED_ON}).</cite>
     </div>` : '';
 
@@ -309,7 +313,7 @@ function render() {
     <div class="it">
       <div><span class="t">${it.title}</span>
         <span class="m">${it.freeShipping ? 'shipping included by seller'
-          : 'domestic shipping paid by buyer, ~¥800'} · category “${it.cat}”</span></div>
+          : 'domestic shipping paid by buyer, ~¥800'} · “${it.cat}”</span></div>
       <input type="number" value="${it.price}" step="100" min="0" data-p="${i}" aria-label="Item price">
       <button class="w" data-w="${i}">~${it.weight} g</button>
       <button class="x" data-x="${i}" aria-label="Remove">&times;</button>
@@ -317,12 +321,12 @@ function render() {
 
   const off = [
     `Weight. We guessed ${(items.reduce((a, i) => a + i.weight, 0) / 1000).toFixed(1)} kg from the categories. EMS is priced by weight, so this is the number to check.`,
-    'Buyee, ZenMarket and FROM JAPAN may charge more than Japan Post’s EMS rates. Neokyo charges exactly those. We couldn’t confirm the others.',
+    'Buyee, ZenMarket and FROM JAPAN may charge more than Japan Post’s EMS rates. Neokyo charges exactly those.',
     'ZenMarket’s and FROM JAPAN’s default parcel behaviour is unconfirmed. We assumed one parcel.',
     'Domestic shipping from the seller to the proxy: we used ¥800 where the buyer pays. Real cost is ¥150–1,500.',
   ];
   if (cc === 'US') off.splice(1, 0,
-    'US duty: we apply 12.5% for Japan-origin goods (a reported Section 301 rate; not confirmed on the USITC site). If the item was made in China, the rate is different.',
+    'US duty: we apply 12.5% for Japan-origin goods (a reported Section 301 rate; not confirmed on the USITC site).',
     'The USPS $9.35 clearance fee per parcel is reported, not confirmed.');
   if (COUNTRIES[cc].dutyRate === null) off.push(
     `Duty above the ${COUNTRIES[cc].ccy} ${COUNTRIES[cc].dutyFreeLimit} threshold is not included — we couldn’t find the rates.`);
@@ -344,7 +348,6 @@ function fromUrl(field) {
   field.value = '';
 }
 $('add').addEventListener('click', () => fromUrl($('url')));
-$('url2').addEventListener('change', () => fromUrl($('url2')));
 $('cc').addEventListener('change', (e) => { cc = e.target.value; render(); });
 $('cart').addEventListener('click', (e) => {
   const w = e.target.closest('.w'), x = e.target.closest('.x');
