@@ -294,6 +294,27 @@ test('10. only the links that actually pay us are marked sponsored', async ({ pa
   expect(free).toBeGreaterThan(0);
 });
 
+
+test('11b. a single listing opens on the proxy directly where we verified it', async ({ page }) => {
+  await gotoCompare(page);
+
+  // 例の2点を消し、実在の出品URLを1つだけ入れる。
+  const c = await openCart(page);
+  const removes = c.getByRole('button', { name: /remove|✕/i });
+  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
+
+  await page.getByRole('button', { name: 'Or add an item by hand' }).click();
+  await page.getByLabel('Item name').fill('Nendoroid test listing');
+  await page.getByLabel('Price ¥').fill('5000');
+  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+
+  // 手入力には出品URLが無いので、どの社もトップに落ちる。
+  // **黙って落とさず、何をすることになるかを書く**こと。
+  const li = await openRankRow(page, 0);
+  await expect(li.getByRole('link', { name: /^Open / })).toBeVisible();
+  await expect(li.getByText(/paste the listing URL there/i)).toBeVisible();
+});
+
 // ────────────────────────────────────────────────────────────────
 // desktop 専用
 // ────────────────────────────────────────────────────────────────

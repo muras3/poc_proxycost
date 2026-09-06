@@ -1,6 +1,7 @@
 import { COUNTRIES } from './countries';
 import { EMS_ZONE, EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
 import { rateFor, RATES_AS_OF } from './rates';
+import { outboundFor } from './deeplink';
 import { SERVICES, type Service } from './services';
 import type { Band, CompareInput, CompareResult, Item, Line, Row, Tier } from './types';
 
@@ -253,7 +254,15 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     cheapest: false,
     paysUs: svc.paysUs,
     referralNote: svc.referralNote,
-    outboundUrl: svc.url,
+    // 1点だけなら、その社でその出品を直接開く（検証済みの組み合わせのみ）。
+    ...(() => {
+      const one = items.length === 1 ? outboundFor(svc.id, svc.url, items[0]) : null;
+      return { outboundUrl: one?.url ?? svc.url, outboundDirect: one?.direct ?? false };
+    })(),
+    itemLinks: items
+      .map((i) => ({ item: i, link: outboundFor(svc.id, svc.url, i) }))
+      .filter((x) => x.link.direct)
+      .map((x) => ({ itemId: x.item.id, title: x.item.title, url: x.link.url })),
     approximate,
   };
 }
