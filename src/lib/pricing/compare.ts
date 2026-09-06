@@ -108,6 +108,16 @@ function taxLines(
       `${c.clearanceCcy} ${c.clearanceFeePerParcel} × ${plural(a.parcels, 'parcel')}`,
       c.clearanceTier, c.sourceUrl));
   }
+
+  // 関税の事前納付（米国）。**「発生するが額を知らない」を画面に出すための行。**
+  // 額を持っていないので null。0 と書けば「無料」という嘘になり、行ごと省けば
+  // 「そんな費目は無い」という嘘になる。excluded に名前が載るのが目的。
+  // 閾値は郵便物1個の内容品価格なので、個口に割ってから測る。割り切れない分は
+  // **費目を出す側に倒す**（持っている情報を隠すより、余分に開示するほうが安全）。
+  const dp = c.dutyPrepayment;
+  if (dp && declared / a.parcels <= dp.upTo) {
+    out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl));
+  }
   return out;
 }
 

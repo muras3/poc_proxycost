@@ -58,3 +58,64 @@ describe('the duty note says something a buyer can read', () => {
     expect(COUNTRIES.SG.dutyRate).toBe(0);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T11: 米国の関税事前納付（Zonos）の利用料。**発生するが額が公表されていない。**
+// 0 でも推定値でもなく null 行として出し、excluded に名前を載せる。
+// ─────────────────────────────────────────────────────────────────────────────
+const PREPAY_LABEL = 'US import prepayment (Zonos) fee — not published';
+
+describe('the US prepayment fee is disclosed as a cost we cannot price', () => {
+  test('every US row carries the line, with no amount and no tier that implies one', () => {
+    for (const row of rowsFor('US', 15000)) {
+      const l = line(row, 'duty-prepayment');
+      expect(l.label, row.id).toBe(PREPAY_LABEL);
+      expect(l.amount, row.id).toBeNull();
+      expect(l.tier, row.id).toBe('none');
+      expect(l.sourceUrl, row.id).toContain('post.japanpost.jp');
+      expect(l.note, row.id).toMatch(/Zonos/);
+    }
+  });
+
+  test('it shows up in excluded, which is where the shortfall is read', () => {
+    for (const row of rowsFor('US', 15000)) {
+      expect(row.excluded, row.id).toContain(PREPAY_LABEL);
+    }
+  });
+
+  test('it never enters the total — the board stays comparable', () => {
+    const rows = rowsFor('US', 15000);
+    for (const row of rows) {
+      expect(row.total, row.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
+      expect(row.comparable, row.id).toBe(true);
+    }
+  });
+
+  test('no other destination invents a prepayment it does not have', () => {
+    for (const cc of COUNTRY_CODES) {
+      if (cc === 'US') continue;
+      for (const row of rowsFor(cc, 15000)) {
+        expect(row.lines.some((l) => l.key === 'duty-prepayment'), `${cc} ${row.id}`).toBe(false);
+        expect(row.excluded, `${cc} ${row.id}`).not.toContain(PREPAY_LABEL);
+      }
+    }
+  });
+
+  test('above the USD 2,500 band Japan Post asks for no prepayment, so we drop the line', () => {
+    // ¥2,000,000 は現行の為替（¥150〜¥157/USD）のどちらでも 12,000 USD 超。
+    for (const row of rowsFor('US', 2_000_000)) {
+      expect(row.lines.some((l) => l.key === 'duty-prepayment'), row.id).toBe(false);
+    }
+  });
+
+  test('the band is measured per parcel, because the rule is per postal item', () => {
+    // 3点 × ¥300,000 = 商品代で 5,700〜6,000 USD。1個口にまとめる社は帯の外だが、
+    // 注文ごとに分けて出す Buyee は 1個口あたり 1,900〜2,000 USD で帯の中に残る。
+    const rows = rowsFor('US', 300_000, 3);
+    const has = (id: string) =>
+      rows.find((r) => r.id === id)!.lines.some((l) => l.key === 'duty-prepayment');
+    expect(has('buyee:default')).toBe(true);
+    expect(has('buyee:consolidated')).toBe(false);
+    expect(has('neokyo')).toBe(false);
+  });
+});
