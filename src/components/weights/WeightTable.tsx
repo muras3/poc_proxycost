@@ -91,7 +91,9 @@ function CategoryTable({ cat }: { cat: WeightCategory }) {
                 <Cell label="Spread">{spread(line)}</Cell>
                 <Cell label="n">{count(line.n)}</Cell>
                 <Cell label="EMS step">
-                  <span className="tabular-nums">{formatStep(step.stepG)}</span>
+                  <span className="tabular-nums">
+                    {step.stepG == null ? '—' : formatStep(step.stepG)}
+                  </span>
                 </Cell>
                 <Cell label="Source">
                   {source ? (

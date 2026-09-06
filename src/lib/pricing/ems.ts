@@ -31,14 +31,18 @@ export const EMS_TABLE: readonly (readonly number[])[] = [
 
 export const EMS_MAX_INDEX = EMS_TABLE.length - 1;
 
-/** 重量から段の添字を引く。15kg 超は最上段に丸める（EMS の受付上限が 30kg で、
- *  そこから先は国別に段が分かれるため、この表では持たない）。 */
+/** この表が扱える上限（g）。これを超える料金は持っていない。 */
+export const EMS_MAX_GRAMS = EMS_TABLE[EMS_MAX_INDEX]![0]!;
+
+/** 重量から段の添字を引く。**表の外なら -1 を返す。**
+ *  以前は最上段に丸めていたが、20kg を 15kg の料金で出すことになり、
+ *  「持っていない数字を安い側に丸めて見せる」ことになっていた。 */
 export function emsStepIndex(grams: number): number {
   for (let i = 0; i < EMS_TABLE.length; i++) {
     const row = EMS_TABLE[i];
     if (row && grams <= row[0]!) return i;
   }
-  return EMS_MAX_INDEX;
+  return -1;
 }
 
 export function emsStepGrams(index: number): number {
@@ -51,9 +55,15 @@ export function emsYen(index: number, zone: number): number {
   return EMS_TABLE[i]![zone]!;
 }
 
-export function emsFor(grams: number, zone: number, stepOffset = 0) {
-  const i = Math.min(EMS_MAX_INDEX, Math.max(0, emsStepIndex(grams) + stepOffset));
-  return { yen: emsYen(i, zone), stepG: emsStepGrams(i), index: i };
+/** 表の外に出たときは yen を null で返す。**丸めない。** */
+export function emsFor(grams: number, zone: number, stepOffset = 0):
+  { yen: number | null; stepG: number | null; index: number; overMax: boolean } {
+  const base = emsStepIndex(grams);
+  if (base === -1) {
+    return { yen: null, stepG: null, index: -1, overMax: true };
+  }
+  const i = Math.min(EMS_MAX_INDEX, Math.max(0, base + stepOffset));
+  return { yen: emsYen(i, zone), stepG: emsStepGrams(i), index: i, overMax: false };
 }
 
 export function formatStep(grams: number): string {
