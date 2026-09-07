@@ -1,4 +1,5 @@
 import type { CountryCode, PostalMethod, Tier } from './types';
+import type { PostageRate } from './services';
 import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
 
 /**
@@ -173,4 +174,37 @@ export function postageFor(method: PostalMethod, cc: CountryCode, grams: number)
   if (!steps) return null;
   const hit = steps.find(([g]) => grams <= g);
   return hit ? { yen: hit[1], stepGrams: hit[0] } : null;
+}
+
+/**
+ * その方式・その国・その重量の上乗せ（円）。**公表額に足す。**
+ *
+ * 掛け算（率）ではなく足し算にしたのは、実測で形が分かったのが
+ * 「1kg 段ごとの定額」だったから。率で持つと重量で外れる
+ * ——Jauce の船便は率で見ると 10.0% → 16.1% → 25.5% と動く。
+ */
+export function markupYen(
+  rate: PostageRate, cc: CountryCode, grams: number,
+): number {
+  const m = rate.byCountry?.[cc] ?? rate.markup;
+  switch (m.kind) {
+    case 'none':
+      return 0;
+    case 'per-kg-step':
+      return m.yen * Math.ceil(grams / 1000);
+    case 'observed': {
+      // **観測点の間は線形、外は端の値を延ばす。**形が分かっていないので、
+      // 観測の外へ勝手な曲線を引かない。端の延長は「それ以上は知らない」の意味。
+      const pts = [...m.points].sort((a, b) => a[0] - b[0]);
+      if (grams <= pts[0]![0]) return pts[0]![1];
+      const last = pts[pts.length - 1]!;
+      if (grams >= last[0]) return last[1];
+      for (let i = 1; i < pts.length; i++) {
+        const [g0, y0] = pts[i - 1]!;
+        const [g1, y1] = pts[i]!;
+        if (grams <= g1) return Math.round(y0 + ((y1 - y0) * (grams - g0)) / (g1 - g0));
+      }
+      return last[1];
+    }
+  }
 }

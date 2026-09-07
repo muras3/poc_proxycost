@@ -4,7 +4,7 @@ import {
 } from './countries';
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, POSTAL_ZONE, maxGramsFor, postageFor,
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, POSTAL_ZONE, markupYen, maxGramsFor, postageFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -512,7 +512,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     if (!rate) return null;                        // その社はこの方式を売っていない
     const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
     if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
-    return Math.round(each.reduce((a, e) => a + e!.yen, 0) * (1 + rate.markup));
+    // **上乗せは個口ごとに足す。**1kg 段の定額なので、個口を分ければその数だけ乗る。
+    return parcelGross.reduce(
+      (a, g, i) => a + each[i]!.yen + markupYen(rate, ctx.cc, g), 0);
   };
   const method: PostalMethod = wanted === 'cheapest'
     // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
@@ -564,7 +566,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // ことは、この行の note に必ず書く**（tier からは読めないので、文字で書く）。
   const shipTier: Tier = shipYen == null ? 'none' : rate!.tier;
   const markupNote = shipYen == null ? ''
-    : rate!.markup !== 0 ? `, +${(rate!.markup * 100).toFixed(1)}% over the published rate`
+    : markupYen(rate!, ctx.cc, parcelGross[0]!) !== 0
+      ? `, +¥${markupYen(rate!, ctx.cc, parcelGross[0]!).toLocaleString('en-US')}`
+        + ` per parcel over the published rate`
     : ', published rate, no markup';
   // **速さと追跡を額と同じ行に出す。**船便は 3kg で EMS より ¥5,100 安いが 1〜3 か月かかる。
   // 額だけ出して日数を出さなければ、安いほうを選ばせる誤誘導になる。
