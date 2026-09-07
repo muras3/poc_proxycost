@@ -303,3 +303,50 @@ describe('the GST the service collects at checkout is shown per service', () => 
     }
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **数字には出典と確認日が要る。**額だけ出して日付を伏せたら、いつの値か言えない
+// 数字を公表していることになる。監査で AU の A$50/A$152/A$48 と CA の C$9.95 が
+// 日付なしで公開されていたのが見つかった。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('every fetched clearance fee carries its source and the day we read it', () => {
+  test('a country with clearance bands has a source URL and a checked-on date', () => {
+    for (const cc of COUNTRY_CODES) {
+      const c = COUNTRIES[cc];
+      if (!c.clearanceBands?.length) continue;
+      expect(c.clearanceSourceUrl, `${cc}: bands without a source`).toBeTruthy();
+      expect(c.clearanceSourceUrl, cc).toMatch(/^https:\/\//);
+      expect(c.clearanceCheckedOn, `${cc}: bands without a checked-on date`).toBeTruthy();
+      expect(c.clearanceCheckedOn, cc).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(new Date(c.clearanceCheckedOn!).getTime(), `${cc}: read in the future`)
+        .toBeLessThanOrEqual(Date.now());
+    }
+  });
+
+  test('**AU cites the department whose charge it is, not only the one that collects it**', () => {
+    // A$48 は DAFF（農漁林業省）の生物検疫費用回収額で、ABF は代わりに徴収しているだけ。
+    // 徴収者のページだけを出典に立てると、額の出どころを取り違える。
+    const au = COUNTRIES.AU;
+    expect(au.clearanceSourceUrl).toContain('abf.gov.au');
+    expect(au.clearanceSourceUrl2, 'the biosecurity charge has no source of its own')
+      .toContain('agriculture.gov.au');
+    expect(au.clearanceBands!.some((b) => b.note.includes('biosecurity'))).toBe(true);
+  });
+});
+
+// **二次情報を一次情報に見せない。**確認日が付いたからといって原典に当たった
+// ことにはならない。tier が unverified の国は、note か画面で二次情報だと分かること。
+describe('a second-hand clearance fee still says it is second-hand', () => {
+  test('unverified bands are drawn as second-hand, not as published figures', () => {
+    for (const cc of COUNTRY_CODES) {
+      const c = COUNTRIES[cc];
+      if (!c.clearanceBands?.length) continue;
+      if (c.clearanceTier !== 'unverified') continue;
+      // 確度が画面の描き分けに効くのは tier。ここが fixed に変わったら、
+      // 原典を読んだという主張になる。
+      expect(c.clearanceTier, cc).toBe('unverified');
+    }
+    // 少なくとも1国は二次情報のまま（全部 fixed になったらこのテストが形骸化する）。
+    expect(COUNTRY_CODES.some((cc) => COUNTRIES[cc].clearanceTier === 'unverified')).toBe(true);
+  });
+});

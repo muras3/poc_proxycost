@@ -500,7 +500,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     optionalLines: svc.optional.map((o) => L(
       o.key, o.label,
       o.amountFor ? o.amountFor(optionalCtx) : o.amountYen,
-      o.note, o.tier, svc.sourceUrl,
+      // **額の出どころが社のページでない費目は、そちらを指す。**
+      // 輸出申告代行手数料は日本郵便の額で、社は取次いでいるだけ。
+      o.note, o.tier, o.sourceUrl ?? svc.sourceUrl,
     )),
     excluded,
     parcels,

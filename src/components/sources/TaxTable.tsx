@@ -86,6 +86,25 @@ function clearanceCell(c: Country): ReactNode {
           {i === 0 && c.clearanceBands!.length === 1 ? '' : ''}
         </span>
       ))}
+      {/* **確認日を出す。**額だけ出して日付を伏せたら、いつの値か言えない数字を
+          公表していることになる。出典が2本に分かれる国（AU の生物検疫費用は DAFF の
+          額で、ABF が代わりに徴収している）は両方出す。 */}
+      {c.clearanceCheckedOn && (
+        <span className="mt-0.5 block text-xs font-normal text-neutral-600 dark:text-neutral-400">
+          {c.clearanceSourceUrl && (
+            <a className="underline" href={c.clearanceSourceUrl} target="_blank" rel="noopener noreferrer">source</a>
+          )}
+          {c.clearanceSourceUrl2 && (
+            <>
+              {' · '}
+              <a className="underline" href={c.clearanceSourceUrl2} target="_blank" rel="noopener noreferrer">
+                biosecurity source
+              </a>
+            </>
+          )}
+          {` · read ${c.clearanceCheckedOn}`}
+        </span>
+      )}
     </span>
   );
 }

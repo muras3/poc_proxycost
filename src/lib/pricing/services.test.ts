@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
 import {
-  EXPORT_DECLARATION_FEE_YEN, SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
+  EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_YEN,
+  SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
 } from './services';
 import type { Item, Line, Row, SiteId } from './types';
 
@@ -252,7 +253,12 @@ describe('storage is offered as an optional line for every service', () => {
       const row = one(s.id);
       const storage = storageOf(s.id);
       expect(storage.label, s.id).toMatch(/^Storage/);
-      expect(storage.sourceUrl, s.id).toBe(s.sourceUrl);
+      // 出典は**その額が書いてあるページ**。社の料金ページとは限らない
+      // （Neokyo の保管料は neokyo.com/en/storage が原文）。ここで社の
+      // 料金ページに固定すると、額の出どころを取り違えたまま固まる。
+      expect(storage.sourceUrl, s.id).toMatch(/^https:\/\//);
+      expect(new URL(storage.sourceUrl!).host, `${s.id}: storage cited off-site`)
+        .toBe(new URL(s.sourceUrl!).host);
       expect(row.lines.some((l) => l.key === 'storage'), s.id).toBe(false);
       expect(row.total, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
     }
@@ -644,5 +650,42 @@ describe('Jauce — ¥400 + 8% on the auction site, ¥1,000 + 8% off it', () => 
     expect(amount(row, 'deposit')).toBe(Math.round(40 + (base / (1 - 0.039) - base)));
     // 原文未確認の解釈。fixed に格上げするなら先に原文を取ること。
     expect(row.lines[idx]!.tier).toBe('unverified');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **額の出どころが社のページでない費目は、そちらを指す。**
+// 輸出申告代行手数料 ¥2,800 は日本郵便の額で、代行各社は取次いでいるだけ。
+// 社のページを出典に立てると、額を社が決めているように読める。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('an optional fee points at whoever sets the amount', () => {
+  test('the export declaration fee cites Japan Post at every service that lists it', () => {
+    let seen = 0;
+    for (const svc of SERVICES) {
+      const fee = svc.optional.find((o) => o.key === 'export-clearance');
+      if (!fee) continue;
+      seen += 1;
+      expect(fee.amountYen, svc.id).toBe(EXPORT_DECLARATION_FEE_YEN);
+      expect(fee.sourceUrl, `${svc.id}: the amount is Japan Post's, not the service's`)
+        .toBe(EXPORT_DECLARATION_FEE_SOURCE);
+      expect(fee.sourceUrl, svc.id).not.toBe(svc.sourceUrl);
+    }
+    expect(seen, 'no service lists the export declaration fee').toBeGreaterThan(0);
+  });
+
+  test("Neokyo's storage fee cites the storage page it was read from", () => {
+    const fee = SERVICES.find((s) => s.id === 'neokyo')!.optional
+      .find((o) => o.key === 'storage')!;
+    expect(fee.sourceUrl).toBe('https://neokyo.com/en/storage');
+  });
+
+  test('an optional fee that names no source of its own falls back to the service page', () => {
+    // 大半の任意費目は社の料金ページが原文。**そこは上書きしない。**
+    for (const svc of SERVICES) {
+      for (const o of svc.optional) {
+        if (o.sourceUrl == null) continue;
+        expect(o.sourceUrl, `${svc.id}/${o.key}`).toMatch(/^https:\/\//);
+      }
+    }
   });
 });
