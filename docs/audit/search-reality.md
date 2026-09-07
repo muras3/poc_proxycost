@@ -120,6 +120,14 @@ HMV の 31 件のうち 18 件は `/news/article/` で、これは記事であ�
   保証された動作ではない。`/documentation/resources/search-operators` は
   2026-09-07 時点で 404（公開されていない）。**クエリ長や演算子の個数の上限は
   公式には見つからなかった。**
+- **`site:` の個数の実測**: `site:` を 15 個並べた 1 クエリ（`nendoroid site:booth.pm OR
+  site:amiami.jp OR site:fril.jp OR site:melonbooks.co.jp OR site:animate.co.jp` に
+  `siteFilter()` の 10 個が付く）でも 18 件が返り、エラーにならなかった
+  （2026-09-07 実測）。**20 個は未検証。**
+- **こちら側の上限**: `/api/search` の zod が `q` を **120 文字**に切っている
+  （`src/app/api/search/route.ts`）。`siteFilter()` の 235 文字が後ろに付くので、
+  Brave に行くクエリはいま最大 360 文字ほど。サイトを 20 に増やすと
+  付加分はおよそ 470 文字になる。
 - `extra_snippets=true` で 1 件あたり最大 5 本の追加抜粋が返る（**未使用**）。
 - Goggles（再ランク付け）に対応（**未使用**）。
 - 料金: **$5 / 1,000 requests、月 $5 のクレジット、50 QPS**。
