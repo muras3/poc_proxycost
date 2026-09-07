@@ -1,0 +1,473 @@
+{
+ "$comment": "国×経路の輸入側マスタ。tier A_confirmed=公式または実請求で確認／B_inferred=推論（basis 付き）／C_unknown=未取得（点予測に使わない）。clearance は『国ごとに1つ』ではなく『国×配送業者×利用者の操作』",
+ "checked_on": "2026-09-07",
+ "countries": [
+  {
+   "country": "US",
+   "currency": "USD",
+   "tier": "C_unknown",
+   "duty": {
+    "rule": {
+     "type": "rate_of_item_price",
+     "rate": 0.125
+    },
+    "tier": "B_inferred",
+    "basis": "複数の貿易系情報源が『日本からの輸入に一律12.5%』で一致。CBP 原文は未取得",
+    "de_minimis": {
+     "status": "suspended",
+     "note": "$800 免税は非郵便で2026-06から無期限停止、法律上2027で終了"
+    }
+   },
+   "vat": {
+    "rule": {
+     "type": "none_at_federal_level"
+    },
+    "tier": "A_confirmed",
+    "note": "州 sales tax は郵便番号依存で未取得"
+   },
+   "clearance": [
+    {
+     "route": "carrier_brokerage",
+     "carrier": "DHL/FedEx",
+     "rule": {
+      "type": "unknown"
+     },
+     "tier": "C_unknown",
+     "source": "—"
+    }
+   ],
+   "carrier_availability": {
+    "tier": "A_confirmed",
+    "note": "日本郵便は米国向けを8ヶ月停止し2026-04に前払い方式で再開。日本から米国を扱えるのは DHL と FedEx が中心",
+    "source": "複数の業界情報源"
+   },
+   "impact": "現行コードの『EMS to United States』は、存在が怪しい経路を前提にしている"
+  },
+  {
+   "country": "GB",
+   "currency": "GBP",
+   "tier": "A_confirmed",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 135,
+     "rate_above": "unknown"
+    },
+    "tier": "C_unknown"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.2
+    },
+    "tier": "A_confirmed"
+   },
+   "clearance": [
+    {
+     "route": "royal_mail",
+     "carrier": "Royal Mail",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 8,
+      "currency": "GBP"
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.royalmail.com/receiving-mail/pay-a-fee"
+    },
+    {
+     "route": "parcelforce",
+     "carrier": "Parcelforce",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 12,
+      "currency": "GBP"
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.parcelforce.com/receiving/customs-charge"
+    },
+    {
+     "route": "high_value",
+     "carrier": "Royal Mail / Parcelforce",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 25,
+      "currency": "GBP",
+      "when": {
+       "goods_value_gbp_over": 900
+      }
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.parcelforce.com/receiving/customs-charge"
+    }
+   ],
+   "conditional": {
+    "tier": "A_confirmed",
+    "rule": "税がゼロなら手数料もゼロ",
+    "quote": "If there is no duty or tax to pay, you will not be charged a handling fee.",
+    "impact": "手数料は税の発生に従属する。免税帯では手数料も0"
+   }
+  },
+  {
+   "country": "DE",
+   "currency": "EUR",
+   "tier": "A_confirmed",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 150,
+     "rate_above": "unknown"
+    },
+    "tier": "C_unknown",
+    "note": "src/data.js の flatDutyPerItem 3 は根拠未確認"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.19
+    },
+    "tier": "A_confirmed"
+   },
+   "clearance": [
+    {
+     "route": "deutsche_post",
+     "carrier": "Deutsche Post / DHL 標準 / EMS",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 6,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
+     "quote": "seit März 2018 mit zusätzlichen 6 Euro Gebühren"
+    },
+    {
+     "route": "dhl_express",
+     "carrier": "DHL Express",
+     "rule": {
+      "type": "rate_of_import_charges_with_min",
+      "rate": 0.02,
+      "min": 14.88,
+      "currency": "EUR",
+      "min_note": "€12.50 ＋ 19% USt"
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
+     "quote": "Kapitalbereitstellungsprovision … 2% der Einfuhrabgaben, mindestens aber 14,88 Euro"
+    }
+   ]
+  },
+  {
+   "country": "FR",
+   "currency": "EUR",
+   "tier": "A_confirmed",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 150,
+     "rate_above": "unknown"
+    },
+    "tier": "C_unknown"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.2
+    },
+    "tier": "A_confirmed"
+   },
+   "clearance": [
+    {
+     "route": "la_poste_small",
+     "carrier": "La Poste",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 2,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html"
+    },
+    {
+     "route": "la_poste_large",
+     "carrier": "La Poste",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 5,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "同上"
+    },
+    {
+     "route": "la_poste_at_delivery",
+     "carrier": "La Poste",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 8,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "同上",
+     "quote": "2€ pour les petits colis, 5€ pour les gros colis, ou 8€ à la livraison"
+    },
+    {
+     "route": "chronopost",
+     "carrier": "Chronopost",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 21,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "同上"
+    }
+   ],
+   "user_action": {
+    "tier": "A_confirmed",
+    "rule": "オンラインで事前に払えば €8 → €2 / €5 に下がる"
+   }
+  },
+  {
+   "country": "ES",
+   "currency": "EUR",
+   "tier": "A_confirmed",
+   "in_current_scope": false,
+   "note": "現行の対象7カ国に無いが、実請求データが最も多く取れた国。EU の代表例として保持",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 150,
+     "rate_above": 0.025
+    },
+    "tier": "B_inferred",
+    "basis": "複数の利用者が『汎用コードで2.5%』と報告。2.5〜5% のばらつきあり"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.21
+    },
+    "tier": "A_confirmed"
+   },
+   "clearance": [
+    {
+     "route": "correos_self_clear",
+     "carrier": "Correos（事前に自分で払う）",
+     "rule": {
+      "type": "fixed_plus_vat",
+      "base": 1.29,
+      "vat_rate": 0.21,
+      "total": 1.56,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）",
+     "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 € / Total: 1.56 €"
+    },
+    {
+     "route": "correos_at_delivery",
+     "carrier": "Correos（配達時・現金）",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 6,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "elotrolado.net（複数一致）"
+    },
+    {
+     "route": "fedex",
+     "carrier": "FedEx",
+     "rule": {
+      "type": "rate_of_value_with_min",
+      "rate": 0.03,
+      "min": 15,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "elotrolado.net",
+     "quote": "cobraron de gestión 15€ por ser mas de 150€ de bienes (3% del valor 15€ minimo)"
+    },
+    {
+     "route": "dhl",
+     "carrier": "DHL",
+     "rule": {
+      "type": "fixed_min",
+      "min": 21,
+      "currency": "EUR",
+      "plus_vat": true
+     },
+     "tier": "A_confirmed",
+     "source": "elotrolado.net",
+     "quote": "DHL que son mínimo 21€ + IVA sin importar la cantidad"
+    },
+    {
+     "route": "ups",
+     "carrier": "UPS",
+     "rule": {
+      "type": "rate_of_duty",
+      "rate": 0.283,
+      "currency": "EUR"
+     },
+     "tier": "A_confirmed",
+     "source": "elotrolado.net",
+     "quote": "15,90€ (the 28,3% de 56,15€)"
+    }
+   ],
+   "user_action": {
+    "tier": "A_confirmed",
+    "rule": "事前に自己申告すれば €6 → €1.56（約4分の1）"
+   }
+  },
+  {
+   "country": "AU",
+   "currency": "AUD",
+   "tier": "A_confirmed",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 1000,
+     "rate_above": "unknown"
+    },
+    "tier": "C_unknown"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.1
+    },
+    "tier": "A_confirmed"
+   },
+   "collected_at_source": {
+    "tier": "A_confirmed",
+    "rule": "A$1,000 以下は海外の販売者・マーケットプレイス・再送業者が徴収",
+    "note": "代行会社が『再送業者』としてこれに該当する。ZenMarket・FROM JAPAN・Neokyo・Buyee で確認済み",
+    "impact": "着地時の通関手数料は原則発生しない。会社側の請求に入る"
+   },
+   "clearance": [
+    {
+     "route": "post_or_courier",
+     "carrier": "—",
+     "rule": {
+      "type": "unknown"
+     },
+     "tier": "C_unknown",
+     "source": "—"
+    }
+   ]
+  },
+  {
+   "country": "CA",
+   "currency": "CAD",
+   "tier": "A_confirmed",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 20,
+     "rate_above": "unknown"
+    },
+    "tier": "C_unknown",
+    "note": "郵便経由の de minimis は CA$20"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.05,
+     "name": "GST"
+    },
+    "tier": "A_confirmed"
+   },
+   "provincial_tax": {
+    "rule": {
+     "type": "rate_range",
+     "min": 0.05,
+     "max": 0.0975,
+     "by": "postal_code"
+    },
+    "tier": "A_confirmed",
+    "impact": "現行コードは null で総額から脱落。下の実例では総額の 56% が消える"
+   },
+   "clearance": [
+    {
+     "route": "canada_post",
+     "carrier": "Canada Post",
+     "rule": {
+      "type": "fixed_per_parcel_plus_gst",
+      "amount": 9.95,
+      "gst_rate": 0.05,
+      "currency": "CAD"
+     },
+     "tier": "A_confirmed",
+     "source": "Canada Post 公式ほか複数",
+     "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST"
+    },
+    {
+     "route": "courier",
+     "carrier": "UPS / FedEx / DHL",
+     "rule": {
+      "type": "range",
+      "min": 10,
+      "max": 50,
+      "currency": "CAD"
+     },
+     "tier": "B_inferred",
+     "source": "複数の業界情報源",
+     "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得"
+    }
+   ],
+   "real_invoice": {
+    "tier": "A_confirmed",
+    "source": "利用者投稿（フォーラム）",
+    "lines": {
+     "declared_value": 1988.7,
+     "duty": 0,
+     "excise": 0,
+     "gst": 99.44,
+     "pst": 139.21,
+     "handling": 9.95,
+     "total": 248.6,
+     "currency": "CAD"
+    },
+    "note": "PST 139.21 は総額 248.60 の 56%。現行コードはこれを丸ごと落としている"
+   }
+  },
+  {
+   "country": "SG",
+   "currency": "SGD",
+   "tier": "A_confirmed",
+   "duty": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.0
+    },
+    "tier": "A_confirmed",
+    "note": "大半の物品で関税0"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.09,
+     "name": "GST"
+    },
+    "tier": "A_confirmed",
+    "note": "2024-01-01 から 9%"
+   },
+   "collected_at_source": {
+    "tier": "A_confirmed",
+    "rule": "S$400 以下は OVR 制度で海外事業者が決済時に徴収（2023-01-01 から）",
+    "impact": "着地時の GST は原則発生しない"
+   },
+   "clearance": [
+    {
+     "route": "post_or_courier",
+     "carrier": "—",
+     "rule": {
+      "type": "unknown"
+     },
+     "tier": "C_unknown",
+     "source": "—"
+    }
+   ]
+  }
+ ]
+}
