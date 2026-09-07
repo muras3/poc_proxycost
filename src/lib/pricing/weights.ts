@@ -166,6 +166,9 @@ interface Exclusion {
   lineIds?: string[];
   categoryId?: string;
   exceptLineIds?: string[];
+  /** 全カテゴリに効かせる。exceptCategoryIds のカテゴリだけ免れる。 */
+  allCategories?: true;
+  exceptCategoryIds?: string[];
   /** タイトルがこの語を持つなら、その行は当てない。 */
   when: string[];
   why: string;
@@ -200,6 +203,29 @@ const EXCLUSIONS: Exclusion[] = [
     when: ['女児', '男児', '子供', '子ども', 'こども', 'キッズ', 'ジュニア', '幼児', '小学生', 'kids', 'junior', 'youth'],
     why: 'Every median in this category was taken from adult sizes',
   },
+  {
+    // 'PSA10 SAR リザードン' はスラブ（100 g）。生カードの語も同時に持つので、当たった語の
+    // 長さで single-card に流れると 50 g になる。data/weights/tcg-singles.json の
+    // 「マッチ順は graded-slab を先に見ること」を、語の長さに依存しない形で書き下したもの。
+    // when は graded-slab が実際に持つ語だけにする。持っていない語を書くと、
+    // single-card を落としたあと受け皿が無くて null に落ちる。
+    lineIds: ['single-card'],
+    when: ['psa', 'bgs', 'cgc'],
+    why: 'A graded slab carries the raw-card words too; the grading service decides which it is',
+  },
+  {
+    // 「腕時計の図鑑」「フィギュアの達人 |本 | 通販 | Amazon」。**X についての本は X ではない。**
+    // 実測37件のうち4件がこれで、うち1件（図鑑）は本に腕時計の 839 g が付いていた。
+    // 書籍そのものの重量は取れていない（data/weights/index.json の notObtained: books-manga）ので、
+    // ここは当てずに仮置きへ落とす。当てられないことと、別の物の重量を当てることは違う。
+    allCategories: true,
+    when: [
+      '図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック', '単行本',
+      // Amazon 日本のパンくず。'本' 単独は「日本」「本体」「3本」に当たるので使えない。
+      '本 | 通販', '|本 |', '｜本｜',
+    ],
+    why: 'A book about a thing is not the thing, and we have no weight for books',
+  },
 ];
 
 /** 当たった語に裏付けが要るなら、それがタイトルにあるか。 */
@@ -214,7 +240,8 @@ function corroborated(title: string, raw: string): boolean {
 function namesSomethingElse(title: string, cat: WeightCategory, line: WeightLine): boolean {
   for (const rule of EXCLUSIONS) {
     const named = rule.lineIds?.includes(line.id) === true
-      || (rule.categoryId === cat.category && rule.exceptLineIds?.includes(line.id) !== true);
+      || (rule.categoryId === cat.category && rule.exceptLineIds?.includes(line.id) !== true)
+      || (rule.allCategories === true && rule.exceptCategoryIds?.includes(cat.category) !== true);
     if (!named) continue;
     if (rule.when.some((w) => matches(title, w))) return true;
   }

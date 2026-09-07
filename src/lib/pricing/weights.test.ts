@@ -53,9 +53,18 @@ describe('resolving a weight from a title', () => {
 describe('titles that must not be read as a weight (audit logic.md §5)', () => {
   test('a date or a deadline is not a figure scale', () => {
     // 1/7(火) は締切、2024/1/8 は発売日。どちらも 1,500 g / 1,300 g のフィギュアではない。
-    expect(resolveWeight('【1/7(火)まで】限定出品 トレカ').grams).toBeNull();
-    expect(resolveWeight('2024/1/8 発売予定 トレーディングカード').grams).toBeNull();
+    // 前2件は 'トレカ' を表に入れたので null ではなく 50 g（カード）に落ちる。
+    // logic.md 第5節が「妥当な値 ~50 g」と書いていたのがこれで、null より強い固定になる。
+    // ここで守るのは「スケールとして読まないこと」なので、行 id でそれを見る。
+    for (const t of ['【1/7(火)まで】限定出品 トレカ', '2024/1/8 発売予定 トレーディングカード']) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('single-card');
+      expect(r.grams).toBe(50);
+      expect(r.categoryId).not.toBe('figures');
+    }
+    // カードの語が無ければ今までどおり何も出さない。
     expect(resolveWeight('11/4 発送 ポスター').grams).toBeNull();
+    expect(resolveWeight('【1/7(火)まで】限定出品 ポスター').grams).toBeNull();
   });
 
   test('a scale without a figure is doll clothing, not the doll', () => {
@@ -105,6 +114,25 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
     expect(resolveWeight('お菓子 詰め合わせ').grams).toBeNull();
   });
 
+  test('a book about a thing is not the thing', () => {
+    // 「腕時計の図鑑」に腕時計の 839 g が付いていた（本番検索の実タイトル）。
+    // 書籍の重量は取れていない（index.json notObtained: books-manga）ので、当てずに落とす。
+    expect(resolveWeight('腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ...').grams).toBeNull();
+    expect(resolveWeight('フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
+    expect(resolveWeight('フィギュアの教科書 原型入門編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
+    expect(resolveWeight('ポケモンカード 攻略本').grams).toBeNull();
+    expect(resolveWeight('剣道 入門編 ムック').grams).toBeNull();
+  });
+
+  test('a graded slab is never read as a raw single, whatever word is longest', () => {
+    // 'トレーディングカード'(10文字) は 'psa'(3文字) より長い。語の長さで決めると
+    // スラブ 100 g が生カード 50 g に流れる。tcg-singles.json の「graded-slab を先に見ること」。
+    for (const t of ['PSA10 リザードン トレーディングカード', 'BGS9.5 トレカ', 'CGC9 single card']) {
+      expect(resolveWeight(t).lineId).toBe('graded-slab');
+      expect(resolveWeight(t).grams).toBe(100);
+    }
+  });
+
   test('a hakama listing still resolves — the guard must not eat the real hits', () => {
     expect(resolveWeight('袴 単品 男性用').lineId).toBe('hakama');
     expect(resolveWeight('剣道 袴 27号').lineId).toBe('hakama');
@@ -145,6 +173,21 @@ describe('titles that must still resolve', () => {
   test('a rarity code next to a card word still resolves', () => {
     expect(resolveWeight('SSR ポケモンカード').lineId).toBe('single-card');
     expect(resolveWeight('SAR トレカ').grams).toBe(50);
+  });
+
+  test('トレカ resolves — the word the live search returns most', () => {
+    // 実タイトル37件中7件がトレカの出品で、全部落ちていた。50 g は tcg-singles の
+    // 梱包込み単カード中央値。K-POP のフォトカード（kpop 28 g）より重い側なので安全に倒れる。
+    for (const t of [
+      'トレカ プロモカード 非売品カード 5種11枚 - メルカリ',
+      'RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ',
+      'ポケモンカード トレーディングカード ピカチュウ',
+      'One Piece trading card Luffy',
+    ]) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('single-card');
+      expect(r.grams).toBe(50);
+    }
   });
 
   test('a jo and an obi with their martial-arts word still resolve', () => {

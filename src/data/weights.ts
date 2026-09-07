@@ -257,7 +257,7 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     ],
     lines: [
       { id: 'graded-slab', labelEn: 'Graded slab (PSA/BGS)', match: ['psa', 'bgs', 'cgc'], medianG: 100, p25: 100, p75: 250, n: 1602, spread: 2.5, tier: 'estimate' },
-      { id: 'single-card', labelEn: 'Single card, packed', match: ['シングル', 'single card', 'sar', 'csr', 'ssr', 'パラレル', 'parallel'], medianG: 50, p25: 50, p75: 50, n: 3101, spread: 1, tier: 'estimate' },
+      { id: 'single-card', labelEn: 'Single card, packed', match: ['トレカ', 'トレーディングカード', 'trading card', 'シングル', 'single card', 'sar', 'csr', 'ssr', 'パラレル', 'parallel'], medianG: 50, p25: 50, p75: 50, n: 3101, spread: 1, tier: 'estimate' },
     ],
     fallbackG: 50,
     fallbackTier: 'estimate',
@@ -272,7 +272,9 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
       + '\n'
       + 'graded-slab must be matched first: PSA-graded listings also carry rarity words like \'sar\', so testing single-card first would drop graded cards to 50 g. The match words \'psa\', \'sar\', \'csr\' and \'ssr\' are short but appear almost nowhere except card titles, so they were kept; \'sr\', \'ur\' and \'ar\' were dropped as too short to be safe.\n'
       + '\n'
-      + 'Limit: pokeninjapan is effectively the only shop with a real body of singles that did not score pseudo. onepiece.pokeninjapan.store is the same operator, so it is not independent verification. tcgrepublic.com, the largest singles specialist, is not Shopify and could not be read.',
+      + 'Limit: pokeninjapan is effectively the only shop with a real body of singles that did not score pseudo. onepiece.pokeninjapan.store is the same operator, so it is not independent verification. tcgrepublic.com, the largest singles specialist, is not Shopify and could not be read.\n'
+      + '\n'
+      + '2026-09-07: added "トレカ", "トレーディングカード" and "trading card" to single-card. The word was already ruled on when the table was built — kpop/photocard lost it to a denylist entry saying "トレカ should be drawn from tcg-singles at 50 g rather than K-pop\'s 28 g" — but it was never added here, so it matched nothing at all. In a sample of 37 titles the live search returned, seven were トレカ listings (mostly K-pop photocards) and every one of them fell through. No new weight data: 50 g is the same packed single-card median already recorded above, and it is the heavier of the two candidates, so a K-pop photocard quoted at 50 g is quoted on the safe side. Graded slabs keep priority through an exclusion in src/lib/pricing/weights.ts: a title carrying psa / bgs / cgc is never read as a raw single.',
   },
   {
     category: 'kpop',
