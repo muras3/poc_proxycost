@@ -133,3 +133,20 @@ test('the note is readable without opening the cart', async ({ page }) => {
   await expect(note(page)).toBeVisible();
   expect(await isCollapsed(note(page)), '注記が畳まれたカートの中に入っている').toBe(false);
 });
+
+test('the box explains its dashed shapes only when a placeholder is standing in it', async ({ page }) => {
+  await gotoCompare(page);
+  const parcel = page.getByRole('region', { name: 'Parcel' });
+
+  // 既定のカートは2点とも重量表に当たる。**画面に無い形を説明しない。**
+  await expect(parcel).toBeVisible();
+  await expect(parcel).not.toContainText(/dashed outline/);
+
+  await addByHand(page, OFF_TABLE[0], 4000);
+
+  // 入った瞬間から、点線が何なのかを箱の但し書きが名指しする。
+  await expect(parcel).toContainText(/dashed outline/);
+  // 形の違いは目で見た人にしか届かない。読み上げでも数えて言う。
+  await expect(page.getByTestId('packing-box-scene'))
+    .toHaveAttribute('aria-label', /placeholder weight we chose/);
+});

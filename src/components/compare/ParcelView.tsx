@@ -68,12 +68,26 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/** 箱に立てる個数。数量ぶん並べるが、列は12個で打ち止め（詰まり具合は意味を持たない）。 */
+function copiesOf(item: Item): number {
+  return Math.max(1, Math.min(12, item.qty));
+}
+
+/**
+ * 重量表に当たらず仮置きが入っている品の、箱の中での個数。
+ * **これは「推定」より弱い。**表の中央値は数百件の出品から出た数字だが、
+ * こちらは何も知らずに置いた 1 kg で、形も「不明」（点線）で描かれる。
+ * 箱の但し書きと読み上げの両方で、その点線が何なのかを名指しするために数える。
+ */
+function placeholderCount(items: readonly Item[]): number {
+  return items.reduce((n, i) => n + (i.weightOrigin === 'assumed' ? copiesOf(i) : 0), 0);
+}
+
 /** カートの1品 → 箱の中身。**推定重量なら半透明。** */
 function packedItems(items: readonly Item[]): PackedItem[] {
   const out: PackedItem[] = [];
   for (const item of items) {
-    // 数量は個数ぶん並べる。ただし箱の中は列で、詰まり具合は意味を持たない。
-    const n = Math.max(1, Math.min(12, item.qty));
+    const n = copiesOf(item);
     for (let k = 0; k < n; k++) {
       out.push({
         id: item.weightLineId ?? 'unknown',
@@ -189,6 +203,8 @@ export function ParcelView({
   const entering = new Set(anim.entering);
   const zone = EMS_ZONE[country];
   const estimatedCount = packed.filter((p) => p.estimated).length;
+  // 重量表に当たらなかった品。**推定より弱い**ので、推定とは別に数えて別に言う。
+  const placeholders = placeholderCount(items);
 
   return (
     <section
@@ -208,6 +224,9 @@ export function ParcelView({
             items={packed}
             label={`Parcel box holding ${packed.length} item${packed.length === 1 ? '' : 's'}${
               estimatedCount > 0 ? `, ${estimatedCount} with an estimated weight` : ''
+            }${
+              // 読み上げでも点線を名指しする。形の違いは目で見た人にしか届かない。
+              placeholders > 0 ? `, ${placeholders} of them at a placeholder weight we chose` : ''
             }`}
             renderGlyph={(p) => (
               <div
@@ -294,6 +313,14 @@ export function ParcelView({
       <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
         EMS is priced by weight alone — volume never enters the price, so this box is not a packing
         simulation. Faded items are weights we estimated, not measured.{' '}
+        {/* 点線の輪郭（`drawUnknown`）は「重量表に当たらなかった」の形。箱に居るときだけ
+            説明する。居ないときに説明すると、画面に無いものを指すことになる。 */}
+        {placeholders > 0 && (
+          <>
+            A dashed outline means we have no weight for that item at all — it is standing in the
+            box at a placeholder we chose, not at anything we looked up.{' '}
+          </>
+        )}
         <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
           Japan Post EMS rates ↗
         </a>
