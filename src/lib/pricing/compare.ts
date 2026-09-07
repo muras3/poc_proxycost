@@ -35,18 +35,31 @@ const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const grossG = (netG: number) => Math.round(netG * PACKING_MULTIPLIER + PACKING_ADD_G);
 
 /**
- * 方式を指定しなかったときの既定。**EMS のまま据え置いている。**
+ * 方式を指定しなかったときの既定。**EMS。**
  *
- * 「運べる中で最安」を既定にしたくなるが、それは**「利用者は最安を選ぶ」という
- * 未検証の仮定**を置くことになる。しかも最安はたいてい船便で、所要 1〜3 か月
- * （Buyee 原文）——**ほぼ誰も払わない額を既定の総額として出す**ことになり、
- * 「可能な限り正確な総額」から遠ざかる。
+ * 2026-09-07 に5社の公開計算機を実測して（`docs/O2-CALCULATOR-RUN.md` フェーズ1）、
+ * **各社の UI に「EMS を既定にしている社」は無いことが分かった:**
+ *   - FROM JAPAN … 最安を自動選択（International ePacket Light）。5社で唯一の既定
+ *   - Buyee … EMS に `Recommended` バッジ。ただし選択済みではない
+ *   - ZenMarket / Neokyo / Jauce … 既定選択なし。安い順に並べるだけ
  *
- * **各社の画面が既定でどの方式を選んでいるかは、まだ誰も調べていない。**
- * `docs/O2-CALCULATOR-RUN.md` のフェーズ1がそれを取りに行く。**答えが出たら
- * ここを1行変える。**それまでは、テストが校正されている EMS を動かさない。
+ * **それでも既定は EMS にする。**「運べる中で最安」を既定にしかけて、
+ * こちらの実データと矛盾することに気づいて戻した:
+ *
+ * 実請求の収集（`research/real-invoices.md`）で数えた実際の発送方式は
+ * **FedEx 12 / EMS 11 / UPS 7 / DHL 7 / 船便 3 / Airmail 1**。
+ * **船便は約40言及中3件しかない。**最安はたいてい船便なので、それを既定にすると
+ * 実際にはほとんど使われていない方式の総額を見出しに出すことになる
+ * （US 5点600g で ¥36,125 → ¥27,725、−23%）。
+ *
+ * **各社UIの並び順は弱い証拠で、実際の発送実績のほうが強い。**EMS は価格化できる
+ * 方式の中で実績が最も多く、Buyee も EMS を推している。
+ *
+ * **反証**: 実請求の標本はスペインの掲示板に偏り、「通関で驚いた人が投稿する」
+ * バイアスがある（宅配便が過剰に出る）。約40言及と小さい。フェーズ2で各国・各重量の
+ * 観測が増えたら、この既定は再検討に値する。
  */
-const DEFAULT_METHOD: PostalMethod = 'ems';
+const DEFAULT_METHOD: PostalMethod | 'cheapest' = 'ems';
 
 interface Ctx {
   items: Item[];
@@ -474,31 +487,40 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // Buyee の既定は1個口が軽くなるので、同梱では上限を超える小形包装物が使えることがある
   // ——これは実在する差で、モデルから落とすと Buyee の既定が不当に高く出る。
   const wanted = ctx.method ?? 'cheapest';
+  // **その社が売っていない方式は値段が付かない。**2026-09-07 の実測で品揃えが社で
+  // 大きく違うことが分かった（FROM JAPAN 5方式 / Jauce 2方式、Neokyo は小形包装物なし）。
+  // 売っていない方式に公表額を当てると、使えない選択肢を最安に見せることになる。
   const priceAll = (m: PostalMethod): number | null => {
+    const rate = svc.postage[m];
+    if (!rate) return null;                        // その社はこの方式を売っていない
     const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
-    if (each.some((e) => e == null)) return null;   // 1個口でも運べなければ、その方式は使えない
-    return Math.round(each.reduce((a, e) => a + e!.yen, 0) * (1 + svc.emsMarkup));
+    if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
+    return Math.round(each.reduce((a, e) => a + e!.yen, 0) * (1 + rate.markup));
   };
   const method: PostalMethod = wanted === 'cheapest'
-    // 全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
+    // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
     ? (POSTAL_METHODS
         .map((s) => ({ id: s.id, yen: priceAll(s.id) }))
         .filter((x): x is { id: PostalMethod; yen: number } => x.yen != null)
         .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0]?.id ?? 'ems')
     : wanted;
   const spec = POSTAL_METHODS.find((s) => s.id === method)!;
+  const rate = svc.postage[method];
   const zone = POSTAL_ZONE[ctx.cc];
 
   // **表の外の重量では料金を持っていない。丸めない。**
   // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
   const each = parcelGross.map((g) => postageFor(method, ctx.cc, g));
   const overMax = each.some((e) => e == null);
-  const shipYen: number | null = overMax ? null : priceAll(method);
-  const stepLabel = overMax
-    ? `over ${formatStep(maxGramsFor(method, ctx.cc))} — outside this method's table`
-    : split
-      ? `${plural(parcels, 'parcel')}`
-      : `1 parcel, ${formatStep(each[0]!.stepGrams)} step`;
+  const shipYen: number | null = priceAll(method);
+  // **「その社が売っていない」と「重すぎる」は違う理由なので、書き分ける。**
+  const stepLabel = !rate
+    ? `${svc.name} does not offer this method`
+    : overMax
+      ? `over ${formatStep(maxGramsFor(method, ctx.cc))} — outside this method's table`
+      : split
+        ? `${plural(parcels, 'parcel')}`
+        : `1 parcel, ${formatStep(each[0]!.stepGrams)} step`;
 
   const priceEstimated = items.some((i) => i.priceTier === 'estimate');
   const lines: Line[] = [
@@ -523,19 +545,17 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 何も言わなくなっていた（docs/audit/logic.md C4）。重量の確度は Items 行の重量 tier
   // と `Row.approximate` が持つ。**段に入れた重量が梱包後の仮定（×1.2 + 300 g）である
   // ことは、この行の note に必ず書く**（tier からは読めないので、文字で書く）。
-  const shipTier: Tier = overMax ? 'none' : svc.emsMarkupTier;
-  const markupNote = overMax ? ''
-    : svc.emsMarkup !== 0 ? `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`
-    : svc.emsMarkupTier === 'fixed' ? ', published rate, no markup'
-    : svc.emsMarkupTier === 'unverified' ? ', published rate — the company does not say'
-    : ', we assume the published rate';
+  const shipTier: Tier = shipYen == null ? 'none' : rate!.tier;
+  const markupNote = shipYen == null ? ''
+    : rate!.markup !== 0 ? `, +${(rate!.markup * 100).toFixed(1)}% over the published rate`
+    : ', published rate, no markup';
   // **速さと追跡を額と同じ行に出す。**船便は 3kg で EMS より ¥5,100 安いが 1〜3 か月かかる。
   // 額だけ出して日数を出さなければ、安いほうを選ばせる誤誘導になる。
   lines.push(L('intl-shipping', `${spec.label} to ${COUNTRIES[ctx.cc].name}`, shipYen,
     `zone ${zone}, ${stepLabel}`
-    + (overMax ? '' : ' (weight after our packing allowance)')
+    + (shipYen == null ? '' : ' (weight after our packing allowance)')
     + markupNote
-    + (overMax ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
+    + (shipYen == null ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
     shipTier, method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL));
 
   // 入金手数料は送金合計額に対する率なので gross-up。
@@ -644,10 +664,11 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     approximate,
     // 国際送料が取れていない行は、取れている行と総額を比べられない。
     comparable: shipYen != null,
-    notComparableReason: shipYen == null
-      ? `${spec.label} has no published rate above ${formatStep(maxGramsFor(method, ctx.cc))}`
-        + ' in our table, so this total is missing its largest line'
-      : null,
+    notComparableReason: shipYen != null ? null
+      : !rate
+        ? `${svc.name} does not sell ${spec.label}, so there is no total to compare`
+        : `${spec.label} has no published rate above ${formatStep(maxGramsFor(method, ctx.cc))}`
+          + ' in our table, so this total is missing its largest line',
   };
 }
 

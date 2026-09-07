@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
-import { SERVICES, SERVICES_CHECKED_ON, type Service } from '@/lib/pricing/services';
+import {
+  SERVICES, SERVICES_CHECKED_ON, type PostageRate, type Service,
+} from '@/lib/pricing/services';
+import { POSTAL_METHODS } from '@/lib/pricing/postage';
 import { ASSUMED_DOMESTIC_SHIPPING_YEN } from '@/lib/pricing/compare';
 import type { SiteId } from '@/lib/pricing/types';
 import { yen, grams } from '@/lib/ui/format';
@@ -147,13 +150,36 @@ function parcels(svc: Service): ReactNode {
   );
 }
 
+/**
+ * その社が売っている日本郵便の方式と、公表額に対する上乗せ。
+ *
+ * **社ごとに品揃えが違う**（FROM JAPAN 5方式 / Jauce 2方式）ので、方式の数も出す。
+ * **上乗せは方式ごと**（ZenMarket は EMS どおりで小形包装物だけ +45.2%）なので、
+ * 「全部公表額どおり」か「どの方式に上乗せがあるか」を書き分ける。
+ */
 function international(svc: Service): ReactNode {
+  const rows = POSTAL_METHODS
+    .map((m) => ({ spec: m, rate: svc.postage[m.id] }))
+    .filter((x): x is { spec: typeof x.spec; rate: PostageRate } => x.rate != null);
+  const marked = rows.filter((r) => r.rate.markup !== 0);
   return (
-    <span className={tierClass[svc.emsMarkupTier]} title={tierTitle[svc.emsMarkupTier]}>
-      {svc.emsMarkup === 0
-        ? 'EMS published price, no markup'
-        : `EMS + ${(svc.emsMarkup * 100).toFixed(1)}%`}
-      {svc.emsMarkupTier === 'estimate' ? ' (assumed)' : ''}
+    <span>
+      {`${rows.length} Japan Post ${rows.length === 1 ? 'method' : 'methods'}: `}
+      {marked.length === 0 ? (
+        <span className={tierClass.fixed} title={tierTitle.fixed}>
+          all at the published price
+        </span>
+      ) : (
+        marked.map((r, i) => (
+          <span key={r.spec.id}>
+            {i > 0 ? ', ' : ''}
+            <span className={tierClass[r.rate.tier]} title={tierTitle[r.rate.tier]}>
+              {`${r.spec.label} +${(r.rate.markup * 100).toFixed(1)}%`}
+            </span>
+          </span>
+        ))
+      )}
+      {marked.length > 0 && ', the rest at the published price'}
     </span>
   );
 }

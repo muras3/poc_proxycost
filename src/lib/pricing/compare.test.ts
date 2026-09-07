@@ -868,7 +868,8 @@ describe('the international method is an input, and the default is still EMS', (
     const row = byId(compare({ items: items(5, 600), country: 'DE', method: 'parcel-surface' }).rows, 'neokyo');
     expect(shipOf(row).note).toContain('1–3 months');
     expect(shipOf(row).note).toContain('tracked');
-    const air = byId(compare({ items: items(1, 300), country: 'DE', method: 'small-packet-air' }).rows, 'neokyo');
+    // **Neokyo は小形包装物を売っていない**（2026-09-07 実測）ので、売っている社で見る。
+    const air = byId(compare({ items: items(1, 300), country: 'DE', method: 'small-packet-air' }).rows, 'buyee');
     expect(shipOf(air).note).toContain('10 days or less');
     expect(shipOf(air).note).toContain('no tracking');
   });
@@ -899,7 +900,10 @@ describe('the international method is an input, and the default is still EMS', (
     const together = byId(rows, 'buyee:consolidated');
     expect(split.parcels).toBe(3);
     expect(together.parcels).toBe(1);
-    expect(split.method).toBe('small-packet-surface');
+    // Buyee は**船便の小形包装物を売っていない**ので、分割側は航空の小形包装物になる。
+    // 同梱側は1個口 3kg で小形包装物の上限を超えるため国際小包(船便)。
+    // **同じ社の同じカートで方式が分かれる**——個口の数が方式の可否を決めている。
+    expect(split.method).toBe('small-packet-air');
     expect(together.method).toBe('parcel-surface');
   });
 
@@ -1347,18 +1351,37 @@ describe('edges', () => {
       expect(row.approximate).toBe(true);
     });
 
-    test('a company that does not publish its markup keeps the ~ on the same input', () => {
-      // FROM JAPAN は会員ランクで国際送料が %OFF になると書いているが率が読めない。
-      // ZenMarket は実請求1件が公表額と一致し1件が一致しない。どちらも我々の仮定。
-      for (const id of ['fromjapan', 'zenmarket']) {
-        const row = byId(compare({ items: [certain()], country: 'GB' }).rows, id);
-        expect(line(row, 'intl-shipping').tier, id).toBe('estimate');
-        expect(row.approximate, id).toBe(true);
+    test('the EMS line is published for all five now, so the ~ can only come from the weight', () => {
+      // **この前提は 2026-09-07 に変わった。**以前は FROM JAPAN と ZenMarket が
+      // `estimate`、Buyee が `unverified` で、国際送料の行が `~` の出どころだった。
+      // 5社の公開計算機で EMS が公表額と1円まで一致したので、全社 `fixed` に上がった。
+      //
+      // **国際送料の行は5社とも `fixed`。**
+      for (const s of SERVICES) {
+        const row = byId(compare({ items: [certain()], country: 'GB' }).rows, s.id);
+        expect(line(row, 'intl-shipping').tier, s.id).toBe('fixed');
       }
-      // Buyee は社の記述が無く、実請求（二次情報）が一致しただけ。点線で描く。
-      const buyee = byId(compare({ items: [certain()], country: 'GB' }).rows, 'buyee');
-      expect(line(buyee, 'intl-shipping').tier).toBe('unverified');
-      expect(buyee.approximate).toBe(false);
+      // **`~` が残る社は、国際送料以外に推定を持っている社だけ。**
+      // ZenMarket の入金手数料 3.5% は実請求からの逆算（`services.ts`）で、これは推定のまま。
+      // 「国際送料が確定した」を「行全体が確定した」と読み替えないこと。
+      const rows = compare({ items: [certain()], country: 'GB' }).rows;
+      for (const s of SERVICES) {
+        const row = byId(rows, s.id);
+        const otherEstimates = row.lines
+          .filter((l) => l.key !== 'intl-shipping' && l.tier === 'estimate' && l.amount !== 0);
+        expect(row.approximate, `${s.id}: ~ と推定行の有無が食い違う`)
+          .toBe(otherEstimates.length > 0);
+      }
+      expect(byId(rows, 'zenmarket').approximate).toBe(true);
+      expect(line(byId(rows, 'zenmarket'), 'deposit').tier).toBe('estimate');
+      expect(byId(rows, 'neokyo').approximate).toBe(false);
+      // 上乗せがある方式を選べば、その行だけが推定に戻る（ZenMarket の小形包装物 +45.2%）。
+      const marked = byId(compare({
+        items: [certain()], country: 'GB', method: 'small-packet-air',
+      }).rows, 'zenmarket');
+      expect(line(marked, 'intl-shipping').tier).toBe('estimate');
+      expect(line(marked, 'intl-shipping').note).toContain('45.2% over the published rate');
+      expect(marked.approximate).toBe(true);
     });
 
     test('the EMS note always says the weight went through our packing allowance', () => {
