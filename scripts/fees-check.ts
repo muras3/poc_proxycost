@@ -23,7 +23,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
-import { SERVICES } from '../src/lib/pricing/services';
+import { SERVICES, EXPORT_DECLARATION_FEE_SOURCE } from '../src/lib/pricing/services';
 import { EMS_SOURCE_URL } from '../src/lib/pricing/ems';
 import { COUNTRIES } from '../src/lib/pricing/countries';
 import { RATES, RATES_AS_OF, RATES_SOURCE_URL } from '../src/lib/pricing/rates';
@@ -239,6 +239,10 @@ function targets(): Target[] {
     if (s.sourceUrl) out.push({ url: s.sourceUrl, note: `${s.name} の料金ページ`, watch: 'text' });
   }
   out.push({ url: EMS_SOURCE_URL, note: '日本郵便 EMS 料金表', watch: 'text' });
+  // 輸出申告代行手数料 ¥2,800。**5社の任意欄がこの1ページの数字に乗っている**
+  // （3社は自社ページにも書いているが、Neokyo・ZenMarket は書いていない）。
+  // ここが動いたら5社ぶん同時に古くなるので、社の料金ページと同じ扱いで見る。
+  out.push({ url: EXPORT_DECLARATION_FEE_SOURCE, note: '日本郵便 輸出申告代行手数料', watch: 'text' });
   out.push({ url: NOTICE_URL, note: `日本郵便 国際郵便のお知らせ（一覧は ${NOTICE_PAGE}）`, watch: 'notices' });
   out.push({ url: ECB_DAILY_URL, note: '為替の出典（ECB 日次参照レート）', watch: 'value' });
   for (const [cc, c] of Object.entries(COUNTRIES)) {
