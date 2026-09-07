@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { siteFilter, siteFromUrl } from './sites';
+import { isListingUrl, siteFilter, siteFromUrl } from './sites';
 
 describe('siteFromUrl', () => {
   it.each([
@@ -45,5 +45,51 @@ describe('siteFilter', () => {
     expect(f).toContain('site:auctions.yahoo.co.jp');
     expect(f).toContain('site:item.rakuten.co.jp');
     expect(f.split(' OR ').length).toBe(10);
+  });
+});
+
+describe('isListingUrl', () => {
+  // 「1点の出品」だけを候補にする。実測 790 件のうち 316 件は一覧・カテゴリ・記事で、
+  // 籠に入れても値段が付かない（docs/audit/search-reality.md）。
+  it.each([
+    ['https://auctions.yahoo.co.jp/jp/auction/1242770204'],
+    ['https://jp.mercari.com/item/m84660218944'],
+    ['https://jp.mercari.com/en/item/m55279778135'],
+    ['https://jp.mercari.com/shops/product/abc123'],
+    ['https://item.rakuten.co.jp/zootrope/8570/'],
+    ['https://store.shopping.yahoo.co.jp/digitamin/yf158679.html'],
+    ['https://www.amazon.co.jp/-/en/Nendoroid-G12951/dp/B0B3N1KXLK'],
+    ['https://www.amazon.co.jp/gp/product/B0B3N1KXLK'],
+    ['https://www.suruga-ya.jp/product/detail/123456789'],
+    ['https://order.mandarake.co.jp/order/detailPage/item?itemCode=1265543993'],
+    ['https://zozo.jp/shop/commedesgarconshomme/goods/12345678/'],
+    ['https://www.hmv.co.jp/artist_x_000/item_y-z_1234/'],
+    ['https://ecs.toranoana.jp/joshi/ec/item/040031234567/'],
+  ])('出品ページは残す: %s', (url) => expect(isListingUrl(url)).toBe(true));
+
+  it.each([
+    // ヤフオクは実測で 129 件すべてがこの形だった。closedsearch は終了済み＝買えない。
+    ['https://auctions.yahoo.co.jp/search/search/%E3%81%AD%E3%82%93'],
+    ['https://auctions.yahoo.co.jp/closedsearch/closedsearch/nendoroid'],
+    ['https://auctions.yahoo.co.jp/category/list/26318/'],
+    ['https://jp.mercari.com/search?keyword=nendoroid'],
+    ['https://jp.mercari.com/s/695642'],
+    ['https://search.rakuten.co.jp/search/mall/nendoroid/'],
+    ['https://shopping.yahoo.co.jp/search/mg/0/'],
+    ['https://www.amazon.co.jp/s?k=nendoroid'],
+    ['https://www.suruga-ya.jp/search?category=&search_word=x'],
+    ['https://order.mandarake.co.jp/order/listPage/list?categoryCode=020101'],
+    ['https://zozo.jp/men-shop/commedesgarconshomme/tops/'],
+    // HMV は記事が 25 件中 18 件を占めていた。記事は出品ではない。
+    ['https://www.hmv.co.jp/news/article/2601234567/'],
+    ['https://ecs.toranoana.jp/joshi/ec/'],
+  ])('一覧・記事は落とす: %s', (url) => expect(isListingUrl(url)).toBe(false));
+
+  it('形を確かめていないサイト（other）は落とさない', () => {
+    expect(isListingUrl('https://example.com/anything')).toBe(true);
+  });
+
+  it('URL でないものは false（例外を投げない）', () => {
+    expect(isListingUrl('ねんどろいど')).toBe(false);
   });
 });
