@@ -25,5 +25,11 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # マスタ（master/*.json）の検証。スキーマと、実請求の再現。
+      # **再現部は customs.json の rule を実際に評価する**ので、JSON を壊せばここで落ちる。
+      - run: python3 master/validate.py
+      # docs/MASTER.md の生成節が JSON とずれていないか。
+      # 手書きの表は必ずずれるので、生成して CI で縛る。
+      - run: python3 master/render-docs.py --check
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

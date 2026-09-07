@@ -43,7 +43,7 @@ describe('the duty note says something a buyer can read', () => {
     expect(noteOf('DE')).toBe('EUR 3 flat × 1 item');
     expect(noteOf('FR')).toBe('EUR 3 flat × 1 item');
     expect(noteOf('AU')).toBe('under the AUD 1000 threshold');
-    expect(noteOf('CA')).toBe('over the CAD 20 threshold — rate not included');
+    expect(noteOf('CA')).toBe('2.0% of the item price');
   });
 
   test('no country prints a non-number where a number belongs', () => {
@@ -60,17 +60,40 @@ describe('the duty note says something a buyer can read', () => {
   // ───────────────────────────────────────────────────────────────────────────
   // T17: 我々が原典に当たれていない数字を、確定の顔で出さない。
   // ───────────────────────────────────────────────────────────────────────────
-  test('the EU flat €3 is charged but drawn as second-hand, in both EU countries', () => {
+  test('the EU flat €3 is charged but drawn as an assumption, in both EU countries', () => {
     // 制度の原文（EU の暫定定額関税ガイダンス）は取れている。取れていないのは
     // 「代行経由の購入が distance sale of imported goods に当たるか」で、
     // 当たらなければこの ¥489/点 は総額から丸ごと消える。額を出しつつ点線で描く。
+    // **tier は `unverified` ではなく `estimate`。**原典に当たれていないのではなく、
+    // 原典はあって「当たるか」が我々の仮定だから。
     for (const cc of ['DE', 'FR'] as CountryCode[]) {
       for (const row of rowsFor(cc)) {
         const duty = line(row, 'duty');
         expect(duty.amount, `${cc} ${row.id}`).toBeGreaterThan(0);
-        expect(duty.tier, `${cc} ${row.id}`).toBe('unverified');
+        expect(duty.tier, `${cc} ${row.id}`).toBe('estimate');
       }
-      expect(COUNTRIES[cc].dutyTier, cc).toBe('unverified');
+      expect(COUNTRIES[cc].dutyTier, cc).toBe('estimate');
+    }
+  });
+
+  test('over EUR 150 the EU duty is a number, not a dash — and the total stops going backwards', () => {
+    // **以前ここは null（「—」）だった。**関税は VAT の課税ベースに入るので、
+    // null が 0 に畳まれて VAT まで縮み、**商品代が上がると総額が下がる**区間があった。
+    const at = (cc: CountryCode, perItemYen: number) => {
+      const rows = compare({ items: items(5, perItemYen, 600), country: cc }).rows;
+      const row = rows.find((r) => r.comparable)!;
+      return { total: row.total, duty: line(row, 'duty') };
+    };
+    for (const cc of ['DE', 'FR'] as CountryCode[]) {
+      const under = at(cc, 5400);   // 5点 ¥27,000 → €150 以下
+      const over = at(cc, 5600);    // 5点 ¥28,000 → €150 超
+      expect(under.duty.note, cc).toContain('flat');
+      expect(over.duty.amount, `${cc} over EUR 150`).toBeGreaterThan(0);
+      expect(over.duty.tier, cc).toBe('estimate');
+      expect(over.duty.note, cc).toContain('4.1%');
+      // 商品代を上げて総額が下がってはいけない。
+      expect(over.total, `${cc}: 商品代が上がったのに総額が下がった`)
+        .toBeGreaterThan(under.total);
     }
   });
 
@@ -188,33 +211,40 @@ describe('the GST the service collects at checkout is shown per service', () => 
     }
   });
 
-  test('Singapore: only the two we could confirm carry a number — the rest show a dash', () => {
+  test('Singapore: every service carries a number — confirmed as fixed, the rest as an estimate', () => {
+    // **以前ここは「確認できた2社だけ数字、残りは `—`」を守っていた。**
+    // それは `docs/TODO-NEXT.md` 課題1が名指しした誤りで、
+    // **確認できていないのは「誰が集めるか」だけ、「いくら払うか」は同じ**なのに、
+    // `—` にすると調べていない3社がその税額ぶん安い表になっていた。
     const rows = rowsFor('SG', 3000, 5);
     for (const row of rows) {
       const l = line(row, PREPAID);
+      // どの社も額が在る。**`—` は無い。**
+      expect(l.amount, row.id).toBeGreaterThan(0);
       if (COLLECTS.SG.includes(row.serviceId)) {
-        expect(l.amount, row.id).toBeGreaterThan(0);
         expect(l.tier, row.id).toBe('fixed');
         expect(l.label, row.id).toBe('GST collected at checkout');
       } else {
-        // **0 ではなく null。** 0 と書けば「この社では GST が要らない」という嘘になる。
-        expect(l.amount, row.id).toBeNull();
-        expect(l.tier, row.id).toBe('none');
-        expect(l.label, row.id)
-          .toBe('GST collected at checkout — we could not confirm whether this service collects it');
-        // **社名は入れない。**この文言は全社の列に掛かる見出しにも出るので、
-        // ここで名指しすると他社の金額にまでその社の話が付いてしまう。
+        // 推定として出す。画面では `~` と琥珀色（src/lib/ui/tiers.tsx）。
+        expect(l.tier, row.id).toBe('estimate');
+        expect(l.label, row.id).toContain('estimated');
+        // **社名は入れない。**この文言は全社の列に掛かる見出しにも出る。
         expect(l.label, row.id).not.toContain(row.serviceName);
-        // 総額から抜けていることが画面に出る。
-        expect(row.excluded, row.id).toContain(l.label);
+        // 推定の根拠が note に在る。「9% はどちらでも同じ」と、
+        // 国境で集められた場合に配送業者の手数料が別に乗ることの開示。
+        expect(l.note, row.id).toContain('9% either way');
+        expect(l.note, row.id).toContain("handling fee");
+        // 額が在るので総額に入る。excluded には出ない。
+        expect(row.excluded, row.id).not.toContain(l.label);
       }
+      // 額が在るなら総額と一致する。
+      expect(row.total, row.id).toBe(row.lines.reduce((x, y) => x + (y.amount ?? 0), 0));
     }
-    // 確認できた社／できていない社が、両方ちゃんと表に出ていること。
-    const withNumber = rows.filter((r) => line(r, PREPAID).amount != null).map((r) => r.serviceId);
-    const withDash = rows.filter((r) => line(r, PREPAID).amount == null).map((r) => r.serviceId);
-    expect(new Set(withNumber)).toEqual(new Set(COLLECTS.SG));
-    expect(withDash.length).toBeGreaterThan(0);
-    expect(new Set(withDash)).toEqual(
+    // 確認できた社は fixed、それ以外は estimate。**両方が表に出ていること。**
+    const fixed = rows.filter((r) => line(r, PREPAID).tier === 'fixed').map((r) => r.serviceId);
+    const est = rows.filter((r) => line(r, PREPAID).tier === 'estimate').map((r) => r.serviceId);
+    expect(new Set(fixed)).toEqual(new Set(COLLECTS.SG));
+    expect(new Set(est)).toEqual(
       new Set(SERVICES.map((s) => s.id).filter((id) => !COLLECTS.SG.includes(id))));
   });
 
@@ -269,11 +299,43 @@ describe('the GST the service collects at checkout is shown per service', () => 
   });
 
   test('no other destination grows a checkout tax we never confirmed', () => {
+    // 豪・星は**制度が全社に課す**ので国の表（`sellerCollectsBelow`）で持つ。
+    // 独・仏・英の IOSS / UK VAT 前徴収は**任意なので社で割れる**——ZenMarket だけが
+    // 「2026-03-02 から強制」と自分で告知しており、他4社は自社ページに記載が無い。
+    // だからここは「AU/SG 以外は全社ゼロ」ではなく「確認できた社だけ」を見る。
+    const CONFIRMED_EU_UK = new Set(['zenmarket']);
     for (const cc of COUNTRY_CODES) {
       if (cc === 'AU' || cc === 'SG') continue;
       for (const row of rowsFor(cc, 3000, 5)) {
-        expect(row.lines.some((l) => l.key === PREPAID), `${cc} ${row.id}`).toBe(false);
+        const has = row.lines.some((l) => l.key === PREPAID);
+        const expected = (cc === 'DE' || cc === 'FR' || cc === 'GB')
+          && CONFIRMED_EU_UK.has(row.serviceId);
+        expect(has, `${cc} ${row.id}`).toBe(expected);
       }
+    }
+  });
+
+  test('only ZenMarket prepays EU / UK VAT, and only under the threshold', () => {
+    // 4社は自社ページに記載が無いことを対照実験つきで確認している
+    // （FROM JAPAN の英語ヘルプ辞書1,474キーに GST は17件・VAT/IOSS は0件、など）。
+    // Neokyo に至っては「If you ship with Japan Post ... Delivered Duty Unpaid」と
+    // 郵便を明示的に外している。この計算機の既定は EMS＝Japan Post。
+    for (const cc of ['DE', 'FR', 'GB'] as CountryCode[]) {
+      const under = rowsFor(cc, 3000, 5);   // 5点 ¥15,000 → 閾値の中
+      const zen = under.find((r) => r.serviceId === 'zenmarket')!;
+      expect(line(zen, PREPAID).amount, `${cc} 閾値の中`).toBeGreaterThan(0);
+      expect(line(zen, 'vat').amount, `${cc} 国境 VAT は二重に積まない`).toBe(0);
+      // **手数料は税の徴収に従属する。**決済時に払い済みなら国境で徴収するものが無い。
+      expect(line(zen, 'clearance').amount, `${cc} 通関手数料`).toBe(0);
+      for (const row of under.filter((r) => r.serviceId !== 'zenmarket')) {
+        expect(row.lines.some((l) => l.key === PREPAID), `${cc} ${row.id}`).toBe(false);
+        expect(line(row, 'vat').amount, `${cc} ${row.id}`).toBeGreaterThan(0);
+      }
+      // 閾値の外（5点 ¥40,000 = 約 €220 / £186）では ZenMarket も国境払いに戻る。
+      const over = rowsFor(cc, 40_000, 5).find((r) => r.serviceId === 'zenmarket')!;
+      expect(over.lines.some((l) => l.key === PREPAID), `${cc} 閾値の外`).toBe(false);
+      expect(line(over, 'vat').amount, `${cc} 閾値の外の国境 VAT`).toBeGreaterThan(0);
+      expect(line(over, 'clearance').amount, `${cc} 閾値の外の手数料`).toBeGreaterThan(0);
     }
   });
 
