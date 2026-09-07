@@ -1,5 +1,5 @@
 {
- "$comment": "国×経路の輸入側マスタ。tier A_confirmed=公式または実請求で確認／B_inferred=推論（basis 付き）／C_unknown=未取得（点予測に使わない）。clearance は『国ごとに1つ』ではなく『国×配送業者×利用者の操作』",
+ "$comment": "国×経路の輸入側マスタ。tier A_confirmed=公式または実請求で確認／B_inferred=推論（basis 付き）／C_unknown=未取得（点予測に使わない）。clearance は『国ごとに1つ』ではなく『国×配送業者×利用者の操作』 clearance_fee_vat は F38（通関手数料自体にかかる VAT）。同じ国・同じ業者で矛盾する報告がある場合は両方を行として残し、区間の根拠にする",
  "checked_on": "2026-09-07",
  "countries": [
   {
@@ -41,7 +41,13 @@
     "note": "日本郵便は米国向けを8ヶ月停止し2026-04に前払い方式で再開。日本から米国を扱えるのは DHL と FedEx が中心",
     "source": "複数の業界情報源"
    },
-   "impact": "現行コードの『EMS to United States』は、存在が怪しい経路を前提にしている"
+   "impact": "現行コードの『EMS to United States』は、存在が怪しい経路を前提にしている",
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "unknown"
+    },
+    "tier": "C_unknown"
+   }
   },
   {
    "country": "GB",
@@ -105,6 +111,12 @@
     "rule": "税がゼロなら手数料もゼロ",
     "quote": "If there is no duty or tax to pay, you will not be charged a handling fee.",
     "impact": "手数料は税の発生に従属する。免税帯では手数料も0"
+   },
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "unknown"
+    },
+    "tier": "C_unknown"
    }
   },
   {
@@ -154,7 +166,15 @@
      "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
      "quote": "Kapitalbereitstellungsprovision … 2% der Einfuhrabgaben, mindestens aber 14,88 Euro"
     }
-   ]
+   ],
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "included_in_min",
+     "note": "最低額 €14.88 は €12.50＋19% USt"
+    },
+    "tier": "A_confirmed",
+    "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html"
+   }
   },
   {
    "country": "FR",
@@ -225,6 +245,12 @@
    "user_action": {
     "tier": "A_confirmed",
     "rule": "オンラインで事前に払えば €8 → €2 / €5 に下がる"
+   },
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "unknown"
+    },
+    "tier": "C_unknown"
    }
   },
   {
@@ -305,19 +331,57 @@
      "route": "ups",
      "carrier": "UPS",
      "rule": {
-      "type": "rate_of_duty",
-      "rate": 0.283,
-      "currency": "EUR"
+      "type": "rate_of_import_charges",
+      "rate": 0.283
      },
      "tier": "A_confirmed",
      "source": "elotrolado.net",
-     "quote": "15,90€ (the 28,3% de 56,15€)"
+     "quote": "15,90€ (the 28,3% de 56,15€)",
+     "note": "実請求では IVA €56.15 に対する €15.90。DHL Express（DE）の『2% der Einfuhrabgaben』と同じ基準"
+    },
+    {
+     "route": "fedex_alt",
+     "carrier": "FedEx",
+     "rule": {
+      "type": "rate_of_import_charges",
+      "rate": 0.3
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+     "quote": "Luego sacamos el 30% de 25,12€ a modo de gestión de FEdex --> 7,54€ y a eso le sumamos el 21% de IVA, quedando 9,12€",
+     "note": "『価額の3%・最低€15』と矛盾する第2の報告。帯・時期・契約で使い分けられている可能性。両方を残し、区間の幅の根拠にする（UPS 28.3% と同水準なので courier は税額の28〜30%が実態の可能性）"
     }
    ],
    "user_action": {
     "tier": "A_confirmed",
     "rule": "事前に自己申告すれば €6 → €1.56（約4分の1）"
-   }
+   },
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "rate_of_clearance_fee",
+     "rate": 0.21
+    },
+    "tier": "A_confirmed",
+    "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）／elotrolado.net",
+    "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 €"
+   },
+   "observations": [
+    {
+     "tier": "A_confirmed",
+     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+     "note": "申告額 ¥50（€0.30）の品に €5強。ほぼ全額が gestión。定額の下限が効く実例"
+    },
+    {
+     "tier": "A_confirmed",
+     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+     "note": "€37 相当（¥5,600）の注文に IVA＋gestión で €14。総額の 38%"
+    },
+    {
+     "tier": "A_confirmed",
+     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+     "note": "€150 未満は gestión €1.50〜5、超えると €20 以上に跳ねる"
+    }
+   ]
   },
   {
    "country": "AU",
@@ -354,7 +418,13 @@
      "tier": "C_unknown",
      "source": "—"
     }
-   ]
+   ],
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "unknown"
+    },
+    "tier": "C_unknown"
+   }
   },
   {
    "country": "CA",
@@ -429,6 +499,16 @@
      "currency": "CAD"
     },
     "note": "PST 139.21 は総額 248.60 の 56%。現行コードはこれを丸ごと落としている"
+   },
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "rate_of_clearance_fee",
+     "rate": 0.05,
+     "name": "GST"
+    },
+    "tier": "A_confirmed",
+    "source": "Canada Post 公式ほか",
+    "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST"
    }
   },
   {
@@ -467,7 +547,80 @@
      "tier": "C_unknown",
      "source": "—"
     }
-   ]
+   ],
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "unknown"
+    },
+    "tier": "C_unknown"
+   }
+  },
+  {
+   "country": "TW",
+   "currency": "TWD",
+   "tier": "B_inferred",
+   "why_added": "Buyee の購入手数料が台湾のみ ¥300（BEENOS プレスリリース・一次）。会社×国で手数料が変わる実例なので、対象国に台湾が要る",
+   "duty": {
+    "rule": {
+     "type": "threshold",
+     "free_below": 2000,
+     "currency": "TWD",
+     "base": "CIF（商品価格＋国際送料＋保険）",
+     "rate_above": "unknown"
+    },
+    "tier": "B_inferred",
+    "basis": "台湾の複数の解説サイトが一致。関税庁原文は未取得"
+   },
+   "vat": {
+    "rule": {
+     "type": "rate",
+     "rate": 0.05,
+     "name": "營業稅",
+     "base": "完稅價格 ＋ 進口稅"
+    },
+    "tier": "B_inferred",
+    "basis": "複数の解説サイトが一致。税率5%は台湾で固定"
+   },
+   "frequency_rule": {
+    "rule": {
+     "type": "import_count_window",
+     "window_months": 6,
+     "free_count": 6,
+     "note": "7回目以降は NT$1 でも課税。納税義務者単位で、淘宝・メルカリ・日本代購が同一枠を共有"
+    },
+    "tier": "B_inferred",
+    "basis": "複数の解説サイトが一致",
+    "impact": "**国の税ルールが利用者の輸入履歴に依存する。**予測時点では前提を置くしかない（D 寄り）"
+   },
+   "clearance": [
+    {
+     "route": "courier_cod",
+     "carrier": "快遞（代引き）",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 30,
+      "currency": "TWD"
+     },
+     "tier": "B_inferred",
+     "source": "台湾の解説サイト（複数）",
+     "inference_basis": "『税金代収手数料 約30元』で複数一致",
+     "note": "中華郵政の報関費は未取得（C）"
+    }
+   ],
+   "clearance_fee_vat": {
+    "rule": {
+     "type": "unknown"
+    },
+    "tier": "C_unknown"
+   },
+   "company_specific": {
+    "buyee": {
+     "purchase_fee_jpy": 300,
+     "tier": "A_confirmed",
+     "source": "https://beenos.com/news-center/detail/20191220_tcm_pr/",
+     "note": "英語版公式は ¥500。台湾のみ ¥300。BuyeePASS・コンビニ受取も台湾限定"
+    }
+   }
   }
  ]
 }
