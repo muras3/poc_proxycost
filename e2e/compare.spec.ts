@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
+  alcoholNote,
   breakdownTable,
   cart,
   cartItem,
@@ -16,6 +17,7 @@ import {
   rankButtons,
   ranking,
   readRanking,
+  restrictedNote,
   rowCells,
   weightBox,
   type RankRow,
@@ -24,6 +26,10 @@ import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
 import {
   ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_SECOND_HAND, ALTERNATIVE_SHIPPING_VERIFIED, nameList,
 } from '../src/lib/pricing/shipping-methods';
+import {
+  LITHIUM_AIRMAIL_LISTED, RESTRICTED_GOODS, restrictedList,
+} from '../src/lib/pricing/restricted-goods';
+import { COUNTRIES, COUNTRY_CODES } from '../src/lib/pricing/countries';
 
 /**
  * 比較画面の E2E。**実際に押して、選んで、打ち込む。**
@@ -742,6 +748,136 @@ test('20. the disclosure stays through real use, and it comes and goes with the 
   await addByHand(page, 'mystery lot Z', 4000);
   await expect(ranking(page)).toHaveCount(1);
   await expect(note).toBeVisible();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T27: 「送れないかもしれない」の常時開示。
+// この計算機は総額を出すが、**その小包が送れるかは一度も見ていない。**黙っていれば
+// 「¥26,000 で届く」と読まれる表を、届かない品にも出していることになる。
+// EMS の開示（T10）と同じ場所・同じ約束で、押して確かめる。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 酒として当たるタイトル。重量表の corroboration 規則が要求する語（sake）を含む。 */
+const SAKE = 'Dassai junmai daiginjo sake 720ml';
+
+test('24. the ranking says out loud that some goods may not be shippable, and that we never checked', async ({ page }) => {
+  await gotoCompare(page);
+  const note = restrictedNote(page);
+
+  // 何も押していない状態で、もう読める。
+  await expect(note).toHaveCount(1);
+  await expect(note).toBeVisible();
+  expect(await isCollapsed(note), '開示が「開かないと読めない」場所に居る').toBe(false);
+
+  const text = (await note.innerText()).replace(/\s+/g, ' ');
+  // (1) 何が制限されているか。**表（RESTRICTED_GOODS）と同じ語**が出ていること。
+  expect(text).toContain(restrictedList());
+  for (const g of RESTRICTED_GOODS) {
+    expect(text.toLowerCase(), `${g.id} が開示に無い`).toContain(g.labelEn.toLowerCase());
+  }
+  // (2) 我々が見ていないこと、そして総額が「送れる」の保証ではないこと。
+  expect(text).toMatch(/We do not check/);
+  expect(text).toMatch(/not a promise that the parcel can be sent/);
+
+  // 総額を読む前に目に入る位置（順位表の上）に居ること。
+  const noteBox = (await note.boundingBox())!;
+  const rankBox = (await ranking(page).boundingBox())!;
+  expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(rankBox.y + 1);
+});
+
+test('25. the shippability disclosure stays through real use, and comes and goes with the ranking', async ({ page }) => {
+  await gotoCompare(page);
+  const note = restrictedNote(page);
+  await expect(note).toBeVisible();
+
+  // 全ての行き先で消えない。ついでに、日本郵便がリチウム電池の航空郵便の宛先に
+  // 挙げていない国では**その事実がその場に足される**ことを見る。
+  // これは品目の判定ではなく宛先の事実なので、カートを見ずに言える。
+  for (const cc of COUNTRY_CODES) {
+    await page.getByLabel('Ship to').selectOption(cc);
+    await expect(note, `${cc} で開示が消えた`).toHaveCount(1);
+    await expect(note).toBeVisible();
+    const t = (await note.innerText()).replace(/\s+/g, ' ');
+    const named = t.includes(`does not list ${COUNTRIES[cc].name}`);
+    expect(named, `${cc}: リチウム電池の宛先の事実が表と食い違う`)
+      .toBe(!LITHIUM_AIRMAIL_LISTED[cc]);
+  }
+
+  // 品を足す。行を開く。開いた内訳の中に複製されない。
+  await addByHand(page, 'mystery lot Z', 4000);
+  await expect(note).toBeVisible();
+  await openRankRow(page, 1);
+  await expect(note).toHaveCount(1);
+  await expect(note).toBeVisible();
+
+  // カートを空にすれば順位と一緒に消える。開示だけ宙に浮かない。
+  await emptyCart(page);
+  await expect(ranking(page)).toHaveCount(0);
+  await expect(note).toHaveCount(0);
+
+  // 戻せば両方戻る。
+  await addByHand(page, 'mystery lot Z', 4000);
+  await expect(ranking(page)).toHaveCount(1);
+  await expect(note).toBeVisible();
+});
+
+test('26. a bottle of sake in the cart raises a stronger warning, and removing it takes the warning away', async ({ page }) => {
+  await gotoCompare(page);
+  // 酒が無いあいだは強い警告は出ない。常時の1行だけ。
+  await expect(alcoholNote(page)).toHaveCount(0);
+  await expect(restrictedNote(page)).toBeVisible();
+
+  await addByHand(page, SAKE, 5200);
+  const strong = alcoholNote(page);
+  await expect(strong).toHaveCount(1);
+  await expect(strong).toBeVisible();
+  expect(await isCollapsed(strong), '強い警告が畳まれている').toBe(false);
+
+  const text = (await strong.innerText()).replace(/\s+/g, ' ');
+  // 重量表が当てたラインの見出しで名指しする（品名ではなく、当たった根拠のほうを出す）。
+  expect(text).toContain('Sake / spirits, 700-750ml bottle');
+  // 原文が言っていること。24% と「宛先が決める」の両方。
+  expect(text).toMatch(/no drink over 24% ABV/);
+  expect(text).toMatch(/the destination country\s+decides/);
+  // そして我々が見ていないこと。ここを落とすと「送れない」と断定したことになる。
+  expect(text).toMatch(/without checking/);
+  expect(text).toMatch(/may belong to a\s+parcel that cannot be sent/);
+  // 常時の1行は消えない。強いほうが置き換えるのではなく、足される。
+  await expect(restrictedNote(page)).toBeVisible();
+
+  // 酒を外せば強い警告は消え、常時の1行は残る。
+  await cartItem(page, SAKE).getByRole('button', { name: `Remove ${SAKE}` }).click();
+  await expect(strong).toHaveCount(0);
+  await expect(restrictedNote(page)).toBeVisible();
+});
+
+test('27. both disclosures link to the rules, quoted with their source and date', async ({ page }) => {
+  await gotoCompare(page);
+  await restrictedNote(page).getByRole('link', { name: 'What the rules say' }).click();
+  await expect(page).toHaveURL(/\/sources#restricted$/);
+  await expect(page.getByRole('heading', { name: 'Goods that may not be shippable at all' }))
+    .toBeVisible();
+
+  for (const g of RESTRICTED_GOODS) {
+    const li = page.getByRole('listitem').filter({ hasText: `${g.labelEn} —` }).first();
+    await expect(li, `${g.id} の原文が /sources に無い`).toHaveCount(1);
+    await expect(li).toContainText(g.checkedOn);
+    await expect(li.getByRole('link', { name: 'Japan Post, nonmailable articles' }))
+      .toHaveAttribute('href', g.sourceUrl);
+    // 英語版に無い記述は、その旨をその行に書く。書かないと英語で読めると読まれる。
+    if (g.sourceLang === 'ja') {
+      await expect(li).toContainText('only in the Japanese page');
+    }
+  }
+
+  // 宛先ごとのリチウム電池の可否を、表と同じ中身で出していること。
+  const notListed = COUNTRY_CODES
+    .filter((c) => !LITHIUM_AIRMAIL_LISTED[c]).map((c) => COUNTRIES[c].name);
+  for (const name of notListed) {
+    await expect(page.getByText(new RegExp(`${name}[^.]*(is|are) not`))).toBeVisible();
+  }
+  // 取れなかったものは「取れなかった」と書く。黙って落とさない。
+  await expect(page.getByText(/What we could not get:/)).toBeVisible();
 });
 
 test('21. the disclosure links to the methods we did not price, named company by company', async ({ page }) => {

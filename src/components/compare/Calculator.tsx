@@ -13,6 +13,7 @@ import { EmsOnlyNote } from './EmsOnlyNote';
 import { ItemList, type ItemListHandle } from './ItemList';
 import { OptionalExtras } from './OptionalExtras';
 import { RankBoard, Summary } from './RankBoard';
+import { AlcoholInCartNote, RestrictedGoodsNote } from './RestrictedGoodsNote';
 import { StabilityNote } from './StabilityNote';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
 import { useCompare, type Draft } from './useCompare';
@@ -98,6 +99,10 @@ export function Calculator() {
             {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
                 「読んでいない人には言っていない」のと同じになる。 */}
             <EmsOnlyNote result={result} />
+            {/* **送れるかは一度も見ていない。**同じ理由で同じ場所に、常に出す。
+                酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
+            <RestrictedGoodsNote result={result} country={country} />
+            <AlcoholInCartNote result={result} items={items} />
           </div>
 
           <div className="mt-4">
