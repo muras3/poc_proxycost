@@ -1,6 +1,6 @@
 // 引き当て表。**1行1品目、パラメータだけ。**形は固定のルックアップで、生成はしない
 // （プロダクトの規約）。同じ id は必ず同じ形になる。
-// id は src/data/weights.ts の重量ライン id。69ライン全部をここが覆う
+// id は src/data/weights.ts の重量ライン id。75ライン全部をここが覆う
 // （glyphs.test.ts が WEIGHT_CATEGORIES を回して固定している）。
 
 export interface BoxP {
@@ -82,7 +82,12 @@ export const SHAPES: Record<string, GlyphShape> = {
   'scale-1-7': { fam: 'box', w: 48, h: 82, d: 22, win: [0.12, 0.1, 0.76, 0.7], band: 'bottom', mark: '1/7' },
   'scale-1-6': { fam: 'box', w: 52, h: 90, d: 24, win: [0.12, 0.1, 0.76, 0.7], band: 'bottom', mark: '1/6' },
   'scale-1-4': { fam: 'box', w: 62, h: 104, d: 30, win: [0.12, 0.1, 0.76, 0.7], band: 'bottom', mark: '1/4' },
+  // 総称のフィギュア。**スケールを知らないので帯も刻印も付けない。**窓だけの箱。
+  'figure-generic': { fam: 'box', w: 44, h: 68, d: 20, win: [0.14, 0.12, 0.72, 0.64] },
   'luxury-watch': { fam: 'box', w: 40, h: 34, d: 24, lid: true },
+  // 段ボール箱。窓が無いので中身は見えない — 全巻セットとゲーム機本体。
+  'manga-set': { fam: 'box', w: 58, h: 40, d: 42 },
+  'home-console': { fam: 'box', w: 64, h: 44, d: 46, band: 'top' },
   // Card — 1枚のカード。むき出し／スリーブ／鑑定済スラブ。
   'photocard': { fam: 'card', kind: 'photo', w: 30, h: 44, d: 1.6, r: 3 },
   'single-card': { fam: 'card', kind: 'sleeve', w: 32, h: 46, d: 2, r: 1.5 },
@@ -95,6 +100,9 @@ export const SHAPES: Record<string, GlyphShape> = {
   'dvd-bluray': { fam: 'media', w: 34, h: 50, d: 5, topband: true },
   'photobook': { fam: 'media', w: 42, h: 58, d: 6, spine: true },
   'magazine': { fam: 'media', w: 40, h: 58, d: 2.4, masthead: true },
+  'manga-volume': { fam: 'media', w: 30, h: 44, d: 8, spine: true },
+  'book-general': { fam: 'media', w: 26, h: 48, d: 6, spine: true },
+  'game-software': { fam: 'media', w: 30, h: 46, d: 4, band: true },
   // Bag — 柔らかい胴。持ち手が種類を言う。
   'wallet-small-leather': { fam: 'bag', kind: 'wallet' },
   'pouch-clutch': { fam: 'bag', kind: 'pouch' },

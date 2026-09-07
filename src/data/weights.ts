@@ -22,6 +22,14 @@ export interface WeightLine {
   /** P75 / P25。1.0 に近いほど事実上の定数。 */
   spread: number;
   tier: WeightTier;
+  /**
+   * カテゴリの総称ライン。**他のどのラインにも当たらなかったときだけ**使う。
+   * 'フィギュア' は '1/7' より長いので、当たった語の長さで決めると総称が
+   * 個別ラインを食う。だから長さではなく段階で分ける。
+   */
+  generic?: boolean;
+  /** このラインを出した店。カテゴリが複数の店を持つとき、行ごとに出所が違う。 */
+  sourceDomain?: string;
 }
 
 export interface WeightSource {
@@ -62,7 +70,7 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     category: 'figures',
     labelEn: 'Figures',
     labelJa: 'フィギュア',
-    checkedOn: '2026-09-06',
+    checkedOn: '2026-09-07',
     measured: false,
     sources: [
       {
@@ -71,7 +79,7 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
         products: 5000,
         variantsWithGrams: 4747,
         verdict: 'usable',
-        reason: 'Every product carries grams. Lines with a scale in the title have a spread of 1.0x',
+        reason: 'Every product carries grams. Lines with a scale in the title have a spread of 1.0x. Re-fetched 2026-09-07: 5,000 products, 10,630 variants with grams, verdict usable (distinct=287 at 2.7%, top value 22%). product_type=\'Figure\' is n=9,893.',
       },
     ],
     lines: [
@@ -82,10 +90,14 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
       { id: 'pop-up-parade', labelEn: 'Pop Up Parade', match: ['pop up parade', 'ポップアップパレード'], medianG: 800, p25: 800, p75: 1000, n: 104, spread: 1.2, tier: 'estimate' },
       { id: 'figma', labelEn: 'figma', match: ['figma'], medianG: 800, p25: 550, p75: 800, n: 78, spread: 1.5, tier: 'estimate' },
       { id: 'nendoroid', labelEn: 'Nendoroid', match: ['nendoroid', 'ねんどろいど'], medianG: 439, p25: 380, p75: 600, n: 426, spread: 1.6, tier: 'estimate' },
+      { id: 'figure-generic', labelEn: 'Figure, unspecified', match: ['フィギュア', 'フィギア', 'figure', 'figures'], medianG: 800, p25: 800, p75: 1300, n: 5103, spread: 1.63, tier: 'estimate', generic: true, sourceDomain: 'www.solarisjapan.com' },
     ],
     fallbackG: 1000,
     fallbackTier: 'estimate',
-    notes: '5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight.',
+    notes: 
+      '5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight.\n'
+      + '\n'
+      + '2026-09-07: added the generic line. The audit (docs/audit/logic.md §5) recorded that this category had no Japanese word for "a figure" at all — only the Japanese spellings of Nendoroid and Pop Up Parade — so ordinary Yahoo! Auctions and Mercari titles matched nothing. Two of the 37 live search titles were plain figure listings and both fell through. The 800 g is the same Solaris Japan catalogue re-fetched, sliced to product_type=\'Figure\' with the rows the existing lines already claim removed (1/4, 1/6, 1/7, 1/8, Nendoroid, figma, Pop Up Parade): n=5,103, verdict usable (distinct=179 at 3.5%, top value 41%), median 800 g, p25 800 / p75 1,300, spread 1.63. It is marked generic, which means it only resolves when no other line in the table matched. The Japanese word for a figure is five characters and \'1/7\' is three, so under the longest-match rule the generic line would otherwise swallow every scale line.',
   },
   {
     category: 'music',
@@ -110,6 +122,58 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     fallbackG: 200,
     fallbackTier: 'estimate',
     notes: 'Ranges published by Snow Records (CD 80-120 g, LP 240-300 g). We did not keep the sample count, so n is 0 here. Needs re-fetching.',
+  },
+  {
+    category: 'books-manga',
+    labelEn: 'Books and manga',
+    labelJa: '書籍・漫画',
+    checkedOn: '2026-09-07',
+    measured: false,
+    sources: [
+      {
+        domain: 'jpbookstore.com',
+        url: 'https://jpbookstore.com/products.json?limit=250&page=1',
+        products: 5000,
+        variantsWithGrams: 5000,
+        verdict: 'usable',
+        reason: 'distinct=163 (3.3%), top value 15%, multiples of 100: 16%. Adopted. Only one value in six is a round hundred, so these read as per-title weights and not as postage bands. product_type=\'Comics & Manga\' n=4,786 median 210 g (p25 200 / p75 250); \'Literature & Fiction\' n=84 median 408 g (p25 272 / p75 540). \'Art & Design\' (n=33) and \'Self-Help & Hobbies\' (n=37) are under the threshold of 50 and were not used.',
+      },
+      {
+        domain: 'shop.bookoffusa.com',
+        url: 'https://shop.bookoffusa.com/products.json?limit=250&page=1',
+        products: 1178,
+        variantsWithGrams: 1178,
+        verdict: 'usable',
+        reason: 'distinct=124 (10.5%), top value 11%. Adopted for the complete-set line only: the catalogue is entirely manga box sets, n=1,124 median 2,000 g (p25 1,400 / p75 2,800). It also corroborates the single volume from the other direction — a ten-volume set at 2,000 g is 200 g a volume, against jpbookstore\'s 210 g.',
+      },
+      {
+        domain: 'nipponrama.com',
+        url: 'https://nipponrama.com/products.json?limit=250&page=1',
+        products: 0,
+        variantsWithGrams: 0,
+        verdict: 'insufficient',
+        reason: 'products.json returns HTTP 403, so nothing could be read.',
+      },
+    ],
+    lines: [
+      { id: 'manga-set', labelEn: 'Manga, complete set', match: ['全巻セット', '全巻', 'コミックセット', 'complete set'], medianG: 2000, p25: 1400, p75: 2800, n: 1124, spread: 2, tier: 'estimate', sourceDomain: 'shop.bookoffusa.com' },
+      { id: 'manga-volume', labelEn: 'Manga volume', match: ['漫画', 'まんが', 'マンガ', 'コミックス', 'コミック', 'manga', 'comics', 'comic'], medianG: 210, p25: 200, p75: 250, n: 4786, spread: 1.25, tier: 'estimate', sourceDomain: 'jpbookstore.com' },
+      { id: 'book-general', labelEn: 'Book, non-manga', match: ['文庫本', '文庫', '新書', '小説', '単行本', 'ハードカバー', 'paperback', 'hardcover'], medianG: 408, p25: 272, p75: 540, n: 84, spread: 1.99, tier: 'estimate', sourceDomain: 'jpbookstore.com' },
+    ],
+    fallbackG: 220,
+    fallbackTier: 'estimate',
+    notes: 
+      'Two shops adopted: jpbookstore.com (usable) and shop.bookoffusa.com (usable). grams is an input to a shipping calculator, not a measurement, so measured: false. This category was listed as not obtained until 2026-09-07; it is obtained now.\n'
+      + '\n'
+      + 'jpbookstore.com is the better source of the two. Of 5,000 rows only 16% are round hundreds and the median is 220 g, which is what a Japanese tankobon actually weighs — so the shop is recording per-title weights rather than filling in a postage band. The manga line (210 g, n=4,786) is the single strongest line in the whole table by sample size and by spread (1.25).\n'
+      + '\n'
+      + 'shop.bookoffusa.com sells nothing but complete sets, which is why it is here: a set is a different object from a volume and needed its own line. It also checks the volume from the other side. A 2,000 g set of about ten volumes is 200 g a volume, within 5% of jpbookstore\'s 210 g, from an unrelated shop on another continent.\n'
+      + '\n'
+      + 'The general-book line is the weak one: 84 rows of \'Literature & Fiction\' with a spread of 1.99. It is kept because a novel is not a manga volume and 408 g is nearer the truth than 210 g, but it should be re-taken from a larger catalogue.\n'
+      + '\n'
+      + 'What is deliberately not here: illustrated reference books. A 図鑑, a 教科書 or a ムック is a large-format book, far heavier than a novel, and none of the adopted shops carry them in quantity. Rather than stretch the 408 g novel median over them, src/lib/pricing/weights.ts refuses those titles outright, and they fall back to the calculator\'s assumed weight. It also keeps a book about a thing from being read as the thing — a picture book about watches was resolving to 839 g, the weight of a watch.\n'
+      + '\n'
+      + '\'box set\' was tried as a match word for the set line and dropped: \'CD box set\' and \'Blu-ray box set\' are not manga, and the phrase is eight characters long, so it outranked the two-letter \'cd\' and took the listing.',
   },
   {
     category: 'tcg-singles',
@@ -257,7 +321,7 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     ],
     lines: [
       { id: 'graded-slab', labelEn: 'Graded slab (PSA/BGS)', match: ['psa', 'bgs', 'cgc'], medianG: 100, p25: 100, p75: 250, n: 1602, spread: 2.5, tier: 'estimate' },
-      { id: 'single-card', labelEn: 'Single card, packed', match: ['シングル', 'single card', 'sar', 'csr', 'ssr', 'パラレル', 'parallel'], medianG: 50, p25: 50, p75: 50, n: 3101, spread: 1, tier: 'estimate' },
+      { id: 'single-card', labelEn: 'Single card, packed', match: ['トレカ', 'トレーディングカード', 'trading card', 'シングル', 'single card', 'sar', 'csr', 'ssr', 'パラレル', 'parallel'], medianG: 50, p25: 50, p75: 50, n: 3101, spread: 1, tier: 'estimate' },
     ],
     fallbackG: 50,
     fallbackTier: 'estimate',
@@ -272,7 +336,9 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
       + '\n'
       + 'graded-slab must be matched first: PSA-graded listings also carry rarity words like \'sar\', so testing single-card first would drop graded cards to 50 g. The match words \'psa\', \'sar\', \'csr\' and \'ssr\' are short but appear almost nowhere except card titles, so they were kept; \'sr\', \'ur\' and \'ar\' were dropped as too short to be safe.\n'
       + '\n'
-      + 'Limit: pokeninjapan is effectively the only shop with a real body of singles that did not score pseudo. onepiece.pokeninjapan.store is the same operator, so it is not independent verification. tcgrepublic.com, the largest singles specialist, is not Shopify and could not be read.',
+      + 'Limit: pokeninjapan is effectively the only shop with a real body of singles that did not score pseudo. onepiece.pokeninjapan.store is the same operator, so it is not independent verification. tcgrepublic.com, the largest singles specialist, is not Shopify and could not be read.\n'
+      + '\n'
+      + '2026-09-07: added トレカ, its long form and "trading card" to single-card. The word was already ruled on when the table was built — kpop/photocard lost it to a denylist entry saying "トレカ should be drawn from tcg-singles at 50 g rather than K-pop\'s 28 g" — but it was never added here, so it matched nothing at all. In a sample of 37 titles the live search returned, seven were トレカ listings (mostly K-pop photocards) and every one of them fell through. No new weight data: 50 g is the same packed single-card median already recorded above, and it is the heavier of the two candidates, so a K-pop photocard quoted at 50 g is quoted on the safe side. Graded slabs keep priority through an exclusion in src/lib/pricing/weights.ts: a title carrying psa / bgs / cgc is never read as a raw single.',
   },
   {
     category: 'kpop',
@@ -1572,6 +1638,79 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
       + '\n'
       + '(8) fallbackG 2,000 is the overall median of the three adopted shops. Their catalogues are uniform- and armour-heavy, so applying it to non-budo sports goods (balls, apparel, small accessories) will overstate badly.',
   },
+  {
+    category: 'games',
+    labelEn: 'Video games',
+    labelJa: 'ゲーム',
+    checkedOn: '2026-09-07',
+    measured: false,
+    sources: [
+      {
+        domain: 'www.retroasia.com',
+        url: 'https://www.retroasia.com/products.json?limit=250&page=1',
+        products: 591,
+        variantsWithGrams: 692,
+        verdict: 'usable',
+        reason: 'distinct=81 (11.7%), top value 11%, multiples of 100: 69%. Adopted for the console line. Sliced to console listings (title or type naming a system or a set) it is n=587, median 3,350 g, p25 2,750 / p75 3,700, spread 1.35. Product types are console families: Famicom 185, Nintendo 64 133, Neogeo 50, Saturn 50, Dreamcast 45, Panasonic Q 42, Playstation 29, PC Engine 28, Megadrive 20. Every unit is sold as a refurbished set with cables, a controller and often a video-output mod, so the figure is a boxed set and not a bare console.',
+      },
+      {
+        domain: 'japan-figure.com',
+        url: 'https://japan-figure.com/products.json?limit=250&page=1',
+        products: 5000,
+        variantsWithGrams: 9078,
+        verdict: 'usable',
+        reason: 'distinct=437 (4.8%), top value 9%, multiples of 100: 27%. Adopted for the software line. product_type=\'Video Games New\' is n=1,691, but it mixes software with pouches, cases, grips and card holders; with those words removed the slice is n=1,495, median 190 g, p25 160 / p75 250, spread 1.56, and only 5% of the values are round hundreds.',
+      },
+      {
+        domain: 'www.emporiumretrogamingshop.com',
+        url: 'https://www.emporiumretrogamingshop.com/products.json?limit=250&page=1',
+        products: 1000,
+        variantsWithGrams: 1000,
+        verdict: 'pseudo',
+        reason: 'distinct=33, top value 66% of all rows. Not adopted: two thirds of the catalogue carries the same number.',
+      },
+      {
+        domain: 'hakushin-retro-game-shop.myshopify.com',
+        url: 'https://hakushin-retro-game-shop.myshopify.com/products.json?limit=250&page=1',
+        products: 1000,
+        variantsWithGrams: 0,
+        verdict: 'insufficient',
+        reason: '1,000 products and not one of them carries grams.',
+      },
+      {
+        domain: 'nin-nin-game.com',
+        url: 'https://nin-nin-game.com/products.json?limit=250&page=1',
+        products: 0,
+        variantsWithGrams: 0,
+        verdict: 'insufficient',
+        reason: 'products.json returns HTML, not JSON. Not a Shopify catalogue we can read.',
+      },
+      {
+        domain: 'www.retrogamecity.com',
+        url: 'https://www.retrogamecity.com/products.json?limit=250&page=1',
+        products: 0,
+        variantsWithGrams: 0,
+        verdict: 'insufficient',
+        reason: 'products.json returns HTTP 400.',
+      },
+    ],
+    lines: [
+      { id: 'home-console', labelEn: 'Home console, boxed set', match: ['ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube', 'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo', 'pcエンジン', 'pc engine', 'pc-fx', 'pcfx', 'メガドライブ', 'mega drive', 'megadrive', 'プレイステーション', 'playstation', 'プレステ'], medianG: 3350, p25: 2750, p75: 3700, n: 587, spread: 1.35, tier: 'estimate', sourceDomain: 'www.retroasia.com' },
+      { id: 'game-software', labelEn: 'Video game, software', match: ['ゲームソフト', 'video game', 'video games', 'game software'], medianG: 190, p25: 160, p75: 250, n: 1495, spread: 1.56, tier: 'estimate', sourceDomain: 'japan-figure.com' },
+    ],
+    fallbackG: null,
+    fallbackTier: 'none',
+    notes: 
+      'Two shops adopted: www.retroasia.com (usable) for hardware and japan-figure.com (usable) for software. grams is an input to a shipping calculator, not a measurement, so measured: false. This category was listed as not obtained until 2026-09-07.\n'
+      + '\n'
+      + 'The two lines are 18 times apart, which is the point of splitting them: a console and a game for that console are not the same parcel. There is no category average, because averaging 3,350 g and 190 g would produce a number describing nothing. fallbackG is null.\n'
+      + '\n'
+      + 'The console line is the weaker of the two and its limit has to be read with it. Every retroasia unit is a refurbished set — console, cables, a controller, usually a video-output mod — packed for export. So 3,350 g is a boxed set, not a bare console, and a used bare Famicom off an auction site is far lighter. The value is on the heavy side rather than the light side, which is the safe direction for a postage estimate, but it is not the weight of the machine. It is also one shop; no second catalogue publishing console grams was found.\n'
+      + '\n'
+      + 'Because the console line would be badly wrong on the wrong listing (a Famicom game is 100 g, not 3,350 g), src/lib/pricing/weights.ts requires a corroborating word — 本体, ゲーム機, console or system — before any system name resolves to it. A title that only says \'ファミコン ソフト\' resolves to nothing.\n'
+      + '\n'
+      + 'Not obtained: handheld consoles and current-generation consoles. retroasia has 26 handheld rows, under the threshold of 50, spanning 400 g to 4,100 g — a Chinese pocket handheld and a boxed Game Boy in one bucket, with nothing to separate them. Rather than average them, handhelds are left out of the table, and a handheld listing falls back to the calculator\'s assumed weight.',
+  },
 ];
 
 // 叩いたが商品ごとの重量が取れなかったカテゴリ。/weights はこれも出す。
@@ -1586,20 +1725,14 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     id: 'cameras',
     labelEn: 'Cameras and lenses',
     labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight.',
+    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
   },
   {
-    id: 'books-manga',
-    labelEn: 'Books and manga',
-    labelJa: '書籍・漫画',
-    reason: 'No Shopify catalogue found with per-title grams.',
-  },
-  {
-    id: 'games',
-    labelEn: 'Video games',
-    labelJa: 'ゲーム',
-    reason: 'No Shopify catalogue found with per-title grams.',
+    id: 'apparel',
+    labelEn: 'Clothing and outfit sets',
+    labelJa: 'アパレル・コーデセット',
+    reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
   },
 ];
 
-export const WEIGHTS_CHECKED_ON = '2026-09-06';
+export const WEIGHTS_CHECKED_ON = '2026-09-07';

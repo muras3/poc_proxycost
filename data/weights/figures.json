@@ -2,7 +2,7 @@
   "category": "figures",
   "labelJa": "フィギュア",
   "labelEn": "Figures",
-  "checkedOn": "2026-09-06",
+  "checkedOn": "2026-09-07",
   "method": "shopify-products-json",
   "measured": false,
   "sources": [
@@ -12,7 +12,7 @@
       "products": 5000,
       "variantsWithGrams": 4747,
       "verdict": "usable",
-      "reason": "Every product carries grams. Lines with a scale in the title have a spread of 1.0x"
+      "reason": "Every product carries grams. Lines with a scale in the title have a spread of 1.0x. Re-fetched 2026-09-07: 5,000 products, 10,630 variants with grams, verdict usable (distinct=287 at 2.7%, top value 22%). product_type='Figure' is n=9,893."
     }
   ],
   "lines": [
@@ -108,9 +108,27 @@
       "n": 426,
       "spread": 1.6,
       "tier": "estimate"
+    },
+    {
+      "id": "figure-generic",
+      "labelEn": "Figure, unspecified",
+      "match": [
+        "フィギュア",
+        "フィギア",
+        "figure",
+        "figures"
+      ],
+      "medianG": 800,
+      "p25": 800,
+      "p75": 1300,
+      "n": 5103,
+      "spread": 1.63,
+      "tier": "estimate",
+      "generic": true,
+      "sourceDomain": "www.solarisjapan.com"
     }
   ],
   "fallbackG": 1000,
   "fallbackTier": "estimate",
-  "notes": "5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight."
+  "notes": "5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight.\n\n2026-09-07: added the generic line. The audit (docs/audit/logic.md §5) recorded that this category had no Japanese word for \"a figure\" at all — only the Japanese spellings of Nendoroid and Pop Up Parade — so ordinary Yahoo! Auctions and Mercari titles matched nothing. Two of the 37 live search titles were plain figure listings and both fell through. The 800 g is the same Solaris Japan catalogue re-fetched, sliced to product_type='Figure' with the rows the existing lines already claim removed (1/4, 1/6, 1/7, 1/8, Nendoroid, figma, Pop Up Parade): n=5,103, verdict usable (distinct=179 at 3.5%, top value 41%), median 800 g, p25 800 / p75 1,300, spread 1.63. It is marked generic, which means it only resolves when no other line in the table matched. The Japanese word for a figure is five characters and '1/7' is three, so under the longest-match rule the generic line would otherwise swallow every scale line."
 }

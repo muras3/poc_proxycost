@@ -139,7 +139,10 @@ export function WeightLadder({
            距離なので、この ol が static のままだと段の位置が別の祖先基準になり、
            現在段ではなく最下段（30kg）まで送ってしまう。2.6kg の荷物で 19〜30kg の
            帯を出していたのがこれ。 */
-        className="relative flex max-h-64 flex-row overflow-auto rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neutral-700 sm:max-h-72 sm:flex-col dark:focus-visible:outline-neutral-300"
+        /* lg 以上では箱と目盛りは入力の隣の狭い列に入る（Calculator）。そこでの高さは
+           **カートの高さを超えてはいけない**（超えたぶんだけ順位表が下がる）ので、
+           広い画面でだけ短くする。段は 42 あるので、どの高さでも中は送る。 */
+        className="relative flex max-h-64 flex-row overflow-auto rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neutral-700 sm:max-h-72 sm:flex-col lg:max-h-60 dark:focus-visible:outline-neutral-300"
       >
         {rungs.map((rung) => {
           if (rung.kind === 'gap') {

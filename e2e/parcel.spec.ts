@@ -348,3 +348,117 @@ test('the ladder shows the step the parcel is actually on, not the end of the ta
   // かつ、遠すぎない（30 kg に張り付いていない）。
   expect(rungKg).toBeLessThan(parcelKg + 10);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **箱の置き場所。**
+// 箱は「足した品が落ちる」絵で、動きが情報を運ぶ。順位表の下（前の配置）に居ると、
+// 入力から1画面以上離れた場所で動くので、**誰も見ていないあいだに動いて終わる。**
+// ここで固定するのは3つ:
+//   ・入力欄と箱が同じ視界に入っている（足す前・足した後の両方）
+//   ・足しても画面は勝手に動かない（scrollIntoView で祖先を動かした前科がある）
+//   ・**答え（順位）を画面の外に押し出していない**
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 追加の入口（キーワード／URL の入力欄）。ここと箱が同じ視界に無ければ意味が無い。 */
+function addInput(page: Page) {
+  return page.getByPlaceholder('Paste a listing URL, or search by keyword');
+}
+
+/** 箱を描いている場面。箱そのものは 3D 変換が掛かるので、包む場面の矩形で見る。 */
+function boxScene(page: Page) {
+  return page.getByTestId('packing-box-scene');
+}
+
+function cartRegion(page: Page) {
+  return page.getByRole('region', { name: 'Cart' });
+}
+
+test('the box is in the same view as the input you add from — before and after adding', async ({ page }) => {
+  await gotoCompare(page);
+
+  // 何もスクロールしていない状態で、入力欄と箱が同時に、全部見えている。
+  await expect(addInput(page)).toBeInViewport({ ratio: 1 });
+  await expect(boxScene(page)).toBeInViewport({ ratio: 1 });
+
+  const before = await page.getByTestId('packed-item').count();
+  const scrolled = await page.evaluate(() => window.scrollY);
+  await addByHand(page, ITEM, 4000);
+  await expect(page.getByTestId('packed-item')).toHaveCount(before + 1);
+
+  // **画面は勝手に動かない。**箱を見せるために scrollIntoView を呼ぶのは、
+  // 祖先ごと動いて常時開示が画面外に出た（compare.spec の 19・24）ので禁止。
+  expect(await page.evaluate(() => window.scrollY), 'ページが勝手にスクロールした').toBe(scrolled);
+
+  // 落ちている最中も、静止した後も、箱は視界の中に居る。
+  await expect(addInput(page)).toBeInViewport({ ratio: 1 });
+  await expect(boxScene(page)).toBeInViewport({ ratio: 1 });
+  await expect(parcel(page)).toHaveAttribute('data-phase', 'idle', { timeout: 5000 });
+  await expect(boxScene(page)).toBeInViewport({ ratio: 1 });
+});
+
+test('an empty cart still shows the box, and the empty box claims no numbers', async ({ page }) => {
+  await gotoCompare(page);
+  await emptyCart(page);
+
+  // 箱は残る。落ちる先が画面に無いところから始まると、どこに落ちたのか分からない。
+  await expect(parcel(page)).toBeVisible();
+  expect(await step(page)).toBe('empty');
+  await expect(boxScene(page)).toBeInViewport({ ratio: 1 });
+  await expect(page.getByTestId('packed-item')).toHaveCount(0);
+
+  // **持っていない数字を出さない。**空の箱に重量も送料も段も無い。
+  const text = await parcel(page).innerText();
+  expect(text, '空の箱が金額を名乗っている').not.toMatch(/¥/);
+  expect(text, '空の箱が重量を名乗っている').not.toMatch(/\bkg\b/);
+  await expect(page.getByTestId('weight-ladder')).toHaveCount(0);
+  await expect(page.getByTestId('parcel-postage')).toHaveCount(0);
+
+  // 足せば、その箱に入る。
+  await addByHand(page, ITEM, 4000);
+  await expect(page.getByTestId('packed-item')).toHaveCount(1);
+  expect(await step(page)).not.toBe('empty');
+});
+
+test.describe('desktop layout', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'lg 以上の2列なので desktop でだけ見る');
+  });
+
+  test('the box stands beside the cart, and the ranking is still on the first screen', async ({ page }) => {
+    await gotoCompare(page);
+    const p = (await parcel(page).boundingBox())!;
+    const c = (await cartRegion(page).boundingBox())!;
+
+    // 横に並んでいる（カートの下ではない）。同じ行なので順位表は押し下がらない。
+    expect(p.x + p.width, '箱がカートに重なっている').toBeLessThanOrEqual(c.x + 1);
+    expect(Math.abs(p.y - c.y), '箱とカートの上端が揃っていない').toBeLessThan(2);
+
+    // **答えが画面の外に出ていない。**箱を上へ持ってきた代償はここに出る。
+    // 「どこが最安でいくらか」の1文（Summary）は丸ごと視界の中。
+    await expect(page.locator('p').filter({ hasText: /is cheapest\.|are tied cheapest/ }).first())
+      .toBeInViewport({ ratio: 1 });
+    // 順位表そのものも、最初の画面のうちに始まっている。
+    const rank = (await page.getByRole('region', { name: 'Ranking' }).boundingBox())!;
+    const vh = await page.evaluate(() => window.innerHeight);
+    expect(
+      rank.y,
+      `順位表が最初の画面から押し出されている（${Math.round(rank.y)} > ${vh}）`,
+    ).toBeLessThan(vh);
+  });
+});
+
+test.describe('mobile layout', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', '縦積みの順なので mobile でだけ見る');
+  });
+
+  test('the box comes before the cart, so a long cart cannot push it off screen', async ({ page }) => {
+    await gotoCompare(page);
+    // カートを開く（足した直後の状態）。それでも箱は上に残る。
+    await openCart(page);
+    const p = (await parcel(page).boundingBox())!;
+    const c = (await cartRegion(page).boundingBox())!;
+    expect(p.y + p.height, '箱がカートの下に落ちている').toBeLessThanOrEqual(c.y + 1);
+    await expect(boxScene(page)).toBeInViewport({ ratio: 1 });
+  });
+});
