@@ -1134,6 +1134,33 @@ test.describe('mobile layout', () => {
     expect(withCart.scroll).toBe(withCart.inner);
   });
 
+  test('13b. the by-hand form is usable — the name field is not crushed to a sliver', async ({ page }) => {
+    // Pixel 7 で 21px まで縮み、ラベルが 'Price ¥' に重なっていた。手入力は
+    // 検索も URL も要らない唯一の経路なので、ここが潰れると足す手段が1つ消える。
+    await gotoCompare(page);
+    await page.getByRole('button', { name: 'Or add an item by hand' }).click();
+    const name = page.getByLabel('Item name');
+    await expect(name).toBeVisible();
+
+    const box = (await name.boundingBox())!;
+    const vw = await page.evaluate(() => window.innerWidth);
+    expect(box.width, `名前欄が ${Math.round(box.width)}px しかない`).toBeGreaterThan(vw * 0.5);
+
+    // ラベルどうしが重なっていない（同じ行に居るなら横に、違う行なら上下に離れている）。
+    const price = page.getByLabel('Price ¥');
+    const p = (await price.boundingBox())!;
+    const overlaps = box.x < p.x + p.width && p.x < box.x + box.width
+      && box.y < p.y + p.height && p.y < box.y + box.height;
+    expect(overlaps, '名前欄と価格欄が重なっている').toBe(false);
+
+    // 実際に打てて、実際に足せる。
+    await name.fill('mobile hand-entry check');
+    await page.getByLabel('Price ¥').fill('4000');
+    await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+    await openCart(page);
+    await expect(cartItem(page, 'mobile hand-entry check')).toBeVisible();
+  });
+
   test('14. no cost×company table on a phone', async ({ page }) => {
     await gotoCompare(page);
     await expect(breakdownTable(page)).toBeHidden();

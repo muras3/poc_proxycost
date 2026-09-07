@@ -260,7 +260,13 @@ const EXCLUSIONS: Exclusion[] = [
     // index.json partialGaps 参照）。書籍カテゴリにも当てさせない。
     // これで「腕時計の図鑑」に腕時計の 839 g が付くのも止まる。
     allCategories: true,
-    when: ['図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック'],
+    // 「フィギュアの達人 初級編」は塞がっていたが、「フィギュアの作り方 入門書」は
+    // 語が1つ違うだけで通り抜けて 800 g（フィギュア本体）を名乗っていた。
+    // 同じ手引き書なので、同じ門で塞ぐ。
+    when: [
+      '図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック',
+      '入門書', '作り方', '描き方', '解説書', 'ガイドブック', '設定資料集',
+    ],
     why: 'A large-format or how-to book is not the thing it is about, and not the novel we measured',
   },
   {
@@ -277,6 +283,33 @@ const EXCLUSIONS: Exclusion[] = [
     lineIds: ['figure-generic'],
     when: ['スケート', 'skating', 'skate'],
     why: 'Figure skating is not a figure',
+  },
+  {
+    // **容れ物を売っている出品。**総称の 'フィギュア' 'トレカ' を表に入れた副作用で、
+    // 「フィギュア用アクリルケース」に 800 g、「トレカ用スリーブ 100枚」に 50 g が
+    // 付くようになった（この変更より前は両方 null）。中身の重量は容れ物の重量ではない。
+    // cd / lp に既に在る同じ門を、フィギュアとカードのラインにも効かせる
+    // （スケール行も、'1/7 スケール アクリルケース' で裏付けが揃ってしまうので同じ扱い）。
+    // **容れ物そのものの重量は取れていない**ので、当てずに仮置きへ落とす。
+    categoryId: 'figures',
+    lineIds: ['single-card', 'graded-slab'],
+    when: [
+      'ケース', 'case', 'ボックス', 'スリーブ', 'sleeve', 'ローダー', 'loader',
+      'バインダー', 'binder', 'ホルダー', 'holder', '収納', '台座', 'スタンド', 'stand',
+      'ディスプレイ', 'display', 'アクリル', 'acrylic', 'プロテクター', 'protector',
+    ],
+    why: 'The listing sells the case, the sleeve or the stand, and we have no weight for those',
+  },
+  {
+    // 'スニーカーボックス 収納ケース' は箱、'スニーカー用シューキーパー' は木型。
+    // どちらも 750 g（靴そのもの）ではない。この2件は総称を入れる前から在った誤爆。
+    categoryId: 'sneakers',
+    when: [
+      'ケース', 'case', 'ボックス', '収納', 'スタンド', 'stand', 'ラック', 'rack',
+      'シューキーパー', 'シューツリー', 'shoe keeper', 'shoe tree', 'インソール', 'insole',
+      '靴紐', '靴ひも', 'シューレース', 'shoelace', 'shoe laces', 'クリーナー', 'cleaner',
+    ],
+    why: 'A shoe box, a shoe tree or a lace is not the shoe we weighed',
   },
   {
     // 'ワンピース 全巻セット' は 2,000 g の箱で、210 g の単巻ではない。
