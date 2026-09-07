@@ -23,13 +23,19 @@ export interface RankRow {
   name: string;
   /** 'consolidated' / 'default' / null。 */
   variant: string | null;
-  /** `approx. total ~¥33,500` から読んだ数字。幅表示のときは下限。 */
-  total: number;
+  /** `approx. total ~¥33,500` から読んだ数字。幅表示のときは下限。比較不能なら null。 */
+  total: number | null;
   /** 最安との差額。最安行は 0。 */
   diff: number;
   cheapest: boolean;
   /** 行の生テキスト。'pays us nothing' の判定などに使う。 */
   text: string;
+  /**
+   * 総額が出ている行か。**出ていない行は総額も差額も持たない**——国際送料が
+   * 取れていないので、費目の合計は最大の費目を欠いた数字になる。画面は
+   * 'NOT COMPARABLE' と `—` を出す。`readRanking` はそれを total=null で表す。
+   */
+  comparable: boolean;
 }
 
 export function ranking(page: Page): Locator {
@@ -112,8 +118,14 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
   const out: RankRow[] = [];
   for (let i = 0; i < n; i++) {
     const text = (await buttons.nth(i).innerText()).replace(/\s+/g, ' ').trim();
+    // **比べられない行は 'NOT COMPARABLE' と `approx. total —` を出す。**
+    // 額が無いことが正しい状態なので、ここで落とさずに null として持ち帰る。
+    const comparable = !/NOT COMPARABLE/.test(text);
     const totalMatch = text.match(/approx\. total\s*~?(¥[\d,]+)/);
-    if (!totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
+    if (comparable && !totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
+    if (!comparable && totalMatch) {
+      throw new Error(`row ${i} is not comparable but still prints a total: ${text}`);
+    }
     const cheapest = /(^|\s)CHEAPEST(\s|$)/.test(text);
     const diffMatch = text.match(/\+¥([\d,]+)/);
     // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
@@ -132,10 +144,11 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
       tied: /tied with /.test(text),
       name,
       variant,
-      total: parseYen(totalMatch[1]!),
+      total: totalMatch ? parseYen(totalMatch[1]!) : null,
       diff: cheapest ? 0 : parseYen(diffMatch?.[1] ?? '0'),
       cheapest,
       text,
+      comparable,
     });
   }
   return out;

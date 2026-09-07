@@ -421,8 +421,15 @@ export default function SourcesPage() {
       <section className="mt-12">
         <H2 id="stability">What happens when the weight guess is wrong</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          Five items at ¥3,000 from Yahoo! Auctions to the United States, with the per-item weight
-          moved from a third of our estimate to five times it:
+          Five items at ¥3,000 from Yahoo! Auctions to Canada, with the per-item weight
+          moved from a third of our estimate to five times it. <strong>This one table is not the
+          United States</strong>, and that is itself a finding: the two companies that trade places
+          here are Neokyo and FROM JAPAN, and Neokyo does not sell Japan Post to the United States
+          at all — its own quote screen answers &ldquo;Not available or suspended in your
+          country&rdquo; for EMS, airmail and surface alike. With one of the two absent, the
+          American board does not change hands at any weight. That is one fewer company to choose
+          from, not one less thing to worry about: the total still moves by the same +98% from
+          200 g to 3,000 g.
         </p>
         <table className="mt-4 w-full max-w-3xl border-collapse text-sm">
           <thead>
@@ -471,8 +478,9 @@ export default function SourcesPage() {
         <H2 id="reversal">The one thing that changes the winner</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           Neokyo includes domestic shipping inside Japan in its service fee, which is most of why it
-          usually wins. When the seller ships free, that advantage disappears and FROM JAPAN comes
-          first instead. This is the only reversal we have found — and it is not a guess: whether the
+          usually wins <em>where it can carry the parcel at all</em> — six of our seven
+          destinations; not the United States, where it sells no Japan Post service. When the seller
+          ships free, that advantage disappears and FROM JAPAN comes first instead. This is the only reversal we have found — and it is not a guess: whether the
           seller charges for shipping is stated on the listing page, so pasting the listing URL
           settles it. Picking an item from search results cannot settle it, which is why the
           calculator asks for the URL at that point rather than quietly assuming ¥800.

@@ -151,6 +151,19 @@ const TABLES: Record<Exclude<PostalMethod, 'ems'>, Record<number, readonly Step[
   'parcel-surface': PARCEL_SURFACE,
 };
 
+/**
+ * その方式でその国が属する地帯。**EMS だけ別の割り方を使う。**
+ *
+ * 額の計算は最初から `EMS_ZONE` と `POSTAL_ZONE` を使い分けていたが、
+ * **画面の注記だけが `POSTAL_ZONE` で書かれていた。**そのため米国の EMS は
+ * 第4地帯の額（30kg で ¥75,100。第3地帯なら ¥65,500）を出しながら
+ * 注記に「zone 3」と書いていて、**額と根拠が食い違っていた。**
+ * 地帯を答える口をここ1つにして、呼ぶ側が選び間違える余地を無くす。
+ */
+export function zoneFor(method: PostalMethod, cc: CountryCode): number {
+  return method === 'ems' ? EMS_ZONE[cc] : POSTAL_ZONE[cc];
+}
+
 /** その方式・その地帯で表が持っている最大重量。**表の外は「高い」ではなく「送れない」。** */
 export function maxGramsFor(method: PostalMethod, cc: CountryCode): number {
   if (method === 'ems') return EMS_MAX_GRAMS;
