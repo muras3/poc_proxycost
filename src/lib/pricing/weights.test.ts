@@ -152,6 +152,37 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
     expect(resolveWeight('フィギュアスケート 衣装').grams).toBeNull();
   });
 
+  test('a how-to book about figures is not a figure either', () => {
+    // 「フィギュアの達人 初級編」は '初級編' で塞がっていたのに、語が1つ違う
+    // 「フィギュアの作り方 入門書」は総称ライン 800 g を名乗って通り抜けていた。
+    for (const t of [
+      'フィギュアの作り方 入門書', 'フィギュア製作 ガイドブック',
+      'フィギュアの描き方 解説書', 'ねんどろいど 設定資料集',
+    ]) {
+      expect(resolveWeight(t).grams, t).toBeNull();
+    }
+  });
+
+  test('the case, the sleeve and the stand are not the thing they hold', () => {
+    // 総称の 'フィギュア' 'トレカ' を表に入れた副作用。中身の重量は容れ物の重量ではない。
+    // **容れ物そのものの重量は取れていない**ので、当てずに仮置きへ落ちるのが正しい。
+    for (const t of [
+      'フィギュア用 アクリルケース 展示用', 'フィギュア ディスプレイケース 5体収納',
+      'フィギュア台座 スタンド 10個', 'フィギュア収納ボックス', 'ねんどろいど 専用ケース',
+      '1/7 スケール フィギュア用 アクリルケース',
+      'トレカ用スリーブ 100枚', 'トレカ ケース ローダー 25枚', 'トレカ バインダー 収納',
+      'PSA トレカ デッキケース',
+      'スニーカーボックス 収納ケース', 'スニーカー用シューキーパー', 'スニーカー 靴紐 3足分',
+    ]) {
+      expect(resolveWeight(t).grams, t).toBeNull();
+    }
+    // **門は本物の出品を食わない。**中身を売っている出品は今までどおり当たる。
+    expect(resolveWeight('ワンピース フィギュア ルフィ 正規品').lineId).toBe('figure-generic');
+    expect(resolveWeight('トレカ プロモカード 5種11枚').lineId).toBe('single-card');
+    expect(resolveWeight('レア 当時物 ヴィンテージ NIKE スニーカー').lineId).toBe('sneaker-casual');
+    expect(resolveWeight('1/7 スケール フィギュア レム').lineId).toBe('scale-1-7');
+  });
+
   test('a graded slab is never read as a raw single, whatever word is longest', () => {
     // 'トレーディングカード'(10文字) は 'psa'(3文字) より長い。語の長さで決めると
     // スラブ 100 g が生カード 50 g に流れる。tcg-singles.json の「graded-slab を先に見ること」。
