@@ -30,6 +30,9 @@ export interface Country {
   clearanceBands?: { upTo: number; amount: number; note: string }[];
   clearanceCcy: string;
   clearanceTier: Tier;
+  /** `dutyRate` が `dutyFreeLimit` **超**にだけ効くとき、その税率の出典。
+   * `sourceUrl`（免税枠側の出典）と別文書になるので分けている。 */
+  dutyRateSourceUrl?: string;
   clearanceSourceUrl?: string;
   /** `clearanceBands` を読んだ日。**帯ごとの額は他の数字と同じで、日付が無ければ
    *  いつの値か言えない。**画面に「read <日付>」として出す。 */
@@ -69,18 +72,47 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'United States', ccy: 'USD', base: 'FOB',
     dutyFreeLimit: 0, dutyRate: 0.125, dutyTier: 'unverified',
     vatRate: null, vatFreeLimit: null,
-    // USPS Notice 123 の「Customs Clearance and Delivery Fee」$9.35／課税対象郵便物1個。
-    // 免税帯が無い（de minimis 停止中）ので帯は1つ。
-    clearanceBands: [{
-      upTo: Number.POSITIVE_INFINITY, amount: 9.35,
-      note: 'USPS customs clearance and delivery fee, per dutiable item',
-    }],
-    clearanceCcy: 'USD', clearanceTier: 'unverified',
-    // **原典（USPS Notice 123）に当たれていない。**額は二次情報で、tier が
-    // unverified なのはそのため。日付は「その二次情報を読んだ日」であって
-    // 「原典を確認した日」ではない。取れたら tier ごと差し替える。
-    clearanceSourceUrl: 'https://pe.usps.com/text/imm/immc1_022.htm',
-    clearanceCheckedOn: '2026-09-06',
+    // USPS Notice 123 の「Customs Clearance and Delivery ... Per dutiable item
+    // All other qualifying classes of inbound mail $9.35」。**原典で確認済み。**
+    //
+    // **この手数料は無条件ではない。**IMM 712.11 原文:「Post Office facilities must
+    // collect a Postal Service fee from the addressee for each item on which customs
+    // duty or Internal Revenue tax **is collected**」。712.2 は「mail items examined
+    // and passed free of duty」を明示的に除外する。**配達時に徴収するものが無ければ
+    // 手数料も無い**——GB/DE/FR/SG と同じ構造（`docs/MASTER.md` の共通構造）。
+    //
+    // 日本郵便は米国宛を「差出人が Zonos で関税を事前納付すること」を条件に引き受ける
+    // （下の `dutyPrepayment`、$2,500 まで）。事前納付されていれば配達時の徴収は無く、
+    // 712.11 の条件が立たない。Notice 123 自身も「USPS Delivered Duty Paid (DDP) ...
+    // Per piece $0.00」と別立てしている。**よって $2,500 以下は 0**（取得できた 0）。
+    clearanceBands: [
+      {
+        upTo: 2500, amount: 0,
+        note: 'duty is prepaid by the sender through Zonos, so the Postal Service has'
+          + ' nothing to collect at delivery — IMM 712.11 charges the fee only on items'
+          + ' on which duty is collected, and Notice 123 lists DDP at $0.00',
+      },
+      {
+        upTo: Number.POSITIVE_INFINITY, amount: 9.35,
+        note: 'USPS customs clearance and delivery fee, per dutiable item — above the'
+          + ' $2,500 prepayment band, duty is collected at delivery instead',
+      },
+    ],
+    clearanceCcy: 'USD', clearanceTier: 'fixed',
+    // 原典 = USPS Notice 123（Price List）。IMM 712 は徴収条件、Notice 123 は額。
+    clearanceSourceUrl: 'https://pe.usps.com/text/dmm300/Notice123.htm',
+    clearanceSourceUrl2: 'https://pe.usps.com/text/imm/immc7_002.htm',
+    clearanceCheckedOn: '2026-09-07',
+    // **CBP 側の手数料は、この計算機の帯では買い手に課されない。**原文で確認した:
+    // - 19 CFR 24.22(f)(2)「The fee specified in paragraph (f)(1) of this section
+    //   does not apply to dutiable Inbound EMS items」→ 名宛人課金の Dutiable Mail
+    //   Fee $7.39 は **EMS に適用されない**
+    // - 19 CFR 24.22(l)(2) の EMS 手数料 $1.00 は USPS が外国郵便事業者との
+    //   settlement で受け取り四半期ごとに CBP へ送金するもの。**名宛人には課されない**
+    // - 19 CFR 24.23(c)(v)「merchandise imported by mail, other than Inbound EMS items
+    //   that are **formally entered**」→ MPF は郵便免除。EMS が正式輸入申告される
+    //   （＝$2,500 超）ときだけ 24.23(b)(1) の formal MPF（0.3464%・最低 $33.58）。
+    //   **$2,500 超の帯に未実装**（`docs/TODO-NEXT.md`）。
     notes: ['de_minimis_suspended'],
     sourceUrl: 'https://hts.usitc.gov/',
     sellerCollectsBelow: null,
@@ -127,9 +159,42 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // 代行が挟まる取引がここに当たるかは規則本文からは断定できない
     // （docs/audit/taxes.md §「€3 の適用対象」）。当たらなければこの ¥489/点 は
     // 総額から丸ごと消える。だから確定として描かない。
-    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
+    // **€150 を超えた帯の税率。**以前ここは `null` で、画面に「—」を出していた。
+    // それは「関税が無い」ではなく「我々が調べていない」で、しかも副作用があった:
+    // 関税は VAT の課税ベースに入るので、null が 0 として畳まれて **VAT まで縮み**、
+    // **商品代が上がると総額が下がる**区間ができていた（¥27,000→¥28,000 で総額 −¥2,052）。
+    //
+    // 品目分類を持っていないので個別税率は引けない。**分類を持たない者が置ける最も
+    // 根拠のある1つの数字**として、WTO World Tariff Profiles 2025 の EU プロファイル
+    // Part A.1 から「非農産品・MFN applied 2024 の単純平均 4.1%」を採る。
+    // 原文: Simple average 2024 — Total 5.0 / Ag 10.5 / Non-Ag 4.1。
+    //
+    // **加重平均 2.4% ではなく単純平均を採る理由**: 加重平均は EU の実際の輸入額
+    // （工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは
+    // 「税表の行を1本引く」ことなので、行を等しく扱う単純平均のほうが近い。
+    // **反証**: 同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。
+    // 逆に非農産品の 29.1% は無税、63.4% は 5% 以下（同 Part A.1 の度数分布）。
+    // **幅は 0〜12% あり、4.1% はその中央付近の1点でしかない。だから tier は estimate。**
+    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: 0.041, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf',
     vatRate: 0.19, vatFreeLimit: 0,
-    clearanceCcy: 'EUR', clearanceTier: 'none',
+    // Deutsche Post / DHL の Auslagepauschale。**2026-03-10 に €6 → €7.50 へ上がった**
+    // （公式「Leistungen und Preise」2026-07-01 版で €7.50／通、消費税込み）。
+    // 額は総額によらず一律。**輸入税が実際に発生する通にだけ課される**
+    // ——ドイツは免税枠が無い（`vatFreeLimit: 0`）ので、この計算機が扱う帯では常に発生する。
+    // 独自通関（Selbstverzollung）を選べば回避できるが、それは利用者の操作であって
+    // 料金表ではない（`docs/MASTER.md` の D_unpredictable と同じ扱い）。
+    clearanceBands: [{
+      upTo: Number.POSITIVE_INFINITY, amount: 7.5,
+      note: 'Deutsche Post / DHL Auslagepauschale, per consignment, incl. VAT',
+    }],
+    clearanceCcy: 'EUR', clearanceTier: 'unverified',
+    // **原典（Deutsche Post「Leistungen und Preise」）に当たれていない。**
+    // 額と改定日は業界紙と paketda.de（複数が €7.50 で一致）から。tier はそのため unverified。
+    // 以前この国は帯そのものを持たず「—」を出していたが、それは
+    // 「手数料が無い」ではなく「我々が調べていない」であり、DE だけ安く見えていた。
+    clearanceSourceUrl: 'https://www.paketda.de/zoll/auslagepauschale.html',
+    clearanceCheckedOn: '2026-09-07',
     notes: [],
     sourceUrl: 'https://www.zoll.de/EN/Private-individuals/private-individuals_node.html',
     sellerCollectsBelow: null,
@@ -137,9 +202,40 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   FR: {
     name: 'France', ccy: 'EUR', base: 'CIF',
     // DE と同じ €3。対象（DSIG）に当たるかを断定できないので確定として描かない。
-    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
+    // **€150 を超えた帯の税率。**以前ここは `null` で、画面に「—」を出していた。
+    // それは「関税が無い」ではなく「我々が調べていない」で、しかも副作用があった:
+    // 関税は VAT の課税ベースに入るので、null が 0 として畳まれて **VAT まで縮み**、
+    // **商品代が上がると総額が下がる**区間ができていた（¥27,000→¥28,000 で総額 −¥2,052）。
+    //
+    // 品目分類を持っていないので個別税率は引けない。**分類を持たない者が置ける最も
+    // 根拠のある1つの数字**として、WTO World Tariff Profiles 2025 の EU プロファイル
+    // Part A.1 から「非農産品・MFN applied 2024 の単純平均 4.1%」を採る。
+    // 原文: Simple average 2024 — Total 5.0 / Ag 10.5 / Non-Ag 4.1。
+    //
+    // **加重平均 2.4% ではなく単純平均を採る理由**: 加重平均は EU の実際の輸入額
+    // （工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは
+    // 「税表の行を1本引く」ことなので、行を等しく扱う単純平均のほうが近い。
+    // **反証**: 同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。
+    // 逆に非農産品の 29.1% は無税、63.4% は 5% 以下（同 Part A.1 の度数分布）。
+    // **幅は 0〜12% あり、4.1% はその中央付近の1点でしかない。だから tier は estimate。**
+    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: 0.041, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf',
     vatRate: 0.20, vatFreeLimit: 0,
-    clearanceCcy: 'EUR', clearanceTier: 'none',
+    // La Poste の「frais de gestion」。**額は利用者がいつ払うかで変わる。**
+    // 原文:「En payant en ligne, vous bénéficiez de frais de gestion réduits
+    // (2 ou 5€ selon le type de colis)」／配達時・窓口は「le tarif plein」で
+    // **フランス本土 8€ TTC**（海外県は 7.5€ / 7€ と TVA 率で違う）。
+    // **既定は 8€ を出す。**利用者が何もしなければこれになるからで、
+    // 事前にオンラインで払えば 2〜5€ に下がるのは**利用者の操作**であって料金表ではない
+    // （スペインの Correos も €6 → €1.56 と同じ構造。docs/MASTER.md の D_unpredictable）。
+    // 本土の宛先だけを扱うので海外県の帯は入れていない。
+    clearanceBands: [{
+      upTo: Number.POSITIVE_INFINITY, amount: 8,
+      note: 'La Poste frais de gestion, full rate at delivery — 2–5 EUR if paid online in advance',
+    }],
+    clearanceCcy: 'EUR', clearanceTier: 'fixed',
+    clearanceSourceUrl: 'https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international',
+    clearanceCheckedOn: '2026-09-07',
     notes: [],
     sourceUrl: 'https://www.douane.gouv.fr/',
     sellerCollectsBelow: null,
@@ -183,7 +279,22 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   },
   CA: {
     name: 'Canada', ccy: 'CAD', base: 'FOB',
-    dutyFreeLimit: 20, dutyRate: null, dutyTier: 'none',
+    // **C$20 超の関税率。**以前は null で画面に「—」を出していた。EU と同じ理由で埋める
+    // ——「関税が無い」ではなく「我々が調べていない」で、しかも関税は GST の課税ベースに
+    // 入るので null が 0 に畳まれて GST まで縮む。
+    //
+    // WTO World Tariff Profiles 2025 のカナダプロファイル Part A.1 原文:
+    //   Simple average 2025 — Total 3.7 / Ag 14.5 / **Non-Ag 2.0**
+    //   Trade weighted average 2025 — 3.6 / 15.1 / 2.3
+    // 非農産品の単純平均 **2.0%** を採る（EU と同じ選び方。加重平均はその国の実際の
+    // 輸入額の構成で、個人小包の中身の分布ではない）。
+    //
+    // **EU より不確かである点を明記しておく。**同 Part A.1 の度数分布で、カナダは
+    // 非農産品の税表の行の **79.2% が無税**（EU は 29.1%）。つまり**最頻値は 0%** で、
+    // 2.0% は「無税の行が大半・残りに 5〜25% が散る」分布の平均でしかない。
+    // 個別の品目では 0% か、2% よりずっと高いかのどちらかになりやすい。
+    dutyFreeLimit: 20, dutyRate: 0.02, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/CA_e.pdf',
     vatRate: 0.05, vatFreeLimit: 20,
     // Canada Post 原文:「We apply a handling fee of CAN$9.95 per dutiable or taxable
     // mail item.」——**課税対象の郵便物1個ごと**。C$20 以下は同じページが
@@ -219,7 +330,25 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'Singapore', ccy: 'SGD', base: 'CIF',
     dutyFreeLimit: Number.POSITIVE_INFINITY, dutyRate: 0, dutyTier: 'fixed',
     vatRate: 0.09, vatFreeLimit: 400,
-    clearanceCcy: 'SGD', clearanceTier: 'none',
+    // SingPost の Handling Fee。**シンガポール税関自身は通関手数料を取らない**
+    // （原文「Singapore Customs does not collect any clearance fee ... other than
+    // payment of duty or GST」）。取るのは SingPost で、名目は
+    // 「税関に代わって GST・関税を徴収する手数料」。
+    //
+    // **だから帯は S$400 で割れる。**S$400 以下は OVR で決済時に GST が済んでいるので
+    // 国境で徴収するものが無く、この手数料も発生しない ——「取得できた 0」。
+    // 超えた帯だけ S$10.90／通。
+    clearanceBands: [
+      { upTo: 400, amount: 0, note: 'GST already collected at checkout under OVR — nothing for SingPost to collect' },
+      { upTo: Number.POSITIVE_INFINITY, amount: 10.9, note: 'SingPost handling fee, per consignment' },
+    ],
+    clearanceCcy: 'SGD', clearanceTier: 'unverified',
+    // **S$400 の閾値は公式本文で取れた**（「the postal parcel contains goods of a
+    // total CIF value exceeding S$400」）。**額 S$10.90 は取れていない**——
+    // 公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画だけ。
+    // だから tier は unverified。文そのものが取れたら fixed に上げる。
+    clearanceSourceUrl: 'https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments',
+    clearanceCheckedOn: '2026-09-07',
     notes: ['seller_collects_gst'],
     sourceUrl: 'https://www.customs.gov.sg/individuals/importing-personal-goods/',
     // S$400 未満の低額品（LVG）は、GST 登録済みの海外事業者・転送業者が

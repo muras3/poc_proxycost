@@ -41,8 +41,8 @@ DE: CIF/150/€3定額/19%、FR: 同/20%、AU: FOB/1000/GST10%、CA: FOB/20/GST5
 | 郵便の課税方式 | 2026-02-24〜07-24 は Section 122 の一律10%。**2026-07-24 に新しい郵便 informal entry へ移行**し、以後は「HTSUS の分類・原産国・課税価格に基づく全ての税・手数料」を課す | 一律 12.5% | **偶然一致（理由が違う）** | [CBP E-Commerce FAQ](https://www.cbp.gov/trade/basic-import-export/e-commerce/faqs) | 2026-09-06 |
 | 日本産品の関税率 | **MFN と Section 301 の合計が 12.5% になるよう調整。MFN が 12.5% 以上なら 301 はゼロ**（= 実効 `max(MFN, 12.5%)`）。2026-07-24 発効 | 12.5% 一律 | **MFN ≤ 12.5% の品目では一致、超える品目では過少** | [USTR 最終措置 FRN (2026-07-23) p.28, p.78](https://ustr.gov/sites/default/files/files/Press/Releases/2026/FLIP%20301%20Investigation%20Final%20Action%20FRN%207-23-26%20FINAL.pdf) | 2026-09-06 |
 | 課税ベース | 米国は FOB（商品価格）。国際運賃は課税価格に入らない | `base: 'FOB'` | **一致** | HTSUS 一般規則／CBP | 2026-09-06 |
-| USPS 通関・配達手数料 | **$9.35／課税対象郵便物1個**（Notice 123 価格表） | $9.35 | **一致。tier を `unverified` から上げてよい** | [USPS IMM 712](https://pe.usps.com/text/imm/immc7_002.htm) / [Notice 123](https://pe.usps.com/text/dmm300/Notice123.htm) | 2026-09-06 |
-| CBP 側の手数料 | **Inbound EMS は MPF 免除の対象外**。EMS 手数料 $1.00、informal entry の MPF $2.69 / $8.06 / $12.09 | **無し** | **欠落** | [CBP E-Commerce FAQ](https://www.cbp.gov/trade/basic-import-export/e-commerce/faqs) / [CBP User Fee Table](https://www.cbp.gov/trade/basic-import-export/user-fee-table) | 2026-09-06 |
+| USPS 通関・配達手数料 | **$9.35／課税対象郵便物1個**（Notice 123 価格表）。ただし IMM 712.11 は「customs duty or Internal Revenue tax **is collected**」な品にだけ課すと書き、712.2 は「examined and passed free of duty」を除外する。**税を徴収しなければ手数料も無い** | $2,500 以下 **0**（Zonos 事前納付で配達時の徴収が無い）／超は $9.35 | **一致（2026-09-07 に修正）。**原典で確認したので tier を `fixed` に上げた | [USPS IMM 712](https://pe.usps.com/text/imm/immc7_002.htm) / [Notice 123](https://pe.usps.com/text/dmm300/Notice123.htm) | 2026-09-07 |
+| CBP 側の手数料 | **この帯では買い手に課されない**（2026-09-07 に原文で確認、以前の「欠落」は誤り）。①24.22(f)(2)「The fee specified in paragraph (f)(1) ... does not apply to dutiable Inbound EMS items」→ 名宛人課金の Dutiable Mail Fee $7.39 は EMS 適用外 ②24.22(l)(2) の EMS 手数料 $1.00 は USPS が**外国郵便事業者との settlement** で受け取り四半期ごとに CBP へ送金するもので、名宛人には課されない ③24.23(c)(v)「merchandise imported by mail, other than Inbound EMS items that are **formally entered**」→ MPF は郵便免除、EMS が正式申告（$2,500 超）のときだけ 24.23(b)(1) の formal MPF（0.3464%・最低 $33.58） | 無し | **$2,500 以下は一致（課されない）。$2,500 超の formal MPF は未実装** | [19 CFR 24.22](https://www.ecfr.gov/current/title-19/chapter-I/part-24/section-24.22) / [19 CFR 24.23](https://www.ecfr.gov/current/title-19/chapter-I/part-24/section-24.23) / [CBP User Fee Table](https://www.cbp.gov/trade/basic-import-export/user-fee-table) | 2026-09-07 |
 | 州の売上税 | 連邦レベルには無い（実装の注記どおり） | `vatRate: null` | 一致 | — | — |
 
 ### 「米国の少額免税停止」という前提は今も正しいか → **正しい。ただし理由が古い。**
@@ -199,7 +199,7 @@ SG は現在7カ国で最安に見えるが、**その最安さは欠落によ�
 | カテゴリ | 実態 | 金額の桁 | 一次情報 |
 |---|---|---|---|
 | 為替スプレッド | 各社の請求は円建て。利用者のカード／PayPal に 2〜4% の外貨手数料が乗る。`rates.ts` は公表仲値の固定値のみ | ¥20,000 につき **¥400〜800** | 未取得（カード会社ごと） |
-| 米国 CBP の手数料 | Inbound EMS は MPF 免除外。EMS 手数料 $1.00 ＋ informal entry MPF $2.69/$8.06/$12.09 | **¥550〜¥1,960**／小包 | [CBP User Fee Table](https://www.cbp.gov/trade/basic-import-export/user-fee-table) |
+| 米国 CBP の formal MPF（**$2,500 超の帯だけ**） | 24.23(c)(v) は郵便を MPF 免除にし、EMS も**正式申告されたときだけ**免除外。$2,500 以下は課されない（前の版の「¥550〜¥1,960 が未計上」は誤り） | **¥5,250〜**（$33.58 最低額・該当帯のみ） | [19 CFR 24.23](https://www.ecfr.gov/current/title-19/chapter-I/part-24/section-24.23) |
 | 豪州 IPC＋生物検疫 | A$1,000超で A$50＋A$48 | **¥9,700**（該当帯のみ） | [ABF](https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/cost-of-importing-goods/charges/import-processing-charge) |
 | Canada Post 立替手数料 | CAN$9.95／課税郵便物 | **¥1,095** | Canada Post |
 | カナダ州税 | 州により 0〜10%（QST 9.975%、ON 8%、BC 7% 等） | **¥0〜¥1,800** | [CBSA](https://www.cbsa-asfc.gc.ca/import/postal-postale/dtytx-drttx-eng.html) |
@@ -238,7 +238,7 @@ docs に書いてあることと動くコードが乖離している典型例で
 | 3 | US | 衣類など MFN > 12.5% の品目を 12.5% 固定にしている（化繊セーター 32%） | 過少 | **¥2,340** | -10% |
 | 4 | SG | OVR による 9% 前徴収（Buyee が明記）を「S$400以下は¥0」としている | 過少 | **¥1,503** | **-8%** |
 | 5 | GB | ≤£135 で「VAT」と「£8 立替手数料」を両方積む（売り手徴収なら手数料は発生しない） | 過大 | **+¥1,520** | +7% |
-| 6 | US | Inbound EMS の MPF＋EMS 手数料 | 過少 | ¥550〜¥1,960 | -3〜9% |
+| 6 | US | ~~Inbound EMS の MPF＋EMS 手数料~~ **誤りだった。**24.22(f)(2) と 24.23(c)(v) の原文で、$2,500 以下の EMS には CBP 手数料が課されないことを確認（2026-09-07） | — | ¥0 | 0% |
 | 7 | CA | Canada Post 手数料単体（#2 の内訳） | 過少 | ¥1,095 | -6% |
 | 8 | 全 | 為替スプレッド 2〜4%（実装は仲値固定） | 過少 | ¥400〜800 | -2〜4% |
 | 9 | GB/DE/FR | 閾値を CIF で判定（正しくは intrinsic value）。£110〜135・€125〜150 の帯で判定を誤る | 両方向 | 帯によっては関税行が丸ごと反転 | — |

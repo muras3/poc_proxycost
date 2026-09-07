@@ -112,6 +112,13 @@ export interface PrepaidImportTax {
    *   total           … 税を除く支払総額（商品代＋手数料＋国内送料＋梱包＋国際送料）
    */
   base: 'declared' | 'before-shipping' | 'total';
+  /**
+   * **その社が自分で徴収すると言っている上限**（受取国通貨・intrinsic value）。
+   * 国側の `sellerCollectsBelow` は「その国では**どの社も**販売時点で取る」制度
+   * （豪 A$1,000・星 S$400）を表すのに対し、こちらは**社ごと**。
+   * EU/UK の IOSS は制度が任意なので、**社によって取る／取らないが割れる**。
+   */
+  collectsBelow?: number;
   /** 画面に出す1行（英語）。その社の原文の言い方に寄せる。 */
   note: string;
   tier: Tier;
@@ -159,6 +166,10 @@ export interface Service {
   paysUs: boolean;
   referralNote: string | null;
 }
+
+/** ZenMarket が EU・UK の VAT 前徴収を強制にした告知。DE / FR / GB の3行が同じ原文を指す。 */
+const ZENMARKET_VAT_PRECHARGE_URL =
+  'https://zenmarket.jp/en/blog/post/16240/mandatory-vat-precharge-eu-norway';
 
 export const SERVICES_CHECKED_ON = '2026-09-06';
 
@@ -326,6 +337,42 @@ export const SERVICES: Service[] = [
         rate: 0.10, base: 'declared', tier: 'fixed',
         note: '10% of the declared value, charged with the international shipping fee',
         sourceUrl: 'https://zenmarket.jp/en/fees.aspx', checkedOn: '2026-09-06',
+      },
+      // **5社でここだけが EU / UK の VAT を決済時に取る。**しかも 2026-03-02 から強制。
+      // 原文（自社ブログ 2026-02-19）:「Starting March 2, 2026, ZenMarket will make VAT
+      // pre-charge mandatory for eligible shipments to the European Union (EU), Norway
+      // and the UK.」「European Union (IOSS System): All parcels with a declared value of
+      // 150 EUR or less」「UK (VAT precharge): For parcels with a goods value of
+      // 135 GBP or less」「Customers will no longer be able to opt out of VAT pre-charge
+      // for applicable shipments.」
+      //
+      // **輸送業者の限定が無い。**Neokyo は同じ IOSS でも「If you ship with Japan Post
+      // ... the customs are Delivered Duty Unpaid」と郵便を明示的に外しているが、
+      // ZenMarket の告知にその条件は無い。だからこの計算機の既定（EMS）でも効く。
+      //
+      // **閾値と課税ベースは別物。**€150 / £135 の判定は intrinsic value（商品代のみ）だが、
+      // 課税ベースは EU VAT 指令の一般規則で「the invoiced price, including taxes, duties,
+      // levies and charges (excluding VAT itself), and **incidental expenses such as
+      // commission, packing, transport and insurance costs charged by the supplier**」。
+      // IOSS では代行が supplier なので、代行が請求する分は全部入る → `total`。
+      // （最初 `declared` で置いたが、それだと課税ベースが商品代だけになり
+      //  ZenMarket の税額が他社の約半分に出ていた。閾値の測り方と混同していた。）
+      // **未確定**: €3 の定額関税が課税ベースに入るか。指令の文言は duties を含むが、
+      // その関税は IOSS の外で課され、我々は代行の請求書を持っていない。入れていない。
+      DE: {
+        rate: 0.19, base: 'total', collectsBelow: 150, tier: 'fixed',
+        note: '19% German VAT, charged at parcel payment via IOSS — not at the border',
+        sourceUrl: ZENMARKET_VAT_PRECHARGE_URL, checkedOn: '2026-09-07',
+      },
+      FR: {
+        rate: 0.20, base: 'total', collectsBelow: 150, tier: 'fixed',
+        note: '20% French VAT, charged at parcel payment via IOSS — not at the border',
+        sourceUrl: ZENMARKET_VAT_PRECHARGE_URL, checkedOn: '2026-09-07',
+      },
+      GB: {
+        rate: 0.20, base: 'total', collectsBelow: 135, tier: 'fixed',
+        note: '20% UK VAT, charged at parcel payment — not at the border',
+        sourceUrl: ZENMARKET_VAT_PRECHARGE_URL, checkedOn: '2026-09-07',
       },
     },
     paysUs: true,

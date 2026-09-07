@@ -98,6 +98,12 @@ function taxLines(
   /** カートそのもの。**品目カテゴリでしか言えないこと**（米国の関税・英国の酒税）に使う。 */
   items: Item[],
   a: { itemsYen: number; domYen: number; emsYen: number; units: number; parcels: number },
+  /**
+   * **この社がこの荷物の輸入税を決済時に取るか。**国側の `sellerCollectsBelow`
+   * （豪・星）は制度がその国の全社に課すもので、社では割れない。EU/UK の IOSS は
+   * 任意なので**社で割れる**——だから国の表では表せず、呼び出し側から渡す。
+   */
+  companyCollects = false,
 ): Line[] {
   const c = COUNTRIES[cc];
   const rate = rateFor(c.ccy);
@@ -137,7 +143,7 @@ function taxLines(
       // 下限でしかないと分かっている数字を確度そのままで描かない。
       // **我々の仮定**なので estimate（画面では `~` と琥珀）に落とす。
       us?.knownFloor ? 'estimate' : c.dutyTier,
-      us ? US_HTS_SOURCE_URL : c.sourceUrl));
+      us ? US_HTS_SOURCE_URL : (c.dutyRateSourceUrl ?? c.sourceUrl)));
   } else {
     out.push(L('duty', 'Duty', null,
       `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`, 'none', c.sourceUrl));
@@ -148,13 +154,16 @@ function taxLines(
   // AU（≤A$1,000）と SG（<S$400）は、**国境ではなく代行が販売時点で徴収する**帯がある。
   // その帯で税関側の行に金額を出すと、代行が取る分と二重に積むことになる。
   // 実際にいくら取られるかは社ごとに違うので、社ごとの行（prepaid-import-tax）が持つ。
-  const sellerCollects = c.sellerCollectsBelow != null && declared <= c.sellerCollectsBelow;
+  const sellerCollects = companyCollects
+    || (c.sellerCollectsBelow != null && declared <= c.sellerCollectsBelow);
   if (c.vatRate == null) {
     out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl));
   } else if (sellerCollects) {
     out.push(L('vat', vatLabel, 0,
-      `under the ${c.ccy} ${c.sellerCollectsBelow} threshold`
-      + ' — collected at checkout by the service, not at the border',
+      c.sellerCollectsBelow != null
+        ? `under the ${c.ccy} ${c.sellerCollectsBelow} threshold`
+          + ' — collected at checkout by the service, not at the border'
+        : 'collected at checkout by the service, not at the border',
       'fixed', c.sourceUrl));
   } else if (c.vatFreeLimit && declared <= c.vatFreeLimit) {
     out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold`, 'fixed', c.sourceUrl));
@@ -176,7 +185,17 @@ function taxLines(
   // 未取得は帯そのものを持たないことで表す（そのときだけ null＝「—」）。
   const clearanceSrc = c.clearanceSourceUrl ?? c.sourceUrl;
   const band = c.clearanceBands?.find((b) => declared / a.parcels <= b.upTo);
-  if (!band) {
+  // **手数料は税の徴収に従属する。**5カ国の原文が同じことを言っている
+  // （GB「If there is no duty or tax to pay, you will not be charged a handling fee」／
+  //  DE Auslagepauschale ／ FR frais de gestion ／ SG SingPost ／
+  //  US IMM 712.11「each item on which customs duty ... is collected」）。
+  // 決済時に払い済みなら国境で徴収するものが無く、手数料も立たない。
+  if (sellerCollects && band && band.amount > 0) {
+    out.push(L('clearance', 'Customs clearance fee', 0,
+      'nothing is collected at delivery — the tax was paid at checkout, and the fee is'
+      + ' charged only on parcels the carrier has to collect tax on',
+      c.clearanceTier, clearanceSrc));
+  } else if (!band) {
     out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl));
   } else if (band.amount === 0) {
     out.push(L('clearance', 'Customs clearance fee', 0, band.note, c.clearanceTier, clearanceSrc));
@@ -318,25 +337,50 @@ function feeLines(
  */
 function prepaidImportTaxLine(
   svc: Service, cc: CompareInput['country'],
-  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number; shippingKnown: boolean },
+  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number;
+       cifYen: number; shippingKnown: boolean },
 ): Line | null {
   const c = COUNTRIES[cc];
-  if (c.sellerCollectsBelow == null || a.declared > c.sellerCollectsBelow) return null;
+  const p = svc.prepaidImportTax?.[cc];
+  // 制度がその国の全社に課す帯（豪 A$1,000・星 S$400）と、社が自分で言っている帯
+  // （EU/UK の IOSS）の**どちらか**に入っていれば行を出す。
+  const byCountry = c.sellerCollectsBelow != null && a.declared <= c.sellerCollectsBelow;
+  const byCompany = p?.collectsBelow != null && a.declared <= p.collectsBelow;
+  if (!byCountry && !byCompany) return null;
 
   const taxName = cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
-  const p = svc.prepaidImportTax?.[cc];
   if (!p) {
-    // **社名をラベルに入れない。** このラベルは費目の見出しとして全社の列に
-    // 掛かる場所（デスクトップの内訳表）にも出るので、そこで特定の社を名指しすると
-    // 他社の金額にまで「Neokyo は確認できていない」と書くことになる。
-    // 行の中では「this service」で一意に読める。
+    // **確認できていないのは「誰が集めるか」だけで、「いくら払うか」ではない。**
+    // その社が決済時に集めるなら決済時に、集めないなら国境で SingPost / 税関が集める。
+    // どちらでも買い手が出す額は同じ税率ぶん。**だから `—` にしてはいけない。**
+    // `—` にすると、確認できた社にだけ税が乗り、確認できなかった社が
+    // **その税額ぶん安い**表になる——調べていないことが安さに化ける
+    // （`docs/TODO-NEXT.md` 課題1）。
+    //
+    // ベースは**その国の課税ベース**を使う。徴収者が誰であれ、国境で課すなら
+    // この額に掛かるからで、社ごとの内部ベース（Charge1+Charge2 等）は
+    // 集めると分かっている社にしか適用できない。
+    //
+    // **幅**: 集める社の実際のベースは商品代のみ〜総額まで割れており
+    // （`services.ts` の `prepaidImportTax[].base`）、その差ぶんは上下しうる。
+    // tier `estimate` にして画面で `~` と出す。
+    //
+    // **なお不足がもう1つ残る**: 国境で集められる場合、SingPost の手数料
+    // （`countries.ts` の `clearanceBands`）も乗るが、そこは S$400 以下を
+    // 「OVR で徴収済み＝0」として置いている。この社ではその前提が立たない。
+    // 額を足さずに、ここに書いて開示する。
+    const est = c.base === 'CIF' ? a.cifYen : a.itemsYen;
+    if (c.vatRate == null || !a.shippingKnown) {
+      return L('prepaid-import-tax', `${taxName} collected at checkout`, null,
+        'we cannot complete the base for this parcel', 'none', c.sourceUrl);
+    }
     return L('prepaid-import-tax',
-      `${taxName} collected at checkout`
-      + ' — we could not confirm whether this service collects it',
-      null,
-      `${c.name} makes the seller collect ${taxName} below ${c.ccy} ${c.sellerCollectsBelow}.`
-      + ` ${svc.name} does not say on its own pages whether it does, so we do not put a number here.`,
-      'none', c.sourceUrl);
+      `${taxName} — estimated: we could not confirm who collects it`,
+      Math.round(est * c.vatRate),
+      `${(c.vatRate * 100).toFixed(0)}% either way — ${svc.name} does not say whether it collects at checkout,`
+      + ` so this is ${c.name}'s own base. If it is collected at the border instead,`
+      + ` the carrier's handling fee is added on top and we do not show that here.`,
+      'estimate', c.sourceUrl);
   }
 
   const base = p.base === 'declared' ? a.itemsYen
@@ -449,13 +493,22 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const shippingYen = lines
     .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'ems')
     .reduce((acc, l) => acc + (l.amount ?? 0), 0);
+  // **その社がこの国で自分で税を取るか。**閾値は intrinsic value（商品代）で測る
+  // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declared` と同じ。
+  const declaredForCc = itemsYen / rateFor(COUNTRIES[ctx.cc].ccy);
+  const ownPrepaid = svc.prepaidImportTax?.[ctx.cc];
+  const companyCollects = ownPrepaid?.collectsBelow != null
+    && declaredForCc <= ownPrepaid.collectsBelow;
   lines.push(...taxLines(ctx.cc, ctx.province, items,
-    { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
+    { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }, companyCollects));
   const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
     itemsYen,
     declared: itemsYen / rateFor(COUNTRIES[ctx.cc].ccy),
     preTaxYen,
     shippingYen,
+    // その国の課税ベース（CIF）。徴収者が確認できない社の推定に使う。
+    // `taxLines` が使っているのと同じ組み立て（実際に払う国内送料＋国際送料）。
+    cifYen: itemsYen + domCharged + (emsYen ?? 0),
     shippingKnown: emsYen != null,
   });
   if (prepaid) lines.push(prepaid);

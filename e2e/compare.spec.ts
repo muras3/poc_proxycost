@@ -158,11 +158,18 @@ test('3. what we do not have shows as — , never as ¥0', async ({ page }) => {
   await expect(vat).toHaveCount(1);
   expect((await rowCells(vat))[1]).toBe('—');
 
-  // 税・関税の行に ¥0 が出ていないこと。
+  // **¥0 そのものは禁じない。**原文が「その帯では 0」と書いている費目は 0 で正しい
+  // （米国の $2,500 以下の通関手数料、英国の £135 以下の関税、豪の A$1,000 以下 …）。
+  // 禁じるのは**「持っていない」が ¥0 に化けること。**その2つは tier で分かれる:
+  //   持っていない  → tier `none`（title「Not included in the total — this is not zero」）で必ず「—」
+  //   取得できた 0  → tier `fixed` などで ¥0、かつ**なぜ 0 なのかが note にある**
+  const noneCells = li.getByTitle('Not included in the total — this is not zero');
+  for (let i = 0; i < await noneCells.count(); i++) {
+    expect((await noneCells.nth(i).innerText()).trim(), '未取得が ¥0 に化けている').toBe('—');
+  }
   for (const { label, cells } of await taxRowsOf(li)) {
-    for (const c of cells.slice(1)) {
-      expect(c, `${label} shows ¥0`).not.toBe('¥0');
-    }
+    if (!cells.slice(1).includes('¥0')) continue;
+    expect(cells[0]?.trim(), `${label} が理由なしに ¥0`).not.toBe('');
   }
 });
 
@@ -182,14 +189,12 @@ test('3b. two figures we did not read from the source are drawn as such (T17)', 
 
   const duty = costRow(li, /^Duty/);
   await expect(duty).toHaveCount(1);
-  const dutyAmount = duty.getByTitle(TITLE.unverified).first();
+  // **tier は `unverified` ではなく `estimate`。**制度の原文（EU の暫定定額関税ガイダンス）は
+  // 手元にある——取れていないのは「代行経由の購入が DSIG に当たるか」で、それは**我々の仮定**。
+  // 「原典に当たれていない」（unverified）ではないので、点線ではなく `~` と琥珀で描く。
+  const dutyAmount = duty.getByTitle(TITLE.estimate).first();
   await expect(dutyAmount).toBeVisible();
-  const deco = await dutyAmount.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return { line: s.textDecorationLine, style: s.textDecorationStyle };
-  });
-  expect(deco.style).toBe('dotted');
-  expect(deco.line).toContain('underline');
+  expect((await dutyAmount.innerText()).trim()).toMatch(/^~¥/);
 
   const depositRow = costRow(li, /^Deposit fee/);
   await expect(depositRow).toHaveCount(1);

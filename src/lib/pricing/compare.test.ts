@@ -64,15 +64,21 @@ describe('the breakdown explains the total', () => {
     }
   });
 
-  test('Canada is down to one unknown: the two lines that certainly happen now carry numbers', () => {
+  test('Canada has no unknowns left: all three lines carry a number', () => {
     // 以前は Duty・Provincial tax・Customs clearance fee の3つとも `—` だった。
-    // **州税と Canada Post の手数料は確実に発生する**ので、`—` は誤り（T23）。
-    // 残る Duty は品目分類が要る（T24）ので、これだけが未取得のまま。
+    // 州税と Canada Post の手数料は確実に発生するので `—` は誤り（T23）。
+    // **Duty も 2026-09-07 に埋めた。**品目分類は持っていないので、WTO のカナダ
+    // プロファイルの非農産品 MFN 単純平均 2.0% を推定として出す。
+    // **反証**: 同プロファイルでカナダは非農産品の税表の行の 79.2% が無税。
+    // 最頻値は 0% で、2.0% は分布の平均でしかない。だから tier は estimate。
     const row = compare({ items: items(1, 600), country: 'CA' }).rows[0]!;
-    expect(line(row, 'duty').amount).toBeNull();
+    const duty = line(row, 'duty');
+    expect(duty.amount).toBeGreaterThan(0);
+    expect(duty.tier).toBe('estimate');
+    expect(duty.note).toContain('2.0%');
     expect(line(row, 'province-tax').amount).toBeGreaterThan(0);
     expect(line(row, 'clearance').amount).toBeGreaterThan(0);
-    expect(row.excluded).toEqual(['Duty']);
+    expect(row.excluded).toEqual([]);
   });
 
   test('a fetched zero stays a zero: under-threshold duty is 0 with its reason', () => {
@@ -82,14 +88,54 @@ describe('the breakdown explains the total', () => {
     expect(duty.note).toContain('threshold');
   });
 
-  test('a clearance fee we never fetched is null in every country that lacks one', () => {
-    // **CA と AU はここから抜けた**（T23 / T24 で Canada Post と ABF の原文を取った）。
-    // 抜けたことを空振りにしないため、下の test がそれぞれに数字と出典が在ることを見る。
-    for (const cc of ['DE', 'FR', 'SG'] as const) {
+  test('no country is left with a null customs clearance fee', () => {
+    // **7カ国すべてに額が入った**（`docs/TODO-NEXT.md` 課題1）。
+    //   US   USPS $9.35 / GB Royal Mail £8 / CA Canada Post C$9.95（T23）
+    //   AU   ABF の Import Processing Charge（T24）
+    //   DE   Deutsche Post の Auslagepauschale €7.50
+    //   FR   La Poste の frais de gestion €8
+    //   SG   SingPost の handling fee S$10.90（S$400 以下は 0）
+    //
+    // **`—` を使ってよいのは発生しないものだけ。**通関手数料はどの国でも発生するので、
+    // `—` は「手数料が無い」ではなく「我々が調べていない」であり、
+    // 調べていない国だけが安く見えるという嘘になっていた。
+    // **この test は、その嘘に戻らないための歯止め。**
+    for (const cc of COUNTRIES_ALL) {
       const clearance = line(compare({ items: items(1, 600), country: cc }).rows[0]!, 'clearance');
-      expect(clearance.amount, cc).toBeNull();
-      expect(clearance.tier, cc).toBe('none');
+      expect(clearance.amount, cc).not.toBeNull();
+      expect(clearance.tier, cc).not.toBe('none');
+      // 額が在るなら出典と確認日も在る。無ければ「いつの値か」を言えない。
+      expect(clearance.sourceUrl, cc).toBeTruthy();
     }
+  });
+
+  test('the Singapore handling fee is zero at or below SGD 400 — a fetched zero, not a missing number', () => {
+    // 税関自身は通関手数料を取らない。取るのは SingPost で、名目は「税関に代わって
+    // GST を徴収する手数料」。**S$400 以下は OVR で決済時に GST が済んでいるので
+    // 徴収するものが無く、手数料も発生しない。**この 0 は取得できた 0。
+    const low = line(compare({ items: items(1, 600), country: 'SG' }).rows[0]!, 'clearance');
+    expect(low.amount).toBe(0);
+    expect(low.note).toContain('OVR');
+    // 閾値を越えれば S$10.90 が乗る（¥400,000 の1点なら CIF は S$400 を確実に超える）。
+    const high = compare({
+      items: [{ ...items(1, 600)[0]!, priceYen: 400_000 }], country: 'SG',
+    }).rows[0]!;
+    const fee = line(high, 'clearance');
+    expect(fee.amount).not.toBe(0);
+    expect(fee.note).toContain('SGD 10.9');
+  });
+
+  test('the German Auslagepauschale is EUR 7.50 per consignment — the 2026-03-10 amount, not the 2018 one', () => {
+    // €6 は 2018-03-01 の導入時の額で、**2026-03-10 に €7.50 へ上がっている。**
+    // 「一次情報だから正しい」ではなく「いつの一次情報か」を見ないと、7年前の値を今日の値として出す。
+    // **手数料が立つ行を選ぶ。**ZenMarket は IOSS で決済時に VAT を払うので国境で
+    // 徴収するものが無く、この社だけ 0 になる（別テストで見ている）。
+    const rows = compare({ items: items(1, 600), country: 'DE' }).rows;
+    const fee = line(byId(rows, 'neokyo'), 'clearance');
+    expect(fee.amount).not.toBeNull();
+    expect(fee.note).toContain('EUR 7.5 × 1 parcel');
+    // 原典（Deutsche Post「Leistungen und Preise」）には当たれていない。二次情報として出す。
+    expect(fee.tier).toBe('unverified');
   });
 
   test('the Canada Post handling fee is a published number, per parcel, and zero below CAD 20', () => {
@@ -699,9 +745,21 @@ describe('domestic shipping is charged by every service, and taxed where the bas
     for (const n of [1, 2, 3]) {
       const paid = compare({ items: items(n, 600), country: 'GB' }).rows;
       const free = compare({ items: items(n, 600, 3000, { freeShipping: true }), country: 'GB' }).rows;
+      // **税を運んでいる行で測る。**ZenMarket は閾値の中では決済時に払う（IOSS）ので
+      // 国境 VAT が 0 になり、代わりに prepaid-import-tax が同じ課税ベースを持つ。
+      // どちらの経路でも「実際に払う国内送料が課税ベースに入る」ことは変わらない。
+      const taxOf = (row: Row) => (line(row, 'vat').amount ?? 0)
+        + (row.lines.find((l) => l.key === 'prepaid-import-tax')?.amount ?? 0);
       for (const row of paid) {
-        const delta = line(row, 'vat').amount! - line(byId(free, row.id), 'vat').amount!;
-        expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n));
+        const delta = taxOf(row) - taxOf(byId(free, row.id));
+        if (row.serviceId === 'zenmarket') {
+          // **IOSS の課税ベースは「代行が請求する全部」**なので、国内送料が増えると
+          // その社の入金手数料（3.5%）も増え、その増分にも VAT が乗る。
+          // 国境払い（課税ベース = CIF）にはこの連鎖が無い。**同じ 20% でも額が違う。**
+          expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n * 1.035));
+        } else {
+          expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n));
+        }
       }
     }
   });
@@ -751,17 +809,29 @@ describe('Buyee splits parcels by order', () => {
     expect(consolidated.tag).toContain('you must request this');
   });
 
-  test('splitting costs more on EMS and on the clearance fee', () => {
+  test('splitting costs more on EMS — but not on the US clearance fee, which is zero here', () => {
     const rows = compare({ items: items(3, 600), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
     expect(line(consolidated, 'ems').amount).toBe(9100);
     expect(line(dflt, 'ems').amount).toBe(17970);
+    // **3点×¥3,000 は $2,500 の事前納付帯の中**。Zonos で関税が事前納付されるので
+    // 配達時に徴収するものが無く、USPS の手数料も立たない（IMM 712.11）。
+    // 個口を増やしても 0 のまま——**個口が効くのは手数料が立つ帯だけ**。
+    expect(line(consolidated, 'clearance').amount).toBe(0);
+    expect(line(dflt, 'clearance').amount).toBe(0);
+    expect(dflt.total).toBeGreaterThan(consolidated.total);
+  });
+
+  test('above the $2,500 prepayment band the clearance fee is per parcel, so splitting triples it', () => {
+    // 1点 ¥500,000 × 3点。個口あたりの申告額が $2,500 を超えるので $9.35 が立つ。
+    const rows = compare({ items: items(3, 600, 500_000), country: 'US' }).rows;
+    const consolidated = byId(rows, 'buyee:consolidated');
+    const dflt = byId(rows, 'buyee:default');
     // USD 9.35 × ¥156.25 × 3個口を最後に一度だけ丸める（¥1,461 の3倍ではない）。
     expect(line(consolidated, 'clearance').amount).toBe(1461);
     expect(line(dflt, 'clearance').amount).toBe(4383);
     expect(line(dflt, 'clearance').note).toContain('USD 9.35 × 3 parcels');
-    expect(dflt.total).toBeGreaterThan(consolidated.total);
   });
 
   test('the purchase fee is per order, so splitting does not change it', () => {
@@ -1010,34 +1080,34 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('5 items x ¥3,000, 200 g each, to the US', () => {
     const rows = compare({ items: items(5, 200), country: 'US' }).rows;
     expect(rows.map((r) => [r.id, r.total])).toEqual([
-      ['neokyo', 31186],
-      ['fromjapan', 32436],
-      ['buyee:consolidated', 33936],
-      ['zenmarket', 34010],
-      ['jauce', 35469],
-      ['buyee:default', 54080],
+      ['neokyo', 29725],
+      ['fromjapan', 30975],
+      ['buyee:consolidated', 32475],
+      ['zenmarket', 32549],
+      ['jauce', 34008],
+      ['buyee:default', 46775],
     ]);
   });
 
   test('the same basket at 600 g, 1,500 g and 3,000 g — the top two swap on the way', () => {
     const board = (w: number) =>
       compare({ items: items(5, w), country: 'US' }).rows.map((r) => [r.id, r.total]);
-    expect(board(600).slice(0, 2)).toEqual([['neokyo', 37586], ['fromjapan', 38536]]);
+    expect(board(600).slice(0, 2)).toEqual([['neokyo', 36125], ['fromjapan', 37075]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
-    expect(board(1500).slice(0, 2)).toEqual([['neokyo', 52886], ['fromjapan', 52936]]);
-    expect(board(3000).slice(0, 2)).toEqual([['fromjapan', 74536], ['neokyo', 75836]]);
-    expect(board(600)[5]).toEqual(['buyee:default', 63130]);
+    expect(board(1500).slice(0, 2)).toEqual([['neokyo', 51425], ['fromjapan', 51475]]);
+    expect(board(3000).slice(0, 2)).toEqual([['fromjapan', 73075], ['neokyo', 74375]]);
+    expect(board(600)[5]).toEqual(['buyee:default', 55825]);
   });
 
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
     const rows = compare({ items: items(1, 500, 5000), country: 'US' }).rows;
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
-      ['FROM JAPAN', 13606],
-      ['Neokyo', 13756],
-      ['Buyee', 13906],
-      ['ZenMarket', 14127],
-      ['Jauce', 14968],
+      ['FROM JAPAN', 12145],
+      ['Neokyo', 12295],
+      ['Buyee', 12445],
+      ['ZenMarket', 12666],
+      ['Jauce', 13507],
     ]);
   });
 
@@ -1046,11 +1116,11 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // FROM JAPAN はヤフオク限定の ¥200 が消える。
     const rows = compare({ items: items(1, 500, 5000, { site: 'rakuten' }), country: 'US' }).rows;
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
-      ['FROM JAPAN', 13406],
-      ['Neokyo', 13756],
-      ['ZenMarket', 13817],
-      ['Buyee', 13906],
-      ['Jauce', 14136],
+      ['FROM JAPAN', 11945],
+      ['Neokyo', 12295],
+      ['ZenMarket', 12356],
+      ['Buyee', 12445],
+      ['Jauce', 12675],
     ]);
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(0);
     expect(line(byId(rows, 'jauce'), 'ad-valorem').amount).toBe(0);
@@ -1066,16 +1136,24 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **AU と SG は T15（代行の前徴収 GST）で動いた。** 費目モデルが変わったので
     // ここが動くのは正しい。AU は5社とも徴収を明記しているので全行に税が乗り、
     // 課税ベースの違い（内容品価格のみ／総額）で並びまで変わった。
-    // SG は徴収を確認できた Buyee・FROM JAPAN にだけ税が乗り、他3社は「—」なので
-    // **その3社の総額は税のぶん低いまま**（excluded にそう書いてある）。
+    // **SG は5社そろって GST が乗った。**以前は徴収を確認できた Buyee・FROM JAPAN に
+    // だけ税が乗り、他3社は「—」で**その3社が税のぶん安い表**になっていた。
+    // 確認できていないのは「誰が集めるか」だけで「いくら払うか」は同じなので、
+    // 残り3社は国の課税ベースで推定して出す（`docs/TODO-NEXT.md` 課題1）。
+    // 並びも変わる——安く見えていた3社が本来の位置に落ちた。
+    // **DE は Auslagepauschale €7.50、FR は frais de gestion €8 が入って動いた**
+    // （DE 全行 +¥1,362 / FR 全行 +¥1,453。Buyee の別送だけ5個口ぶん）。
+    // 以前この2カ国が安く見えていたのは手数料が安いからではなく、
+    // **我々が独仏の手数料を1円も入れていなかったから。**
+    // **SG はこの帯（5点×¥12,800＝CIF が S$400 超）で S$10.90 が乗る。**
     expect(totals).toEqual({
-      US: [37586, 38536, 40036, 40331, 42066, 63130],
-      GB: [40121, 41071, 42571, 42801, 44528, 66256],
-      DE: [41373, 42323, 43823, 44053, 45780, 60602],
-      FR: [41699, 42649, 44149, 44379, 46106, 61069],
+      US: [36125, 37075, 38575, 38870, 40605, 55825],
+      GB: [40121, 41071, 42156, 42571, 44528, 66256],
+      DE: [42735, 43685, 44529, 45185, 47142, 67412],
+      FR: [43152, 44102, 44880, 45602, 47559, 68333],
       AU: [33950, 36630, 36740, 36900, 40543, 51000],
-      CA: [36762, 37712, 39212, 39442, 41169, 59552],
-      SG: [28500, 31036, 32101, 32747, 33736, 45235],
+      CA: [37062, 38012, 39512, 39742, 41469, 59852],
+      SG: [30836, 32101, 33372, 33736, 35083, 45235],
     });
   });
 });
