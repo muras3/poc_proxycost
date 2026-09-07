@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
+import { markupYen } from './postage';
 import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_YEN,
   SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
@@ -74,28 +75,62 @@ describe('the service table itself', () => {
     for (const s of SERVICES) {
       const ems = s.postage.ems;
       expect(ems, `${s.id} が EMS を売っていない`).toBeDefined();
-      expect(ems!.markup, s.id).toBe(0);
+      expect(ems!.markup, s.id).toEqual({ kind: 'none' });
       expect(ems!.tier, s.id).toBe('fixed');
       expect(ems!.checkedOn, s.id).toBe('2026-09-07');
     }
   });
 
-  test('the markup is per method, not per company — two services prove it', () => {
-    // 以前は社ごとに1つの率だった。**それでは表せない実測が2件出た。**
-    // どちらも EMS は公表額どおりなのに、別の方式だけ上乗せしている。
-    const zen = svc('zenmarket');
-    expect(zen.postage.ems!.markup).toBe(0);
-    expect(zen.postage['small-packet-air']!.markup).toBeCloseTo(0.452, 3);
-    const jauce = svc('jauce');
-    expect(jauce.postage.ems!.markup).toBe(0);
-    expect(jauce.postage['parcel-surface']!.markup).toBeCloseTo(0.10, 3);
-    // **率か定額かは観測1点から決められない**ので、上乗せのある行は estimate。
+  test('the markup is per method and per country, and its shape came from the data', () => {
+    // 以前は社ごとに1つの率だった。**フェーズ2（105見積）でどちらも崩れた。**
+    // Jauce の船便は率で見ると 10.0% → 16.1% → 25.5% と動くが、
+    // **kg段で割ると3点とも 250**。率ではなく「1kg 段ごとの定額」だった。
+    const jauce = svc('jauce').postage['parcel-surface']!;
+    expect(jauce.markup).toEqual({ kind: 'per-kg-step', yen: 250 });
+    // **形が3点で決まったので確度は fixed。**推定のままにしない。
+    expect(jauce.tier).toBe('fixed');
+    expect(markupYen(jauce, 'DE', 600)).toBe(250);
+    expect(markupYen(jauce, 'DE', 2000)).toBe(500);
+    expect(markupYen(jauce, 'DE', 5000)).toBe(1250);
+
+    // ZenMarket の国際小包は **US だけ**上乗せがある。他国は公表額どおり。
+    const zenAir = svc('zenmarket').postage['parcel-air']!;
+    expect(zenAir.markup).toEqual({ kind: 'none' });
+    expect(markupYen(zenAir, 'DE', 5000)).toBe(0);
+    expect(markupYen(zenAir, 'US', 600)).toBe(350);
+    expect(markupYen(zenAir, 'US', 5000)).toBe(1750);
+    const zenSea = svc('zenmarket').postage['parcel-surface']!;
+    expect(markupYen(zenSea, 'DE', 5000)).toBe(0);
+    expect(markupYen(zenSea, 'US', 5000)).toBe(500);
+  });
+
+  test('the one markup whose shape is unknown says so, and is not dressed up as a rate', () => {
+    // **小形包装物は上限 2kg なので観測が2点しか取れない。**
+    // 2点は必ず直線で結べるので「直線だ」は発見ではない。だから確度は estimate。
+    const sp = svc('zenmarket').postage['small-packet-air']!;
+    expect(sp.tier).toBe('estimate');
+    expect(sp.markup.kind).toBe('observed');
+    // 観測点そのものは再現する。
+    expect(markupYen(sp, 'DE', 600)).toBe(637);
+    expect(markupYen(sp, 'DE', 2000)).toBe(1015);
+    expect(markupYen(sp, 'US', 600)).toBe(1281);
+    expect(markupYen(sp, 'US', 2000)).toBe(2142);
+    expect(markupYen(sp, 'SG', 600)).toBe(572);
+    expect(markupYen(sp, 'SG', 2000)).toBe(824);
+    // **国で違う。**1つの率で持っていたら US は半分しか乗らなかった。
+    expect(markupYen(sp, 'US', 600)).toBeGreaterThan(markupYen(sp, 'DE', 600));
+    // 観測の外は端を延ばす。**知らない範囲に勝手な曲線を引かない。**
+    expect(markupYen(sp, 'DE', 100)).toBe(637);
+    expect(markupYen(sp, 'DE', 1300)).toBeGreaterThan(637);
+    expect(markupYen(sp, 'DE', 1300)).toBeLessThan(1015);
+  });
+
+  test('every markup that is not none carries what was observed', () => {
     for (const s of SERVICES) {
-      for (const r of Object.values(s.postage)) {
-        if (r.markup !== 0) {
-          expect(r.tier, `${s.id}`).toBe('estimate');
-          expect(r.observed, `${s.id} に観測の中身が無い`).toBeTruthy();
-        }
+      for (const [m, r] of Object.entries(s.postage)) {
+        const any = [r.markup, ...Object.values(r.byCountry ?? {})]
+          .some((k) => k.kind !== 'none');
+        if (any) expect(r.observed, `${s.id} ${m} に観測の中身が無い`).toBeTruthy();
       }
     }
   });
