@@ -60,17 +60,40 @@ describe('the duty note says something a buyer can read', () => {
   // ───────────────────────────────────────────────────────────────────────────
   // T17: 我々が原典に当たれていない数字を、確定の顔で出さない。
   // ───────────────────────────────────────────────────────────────────────────
-  test('the EU flat €3 is charged but drawn as second-hand, in both EU countries', () => {
+  test('the EU flat €3 is charged but drawn as an assumption, in both EU countries', () => {
     // 制度の原文（EU の暫定定額関税ガイダンス）は取れている。取れていないのは
     // 「代行経由の購入が distance sale of imported goods に当たるか」で、
     // 当たらなければこの ¥489/点 は総額から丸ごと消える。額を出しつつ点線で描く。
+    // **tier は `unverified` ではなく `estimate`。**原典に当たれていないのではなく、
+    // 原典はあって「当たるか」が我々の仮定だから。
     for (const cc of ['DE', 'FR'] as CountryCode[]) {
       for (const row of rowsFor(cc)) {
         const duty = line(row, 'duty');
         expect(duty.amount, `${cc} ${row.id}`).toBeGreaterThan(0);
-        expect(duty.tier, `${cc} ${row.id}`).toBe('unverified');
+        expect(duty.tier, `${cc} ${row.id}`).toBe('estimate');
       }
-      expect(COUNTRIES[cc].dutyTier, cc).toBe('unverified');
+      expect(COUNTRIES[cc].dutyTier, cc).toBe('estimate');
+    }
+  });
+
+  test('over EUR 150 the EU duty is a number, not a dash — and the total stops going backwards', () => {
+    // **以前ここは null（「—」）だった。**関税は VAT の課税ベースに入るので、
+    // null が 0 に畳まれて VAT まで縮み、**商品代が上がると総額が下がる**区間があった。
+    const at = (cc: CountryCode, perItemYen: number) => {
+      const rows = compare({ items: items(5, perItemYen, 600), country: cc }).rows;
+      const row = rows.find((r) => r.comparable)!;
+      return { total: row.total, duty: line(row, 'duty') };
+    };
+    for (const cc of ['DE', 'FR'] as CountryCode[]) {
+      const under = at(cc, 5400);   // 5点 ¥27,000 → €150 以下
+      const over = at(cc, 5600);    // 5点 ¥28,000 → €150 超
+      expect(under.duty.note, cc).toContain('flat');
+      expect(over.duty.amount, `${cc} over EUR 150`).toBeGreaterThan(0);
+      expect(over.duty.tier, cc).toBe('estimate');
+      expect(over.duty.note, cc).toContain('4.1%');
+      // 商品代を上げて総額が下がってはいけない。
+      expect(over.total, `${cc}: 商品代が上がったのに総額が下がった`)
+        .toBeGreaterThan(under.total);
     }
   });
 

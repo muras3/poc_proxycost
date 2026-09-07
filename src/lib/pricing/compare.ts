@@ -137,7 +137,7 @@ function taxLines(
       // 下限でしかないと分かっている数字を確度そのままで描かない。
       // **我々の仮定**なので estimate（画面では `~` と琥珀）に落とす。
       us?.knownFloor ? 'estimate' : c.dutyTier,
-      us ? US_HTS_SOURCE_URL : c.sourceUrl));
+      us ? US_HTS_SOURCE_URL : (c.dutyRateSourceUrl ?? c.sourceUrl)));
   } else {
     out.push(L('duty', 'Duty', null,
       `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`, 'none', c.sourceUrl));
