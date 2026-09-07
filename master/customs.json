@@ -250,7 +250,14 @@
           "until": "2028-07-01",
           "above_threshold": {
             "type": "common_customs_tariff",
-            "rate": "unknown"
+            "rate": 0.041,
+            "tier": "B_inferred",
+            "source": "https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf",
+            "quote": "European Union — Part A.1 Tariffs and imports: Summary and duty ranges. Simple average 2024: Total 5.0 / Ag 10.5 / Non-Ag 4.1. Trade weighted average 2024: 2.8 / 8.7 / 2.4.",
+            "inference_basis": "品目分類を持たないので個別税率は引けない。WTO World Tariff Profiles 2025 の EU プロファイルから**非農産品・MFN applied 2024 の単純平均 4.1%** を採る。加重平均 2.4% を採らない理由: 加重平均は EU の実際の輸入額（工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは『税表の行を1本引く』ことなので、行を等しく扱う単純平均のほうが近い。",
+            "counter_evidence": "同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。逆に非農産品の 29.1% は無税、63.4% は 5% 以下（Part A.1 度数分布）。**実際の幅は 0〜12%。**",
+            "why_filled": "2026-09-07。以前は rate: 'unknown' で実装が『—』を出していた。それは『関税が無い』ではなく『我々が調べていない』で、しかも副作用があった: 関税は VAT の課税ベースに入るので null が 0 に畳まれて VAT まで縮み、**商品代が上がると総額が下がる**区間ができていた（DE: ¥27,000→¥28,000 で総額 57,015→54,963）。埋めて単調性が戻った（57,015→57,056）。",
+            "checked_on": "2026-09-07"
           }
         },
         "base": "goods",
@@ -340,7 +347,14 @@
           "until": "2028-07-01",
           "above_threshold": {
             "type": "common_customs_tariff",
-            "rate": "unknown"
+            "rate": 0.041,
+            "tier": "B_inferred",
+            "source": "https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf",
+            "quote": "European Union — Part A.1 Tariffs and imports: Summary and duty ranges. Simple average 2024: Total 5.0 / Ag 10.5 / Non-Ag 4.1. Trade weighted average 2024: 2.8 / 8.7 / 2.4.",
+            "inference_basis": "品目分類を持たないので個別税率は引けない。WTO World Tariff Profiles 2025 の EU プロファイルから**非農産品・MFN applied 2024 の単純平均 4.1%** を採る。加重平均 2.4% を採らない理由: 加重平均は EU の実際の輸入額（工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは『税表の行を1本引く』ことなので、行を等しく扱う単純平均のほうが近い。",
+            "counter_evidence": "同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。逆に非農産品の 29.1% は無税、63.4% は 5% 以下（Part A.1 度数分布）。**実際の幅は 0〜12%。**",
+            "why_filled": "2026-09-07。以前は rate: 'unknown' で実装が『—』を出していた。それは『関税が無い』ではなく『我々が調べていない』で、しかも副作用があった: 関税は VAT の課税ベースに入るので null が 0 に畳まれて VAT まで縮み、**商品代が上がると総額が下がる**区間ができていた（DE: ¥27,000→¥28,000 で総額 57,015→54,963）。埋めて単調性が戻った（57,015→57,056）。",
+            "checked_on": "2026-09-07"
           }
         },
         "base": "goods",
@@ -445,7 +459,14 @@
           "until": "2028-07-01",
           "above_threshold": {
             "type": "common_customs_tariff",
-            "rate": "unknown"
+            "rate": 0.041,
+            "tier": "B_inferred",
+            "source": "https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf",
+            "quote": "European Union — Part A.1 Tariffs and imports: Summary and duty ranges. Simple average 2024: Total 5.0 / Ag 10.5 / Non-Ag 4.1. Trade weighted average 2024: 2.8 / 8.7 / 2.4.",
+            "inference_basis": "品目分類を持たないので個別税率は引けない。WTO World Tariff Profiles 2025 の EU プロファイルから**非農産品・MFN applied 2024 の単純平均 4.1%** を採る。加重平均 2.4% を採らない理由: 加重平均は EU の実際の輸入額（工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは『税表の行を1本引く』ことなので、行を等しく扱う単純平均のほうが近い。",
+            "counter_evidence": "同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。逆に非農産品の 29.1% は無税、63.4% は 5% 以下（Part A.1 度数分布）。**実際の幅は 0〜12%。**",
+            "why_filled": "2026-09-07。以前は rate: 'unknown' で実装が『—』を出していた。それは『関税が無い』ではなく『我々が調べていない』で、しかも副作用があった: 関税は VAT の課税ベースに入るので null が 0 に畳まれて VAT まで縮み、**商品代が上がると総額が下がる**区間ができていた（DE: ¥27,000→¥28,000 で総額 57,015→54,963）。埋めて単調性が戻った（57,015→57,056）。",
+            "checked_on": "2026-09-07"
           }
         },
         "base": "goods",

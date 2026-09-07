@@ -30,6 +30,9 @@ export interface Country {
   clearanceBands?: { upTo: number; amount: number; note: string }[];
   clearanceCcy: string;
   clearanceTier: Tier;
+  /** `dutyRate` が `dutyFreeLimit` **超**にだけ効くとき、その税率の出典。
+   * `sourceUrl`（免税枠側の出典）と別文書になるので分けている。 */
+  dutyRateSourceUrl?: string;
   clearanceSourceUrl?: string;
   /** `clearanceBands` を読んだ日。**帯ごとの額は他の数字と同じで、日付が無ければ
    *  いつの値か言えない。**画面に「read <日付>」として出す。 */
@@ -156,7 +159,24 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // 代行が挟まる取引がここに当たるかは規則本文からは断定できない
     // （docs/audit/taxes.md §「€3 の適用対象」）。当たらなければこの ¥489/点 は
     // 総額から丸ごと消える。だから確定として描かない。
-    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
+    // **€150 を超えた帯の税率。**以前ここは `null` で、画面に「—」を出していた。
+    // それは「関税が無い」ではなく「我々が調べていない」で、しかも副作用があった:
+    // 関税は VAT の課税ベースに入るので、null が 0 として畳まれて **VAT まで縮み**、
+    // **商品代が上がると総額が下がる**区間ができていた（¥27,000→¥28,000 で総額 −¥2,052）。
+    //
+    // 品目分類を持っていないので個別税率は引けない。**分類を持たない者が置ける最も
+    // 根拠のある1つの数字**として、WTO World Tariff Profiles 2025 の EU プロファイル
+    // Part A.1 から「非農産品・MFN applied 2024 の単純平均 4.1%」を採る。
+    // 原文: Simple average 2024 — Total 5.0 / Ag 10.5 / Non-Ag 4.1。
+    //
+    // **加重平均 2.4% ではなく単純平均を採る理由**: 加重平均は EU の実際の輸入額
+    // （工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは
+    // 「税表の行を1本引く」ことなので、行を等しく扱う単純平均のほうが近い。
+    // **反証**: 同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。
+    // 逆に非農産品の 29.1% は無税、63.4% は 5% 以下（同 Part A.1 の度数分布）。
+    // **幅は 0〜12% あり、4.1% はその中央付近の1点でしかない。だから tier は estimate。**
+    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: 0.041, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf',
     vatRate: 0.19, vatFreeLimit: 0,
     // Deutsche Post / DHL の Auslagepauschale。**2026-03-10 に €6 → €7.50 へ上がった**
     // （公式「Leistungen und Preise」2026-07-01 版で €7.50／通、消費税込み）。
@@ -182,7 +202,24 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   FR: {
     name: 'France', ccy: 'EUR', base: 'CIF',
     // DE と同じ €3。対象（DSIG）に当たるかを断定できないので確定として描かない。
-    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
+    // **€150 を超えた帯の税率。**以前ここは `null` で、画面に「—」を出していた。
+    // それは「関税が無い」ではなく「我々が調べていない」で、しかも副作用があった:
+    // 関税は VAT の課税ベースに入るので、null が 0 として畳まれて **VAT まで縮み**、
+    // **商品代が上がると総額が下がる**区間ができていた（¥27,000→¥28,000 で総額 −¥2,052）。
+    //
+    // 品目分類を持っていないので個別税率は引けない。**分類を持たない者が置ける最も
+    // 根拠のある1つの数字**として、WTO World Tariff Profiles 2025 の EU プロファイル
+    // Part A.1 から「非農産品・MFN applied 2024 の単純平均 4.1%」を採る。
+    // 原文: Simple average 2024 — Total 5.0 / Ag 10.5 / Non-Ag 4.1。
+    //
+    // **加重平均 2.4% ではなく単純平均を採る理由**: 加重平均は EU の実際の輸入額
+    // （工業原料が支配的）の構成で、個人小包の中身の分布ではない。我々がやっているのは
+    // 「税表の行を1本引く」ことなので、行を等しく扱う単純平均のほうが近い。
+    // **反証**: 同 Part A.2 で衣類は平均 11.5%、繊維 6.6%。中古衣類が多いなら 4.1% は過小。
+    // 逆に非農産品の 29.1% は無税、63.4% は 5% 以下（同 Part A.1 の度数分布）。
+    // **幅は 0〜12% あり、4.1% はその中央付近の1点でしかない。だから tier は estimate。**
+    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: 0.041, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/E28_e.pdf',
     vatRate: 0.20, vatFreeLimit: 0,
     // La Poste の「frais de gestion」。**額は利用者がいつ払うかで変わる。**
     // 原文:「En payant en ligne, vous bénéficiez de frais de gestion réduits
