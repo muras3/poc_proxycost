@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Amount, tierClass } from '@/lib/ui/tiers';
 import { foreign, yen, yenRange, yenRounded } from '@/lib/ui/format';
+import { andList } from '@/lib/pricing/compare';
 import { rateLabel } from '@/lib/pricing/rates';
 import type { CompareResult, Row } from '@/lib/pricing/types';
 import { DiffBar } from './DiffBar';
@@ -20,6 +21,18 @@ function diffText(row: Row, result: CompareResult): string {
     if (r) return r[0] === 0 && r[1] === 0 ? 'CHEAPEST' : `+${yenRange(r)}`;
   }
   return row.diff === 0 ? 'CHEAPEST' : `+${yen(row.diff)}`;
+}
+
+/**
+ * 同順位の行を名指しする。**縦の並びに意味が無いことを、その場で言う。**
+ * 同額なら rank は同じ数字になる（compare.ts の `rank()`）が、数字が並んでいるだけでは
+ * 「上が勝っている」と読まれる。誰と並んでいるのかまで書いて初めて打ち消せる。
+ */
+function tiedText(row: Row, rows: Row[]): string {
+  const others = rows.filter((r) => r.id !== row.id && r.comparable && r.total === row.total);
+  if (!others.length) return '';
+  return `tied with ${andList(others.map((r) => r.label))}`
+    + ' — the order between them means nothing';
 }
 
 function totalText(row: Row, result: CompareResult): string {
@@ -66,6 +79,12 @@ export function RankBoard({ result }: { result: CompareResult }) {
                     )}
                   </span>
                   <span className="mt-0.5 block text-xs text-neutral-500">{row.tag}</span>
+                  {/* 同額は同順位。並びの偶然を順位と読ませない（T26）。 */}
+                  {row.tied && (
+                    <span className="mt-0.5 block text-xs text-neutral-600 dark:text-neutral-400">
+                      {tiedText(row, rows)}
+                    </span>
+                  )}
                   <span className="mt-0.5 block text-xs text-neutral-500">
                     {row.referralNote ?? 'pays us nothing'}
                   </span>
@@ -160,7 +179,11 @@ export function Summary({ result }: { result: CompareResult }) {
   const rows = result.rows.filter((r) => r.comparable);
   if (rows.length < 2) return null;
   const first = rows[0]!;
-  const rest = rows.slice(1, 4);
+  // **同額なら1社を名指ししない。** 総額が同じなら最安は複数あり、そのうち1つを
+  // 選んで「これが最安」と書けば、社名の辞書順や宣言順という無根拠な基準で
+  // 1社を推したことになる（compare.ts の `rank()`）。
+  const leaders = rows.filter((r) => r.cheapest);
+  const rest = rows.filter((r) => !r.cheapest).slice(0, 3);
   // **段が割れているときに1社を言い切らない。** 重量不明のとき rows は代表段
   // （真ん中）の順位でしかなく、軽い段では別の社が最安になることがある。
   // 直下の StabilityNote が打ち消していても、一番大きい文が断定していたら嘘になる。
@@ -168,7 +191,11 @@ export function Summary({ result }: { result: CompareResult }) {
   const qualify = !result.rankStable && midBand ? ` at ${midBand.label}` : '';
   return (
     <p className="text-sm">
-      <strong>{first.serviceName} is cheapest{qualify}.</strong>{' '}
+      <strong>
+        {leaders.length > 1
+          ? `${andList(leaders.map((r) => r.label))} are tied cheapest${qualify}.`
+          : `${first.serviceName} is cheapest${qualify}.`}
+      </strong>{' '}
       {rest.map((r, i) => (
         <span key={r.id}>
           {/* 重量が不明なときは差額も幅になる。1点に丸めて言い切らない。 */}

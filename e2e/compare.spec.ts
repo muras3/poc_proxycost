@@ -212,11 +212,14 @@ test('4. changing the destination changes the numbers', async ({ page }) => {
 });
 
 /** 重量表に載らない名前で1点、手で足す。 */
-async function addByHand(page: Page, title: string, priceYen: number): Promise<void> {
+async function addByHand(
+  page: Page, title: string, priceYen: number, site?: string,
+): Promise<void> {
   const form = page.getByRole('button', { name: 'Or add an item by hand' });
   if (await form.count()) await form.click();
   await page.getByLabel('Item name').fill(title);
   await page.getByLabel('Price ¥').fill(String(priceYen));
+  if (site) await page.getByLabel('Site').selectOption(site);
   await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
 }
 
@@ -280,6 +283,93 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   await expect(weightBox(page, PLUSH)).toHaveValue('1000');
   await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(0);
   await expect.poll(async () => (await readRanking(page))[0]!.total).toBe(assumed[0]!.total);
+});
+
+/**
+ * 同額（T26）。**手で作れる実在の入力**で、同順位になることを画面で見る。
+ * 1点 ¥4,200・450 g・楽天・オーストラリア宛で Neokyo と ZenMarket がちょうど ¥10,420。
+ * 走査では同額を含む組み合わせが 3,938 あり、うち 15 組が1位の同額
+ * （docs/audit/ties-2026-09-07.md）。稀な事故ではないので画面で扱う。
+ */
+const TIE = 'tie probe, no weight data';
+
+test('22. two rows with the same total share the rank, and both are CHEAPEST', async ({ page }) => {
+  await gotoCompare(page);
+  await page.getByLabel('Ship to').selectOption('AU');
+  await emptyCart(page);
+  await addByHand(page, TIE, 4200, 'rakuten');
+  await openCart(page);
+  await weightBox(page, TIE).fill('450');
+
+  await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
+  const rows = await readRanking(page);
+
+  const tied = rows.filter((r) => r.tied);
+  expect(tied.map((r) => r.name).sort()).toEqual(['Neokyo', 'ZenMarket']);
+
+  // 総額が同じで、**順位の数字も同じ**。並び順（1本目・2本目）ではなく行が出す数字を見る。
+  expect(new Set(tied.map((r) => r.total)).size, 'the two rows are not actually equal').toBe(1);
+  expect(tied[0]!.shownRank).toBe(tied[1]!.shownRank);
+  expect(tied[0]!.shownRank).toBe(1);
+
+  // **CHEAPEST は両方に付く。**片方だけに付けたら、同額なのに1社を推したことになる。
+  expect(tied.every((r) => r.cheapest)).toBe(true);
+  expect(rows.filter((r) => r.cheapest)).toHaveLength(2);
+
+  // 同順位が2つ在るので、次の行は 2 ではなく 3 に飛ぶ（競技順位）。
+  const rest = rows.filter((r) => !r.tied);
+  expect(rest[0]!.shownRank).toBe(3);
+  expect(rest.map((r) => r.shownRank)).toEqual([3, 4, 5]);
+
+  // **縦の並びが順位に読まれないよう、その場で打ち消す。**
+  for (const r of tied) {
+    const other = tied.find((x) => x.name !== r.name)!.name;
+    expect(r.text, `${r.name} does not name who it is tied with`).toContain(`tied with ${other}`);
+    expect(r.text).toContain('the order between them means nothing');
+  }
+  // 同額でない行は名乗らない。全行に付いたら印として機能しない。
+  for (const r of rest) expect(r.text, r.name).not.toContain('tied with');
+
+  // 一番大きい文が1社を名指ししていないこと。同額なら両方を挙げる。
+  await expect(page.getByText(/Neokyo and ZenMarket are tied cheapest/)).toBeVisible();
+  await expect(page.getByText(/^Neokyo is cheapest/)).toHaveCount(0);
+  await expect(page.getByText(/^ZenMarket is cheapest/)).toHaveCount(0);
+});
+
+test('23. a tie below the top shares its rank too, and does not move the winner', async ({ page }) => {
+  // 1点 ¥12,800・1,450 g・ヤフオク・米国で Buyee と Neokyo が ¥26,761 の2位タイ。
+  // **旧実装はここで社名の辞書順に割っていて、報酬を払う Buyee が、報酬ゼロの Neokyo を
+  // 常に上に置いていた**（同額 3,938 組のうち 3,716 組が同じ向き）。
+  await gotoCompare(page);
+  await emptyCart(page);
+  await addByHand(page, TIE, 12800);
+  await openCart(page);
+  await weightBox(page, TIE).fill('1450');
+
+  await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
+  const rows = await readRanking(page);
+
+  const tied = rows.filter((r) => r.tied);
+  expect(tied.map((r) => r.name).sort()).toEqual(['Buyee', 'Neokyo']);
+  expect(tied[0]!.shownRank).toBe(tied[1]!.shownRank);
+  expect(tied[0]!.shownRank).toBe(2);
+  // 2位タイなので CHEAPEST は付かず、差額も同じ。
+  expect(tied.some((r) => r.cheapest)).toBe(false);
+  expect(tied[0]!.diff).toBe(tied[1]!.diff);
+
+  // 報酬を払う社が、払わない社より上の順位を取れていないこと。
+  const buyee = tied.find((r) => r.name === 'Buyee')!;
+  const neokyo = tied.find((r) => r.name === 'Neokyo')!;
+  expect(buyee.text).toMatch(/pays us/);
+  expect(neokyo.text).toContain('pays us nothing');
+  expect(buyee.shownRank).toBe(neokyo.shownRank);
+
+  // 1位は同額ではないので、これまでどおり1社が CHEAPEST。
+  expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
+  expect(rows[0]!.shownRank).toBe(1);
+  expect(rows[0]!.tied).toBe(false);
+  // 同順位が2つ在るぶん、そのあとは 4 に飛ぶ。
+  expect(rows.map((r) => r.shownRank)).toEqual([1, 2, 2, 4, 5]);
 });
 
 test('6. one more of an item raises the total', async ({ page }) => {

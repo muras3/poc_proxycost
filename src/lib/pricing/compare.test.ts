@@ -101,10 +101,38 @@ describe('ranking uses the total and nothing else', () => {
       for (const n of [1, 2, 3, 5]) {
         const rows = compare({ items: items(n, 600), country: cc }).rows;
         expect(rows.every((r) => r.comparable), `${cc} n=${n}`).toBe(true);
-        const bySort = [...rows].sort(
-          (a, b) => a.total - b.total || a.serviceName.localeCompare(b.serviceName));
+        // **総額だけが並べ替えの鍵。** 第2の鍵（社名の辞書順など）は無い。
+        const bySort = [...rows].sort((a, b) => a.total - b.total);
         expect(rows.map((r) => r.id), `${cc} n=${n}`).toEqual(bySort.map((r) => r.id));
-        expect(rows.map((r) => r.rank)).toEqual(rows.map((_, i) => i + 1));
+        // 順位は「自分より厳密に安い行の数 + 1」。同額が無い入力ではこれが 1..n になる。
+        expect(rows.map((r) => r.rank), `${cc} n=${n}`)
+          .toEqual(rows.map((r) => rows.filter((o) => o.total < r.total).length + 1));
+        expect(rows.every((r) => !r.tied), `${cc} n=${n}`).toBe(true);
+      }
+    }
+  });
+
+  test('nothing but the total distinguishes two rows with the same total', () => {
+    // 同額が実在する以上、第2の鍵（社名の辞書順など）は「たまたま使われない鍵」では
+    // なく、在れば必ず効く。**順位・差額・CHEAPEST のどれも同額の行を区別しない**
+    // ことをここで縛る。縦の並びだけは残るが、それは `tied` が意味を持たないと書く。
+    for (const cc of COUNTRIES_ALL) {
+      for (const w of [450, 1425, 1450, 1900]) {
+        for (const site of ['yahoo-auctions', 'rakuten'] as const) {
+          const rows = compare({ items: items(1, w, 4200, { site }), country: cc }).rows
+            .filter((r) => r.comparable);
+          for (const a of rows) {
+            for (const b of rows) {
+              if (a.id === b.id || a.total !== b.total) continue;
+              const where = `${cc} w=${w} ${site} ${a.id}/${b.id}`;
+              expect(a.rank, where).toBe(b.rank);
+              expect(a.diff, where).toBe(b.diff);
+              expect(a.cheapest, where).toBe(b.cheapest);
+              expect(a.tied, where).toBe(true);
+              expect(b.tied, where).toBe(true);
+            }
+          }
+        }
       }
     }
   });
@@ -142,6 +170,114 @@ describe('ranking uses the total and nothing else', () => {
     const seen = COUNTRIES_ALL.map((cc) => compare({ items: items(1, 600), country: cc }).currency.code);
     expect(seen).toEqual(['USD', 'GBP', 'EUR', 'EUR', 'AUD', 'CAD', 'SGD']);
     expect(compare({ items: items(1, 600), country: 'US' }).currency.rate).toBe(156.25);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 同額（T26）。**同額なら同順位。**社名の辞書順で1位を割り当てない。
+//
+// 同額は珍しくない: 7カ国 × 3サイト × 1/2/3/5点 × 25〜8,000 g × 7価格の走査で
+// 同額を含む組み合わせが 3,938、そのうち**1位が同額**のものが 15 ある
+// （docs/audit/ties-2026-09-07.md）。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('equal totals get equal rank', () => {
+  /** 1点 1,450 g・US。Buyee と Neokyo がちょうど同額（2位タイ）になる実在の入力。 */
+  const midTie = () => compare({ items: items(1, 1450, 12800), country: 'US' }).rows;
+  /** 1点 450 g・¥4,200・楽天・AU。Neokyo と ZenMarket が**1位で**同額になる実在の入力。 */
+  const topTie = () => compare({
+    items: items(1, 450, 4200, { site: 'rakuten' }), country: 'AU',
+  }).rows;
+
+  test('two rows with the same total carry the same rank, and the next rank skips', () => {
+    const rows = midTie();
+    const a = byId(rows, 'neokyo');
+    const b = byId(rows, 'buyee');
+    expect(a.total).toBe(b.total);
+    expect(a.rank).toBe(b.rank);
+    // 競技順位（1-1-3）。同額が2つあれば次は2つ飛ぶ。
+    expect(rows.map((r) => r.rank)).toEqual([1, 2, 2, 4, 5]);
+    expect(a.tied).toBe(true);
+    expect(b.tied).toBe(true);
+    expect(rows.filter((r) => r.tied).map((r) => r.serviceId).sort())
+      .toEqual(['buyee', 'neokyo']);
+  });
+
+  test('**the alphabetical tiebreak used to hand first place to the service that pays us**', () => {
+    // 旧実装は `a.total - b.total || a.serviceName.localeCompare(b.serviceName)` だった。
+    // 'Buyee' < 'Neokyo' なので、同額のとき**報酬を払う Buyee が、報酬ゼロの Neokyo を
+    // 常に押しのけて上に来ていた。**順位に報酬を使わないという約束を第2の鍵が破っていた。
+    const rows = midTie();
+    const buyee = byId(rows, 'buyee');
+    const neokyo = byId(rows, 'neokyo');
+    expect(buyee.paysUs).toBe(true);
+    expect(neokyo.paysUs).toBe(false);
+    expect(buyee.total).toBe(neokyo.total);
+    // いまはどちらも同じ順位で、報酬を払う社が上の順位を取れない。
+    expect(buyee.rank).toBe(neokyo.rank);
+  });
+
+  test('CHEAPEST goes on **every** row at the lowest total, not on one of them', () => {
+    const rows = topTie();
+    const leaders = rows.filter((r) => r.cheapest);
+    expect(leaders.map((r) => r.serviceId).sort()).toEqual(['neokyo', 'zenmarket']);
+    expect(leaders.map((r) => r.rank)).toEqual([1, 1]);
+    expect(leaders.map((r) => r.diff)).toEqual([0, 0]);
+    expect(new Set(leaders.map((r) => r.total)).size).toBe(1);
+    // 最安が2つあるとき、3位は2つ飛んで 3。
+    expect(rows.map((r) => r.rank)).toEqual([1, 1, 3, 4, 5]);
+  });
+
+  test('a tied row says so, so the vertical order cannot be read as a ranking', () => {
+    for (const rows of [midTie(), topTie()]) {
+      const tied = rows.filter((r) => r.tied);
+      expect(tied.length).toBe(2);
+      // 同額でない行は tied を立てない（全行に付けたら印として機能しない）。
+      for (const r of rows.filter((x) => !x.tied)) {
+        expect(rows.filter((o) => o.id !== r.id && o.total === r.total), r.id).toEqual([]);
+      }
+    }
+  });
+
+  test('a tie at the top is not a rank change: stability is judged on the whole tied set', () => {
+    // 1位が {Neokyo, ZenMarket} で、片端で ZenMarket、他端で Neokyo になる。
+    // **どちらを選んでも両端で最安のままにはならない**ので不安定。
+    const r = compare({
+      items: items(1, 450, 4200, { site: 'rakuten', weightOrigin: 'user' }), country: 'AU',
+    });
+    expect(r.rows.filter((x) => x.cheapest).map((x) => x.serviceId).sort())
+      .toEqual(['neokyo', 'zenmarket']);
+    expect(r.rankStable).toBe(false);
+    expect(r.rankStabilityNote).toContain('Neokyo is cheapest');
+    expect(r.rankStabilityNote).toContain('ZenMarket is cheapest');
+  });
+
+  test('a tie below the top never makes the ranking look unstable', () => {
+    // 2位が同額なだけ。1位（FROM JAPAN）は両端で1位のままなので安定。
+    // 旧実装は `rows[0]` を比べていたので、同額の中で先頭が入れ替わっただけでも
+    // 「1位が替わった」と読む余地があった。集合で見ることでそれを塞ぐ。
+    const r = compare({ items: items(1, 1450, 12800), country: 'US' });
+    expect(r.rows.filter((x) => x.tied).length).toBe(2);
+    expect(r.rankStable).toBe(true);
+    expect(r.rankStabilityNote)
+      .toBe('FROM JAPAN stays cheapest even if we are off by 3x on weight.');
+  });
+
+  test('rank never has a hole: every rank from 1 up to the last is either used or skipped by a tie', () => {
+    for (const cc of COUNTRIES_ALL) {
+      for (const n of [1, 2, 3, 5]) {
+        for (const w of [200, 450, 600, 1450, 1900, 3000]) {
+          const rows = compare({ items: items(n, w), country: cc }).rows
+            .filter((r) => r.comparable);
+          const ranks = rows.map((r) => r.rank);
+          // 先頭は必ず 1。ある順位 k が使われた回数だけ、その後の順位が飛ぶ。
+          expect(Math.min(...ranks), `${cc} n=${n} w=${w}`).toBe(1);
+          for (const r of rows) {
+            expect(r.rank, `${cc} n=${n} w=${w} ${r.id}`)
+              .toBe(rows.filter((o) => o.total < r.total).length + 1);
+          }
+        }
+      }
+    }
   });
 });
 
@@ -601,8 +737,8 @@ describe('unknown weight falls back to EMS steps', () => {
 
   test('**two unknown items already change winner between bands**', () => {
     const r = unknown(2);
-    expect(r.bands!.map((b) => b.cheapestRowId))
-      .toEqual(['neokyo', 'neokyo', 'fromjapan', 'fromjapan', 'fromjapan', 'fromjapan']);
+    expect(r.bands!.map((b) => b.cheapestRowIds))
+      .toEqual([['neokyo'], ['neokyo'], ['fromjapan'], ['fromjapan'], ['fromjapan'], ['fromjapan']]);
     expect(r.rankStable).toBe(false);
     expect(r.rankStabilityNote).toContain('changes with weight');
     expect(r.rankStabilityNote).toContain('500 g: Neokyo');
@@ -611,7 +747,7 @@ describe('unknown weight falls back to EMS steps', () => {
 
   test('one unknown item keeps the same winner in every band', () => {
     const r = unknown(1);
-    expect(r.bands!.every((b) => b.cheapestRowId === 'fromjapan')).toBe(true);
+    expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
     expect(r.rankStable).toBe(true);
     expect(r.rankStabilityNote).toBe(
       'Cheapest at every step from 500 g to 10 kg: FROM JAPAN.');
@@ -623,8 +759,9 @@ describe('unknown weight falls back to EMS steps', () => {
       // 2注文なので Buyee が consolidated / default に割れて 6 行。
       expect(band.rows).toHaveLength(6);
       expect(band.rows.map((x) => x.rank)).toEqual([1, 2, 3, 4, 5, 6]);
-      expect(band.rows[0]!.id).toBe(band.cheapestRowId);
-      expect(band.cheapestServiceName).toBe(band.rows[0]!.label);
+      // この入力では同額が無いので最安は1つ。集合で持っていることまで固定する。
+      expect(band.cheapestRowIds).toEqual([band.rows[0]!.id]);
+      expect(band.cheapestServiceNames).toEqual([band.rows[0]!.label]);
     }
     const cheapestPerBand = r.bands!.map((b) => b.rows[0]!.total);
     expect(cheapestPerBand).toEqual([...cheapestPerBand].sort((a, b) => a - b));
