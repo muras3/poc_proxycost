@@ -202,6 +202,28 @@ export function alcoholNote(page: Page): Locator {
   return page.locator('p').filter({ hasText: /we read as alcohol/ });
 }
 
+/**
+ * 手入力で1点足す。**検索も URL 取得も要らない唯一の経路**なので、
+ * 入力を組み立てるテストはここを通る。`site` を渡すと出品サイトも選ぶ。
+ */
+export async function addByHand(
+  page: Page, title: string, priceYen: number, site?: string,
+): Promise<void> {
+  const form = page.getByRole('button', { name: 'Or add an item by hand' });
+  if (await form.count()) await form.click();
+  await page.getByLabel('Item name').fill(title);
+  await page.getByLabel('Price ¥').fill(String(priceYen));
+  if (site) await page.getByLabel('Site').selectOption(site);
+  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+}
+
+/** カートを空にする。 */
+export async function emptyCart(page: Page): Promise<void> {
+  await openCart(page);
+  const removes = cart(page).getByRole('button', { name: /^Remove / });
+  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
+}
+
 /** その要素が「開かないと読めない」場所に居ないか。畳まれた開示は開示ではない。 */
 export async function isCollapsed(target: Locator): Promise<boolean> {
   return target.evaluate(

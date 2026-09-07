@@ -4,6 +4,7 @@ import { SERVICES } from './services';
 import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE, PROVINCE_CODES } from './countries';
 import { EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G } from './ems';
 import { rateFor } from './rates';
+import { weightFieldsFor } from './weights';
 import type { CountryCode, Item, ProvinceCode, Row } from './types';
 
 const COUNTRIES_ALL: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
@@ -82,9 +83,9 @@ describe('the breakdown explains the total', () => {
   });
 
   test('a clearance fee we never fetched is null in every country that lacks one', () => {
-    // **CA はここから抜けた**（T23 で Canada Post の原文を取った）。抜けたことを
-    // 空振りにしないため、下の test が CA に数字と出典が在ることを見る。
-    for (const cc of ['DE', 'FR', 'AU', 'SG'] as const) {
+    // **CA と AU はここから抜けた**（T23 / T24 で Canada Post と ABF の原文を取った）。
+    // 抜けたことを空振りにしないため、下の test がそれぞれに数字と出典が在ることを見る。
+    for (const cc of ['DE', 'FR', 'SG'] as const) {
       const clearance = line(compare({ items: items(1, 600), country: cc }).rows[0]!, 'clearance');
       expect(clearance.amount, cc).toBeNull();
       expect(clearance.tier, cc).toBe('none');
@@ -197,6 +198,76 @@ describe('ranking uses the total and nothing else', () => {
     const seen = COUNTRIES_ALL.map((cc) => compare({ items: items(1, 600), country: cc }).currency.code);
     expect(seen).toEqual(['USD', 'GBP', 'EUR', 'EUR', 'AUD', 'CAD', 'SGD']);
     expect(compare({ items: items(1, 600), country: 'US' }).currency.rate).toBe(156.25);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AU の輸入処理手数料と GB の酒税（T24）。
+// **どちらも「発生するかどうか」は原文から言える。**額を出せるのは AU だけ。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Australia: the import processing charge, including the band where it is zero', () => {
+  test('at or below AUD 1,000 the charge is a published zero, not a dash', () => {
+    // ABF の表は「Electronic / ≤$1,000 / Sea·Air·Post / $0.00」という行を持っている。
+    // **原文が 0 と書いている 0** なので `—` にしない。この帯はちょうど代行が
+    // 販売時点で GST を取る帯でもあり、この計算機が扱う買い物のほとんどがここに入る。
+    const fee = line(compare({ items: items(1, 600), country: 'AU' }).rows[0]!, 'clearance');
+    expect(fee.amount).toBe(0);
+    expect(fee.tier).toBe('fixed');
+    expect(fee.note).toContain('no import declaration is required');
+    expect(fee.sourceUrl).toContain('abf.gov.au');
+  });
+
+  test('above AUD 1,000 it is a number, and it steps again above AUD 10,000', () => {
+    // ¥150,000 ≒ A$1,515、¥1,500,000 ≒ A$15,151（rates.ts の転記値）。
+    const mid = line(compare({ items: items(1, 600, 150000), country: 'AU' }).rows[0]!, 'clearance');
+    const high = line(compare({ items: items(1, 600, 1500000), country: 'AU' }).rows[0]!, 'clearance');
+    expect(mid.amount).toBeGreaterThan(0);
+    expect(mid.note).toContain('AUD 98');
+    expect(mid.note).toContain('biosecurity');
+    expect(high.amount!).toBeGreaterThan(mid.amount!);
+    expect(high.note).toContain('AUD 200');
+  });
+
+  test('the band is chosen per parcel, because the charge is per declaration', () => {
+    // 3点を3個口に割る Buyee default では、1個口あたりの価格で帯が決まる。
+    // 籠の合計で決めると、安い小包にまで A$98 を積むことになる。
+    const rows = compare({ items: items(3, 600, 150000), country: 'AU' }).rows;
+    const split = byId(rows, 'buyee:default');
+    const together = byId(rows, 'buyee:consolidated');
+    expect(split.parcels).toBe(3);
+    expect(line(split, 'clearance').note).toContain('3 parcels');
+    // まとめた1個口は A$4,545 で同じ帯、割った1個口は A$1,515 でやはり同じ帯。
+    // 帯が同じでも個口が3つなら3倍取られる。
+    expect(line(split, 'clearance').amount).toBeGreaterThan(line(together, 'clearance').amount!);
+  });
+});
+
+describe('the UK excise duty on alcohol is named even though we cannot price it', () => {
+  const sake = () => item({
+    id: 'sake', title: 'junmai sake 720ml', priceYen: 5000,
+    ...weightFieldsFor('junmai sake 720ml'),
+  });
+
+  test('a bottle in the basket adds a null line, so the shortfall is on the screen', () => {
+    // gov.uk 原文「you'll be charged Excise Duty at current rates」——金額にかかわらず
+    // 課され、£135 も £39 も効かない。**発生は確実。額だけが分からない。**
+    const row = compare({ items: [sake()], country: 'GB' }).rows[0]!;
+    const excise = line(row, 'excise');
+    expect(excise.amount).toBeNull();
+    expect(excise.tier).toBe('none');
+    expect(excise.note).toContain('at any value');
+    expect(excise.note).toContain('litre of pure alcohol');
+    // 総額から抜けている費目の一覧に名前が載る。載らなければ黙って安く見せたことになる。
+    expect(row.excluded).toContain(excise.label);
+  });
+
+  test('no bottle, no line — and no other destination gets one', () => {
+    expect(compare({ items: items(1, 600), country: 'GB' }).rows[0]!.lines
+      .some((l) => l.key === 'excise')).toBe(false);
+    for (const cc of COUNTRIES_ALL.filter((c) => c !== 'GB')) {
+      expect(compare({ items: [sake()], country: cc }).rows[0]!.lines
+        .some((l) => l.key === 'excise'), cc).toBe(false);
+    }
   });
 });
 
@@ -689,7 +760,7 @@ describe('Buyee splits parcels by order', () => {
     // USD 9.35 × ¥156.25 × 3個口を最後に一度だけ丸める（¥1,461 の3倍ではない）。
     expect(line(consolidated, 'clearance').amount).toBe(1461);
     expect(line(dflt, 'clearance').amount).toBe(4383);
-    expect(line(dflt, 'clearance').note).toBe('USD 9.35 × 3 parcels');
+    expect(line(dflt, 'clearance').note).toContain('USD 9.35 × 3 parcels');
     expect(dflt.total).toBeGreaterThan(consolidated.total);
   });
 
