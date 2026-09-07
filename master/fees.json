@@ -134,26 +134,15 @@
    "stage": "warehouse",
    "rule": {
     "type": "default_split_per_order",
-    "consolidation": "free_on_request"
+    "consolidation": "optional_service",
+    "amount": "unknown"
    },
    "mandatory": false,
-   "tier": "A_confirmed",
+   "tier": "B_inferred",
    "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
    "checked_on": "2026-09-07",
-   "note": "5社中 Buyee だけ既定が注文ごと別送"
-  },
-  {
-   "id": "F22",
-   "company": "buyee",
-   "name": "購入後キャンセル",
-   "stage": "warehouse",
-   "rule": {
-    "type": "not_possible"
-   },
-   "mandatory": false,
-   "tier": "A_confirmed",
-   "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
-   "checked_on": "2026-09-07"
+   "quote": "Once the item arrives at the warehouse, you can apply for package consolidation and/or protective packaging.",
+   "inference_basis": "公式はまとめ梱包が申請制のオプションであることを明記。『既定は注文ごと別送・申請すると無料』は REQUIREMENTS.md §8.5 の調査由来で、今回の一次取得では無料であることの引用が取れていない。額は未取得"
   },
   {
    "id": "F36",
