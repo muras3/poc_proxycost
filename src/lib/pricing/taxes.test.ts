@@ -188,33 +188,40 @@ describe('the GST the service collects at checkout is shown per service', () => 
     }
   });
 
-  test('Singapore: only the two we could confirm carry a number — the rest show a dash', () => {
+  test('Singapore: every service carries a number — confirmed as fixed, the rest as an estimate', () => {
+    // **以前ここは「確認できた2社だけ数字、残りは `—`」を守っていた。**
+    // それは `docs/TODO-NEXT.md` 課題1が名指しした誤りで、
+    // **確認できていないのは「誰が集めるか」だけ、「いくら払うか」は同じ**なのに、
+    // `—` にすると調べていない3社がその税額ぶん安い表になっていた。
     const rows = rowsFor('SG', 3000, 5);
     for (const row of rows) {
       const l = line(row, PREPAID);
+      // どの社も額が在る。**`—` は無い。**
+      expect(l.amount, row.id).toBeGreaterThan(0);
       if (COLLECTS.SG.includes(row.serviceId)) {
-        expect(l.amount, row.id).toBeGreaterThan(0);
         expect(l.tier, row.id).toBe('fixed');
         expect(l.label, row.id).toBe('GST collected at checkout');
       } else {
-        // **0 ではなく null。** 0 と書けば「この社では GST が要らない」という嘘になる。
-        expect(l.amount, row.id).toBeNull();
-        expect(l.tier, row.id).toBe('none');
-        expect(l.label, row.id)
-          .toBe('GST collected at checkout — we could not confirm whether this service collects it');
-        // **社名は入れない。**この文言は全社の列に掛かる見出しにも出るので、
-        // ここで名指しすると他社の金額にまでその社の話が付いてしまう。
+        // 推定として出す。画面では `~` と琥珀色（src/lib/ui/tiers.tsx）。
+        expect(l.tier, row.id).toBe('estimate');
+        expect(l.label, row.id).toContain('estimated');
+        // **社名は入れない。**この文言は全社の列に掛かる見出しにも出る。
         expect(l.label, row.id).not.toContain(row.serviceName);
-        // 総額から抜けていることが画面に出る。
-        expect(row.excluded, row.id).toContain(l.label);
+        // 推定の根拠が note に在る。「9% はどちらでも同じ」と、
+        // 国境で集められた場合に配送業者の手数料が別に乗ることの開示。
+        expect(l.note, row.id).toContain('9% either way');
+        expect(l.note, row.id).toContain("handling fee");
+        // 額が在るので総額に入る。excluded には出ない。
+        expect(row.excluded, row.id).not.toContain(l.label);
       }
+      // 額が在るなら総額と一致する。
+      expect(row.total, row.id).toBe(row.lines.reduce((x, y) => x + (y.amount ?? 0), 0));
     }
-    // 確認できた社／できていない社が、両方ちゃんと表に出ていること。
-    const withNumber = rows.filter((r) => line(r, PREPAID).amount != null).map((r) => r.serviceId);
-    const withDash = rows.filter((r) => line(r, PREPAID).amount == null).map((r) => r.serviceId);
-    expect(new Set(withNumber)).toEqual(new Set(COLLECTS.SG));
-    expect(withDash.length).toBeGreaterThan(0);
-    expect(new Set(withDash)).toEqual(
+    // 確認できた社は fixed、それ以外は estimate。**両方が表に出ていること。**
+    const fixed = rows.filter((r) => line(r, PREPAID).tier === 'fixed').map((r) => r.serviceId);
+    const est = rows.filter((r) => line(r, PREPAID).tier === 'estimate').map((r) => r.serviceId);
+    expect(new Set(fixed)).toEqual(new Set(COLLECTS.SG));
+    expect(new Set(est)).toEqual(
       new Set(SERVICES.map((s) => s.id).filter((id) => !COLLECTS.SG.includes(id))));
   });
 

@@ -82,17 +82,41 @@ describe('the breakdown explains the total', () => {
     expect(duty.note).toContain('threshold');
   });
 
-  test('a clearance fee we never fetched is null in every country that lacks one', () => {
-    // **CA・AU・DE はここから抜けた**（CA/AU は T23 / T24、DE は Auslagepauschale €7.50）。
-    // 抜けたことを空振りにしないため、下の test がそれぞれに数字と出典が在ることを見る。
-    // **FR に残っているのは「手数料が無い」ではない。**La Poste の frais de dossier は
-    // 実在するが、額（€2 / €5 / €8 という報告）を公式で裏づけられなかったので入れていない。
-    // 推測で置けば、DE を €6（2018年の値）のまま置いていたのと同じ誤りになる。
-    for (const cc of ['FR', 'SG'] as const) {
+  test('no country is left with a null customs clearance fee', () => {
+    // **7カ国すべてに額が入った**（`docs/TODO-NEXT.md` 課題1）。
+    //   US   USPS $9.35 / GB Royal Mail £8 / CA Canada Post C$9.95（T23）
+    //   AU   ABF の Import Processing Charge（T24）
+    //   DE   Deutsche Post の Auslagepauschale €7.50
+    //   FR   La Poste の frais de gestion €8
+    //   SG   SingPost の handling fee S$10.90（S$400 以下は 0）
+    //
+    // **`—` を使ってよいのは発生しないものだけ。**通関手数料はどの国でも発生するので、
+    // `—` は「手数料が無い」ではなく「我々が調べていない」であり、
+    // 調べていない国だけが安く見えるという嘘になっていた。
+    // **この test は、その嘘に戻らないための歯止め。**
+    for (const cc of COUNTRIES_ALL) {
       const clearance = line(compare({ items: items(1, 600), country: cc }).rows[0]!, 'clearance');
-      expect(clearance.amount, cc).toBeNull();
-      expect(clearance.tier, cc).toBe('none');
+      expect(clearance.amount, cc).not.toBeNull();
+      expect(clearance.tier, cc).not.toBe('none');
+      // 額が在るなら出典と確認日も在る。無ければ「いつの値か」を言えない。
+      expect(clearance.sourceUrl, cc).toBeTruthy();
     }
+  });
+
+  test('the Singapore handling fee is zero at or below SGD 400 — a fetched zero, not a missing number', () => {
+    // 税関自身は通関手数料を取らない。取るのは SingPost で、名目は「税関に代わって
+    // GST を徴収する手数料」。**S$400 以下は OVR で決済時に GST が済んでいるので
+    // 徴収するものが無く、手数料も発生しない。**この 0 は取得できた 0。
+    const low = line(compare({ items: items(1, 600), country: 'SG' }).rows[0]!, 'clearance');
+    expect(low.amount).toBe(0);
+    expect(low.note).toContain('OVR');
+    // 閾値を越えれば S$10.90 が乗る（¥400,000 の1点なら CIF は S$400 を確実に超える）。
+    const high = compare({
+      items: [{ ...items(1, 600)[0]!, priceYen: 400_000 }], country: 'SG',
+    }).rows[0]!;
+    const fee = line(high, 'clearance');
+    expect(fee.amount).not.toBe(0);
+    expect(fee.note).toContain('SGD 10.9');
   });
 
   test('the German Auslagepauschale is EUR 7.50 per consignment — the 2026-03-10 amount, not the 2018 one', () => {
@@ -1079,19 +1103,24 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **AU と SG は T15（代行の前徴収 GST）で動いた。** 費目モデルが変わったので
     // ここが動くのは正しい。AU は5社とも徴収を明記しているので全行に税が乗り、
     // 課税ベースの違い（内容品価格のみ／総額）で並びまで変わった。
-    // SG は徴収を確認できた Buyee・FROM JAPAN にだけ税が乗り、他3社は「—」なので
-    // **その3社の総額は税のぶん低いまま**（excluded にそう書いてある）。
-    // **DE は Auslagepauschale €7.50 が入って全行 +¥1,362 動いた**（Buyee の別送だけ
-    // 5個口ぶんで +¥6,810）。以前 DE が安く見えていたのは手数料が安いからではなく、
-    // **我々がドイツの手数料を1円も入れていなかったから。**
+    // **SG は5社そろって GST が乗った。**以前は徴収を確認できた Buyee・FROM JAPAN に
+    // だけ税が乗り、他3社は「—」で**その3社が税のぶん安い表**になっていた。
+    // 確認できていないのは「誰が集めるか」だけで「いくら払うか」は同じなので、
+    // 残り3社は国の課税ベースで推定して出す（`docs/TODO-NEXT.md` 課題1）。
+    // 並びも変わる——安く見えていた3社が本来の位置に落ちた。
+    // **DE は Auslagepauschale €7.50、FR は frais de gestion €8 が入って動いた**
+    // （DE 全行 +¥1,362 / FR 全行 +¥1,453。Buyee の別送だけ5個口ぶん）。
+    // 以前この2カ国が安く見えていたのは手数料が安いからではなく、
+    // **我々が独仏の手数料を1円も入れていなかったから。**
+    // **SG はこの帯（5点×¥12,800＝CIF が S$400 超）で S$10.90 が乗る。**
     expect(totals).toEqual({
       US: [37586, 38536, 40036, 40331, 42066, 63130],
       GB: [40121, 41071, 42571, 42801, 44528, 66256],
       DE: [42735, 43685, 45185, 45415, 47142, 67412],
-      FR: [41699, 42649, 44149, 44379, 46106, 61069],
+      FR: [43152, 44102, 45602, 45832, 47559, 68333],
       AU: [33950, 36630, 36740, 36900, 40543, 51000],
       CA: [36762, 37712, 39212, 39442, 41169, 59552],
-      SG: [28500, 31036, 32101, 32747, 33736, 45235],
+      SG: [30836, 32101, 33372, 33736, 35083, 45235],
     });
   });
 });

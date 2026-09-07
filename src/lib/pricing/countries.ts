@@ -155,7 +155,21 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // DE と同じ €3。対象（DSIG）に当たるかを断定できないので確定として描かない。
     dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
     vatRate: 0.20, vatFreeLimit: 0,
-    clearanceCcy: 'EUR', clearanceTier: 'none',
+    // La Poste の「frais de gestion」。**額は利用者がいつ払うかで変わる。**
+    // 原文:「En payant en ligne, vous bénéficiez de frais de gestion réduits
+    // (2 ou 5€ selon le type de colis)」／配達時・窓口は「le tarif plein」で
+    // **フランス本土 8€ TTC**（海外県は 7.5€ / 7€ と TVA 率で違う）。
+    // **既定は 8€ を出す。**利用者が何もしなければこれになるからで、
+    // 事前にオンラインで払えば 2〜5€ に下がるのは**利用者の操作**であって料金表ではない
+    // （スペインの Correos も €6 → €1.56 と同じ構造。docs/MASTER.md の D_unpredictable）。
+    // 本土の宛先だけを扱うので海外県の帯は入れていない。
+    clearanceBands: [{
+      upTo: Number.POSITIVE_INFINITY, amount: 8,
+      note: 'La Poste frais de gestion, full rate at delivery — 2–5 EUR if paid online in advance',
+    }],
+    clearanceCcy: 'EUR', clearanceTier: 'fixed',
+    clearanceSourceUrl: 'https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international',
+    clearanceCheckedOn: '2026-09-07',
     notes: [],
     sourceUrl: 'https://www.douane.gouv.fr/',
     sellerCollectsBelow: null,
@@ -235,7 +249,25 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'Singapore', ccy: 'SGD', base: 'CIF',
     dutyFreeLimit: Number.POSITIVE_INFINITY, dutyRate: 0, dutyTier: 'fixed',
     vatRate: 0.09, vatFreeLimit: 400,
-    clearanceCcy: 'SGD', clearanceTier: 'none',
+    // SingPost の Handling Fee。**シンガポール税関自身は通関手数料を取らない**
+    // （原文「Singapore Customs does not collect any clearance fee ... other than
+    // payment of duty or GST」）。取るのは SingPost で、名目は
+    // 「税関に代わって GST・関税を徴収する手数料」。
+    //
+    // **だから帯は S$400 で割れる。**S$400 以下は OVR で決済時に GST が済んでいるので
+    // 国境で徴収するものが無く、この手数料も発生しない ——「取得できた 0」。
+    // 超えた帯だけ S$10.90／通。
+    clearanceBands: [
+      { upTo: 400, amount: 0, note: 'GST already collected at checkout under OVR — nothing for SingPost to collect' },
+      { upTo: Number.POSITIVE_INFINITY, amount: 10.9, note: 'SingPost handling fee, per consignment' },
+    ],
+    clearanceCcy: 'SGD', clearanceTier: 'unverified',
+    // **S$400 の閾値は公式本文で取れた**（「the postal parcel contains goods of a
+    // total CIF value exceeding S$400」）。**額 S$10.90 は取れていない**——
+    // 公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画だけ。
+    // だから tier は unverified。文そのものが取れたら fixed に上げる。
+    clearanceSourceUrl: 'https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments',
+    clearanceCheckedOn: '2026-09-07',
     notes: ['seller_collects_gst'],
     sourceUrl: 'https://www.customs.gov.sg/individuals/importing-personal-goods/',
     // S$400 未満の低額品（LVG）は、GST 登録済みの海外事業者・転送業者が

@@ -318,7 +318,8 @@ function feeLines(
  */
 function prepaidImportTaxLine(
   svc: Service, cc: CompareInput['country'],
-  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number; shippingKnown: boolean },
+  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number;
+       cifYen: number; shippingKnown: boolean },
 ): Line | null {
   const c = COUNTRIES[cc];
   if (c.sellerCollectsBelow == null || a.declared > c.sellerCollectsBelow) return null;
@@ -326,17 +327,37 @@ function prepaidImportTaxLine(
   const taxName = cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
   const p = svc.prepaidImportTax?.[cc];
   if (!p) {
-    // **社名をラベルに入れない。** このラベルは費目の見出しとして全社の列に
-    // 掛かる場所（デスクトップの内訳表）にも出るので、そこで特定の社を名指しすると
-    // 他社の金額にまで「Neokyo は確認できていない」と書くことになる。
-    // 行の中では「this service」で一意に読める。
+    // **確認できていないのは「誰が集めるか」だけで、「いくら払うか」ではない。**
+    // その社が決済時に集めるなら決済時に、集めないなら国境で SingPost / 税関が集める。
+    // どちらでも買い手が出す額は同じ税率ぶん。**だから `—` にしてはいけない。**
+    // `—` にすると、確認できた社にだけ税が乗り、確認できなかった社が
+    // **その税額ぶん安い**表になる——調べていないことが安さに化ける
+    // （`docs/TODO-NEXT.md` 課題1）。
+    //
+    // ベースは**その国の課税ベース**を使う。徴収者が誰であれ、国境で課すなら
+    // この額に掛かるからで、社ごとの内部ベース（Charge1+Charge2 等）は
+    // 集めると分かっている社にしか適用できない。
+    //
+    // **幅**: 集める社の実際のベースは商品代のみ〜総額まで割れており
+    // （`services.ts` の `prepaidImportTax[].base`）、その差ぶんは上下しうる。
+    // tier `estimate` にして画面で `~` と出す。
+    //
+    // **なお不足がもう1つ残る**: 国境で集められる場合、SingPost の手数料
+    // （`countries.ts` の `clearanceBands`）も乗るが、そこは S$400 以下を
+    // 「OVR で徴収済み＝0」として置いている。この社ではその前提が立たない。
+    // 額を足さずに、ここに書いて開示する。
+    const est = c.base === 'CIF' ? a.cifYen : a.itemsYen;
+    if (c.vatRate == null || !a.shippingKnown) {
+      return L('prepaid-import-tax', `${taxName} collected at checkout`, null,
+        'we cannot complete the base for this parcel', 'none', c.sourceUrl);
+    }
     return L('prepaid-import-tax',
-      `${taxName} collected at checkout`
-      + ' — we could not confirm whether this service collects it',
-      null,
-      `${c.name} makes the seller collect ${taxName} below ${c.ccy} ${c.sellerCollectsBelow}.`
-      + ` ${svc.name} does not say on its own pages whether it does, so we do not put a number here.`,
-      'none', c.sourceUrl);
+      `${taxName} — estimated: we could not confirm who collects it`,
+      Math.round(est * c.vatRate),
+      `${(c.vatRate * 100).toFixed(0)}% either way — ${svc.name} does not say whether it collects at checkout,`
+      + ` so this is ${c.name}'s own base. If it is collected at the border instead,`
+      + ` the carrier's handling fee is added on top and we do not show that here.`,
+      'estimate', c.sourceUrl);
   }
 
   const base = p.base === 'declared' ? a.itemsYen
@@ -456,6 +477,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     declared: itemsYen / rateFor(COUNTRIES[ctx.cc].ccy),
     preTaxYen,
     shippingYen,
+    // その国の課税ベース（CIF）。徴収者が確認できない社の推定に使う。
+    // `taxLines` が使っているのと同じ組み立て（実際に払う国内送料＋国際送料）。
+    cifYen: itemsYen + domCharged + (emsYen ?? 0),
     shippingKnown: emsYen != null,
   });
   if (prepaid) lines.push(prepaid);
