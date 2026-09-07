@@ -1,5 +1,9 @@
 # 代行5社 費目マトリクス（あるべき表）
 
+> **この表は手書きで、権威は `master/fees.json` にある。**
+> 表と JSON が食い違う場合は JSON が正しい。表は「全体像と `?` の位置」を見るためのもので、
+> 実装や引用の根拠には使わない。既知の食い違いは末尾の「JSON との食い違い」に列挙してある。
+
 2026-09-07 調査。**総額に入りうる費目を全部並べ、5社それぞれで発生するかを埋めた表。**
 空欄は作らない。分からないセルは `?` と書いて残す（`?` は 0円ではない）。
 
@@ -258,3 +262,22 @@ Buyee は二次情報しか無いセル（△5）が5社中唯一残っている
 - tokyocardreport.com/articles/zenmarket-vs-buyee-pokemon-cards/
 - japan-shop-helper.com/en/travel/features/buyee-review （Buyee 手数料を公式と 4.5 倍取り違え）
 - dutyglobal.com/forwarders/zenmarket （国際送料の計算のみ。料金額は持たず、保管期間も公式と不一致）
+
+---
+
+## JSON との食い違い（Fable レビュー M11。JSON が正）
+
+| 費目 | この表 | `master/fees.json` | 正 |
+|---|---|---|---|
+| F26 ZenMarket / Neokyo | `?` | **B_inferred で ¥2,800** | JSON |
+| F05 Buyee | `?` | **B_inferred で `zero`（存在しない）** | JSON |
+| F36 Jauce | `?` | **行を削除（豪州法の義務は年 A$75k 以上の事業者。類推だったので C へ降格）** | JSON |
+| F36 Buyee | `?`（対象国 unknown） | **AU / NZ / SG / MY の4行。NZ 15%・SG 9%・MY 10% は A（原文引用あり）** | JSON |
+| F14 Buyee | ○「依頼で無料同梱」 | **B_inferred。「申請制のオプション」までが公式で、無料の引用は取れていない** | JSON |
+| F18 / F20 FROM JAPAN | ◎ ¥500 / ◎ 60日 | **行を追加（tier B。REQUIREMENTS §8.5 由来で再取得できず）** | JSON |
+| F21 Neokyo / Jauce | ◎「額 ?」 | **`amount_tier: C_unknown`** | JSON。◎（金額確定）は凡例違反だった |
+| F02 ZenMarket | ¥300〜800 | **`yahoo_auction: null` を明示、`amount_tier: C`** | JSON。最大の仕入先が公式から読めない |
+| DE / FR / ES の関税 | €150 未満は関税ゼロ | **2026-07-01 に €150 免税廃止。€3 定額（2028-07-01まで）** | JSON。**制度が変わっている** |
+| US の関税 | 12.5%（未検証） | **15%**（日米協定の実装官報）。de minimis 停止は **2025-08-29** | JSON |
+
+**この表を `master/fees.json` から生成するのが本来。**手書きのまま残しているのは未完の作業。

@@ -13,7 +13,7 @@
     "currency": "JPY"
    },
    "mandatory": true,
-   "tier": "A_confirmed",
+   "tier": "B_inferred",
    "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
    "checked_on": "2026-09-07",
    "quote": "Flat rate ¥500 / Per order … Even if multiple purchases are from the same store, it is a flat rate of ¥500.",
@@ -22,7 +22,9 @@
      "TW"
     ]
    },
-   "note": "同一店舗の複数購入・複数落札でも1回。注文数でも商品数でもない"
+   "note": "同一店舗の複数購入・複数落札でも1回。注文数でも商品数でもない",
+   "valid_as_of": "2019-12-18",
+   "inference_basis": "2019-12-18 の BEENOS プレスリリース。7年前の情報で、現行の台湾語版 Buyee の料金ページで再確認していない。英語版公式は台湾を例外として挙げていない"
   },
   {
    "id": "F02",
@@ -35,7 +37,7 @@
     "currency": "JPY"
    },
    "mandatory": true,
-   "tier": "A_confirmed",
+   "tier": "B_inferred",
    "source": "https://beenos.com/news-center/detail/20191220_tcm_pr/",
    "checked_on": "2026-09-07",
    "quote": "台湾限定！購入サポート手数料、一律300円",
@@ -43,7 +45,9 @@
     "country": [
      "TW"
     ]
-   }
+   },
+   "valid_as_of": "2019-12-18",
+   "inference_basis": "2019-12-18 の BEENOS プレスリリース。7年前の情報で、現行の台湾語版 Buyee の料金ページで再確認していない。英語版公式は台湾を例外として挙げていない"
   },
   {
    "id": "F12",
@@ -112,20 +116,18 @@
     "amount": 2800,
     "currency": "JPY",
     "when": {
-     "items_total_jpy_over": 200000,
      "carrier_in": [
-      "EMS",
-      "AIR",
-      "SAL",
-      "JapanPost_Seamail"
-     ]
+      "JapanPost_all"
+     ],
+     "declared_value_jpy_over": 200000
     }
    },
    "mandatory": true,
    "tier": "A_confirmed",
    "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
    "checked_on": "2026-09-07",
-   "quote": "If you send item(s) valued over 200,000 yen with EMS, AIR, SAL or Japan Post Seamail, a customs clearance commission fee (2,800 yen) will be charged."
+   "quote": "If you send item(s) valued over 200,000 yen with EMS, AIR, SAL or Japan Post Seamail, a customs clearance commission fee (2,800 yen) will be charged.",
+   "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
   },
   {
    "id": "F14",
@@ -142,24 +144,8 @@
    "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
    "checked_on": "2026-09-07",
    "quote": "Once the item arrives at the warehouse, you can apply for package consolidation and/or protective packaging.",
-   "inference_basis": "公式はまとめ梱包が申請制のオプションであることを明記。『既定は注文ごと別送・申請すると無料』は REQUIREMENTS.md §8.5 の調査由来で、今回の一次取得では無料であることの引用が取れていない。額は未取得"
-  },
-  {
-   "id": "F36",
-   "company": "buyee",
-   "name": "着地国の税を代理徴収",
-   "stage": "import",
-   "rule": {
-    "type": "collects_destination_tax",
-    "countries": "unknown",
-    "rate": "unknown"
-   },
-   "mandatory": true,
-   "tier": "A_confirmed",
-   "source": "https://bc.help.buyee.jp/en/fee/",
-   "checked_on": "2026-09-07",
-   "quote": "Special fees: Actual cost (GST/taxes by country)",
-   "note": "徴収する事実は公式。対象国と率は未取得（C）"
+   "inference_basis": "公式はまとめ梱包が申請制のオプションであることを明記。『既定は注文ごと別送・申請すると無料』は REQUIREMENTS.md §8.5 の調査由来で、今回の一次取得では無料であることの引用が取れていない。額は未取得",
+   "amount_tier": "C_unknown"
   },
   {
    "id": "F02",
@@ -174,16 +160,22 @@
      "rakuten": 500,
      "other_shops": 500,
      "mercari": 800,
-     "jdirectitems_auction": 800
+     "jdirectitems_auction": 800,
+     "yahoo_auction": null
     },
     "default": 500,
-    "currency": "JPY"
+    "currency": "JPY",
+    "unknown_marketplaces": [
+     "yahoo_auction"
+    ]
    },
    "mandatory": true,
    "tier": "A_confirmed",
    "source": "https://zenmarket.jp/en/fees.aspx",
    "checked_on": "2026-09-07",
-   "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids."
+   "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids.",
+   "amount_tier": "C_unknown",
+   "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。最大の仕入先である Yahoo オークションが ¥500 か ¥800 か公式から読めない。default で埋めない"
   },
   {
    "id": "F04",
@@ -223,7 +215,8 @@
    "name": "国内銀行送金料",
    "stage": "purchase",
    "rule": {
-    "type": "included_in",
+    "type": "zero",
+    "reason": "included_in",
     "fee_id": "F02"
    },
    "mandatory": true,
@@ -272,7 +265,8 @@
    "name": "初回梱包・まとめ梱包",
    "stage": "warehouse",
    "rule": {
-    "type": "free"
+    "type": "zero",
+    "reason": "free"
    },
    "mandatory": true,
    "tier": "A_confirmed",
@@ -361,10 +355,11 @@
     "type": "not_included"
    },
    "mandatory": true,
-   "tier": "A_confirmed",
+   "tier": "C_unknown",
    "source": "https://zenmarket.jp/en/fees.aspx",
    "checked_on": "2026-09-07",
-   "quote": "any check which would take a non-specialist over 3 minutes is not included and requires an additional commission"
+   "quote": "any check which would take a non-specialist over 3 minutes is not included and requires an additional commission",
+   "amount_tier": "C_unknown"
   },
   {
    "id": "F20",
@@ -448,7 +443,8 @@
    "name": "輸送保険",
    "stage": "export",
    "rule": {
-    "type": "included_in",
+    "type": "zero",
+    "reason": "included_in",
     "fee_id": "F02",
     "limit_jpy": 5000000
    },
@@ -525,7 +521,8 @@
    "name": "国内送料",
    "stage": "domestic",
    "rule": {
-    "type": "included_in",
+    "type": "zero",
+    "reason": "included_in",
     "fee_id": "F02"
    },
    "mandatory": true,
@@ -600,7 +597,8 @@
    "tier": "A_confirmed",
    "source": "https://neokyo.com/en/fees",
    "checked_on": "2026-09-07",
-   "quote": "45 days of free storage per item"
+   "quote": "45 days of free storage per item",
+   "amount_tier": "C_unknown"
   },
   {
    "id": "F36",
@@ -621,7 +619,8 @@
    "source": "https://neokyo.com/en/fees",
    "checked_on": "2026-09-07",
    "quote": "Import/customs taxes … charged by destination country (not by Neokyo, except Australia, EU27, and US territories)",
-   "note": "徴収する国は公式。率は未取得（C）"
+   "note": "徴収する国は公式。率は未取得（C）",
+   "amount_tier": "C_unknown"
   },
   {
    "id": "F02",
@@ -720,11 +719,13 @@
     "currency": "JPY"
    },
    "mandatory": false,
-   "tier": "A_confirmed",
+   "tier": "B_inferred",
    "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
    "checked_on": "2026-09-07",
-   "quote": "Details of the Product Protection Plan",
-   "note": "別に Plan Fee があり年間 Charge1 実績で変動。額は未取得（C）"
+   "quote": "Product Protection Plan: 500 yen per item",
+   "note": "別に Plan Fee があり年間 Charge1 実績で変動。額は未取得（C）",
+   "quote_status": "要再確認（原文の該当文を特定しきれていない）",
+   "inference_basis": "REQUIREMENTS.md §8.5 が一次配信ファイルから ¥500/点 を取得済み。今回の再取得で金額を含む文を特定できず"
   },
   {
    "id": "F13",
@@ -783,18 +784,18 @@
     "amount": 2800,
     "currency": "JPY",
     "when": {
-     "total_value_jpy_over": 200000,
      "carrier_in": [
-      "EMS",
-      "JapanPost_International_Parcel"
-     ]
+      "JapanPost_all"
+     ],
+     "declared_value_jpy_over": 200000
     }
    },
    "mandatory": true,
    "tier": "A_confirmed",
    "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
    "checked_on": "2026-09-07",
-   "quote": "Packages with a total value exceeding 200,000 yen sent through Japan Post (EMS, International Parcel) will incur a 2,800 yen Export Clearance Fee."
+   "quote": "Packages with a total value exceeding 200,000 yen sent through Japan Post (EMS, International Parcel) will incur a 2,800 yen Export Clearance Fee.",
+   "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
   },
   {
    "id": "F27",
@@ -956,7 +957,7 @@
    "name": "サービス料（モール・ベータ）",
    "stage": "purchase",
    "rule": {
-    "type": "free",
+    "type": "zero",
     "reason": "beta"
    },
    "mandatory": true,
@@ -1086,7 +1087,8 @@
    "tier": "A_confirmed",
    "source": "https://www.jauce.com/japan_auction_detail",
    "checked_on": "2026-09-07",
-   "quote": "Free for 60 days; monthly fee charged days 61-120"
+   "quote": "Free for 60 days; monthly fee charged days 61-120",
+   "amount_tier": "C_unknown"
   },
   {
    "id": "F26",
@@ -1098,7 +1100,7 @@
     "amount": 2800,
     "currency": "JPY",
     "when": {
-     "contents_value_jpy_over": 200000
+     "declared_value_jpy_over": 200000
     }
    },
    "mandatory": true,
@@ -1149,18 +1151,18 @@
     "amount": 2800,
     "currency": "JPY",
     "when": {
-     "total_value_jpy_over": 200000,
      "carrier_in": [
-      "EMS",
-      "JapanPost_International_Parcel"
-     ]
+      "JapanPost_all"
+     ],
+     "declared_value_jpy_over": 200000
     }
    },
    "mandatory": true,
    "tier": "B_inferred",
    "source": "https://zenmarket.jp/en/fees.aspx",
    "checked_on": "2026-09-07",
-   "inference_basis": "Buyee・FROM JAPAN・Jauce の3社が同額・同条件で持つ。日本郵便の輸出通関料の転嫁であり、日本郵便を使う限り発生する。ZenMarket 公式に記載も否定も無い"
+   "inference_basis": "Buyee・FROM JAPAN・Jauce の3社が同額・同条件で持つ。日本郵便の輸出通関料の転嫁であり、日本郵便を使う限り発生する。ZenMarket 公式に記載も否定も無い",
+   "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
   },
   {
    "id": "F26",
@@ -1172,37 +1174,18 @@
     "amount": 2800,
     "currency": "JPY",
     "when": {
-     "total_value_jpy_over": 200000,
      "carrier_in": [
-      "EMS",
-      "JapanPost_International_Parcel"
-     ]
+      "JapanPost_all"
+     ],
+     "declared_value_jpy_over": 200000
     }
    },
    "mandatory": true,
    "tier": "B_inferred",
    "source": "https://neokyo.com/en/fees",
    "checked_on": "2026-09-07",
-   "inference_basis": "同上"
-  },
-  {
-   "id": "F36",
-   "company": "jauce",
-   "name": "豪州 GST 代理徴収",
-   "stage": "import",
-   "rule": {
-    "type": "collects_destination_tax",
-    "country": "AU",
-    "rate": 0.1,
-    "when": {
-     "declared_value_aud_max": 1000
-    }
-   },
-   "mandatory": true,
-   "tier": "B_inferred",
-   "source": "https://www.jauce.com/japan_auction_detail",
-   "checked_on": "2026-09-07",
-   "inference_basis": "A$1,000以下の低額輸入は豪州法が販売者・EDP に徴収を義務づけている。5社中4社（ZenMarket・FROM JAPAN・Neokyo・Buyee）で確認済み"
+   "inference_basis": "同上",
+   "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
   },
   {
    "id": "F05",
@@ -1210,7 +1193,8 @@
    "name": "国内配送サービス料 ¥500 は存在しない",
    "stage": "purchase",
    "rule": {
-    "type": "not_applicable"
+    "type": "zero",
+    "reason": "not_applicable"
    },
    "mandatory": true,
    "tier": "B_inferred",
@@ -1236,6 +1220,127 @@
    "source": "teetalk.de ほか独語圏の複数の書き手",
    "checked_on": "2026-09-07",
    "inference_basis": "複数の独立した書き手が 3.2%＋¥40 で一致。Jauce の ¥40＋3.9% と構造・水準が整合的。公式の方法別表は要ログインで未取得"
+  },
+  {
+   "id": "F36",
+   "company": "buyee",
+   "name": "NZ GST 代理徴収",
+   "stage": "import",
+   "rule": {
+    "type": "collects_destination_tax",
+    "countries": [
+     "NZ"
+    ],
+    "rate": 0.15,
+    "base": "goods_plus_service_fee_plus_options",
+    "effective_from": "2019-12-01"
+   },
+   "mandatory": true,
+   "tier": "A_confirmed",
+   "source": "https://buyee.jp/helpcenter/guide/nz-gst?lang=en",
+   "quote": "Please pay the 15% GST along with the total price of the goods, Buyee's service fee, and other optional fees during handling.",
+   "checked_on": "2026-09-07"
+  },
+  {
+   "id": "F36",
+   "company": "buyee",
+   "name": "SG GST 代理徴収",
+   "stage": "import",
+   "rule": {
+    "type": "collects_destination_tax",
+    "countries": [
+     "SG"
+    ],
+    "rate": 0.09,
+    "base": "goods_plus_service_fee_plus_options_plus_shipping",
+    "effective_from": "2024-01-05"
+   },
+   "mandatory": true,
+   "tier": "A_confirmed",
+   "source": "https://buyee.jp/helpcenter/guide/sg-gst?lang=en",
+   "quote": "9% of the value of goods shown on the invoice, Buyee's service fees, optional service fees, domestic/international shipping costs",
+   "checked_on": "2026-09-07"
+  },
+  {
+   "id": "F36",
+   "company": "buyee",
+   "name": "MY SST 代理徴収",
+   "stage": "import",
+   "rule": {
+    "type": "collects_destination_tax",
+    "countries": [
+     "MY"
+    ],
+    "rate": 0.1,
+    "base": "unknown",
+    "effective_from": "2024-05-08",
+    "exception": {
+     "when": {
+      "unit_price_myr_min": 500
+     },
+     "who": "local_delivery_company",
+     "note": "配達時に現地業者が別途徴収"
+    }
+   },
+   "mandatory": true,
+   "tier": "A_confirmed",
+   "source": "https://buyee.jp/helpcenter/guide/ms-sst?lang=en",
+   "quote": "a 10% Sales & Service Tax (SST) will be imposed on packages imported into Malaysia after May 8th, 2024. The SST for items with a unit price of 500 MYR or more will be charged separately by the local delivery company upon delivery.",
+   "checked_on": "2026-09-07",
+   "amount_tier": "C_unknown"
+  },
+  {
+   "id": "F36",
+   "company": "buyee",
+   "name": "AU GST 代理徴収",
+   "stage": "import",
+   "rule": {
+    "type": "collects_destination_tax",
+    "countries": [
+     "AU"
+    ],
+    "rate": "unknown",
+    "base": "unknown"
+   },
+   "mandatory": true,
+   "tier": "A_confirmed",
+   "amount_tier": "C_unknown",
+   "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
+   "quote": "GST (Australia, New Zealand, Singapore)",
+   "note": "料金ページに AU の GST サブページへのリンクがあるが、そのページは取得できなかった（401）。徴収する事実は A、率と課税ベースは C",
+   "checked_on": "2026-09-07"
+  },
+  {
+   "id": "F18",
+   "company": "fromjapan",
+   "name": "写真サービス",
+   "stage": "warehouse",
+   "rule": {
+    "type": "fixed_per_item",
+    "amount": 500,
+    "currency": "JPY",
+    "includes": "3 photos"
+   },
+   "mandatory": false,
+   "tier": "B_inferred",
+   "source": "REQUIREMENTS.md §8.5（一次配信ファイルからの取得）",
+   "inference_basis": "§8.5 が一次で取得済みだが、今回の再取得で該当文を特定できず",
+   "checked_on": "2026-09-07"
+  },
+  {
+   "id": "F20",
+   "company": "fromjapan",
+   "name": "保管無料期間",
+   "stage": "warehouse",
+   "rule": {
+    "type": "free_days",
+    "days": 60
+   },
+   "mandatory": true,
+   "tier": "B_inferred",
+   "source": "REQUIREMENTS.md §8.5",
+   "inference_basis": "同上",
+   "checked_on": "2026-09-07"
   }
  ],
  "catalog": [
@@ -1451,6 +1556,57 @@
    "in_fees_master": false,
    "kind": "country_side",
    "excluded_reason": "master/customs.json の clearance_fee_vat に持つ。ES・DE・CA の実請求3件で確認"
+  },
+  {
+   "id": "F39",
+   "name": "会社の申告額ポリシー（CN22/インボイスに何を書くか）",
+   "in_fees_master": false,
+   "kind": "company_attribute",
+   "excluded_reason": "**未取得（C）。輸入側の全ルール（免税閾値・VAT・通関手数料）の入力になるのに、5社とも公表していない。**商品代のみか手数料込みか、Buyee の注文別送ではパーセルごとにいくら申告するか。これが無いと輸入側の計算は開始できない"
+  },
+  {
+   "id": "F40",
+   "name": "燃油・遠隔地サーチャージ（配送業者の公表率）",
+   "in_fees_master": false,
+   "kind": "carrier_attribute",
+   "excluded_reason": "FedEx/DHL は週次で率を公表しており、送料の2〜3割に達する。各社の公表送料が燃油込みかどうかを会社属性として調べる必要がある。現状は全社未取得（C）"
   }
- ]
+ ],
+ "schema": {
+  "tier": "発生の確からしさ（A_confirmed / B_inferred）",
+  "amount_tier": "金額の確からしさ。rule に unknown を含む行は C_unknown を必須とする",
+  "rule_type_vocabulary": [
+   "actual_cost_per_order",
+   "choice_per_order",
+   "collects_destination_tax",
+   "default_split_per_order",
+   "fee_once_per_distinct_item",
+   "fixed_min",
+   "fixed_per_auction",
+   "fixed_per_box",
+   "fixed_per_item",
+   "fixed_per_item_by_marketplace",
+   "fixed_per_order",
+   "fixed_per_parcel",
+   "fixed_per_payment",
+   "fixed_per_seller_per_day",
+   "fixed_plus_per_kg",
+   "fixed_plus_rate",
+   "free_days",
+   "max_fixed_or_rate",
+   "method_eligibility",
+   "not_included",
+   "per_day_per_item",
+   "per_hour",
+   "per_kg",
+   "per_kg_over_threshold",
+   "rate_of_item_price",
+   "rate_of_total",
+   "rate_of_transaction_by_method",
+   "risk_flag",
+   "threshold_fixed",
+   "tiered_by_weight_per_box",
+   "zero"
+  ]
+ }
 }
