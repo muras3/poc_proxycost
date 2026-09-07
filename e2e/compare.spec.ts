@@ -158,6 +158,40 @@ test('3. what we do not have shows as — , never as ¥0', async ({ page }) => {
   }
 });
 
+test('3b. two figures we did not read from the source are drawn as such (T17)', async ({ page }) => {
+  // (1) EU の €3 定額関税: 制度の原文は取れているが、代行経由の購入がその対象
+  //     （distance sale of imported goods）に当たるかを断定できない。
+  // (2) ZenMarket の入金手数料 3.5%: 公表値は「from 1%」で、3.5% は実請求からの逆算。
+  // どちらも「確定」の顔で描いてはいけない。
+  await gotoCompare(page);
+  await page.getByLabel('Ship to').selectOption('DE');
+  await expect.poll(async () => (await readRanking(page)).length).toBeGreaterThan(0);
+
+  const rows = await readRanking(page);
+  const zen = rows.findIndex((r) => r.name === 'ZenMarket');
+  expect(zen, 'ZenMarket が順位に居ない').toBeGreaterThanOrEqual(0);
+  const li = await openRankRow(page, zen);
+
+  const duty = costRow(li, /^Duty/);
+  await expect(duty).toHaveCount(1);
+  const dutyAmount = duty.getByTitle(TITLE.unverified).first();
+  await expect(dutyAmount).toBeVisible();
+  const deco = await dutyAmount.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { line: s.textDecorationLine, style: s.textDecorationStyle };
+  });
+  expect(deco.style).toBe('dotted');
+  expect(deco.line).toContain('underline');
+
+  const depositRow = costRow(li, /^Deposit fee/);
+  await expect(depositRow).toHaveCount(1);
+  const deposit = depositRow.getByTitle(TITLE.estimate).first();
+  await expect(deposit).toBeVisible();
+  expect((await deposit.innerText()).trim()).toMatch(/^~¥/);
+  // 内訳の説明が、公表されている文言を隠していないこと。
+  await expect(depositRow).toContainText('from 1%');
+});
+
 test('4. changing the destination changes the numbers', async ({ page }) => {
   await gotoCompare(page);
   const before = await readRanking(page);

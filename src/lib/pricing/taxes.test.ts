@@ -53,6 +53,33 @@ describe('the duty note says something a buyer can read', () => {
     }
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // T17: 我々が原典に当たれていない数字を、確定の顔で出さない。
+  // ───────────────────────────────────────────────────────────────────────────
+  test('the EU flat €3 is charged but drawn as second-hand, in both EU countries', () => {
+    // 制度の原文（EU の暫定定額関税ガイダンス）は取れている。取れていないのは
+    // 「代行経由の購入が distance sale of imported goods に当たるか」で、
+    // 当たらなければこの ¥489/点 は総額から丸ごと消える。額を出しつつ点線で描く。
+    for (const cc of ['DE', 'FR'] as CountryCode[]) {
+      for (const row of rowsFor(cc)) {
+        const duty = line(row, 'duty');
+        expect(duty.amount, `${cc} ${row.id}`).toBeGreaterThan(0);
+        expect(duty.tier, `${cc} ${row.id}`).toBe('unverified');
+      }
+      expect(COUNTRIES[cc].dutyTier, cc).toBe('unverified');
+    }
+  });
+
+  test('ZenMarket 3.5% deposit fee is our figure — the page says only "from 1%"', () => {
+    const zen = rowsFor('US').find((r) => r.serviceId === 'zenmarket')!;
+    const deposit = line(zen, 'deposit');
+    expect(deposit.amount).toBeGreaterThan(0);
+    expect(deposit.tier).toBe('estimate');
+    expect(deposit.note).toContain('from 1%');
+    // 推定が1つでも混ざれば総額に `~` が付く。
+    expect(zen.approximate).toBe(true);
+  });
+
   test('the country table itself still carries the limit we branch on', () => {
     // 「限度が無い」を 0 で表さない。0 は「1円から課税」の意味になる。
     expect(Number.isFinite(COUNTRIES.SG.dutyFreeLimit)).toBe(false);

@@ -194,10 +194,13 @@ export const SERVICES: Service[] = [
     },
     domesticIncluded: false,
     deposit: {
-      flatYen: 0, rate: 0.035, tier: 'fixed',
-      // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,362.7 が必要。
-      // 台湾の利用者が公開した実請求 ¥10,363 と1円差で一致（docs/DESIGN-NOTES.md §3）。
-      note: '3.5% of the whole payment',
+      // **公表値は 3.5% ではない。** 料金ページ（Arquivo.pt 2025-11-27 の写し、
+      // 2026-09-06 読了）は「Funds Deposit Fee (**from 1%**)」としか書いておらず、
+      // 支払方法ごとの率を出していない。3.5% は台湾の利用者が公開した実請求
+      // ¥10,363 から我々が逆算した値（10000/(1-0.035) = ¥10,362.7 と1円差、
+      // docs/DESIGN-NOTES.md §3）。**逆算は我々の推定なので estimate。**
+      flatYen: 0, rate: 0.035, tier: 'estimate',
+      note: '3.5% of the whole payment — the page says only "from 1%"',
     },
     packing: null,
     parcelDefault: 'one',
