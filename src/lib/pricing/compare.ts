@@ -422,6 +422,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     rank: 0,
     diff: 0,
     cheapest: false,
+    // rank() が総額を見てから付ける。ここでは何も主張しない。
+    tied: false,
     paysUs: svc.paysUs,
     referralNote: svc.referralNote,
     // 1点だけなら、その社でその出品を直接開く（検証済みの組み合わせのみ）。
@@ -446,21 +448,71 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
  * 総額の昇順で順位を付ける。**報酬額（paysUs）は一切参照しない。**
  * 比べられない行（国際送料が取れていない）は末尾に回し、順位も差額も付けない。
  * 最大の費目が欠けた総額を、揃っている総額と並べたら順位が嘘になる。
+ *
+ * ## 同額は同順位（T26）
+ *
+ * 以前はここが `a.total - b.total || a.serviceName.localeCompare(b.serviceName)` で、
+ * **同額を社名の辞書順で割っていた。**社名の辞書順に順位の根拠は無い。
+ * しかも害は抽象的ではなかった: 7カ国 × 1/2/3/5点 × 25〜6,000 g を走査すると同額は
+ * 904 組あり（`docs/audit/ties-2026-09-07.md`）、その大半が **Buyee と Neokyo の同額**で、
+ * `localeCompare('Buyee', 'Neokyo') < 0` なので**報酬を払う社（Buyee）が、報酬ゼロの社
+ * （Neokyo）を常に押しのけて1位**になっていた。順位に報酬を使わないという約束
+ * （REQUIREMENTS §2）を、並べ替えの第2キーが事実上破っていた。
+ *
+ * だから rank は「自分より**厳密に**安い比較可能な行の数 + 1」にする（競技順位）。
+ * 同額の行は同じ数字になり、次の行はその分だけ飛ぶ（1-1-3）。
+ *
+ * ## CHEAPEST は同額の全行に付ける
+ *
+ * 「どちらにも付けない」（両方 `+¥0` と描く）も検討したが、**それは「最安が存在しない」
+ * と読める。**事実は「最安が2つある」。CHEAPEST は「これより安い選択肢は無い」という
+ * 事実の表明であって、1社を推すバッジではない。事実が2社で成り立つなら2社に付く。
+ * 消す方を選ぶと、このツールが答えるべき唯一の問い（どれを選ぶか）に対して、
+ * 答えを持っているのに黙ることになる。
+ *
+ * ただし付けるだけでは足りない: 縦に並べれば上の行が勝っているように読める。
+ * **同順位の行の縦の並び（＝ SERVICES の宣言順。安定ソートがそのまま残す）は
+ * 何も意味しない。**だから `tied` を立て、画面がその場で `tied` と書いて打ち消す。
  */
 function rank(rows: Row[]): Row[] {
-  const byTotal = (a: Row, b: Row) =>
-    a.total - b.total || a.serviceName.localeCompare(b.serviceName);
+  // 第2キーを持たない。同額の並びは入力順（SERVICES の宣言順）のまま残る
+  // ——Array#sort は安定なので。その並びに意味は無く、意味が無いことは画面が書く。
+  const byTotal = (a: Row, b: Row) => a.total - b.total;
   const ok = rows.filter((r) => r.comparable).sort(byTotal);
   const notOk = rows.filter((r) => !r.comparable).sort(byTotal);
   const low = ok[0]?.total ?? 0;
   return [
-    ...ok.map((r, i) => ({
-      ...r, rank: i + 1, diff: r.total - low, cheapest: r.total === low,
+    ...ok.map((r) => ({
+      ...r,
+      rank: ok.filter((o) => o.total < r.total).length + 1,
+      diff: r.total - low,
+      cheapest: r.total === low,
+      tied: ok.some((o) => o.id !== r.id && o.total === r.total),
     })),
+    // 比べられない行の総額は最大の費目を欠いている。同額でも「並んだ」ことにならない
+    // ので tied は立てない（比べていないものを「同じ」と書かない）。
     ...notOk.map((r, i) => ({
-      ...r, rank: ok.length + i + 1, diff: 0, cheapest: false,
+      ...r, rank: ok.length + i + 1, diff: 0, cheapest: false, tied: false,
     })),
   ];
+}
+
+/**
+ * 比較可能な行のうち総額が最小の行の id。**同額なら複数返る。**
+ * 「1位が動いたか」を `rows[0]` で見ると、同額の中でどれが先頭に来たかという
+ * 並びの偶然を「順位が動いた」と読んでしまう。集合で見る。
+ */
+function cheapestIds(rows: Row[]): string[] {
+  const ok = rows.filter((r) => r.comparable);
+  if (!ok.length) return [];
+  const low = Math.min(...ok.map((r) => r.total));
+  return ok.filter((r) => r.total === low).map((r) => r.id);
+}
+
+/** 'A' / 'A and B' / 'A, B and C'。英語UIにそのまま出る。 */
+export function andList(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
 function rowsFor(ctx: Ctx): Row[] {
@@ -501,8 +553,8 @@ function weightSensitivityFor(
   items: Item[], cc: CompareInput['country'], base: Row[],
 ): Record<string, WeightSensitivity> {
   const out: Record<string, WeightSensitivity> = {};
-  const first = base.find((r) => r.comparable);
-  if (!first) return out;
+  const baseIds = cheapestIds(base);
+  if (!baseIds.length) return out;
   const baseComparable = base.filter((r) => r.comparable).length;
 
   for (const item of items) {
@@ -513,20 +565,31 @@ function weightSensitivityFor(
         items: items.map((i) => (i.id === item.id ? { ...i, weightG: g } : i)),
         cc, assumeUnknownG: null, weightScale: 1,
       });
-      const comparable = rows.filter((r) => r.comparable);
-      return { winner: comparable[0] ?? null, shrank: comparable.length < baseComparable };
+      const ids = cheapestIds(rows);
+      return {
+        ids,
+        // 同額なら全部並べる。1つだけ名指しすると、並びの偶然で選んだ社を
+        // 「その重量での最安」と言い切ることになる。
+        label: ids.length
+          ? andList(ids.map((id) => rows.find((r) => r.id === id)?.label ?? id))
+          : null,
+        shrank: rows.filter((r) => r.comparable).length < baseComparable,
+      };
     };
     const lo = at(range[0]);
     const hi = at(range[1]);
     out[item.id] = {
       lowG: range[0],
       highG: range[1],
-      winnerAtLow: lo.winner?.label ?? null,
-      winnerAtHigh: hi.winner?.label ?? null,
+      winnerAtLow: lo.label,
+      winnerAtHigh: hi.label,
       onlyPricedAtLow: lo.shrank,
       onlyPricedAtHigh: hi.shrank,
       // 「比べられなくなった」端は「替わった」に数えない（rankStable と同じ）。
-      decisive: [lo, hi].some((w) => w.winner != null && w.winner.id !== first.id),
+      // **同額は「替わった」ではない。**基準の重量で最安だった行が1つでも
+      // その端で最安のままなら、選ぶべき社は変わっていない。
+      decisive: [lo, hi].some(
+        (w) => w.ids.length > 0 && !w.ids.some((id) => baseIds.includes(id))),
     };
   }
   return out;
@@ -600,11 +663,23 @@ export function compare({ items, country }: CompareInput): CompareResult {
       // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
       // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
       // 値段が付く唯一の社というだけ。そう書かないと嘘になる。
-      return { id: comparable[0]?.id ?? null, shrank: comparable.length < baseComparable };
+      // 最安は**集合**で持つ（同額があるので）。
+      return { rows, ids: cheapestIds(rows), shrank: comparable.length < baseComparable };
     });
+    const baseIds = cheapestIds(base);
+    // 「1位が動かない」＝ **基準の重量で最安だった社のうち、両端でも最安のままの社が
+    // 1つでも在る**こと。同額の中でどれが先頭に来たかは並びの偶然なので、
+    // それで判定すると動いていない順位が動いたことになる。
+    // 値段の付く行が消えた端（ids が空）は「判定できない」として飛ばす（従来どおり）。
+    const holds = winners.reduce(
+      (keep, w) => (w.ids.length === 0 ? keep : keep.filter((id) => w.ids.includes(id))),
+      baseIds);
     const first = base.find((r) => r.comparable);
-    const stable = !!first && winners.every((w) => w.id === null || w.id === first.id);
-    const outOfTable = winners.some((w) => w.id === null || w.shrank);
+    const stable = holds.length > 0;
+    // 基準で同額だったのに片端で落ちた社は、黙って消さずに名指しする。
+    const dropped = baseIds.filter((id) => !holds.includes(id));
+    const labelOf = (id: string) => base.find((r) => r.id === id)?.label ?? id;
+    const outOfTable = winners.some((w) => w.ids.length === 0 || w.shrank);
     // 表の中央値や仮置きを「あなたがくれた重量」と呼ぶのは嘘。出どころを知らない
     // 呼び出し側（origin 未設定）と利用者入力だけ「you gave us」と言う。
     const ours = items.some((i) => i.weightOrigin === 'table' || i.weightOrigin === 'assumed');
@@ -616,7 +691,12 @@ export function compare({ items, country }: CompareInput): CompareResult {
       rankStabilityNote: !first
         ? 'No published EMS rate covers this parcel, so we cannot compare these totals.'
         : stable
-          ? `${first.label} stays cheapest even if we are off by 3x on weight.`
+          ? `${andList(holds.map(labelOf))} stay${holds.length === 1 ? 's' : ''} cheapest`
+            + ' even if we are off by 3x on weight.'
+            + (dropped.length
+              ? ` ${andList(dropped.map(labelOf))} ${dropped.length === 1 ? 'ties' : 'tie'}`
+                + ' with it at this weight but not at both ends.'
+              : '')
             + (outOfTable ? ' Beyond that the parcel leaves the published EMS table.' : '')
           // **不安定なときに「段の表を見ろ」と言ってはいけない。** 重量が分かって
           // いるときは段の表を出していないので、画面に無いものを指すことになる。
@@ -625,13 +705,15 @@ export function compare({ items, country }: CompareInput): CompareResult {
             ['a third of', 'three times']
               .map((word, i) => {
                 const w = winners[i]!;
-                const name = w.id == null ? null : base.find((r) => r.id === w.id)?.label ?? w.id;
-                const label = name == null
+                const names = w.ids.map((id) => w.rows.find((r) => r.id === id)?.label ?? id);
+                const many = names.length > 1;
+                const label = names.length === 0
                   ? 'no published EMS rate covers the parcel'
                   : w.shrank
                     // 「唯一値段が付く社」を「最安」と書かない。
-                    ? `${name} is the only one we can still price`
-                    : `${name} is cheapest`;
+                    ? `${andList(names)} ${many ? 'are' : 'is'} the only`
+                      + ` ${many ? 'ones' : 'one'} we can still price`
+                    : `${andList(names)} ${many ? 'are tied cheapest' : 'is cheapest'}`;
                 return `at ${word} ${basis}, ${label}`;
               })
               .join('; ')
@@ -647,14 +729,16 @@ export function compare({ items, country }: CompareInput): CompareResult {
   const bands: Band[] = [];
   for (const stepG of UNKNOWN_WEIGHT_STEPS_G) {
     const rows = rowsFor({ items, cc: country, assumeUnknownG: stepG, weightScale: 1 });
-    const top = rows[0];
-    if (!top) continue;
+    if (!rows.length) continue;
+    // 段ごとの最安も**集合**で持つ。同額のとき `rows[0]` を最安と呼ぶと、
+    // 並びの偶然を段ごとの答えとして出すことになる。
+    const ids = cheapestIds(rows);
     bands.push({
       stepG,
       label: formatStep(stepG),
       rows,
-      cheapestRowId: top.id,
-      cheapestServiceName: top.label,
+      cheapestRowIds: ids,
+      cheapestServiceNames: ids.map((id) => rows.find((r) => r.id === id)?.label ?? id),
     });
   }
   if (!bands.length) return empty;
@@ -671,7 +755,11 @@ export function compare({ items, country }: CompareInput): CompareResult {
   }
 
   const first = bands[0]!;
-  const stable = bands.every((b) => b.cheapestRowId === first.cheapestRowId);
+  // 全段で最安のままの行が1つでも在れば「動かない」。同額は「動いた」ではない。
+  const holdsAcrossBands = bands.reduce<string[]>(
+    (keep, b) => keep.filter((id) => b.cheapestRowIds.includes(id)),
+    first.cheapestRowIds);
+  const stable = holdsAcrossBands.length > 0;
   const totals = bands.flatMap((b) => b.rows.map((r) => r.total));
   // 代表として真ん中の段を rows に据える。1つの数字を主役にはしないが、
   // 画面が何も出せないと困るので順序の代表は要る。
@@ -684,8 +772,10 @@ export function compare({ items, country }: CompareInput): CompareResult {
     rowDiffRange,
     rankStable: stable,
     rankStabilityNote: stable
-      ? `Cheapest at every step from ${first.label} to ${bands[bands.length - 1]!.label}: ${first.cheapestServiceName}.`
-      : `The cheapest option changes with weight — ${bands.map((b) => `${b.label}: ${b.cheapestServiceName}`).join(', ')}.`,
+      ? `Cheapest at every step from ${first.label} to ${bands[bands.length - 1]!.label}: `
+        + `${andList(holdsAcrossBands.map((id) => first.rows.find((r) => r.id === id)?.label ?? id))}.`
+      : 'The cheapest option changes with weight — '
+        + `${bands.map((b) => `${b.label}: ${andList(b.cheapestServiceNames)}`).join(', ')}.`,
     totalRangeYen: [Math.min(...totals), Math.max(...totals)],
     currency,
     hasUnknownWeight: true,

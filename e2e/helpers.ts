@@ -13,8 +13,12 @@ export const CONSENT_KEY = 'proxycost.consent.v1';
 const SERVICE_NAMES = ['FROM JAPAN', 'ZenMarket', 'Neokyo', 'Buyee', 'Jauce'] as const;
 
 export interface RankRow {
-  /** 1 始まり。画面上の並び順。 */
+  /** 1 始まり。画面上の**並び順**。順位そのものではない（同額は同順位になる）。 */
   rank: number;
+  /** 行が実際に表示している順位の数字。同額なら前の行と同じ数字になる。 */
+  shownRank: number;
+  /** 「tied with …」を名乗っているか。同額の行だけが名乗る。 */
+  tied: boolean;
   /** 'Neokyo' / 'Buyee' など。 */
   name: string;
   /** 'consolidated' / 'default' / null。 */
@@ -112,12 +116,20 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     if (!totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
     const cheapest = /(^|\s)CHEAPEST(\s|$)/.test(text);
     const diffMatch = text.match(/\+¥([\d,]+)/);
-    const name = SERVICE_NAMES.find((s) => text.includes(s));
+    // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
+    const shown = text.match(/^(\d+)\s/);
+    if (!shown) throw new Error(`row ${i} shows no rank number: ${text}`);
+    // **社名は行頭からだけ読む。** 行の中には他社の名前も出る（同額の「tied with ZenMarket」）
+    // ので、行全体を includes で探すと隣の社の名前を自分の名前として拾う。
+    const head = text.replace(/^\d+\s+/, '');
+    const name = SERVICE_NAMES.find((s) => head.startsWith(s));
     if (!name) throw new Error(`row ${i} has no known service name: ${text}`);
     const variant = text.includes('consolidated') ? 'consolidated'
       : text.includes('default') ? 'default' : null;
     out.push({
       rank: i + 1,
+      shownRank: Number(shown[1]),
+      tied: /tied with /.test(text),
       name,
       variant,
       total: parseYen(totalMatch[1]!),

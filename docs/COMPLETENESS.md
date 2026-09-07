@@ -157,7 +157,7 @@
 | T23 | CA の州選択と Canada Post CAN$9.95 | ON 選択で HST 13%、州税行が数値になる |
 | T24 | US：品目カテゴリ→HTS の対応表（衣類・収集品の除外）、AU IPC、GB excise の行 | 該当カテゴリで Duty 行が変わる |
 | T25 | Jauce 入金手数料の方式（gross-up か加算か）を原文とサポートに確認して直す | 原文の引用と実効率が `services.ts` の note に載る |
-| T26 | 同額タイの扱い：同額は同順位、タイブレークをサービス名にしない | 同額2行で rank が同じ値 |
+| T26 | **済**。同額は同順位（競技順位 1-1-3）。第2キーを消した。**社名の辞書順は無害ではなかった**——同額 3,938 組のうち 3,716 組（94%）で報酬を払う社が報酬ゼロの社より上に置かれていた（`'Buyee' < 'Neokyo'`）。CHEAPEST は**同額の全行に付ける**（「これより安い選択肢は無い」という事実の表明で、1社を推すバッジではない。どちらにも付けない案は「最安が存在しない」と読める）。同順位の縦の並びは `SERVICES` の宣言順で意味を持たないので、画面が `tied with … — the order between them means nothing` と行内で打ち消す。「1位が動いたか」（`rankStable` / `weightSensitivity` / 段ごとの最安）は集合で見る——`rows[0]` で見ると並びの偶然を「順位が動いた」と読む。実測は `docs/audit/ties-2026-09-07.md`（`npm run ties:scan` で測り直せる） | 同額2行で rank が同じ値。ユニット7件と E2E 2件（desktop / mobile 各2＝4）が**実操作で**同額を作って見る（AU・楽天・¥4,200・450 g で1位タイ、US・ヤフオク・¥12,800・1,450 g で2位タイ） |
 | T27 | 「送れない」判定（酒・リチウム・刃物）。v1 は免責1行のみ | What could be off に「Alcohol, lithium batteries, blades … may not be shippable; we do not check」 |
 
 ---
