@@ -692,8 +692,48 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
         .map((r) => line(r, 'duty').amount);
     // 商品代 ¥28,539 = £135.0。送料込みなら £150 相当だが、判定には混ぜない。
     // **境界は為替そのもの。**転記前の ¥190/£ では ¥25,650 に置かれていた（約 ¥2,900 手前）。
+    // 限度以下は**取得できた 0**（原文が「£135 以下は関税なし」と書いている）。
     expect(dutyAt(28539)).toEqual([0, 0, 0, 0, 0]);
-    expect(dutyAt(28540)).toEqual([null, null, null, null, null]);
+    // 限度超は数字になる。**以前ここは null（「—」）だった。**関税は VAT の課税ベースに
+    // 入るので、null が 0 に畳まれて VAT まで縮んでいた（EU・カナダと同じ欠陥）。
+    // 額は WTO 英国プロファイルの非農産品 MFN 単純平均 2.9%。
+    for (const amount of dutyAt(28540)) expect(amount).toBeGreaterThan(0);
+  });
+
+  test('the threshold is per consignment, so splitting into parcels can put every parcel under it', () => {
+    // **制度がどれも「1個口あたり」と書いている。**
+    //   GB「The £135 limit applies to the value of a **total consignment** that is imported」
+    //      「**Unless sent individually**, the seller must add the individual values of all
+    //       items in a consignment together」
+    //   EU「in **consignments** ≤ EUR 150. **This threshold applies per consignment**」
+    //
+    // **以前はカート全額で判定していた。**Buyee の既定は注文ごとに別送するので、
+    // 3点 × ¥20,000 が 1個口 €110 ずつ（€150 以下）なのに「€330 超」と判定され、
+    // 4.1% を掛けていた。**個口を分けたほうが税は安いのに、逆に高く出していた。**
+    const de = compare({ items: items(3, 600, 20_000), country: 'DE' }).rows;
+    const one = byId(de, 'buyee:consolidated');   // 1個口 = €330
+    const three = byId(de, 'buyee:default');      // 3個口 = 1個口あたり €110
+    expect(one.parcels).toBe(1);
+    expect(three.parcels).toBe(3);
+    expect(line(one, 'duty').note).toContain('4.1%');
+    expect(line(three, 'duty').note).toContain('EUR 3 flat');
+    // 同梱すると関税は上がる。**個口の数が税を決めている**ことがこの不等号に出る。
+    expect(line(one, 'duty').amount!).toBeGreaterThan(line(three, 'duty').amount!);
+
+    // 英国も同じ。1個口 £330 は限度超、3個口なら1個口 £110 で限度以下＝取得できた 0。
+    const gb = compare({ items: items(3, 600, 20_000), country: 'GB' }).rows;
+    expect(line(byId(gb, 'buyee:consolidated'), 'duty').amount!).toBeGreaterThan(0);
+    expect(line(byId(gb, 'buyee:default'), 'duty').amount).toBe(0);
+  });
+
+  test('splitting is not automatically cheaper — the postage eats the tax saving', () => {
+    // **「個口を分ければ安い」と断言してはいけない。**分けると EMS が個口ごとに乗る。
+    // 上のテストで税は下がるが、総額は上がる。両方を計算しないと助言にならない。
+    const de = compare({ items: items(3, 600, 20_000), country: 'DE' }).rows;
+    const one = byId(de, 'buyee:consolidated');
+    const three = byId(de, 'buyee:default');
+    expect(line(three, 'ems').amount!).toBeGreaterThan(line(one, 'ems').amount!);
+    expect(three.total).toBeGreaterThan(one.total);
   });
 
   test('SGD 400 likewise: GST stays 0 while CIF is over but the goods are not', () => {
