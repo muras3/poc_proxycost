@@ -14,18 +14,22 @@ export interface Country {
   dutyTier: Tier;
   vatRate: number | null;
   vatFreeLimit: number | null;
-  /** 小包ごとの通関手数料（現地通貨）。null = 未取得。 */
-  clearanceFeePerParcel: number | null;
+  /**
+   * 小包ごとの通関手数料（現地通貨）を、内容品価格の帯ごとに持つ。
+   *
+   * **定額1つでは足りない国がある。**オーストラリアの Import Processing Charge は
+   * A$1,000 以下で **A$0.00**（原文の表がその行を持っている＝取得できた 0）、
+   * それを超えると A$50、A$10,000 以上で A$152 と、帯で変わる。
+   * カナダのように「一定額以下は課税自体が無いので手数料も無い」国も同じ形で書ける。
+   *
+   * 帯は `upTo` の**昇順**、最後は `Number.POSITIVE_INFINITY`。判定は内容品価格を
+   * 郵便物1個ぶんに割った額で行う（手数料は郵便物ごとに課されるので）。
+   * `amount: 0` は**取得できた 0**（原文がその帯で 0 と書いている）であって、
+   * 未取得ではない。未取得は `clearanceBands` を置かないことで表す。
+   */
+  clearanceBands?: { upTo: number; amount: number; note: string }[];
   clearanceCcy: string;
   clearanceTier: Tier;
-  /**
-   * 内容品価格（現地通貨）がこの額以下なら通関手数料が**発生しない**国。
-   * 原文が「課税対象の郵便物1個につき」と書いている国だけに置く。
-   * ここに当たる帯の 0 は**未取得の 0 ではなく取得できた 0** なので、tier は fixed。
-   */
-  clearanceFreeAtOrBelow?: number;
-  /** 通関手数料の説明（誰が何に対して取るか）。画面の note にそのまま出る。 */
-  clearanceNote?: string;
   clearanceSourceUrl?: string;
   notes: string[];
   sourceUrl: string | null;
@@ -58,7 +62,13 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'United States', ccy: 'USD', base: 'FOB',
     dutyFreeLimit: 0, dutyRate: 0.125, dutyTier: 'unverified',
     vatRate: null, vatFreeLimit: null,
-    clearanceFeePerParcel: 9.35, clearanceCcy: 'USD', clearanceTier: 'unverified',
+    // USPS Notice 123 の「Customs Clearance and Delivery Fee」$9.35／課税対象郵便物1個。
+    // 免税帯が無い（de minimis 停止中）ので帯は1つ。
+    clearanceBands: [{
+      upTo: Number.POSITIVE_INFINITY, amount: 9.35,
+      note: 'USPS customs clearance and delivery fee, per dutiable item',
+    }],
+    clearanceCcy: 'USD', clearanceTier: 'unverified',
     notes: ['de_minimis_suspended'],
     sourceUrl: 'https://hts.usitc.gov/',
     sellerCollectsBelow: null,
@@ -84,7 +94,11 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'United Kingdom', ccy: 'GBP', base: 'CIF',
     dutyFreeLimit: 135, dutyRate: null, dutyTier: 'none',
     vatRate: 0.20, vatFreeLimit: 0,
-    clearanceFeePerParcel: 8, clearanceCcy: 'GBP', clearanceTier: 'unverified',
+    clearanceBands: [{
+      upTo: Number.POSITIVE_INFINITY, amount: 8,
+      note: 'Royal Mail handling fee — we have not read the original',
+    }],
+    clearanceCcy: 'GBP', clearanceTier: 'unverified',
     notes: [],
     sourceUrl: 'https://www.gov.uk/goods-sent-from-abroad',
     sellerCollectsBelow: null,
@@ -100,7 +114,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // 総額から丸ごと消える。だから確定として描かない。
     dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
     vatRate: 0.19, vatFreeLimit: 0,
-    clearanceFeePerParcel: null, clearanceCcy: 'EUR', clearanceTier: 'none',
+    clearanceCcy: 'EUR', clearanceTier: 'none',
     notes: [],
     sourceUrl: 'https://www.zoll.de/EN/Private-individuals/private-individuals_node.html',
     sellerCollectsBelow: null,
@@ -110,7 +124,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // DE と同じ €3。対象（DSIG）に当たるかを断定できないので確定として描かない。
     dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
     vatRate: 0.20, vatFreeLimit: 0,
-    clearanceFeePerParcel: null, clearanceCcy: 'EUR', clearanceTier: 'none',
+    clearanceCcy: 'EUR', clearanceTier: 'none',
     notes: [],
     sourceUrl: 'https://www.douane.gouv.fr/',
     sellerCollectsBelow: null,
@@ -119,7 +133,27 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'Australia', ccy: 'AUD', base: 'FOB',
     dutyFreeLimit: 1000, dutyRate: null, dutyTier: 'none',
     vatRate: 0.10, vatFreeLimit: 0,
-    clearanceFeePerParcel: null, clearanceCcy: 'AUD', clearanceTier: 'none',
+    // ABF の Import Processing Charge の表（原文は Cargo Channel に **Post** を含む）。
+    // 電子申告（Electronic）の行を採る——書類申告（Documentary、A$90 / A$192）は例外的で、
+    // 郵便の通関で既定になる根拠が無い。**A$1,000 以下の A$0.00 は原文の行そのもの**で、
+    // 「調べていない 0」ではない。この帯はちょうど代行が販売時点で GST を取る帯でもある。
+    // A$1,000 超には DAFF の生物検疫費用回収（Full Import Declaration charge – air A$48。
+    // ABF が DAFF に代わって徴収する）が同じページで併記されているので足す。
+    clearanceBands: [
+      { upTo: 1000, amount: 0, note: 'no import declaration is required at or below AUD 1,000' },
+      {
+        upTo: 10000, amount: 50 + 48,
+        note: 'AUD 50 import processing charge (electronic) + AUD 48 biosecurity charge (air)',
+      },
+      {
+        upTo: Number.POSITIVE_INFINITY, amount: 152 + 48,
+        note: 'AUD 152 import processing charge (electronic) + AUD 48 biosecurity charge (air)',
+      },
+    ],
+    clearanceCcy: 'AUD', clearanceTier: 'fixed',
+    clearanceSourceUrl:
+      'https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/'
+      + 'cost-of-importing-goods/charges/import-processing-charge',
     notes: ['seller_collects_gst'],
     sourceUrl: 'https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/cost-of-importing-goods',
     // A$1,000 以下の輸入は、売り手・プラットフォーム・「redeliverer（転送・代行業者）」が
@@ -135,9 +169,18 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // mail item.」——**課税対象の郵便物1個ごと**。C$20 以下は同じページが
     // 「The CBSA doesn't assess duty or tax on mail items valued at CAN$20 or less」と
     // 書いているので、その帯では手数料も発生しない（0。未取得の 0 ではない）。
-    clearanceFeePerParcel: 9.95, clearanceCcy: 'CAD', clearanceTier: 'fixed',
-    clearanceFreeAtOrBelow: 20,
-    clearanceNote: 'Canada Post handling fee, charged on each dutiable or taxable item',
+    clearanceBands: [
+      {
+        upTo: 20, amount: 0,
+        note: 'no duty or tax is assessed at or below CAD 20, so nothing is charged for'
+          + ' collecting it',
+      },
+      {
+        upTo: Number.POSITIVE_INFINITY, amount: 9.95,
+        note: 'Canada Post handling fee, charged on each dutiable or taxable item',
+      },
+    ],
+    clearanceCcy: 'CAD', clearanceTier: 'fixed',
     clearanceSourceUrl:
       'https://www.canadapost-postescanada.ca/cpc/en/support/articles/customs-requirements/'
       + 'customs-duty-taxes-and-exemptions.page',
@@ -155,7 +198,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'Singapore', ccy: 'SGD', base: 'CIF',
     dutyFreeLimit: Number.POSITIVE_INFINITY, dutyRate: 0, dutyTier: 'fixed',
     vatRate: 0.09, vatFreeLimit: 400,
-    clearanceFeePerParcel: null, clearanceCcy: 'SGD', clearanceTier: 'none',
+    clearanceCcy: 'SGD', clearanceTier: 'none',
     notes: ['seller_collects_gst'],
     sourceUrl: 'https://www.customs.gov.sg/individuals/importing-personal-goods/',
     // S$400 未満の低額品（LVG）は、GST 登録済みの海外事業者・転送業者が

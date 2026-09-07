@@ -8,6 +8,8 @@ import { outboundFor } from './deeplink';
 import { SERVICES, type OptionalFeeContext, type Service } from './services';
 import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
+import { alcoholItems } from './restricted-goods';
+import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
 import type {
   Band, CompareInput, CompareResult, Item, Line, ProvinceCode, Row, Tier, WeightSensitivity,
 } from './types';
@@ -93,6 +95,8 @@ function provincialTaxLine(
 function taxLines(
   cc: CompareInput['country'],
   province: ProvinceCode | null,
+  /** カートそのもの。**品目カテゴリでしか言えないこと**（米国の関税・英国の酒税）に使う。 */
+  items: Item[],
   a: { itemsYen: number; domYen: number; emsYen: number; units: number; parcels: number },
 ): Line[] {
   const c = COUNTRIES[cc];
@@ -122,8 +126,18 @@ function taxLines(
       'fixed', c.sourceUrl));
   } else if (c.dutyRate != null) {
     dutyYen = baseYen * c.dutyRate;
+    // **米国だけは、重量表のカテゴリから HTS を引き直して 12.5% の意味を言える**（T24）。
+    // 12.5% は Section 301 が日本産品に置いた**下限**で、MFN がそれを超える品目
+    // （靴・鞄・衣類）では税率ではない。額は変えない——見出しを1つに決めるのは推測で、
+    // 我々は品目分類を持っていない。**言えるのは「下限だ」と「どの見出しを引いたか」だけ。**
+    const us = cc === 'US' ? readUsDuty(items) : null;
     out.push(L('duty', 'Duty', Math.round(dutyYen),
-      `${(c.dutyRate * 100).toFixed(1)}% of the item price`, c.dutyTier, c.sourceUrl));
+      `${(c.dutyRate * 100).toFixed(1)}% of the item price`
+      + (us ? ` — ${us.noteEn}` : ''),
+      // 下限でしかないと分かっている数字を確度そのままで描かない。
+      // **我々の仮定**なので estimate（画面では `~` と琥珀）に落とす。
+      us?.knownFloor ? 'estimate' : c.dutyTier,
+      us ? US_HTS_SOURCE_URL : c.sourceUrl));
   } else {
     out.push(L('duty', 'Duty', null,
       `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`, 'none', c.sourceUrl));
@@ -157,23 +171,36 @@ function taxLines(
     out.push(provincialTaxLine(province, c.base === 'CIF' ? cif : a.itemsYen + a.emsYen, caTaxed));
   }
 
-  // 通関手数料。**「課税対象の郵便物1個ごと」と原文が書いている国では、免税の帯で 0。**
-  // その 0 は取得できた 0 なので tier は fixed のまま（未取得の `—` と混ぜない）。
-  const clearanceFree = c.clearanceFreeAtOrBelow != null && declared <= c.clearanceFreeAtOrBelow;
+  // 通関手数料。**帯は郵便物1個ぶんの内容品価格で選ぶ**（手数料は郵便物ごとに課される）。
+  // 帯の 0 は**原文がその帯で 0 と書いている**＝取得できた 0 なので tier はそのまま。
+  // 未取得は帯そのものを持たないことで表す（そのときだけ null＝「—」）。
   const clearanceSrc = c.clearanceSourceUrl ?? c.sourceUrl;
-  if (c.clearanceFeePerParcel == null) {
+  const band = c.clearanceBands?.find((b) => declared / a.parcels <= b.upTo);
+  if (!band) {
     out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl));
-  } else if (clearanceFree) {
-    out.push(L('clearance', 'Customs clearance fee', 0,
-      `no duty or tax is assessed at or below ${c.clearanceCcy} ${c.clearanceFreeAtOrBelow},`
-      + ' so nothing is charged for collecting it',
-      c.clearanceTier, clearanceSrc));
+  } else if (band.amount === 0) {
+    out.push(L('clearance', 'Customs clearance fee', 0, band.note, c.clearanceTier, clearanceSrc));
   } else {
     out.push(L('clearance', 'Customs clearance fee',
-      Math.round(c.clearanceFeePerParcel * rateFor(c.clearanceCcy) * a.parcels),
-      `${c.clearanceCcy} ${c.clearanceFeePerParcel} × ${plural(a.parcels, 'parcel')}`
-      + (c.clearanceNote ? ` — ${c.clearanceNote}` : ''),
+      Math.round(band.amount * rateFor(c.clearanceCcy) * a.parcels),
+      `${c.clearanceCcy} ${band.amount} × ${plural(a.parcels, 'parcel')} — ${band.note}`,
       c.clearanceTier, clearanceSrc));
+  }
+
+  // **英国の酒税。**gov.uk 原文「If you're sent alcohol or tobacco from outside the UK,
+  // you'll be charged Excise Duty at current rates」——**金額にかかわらず**課され、
+  // £135 も £39 の贈答免除も効かない。つまり酒が入っていれば**確実に発生する**。
+  // それでも額は出さない: 税率は ABV の帯と純アルコールのリットル数で決まり、
+  // **ABV を我々は持っていない**（重量表が持っているのは瓶の容量だけ）。
+  // 推測で ABV を置けば、その1つの仮定で税額が丸ごと決まってしまう。
+  // だから null 行にして、`excluded` に名前を載せる——「発生するのに額を知らない」を
+  // 画面に出すための行（米国の Zonos 利用料と同じ形）。
+  if (cc === 'GB' && alcoholItems(items).length > 0) {
+    out.push(L('excise', 'UK excise duty on alcohol — rate depends on the ABV', null,
+      'The UK charges excise duty on alcohol sent from abroad at any value — neither the £135'
+      + ' nor the £39 threshold exempts it. The rate is per litre of pure alcohol and depends'
+      + ' on the strength, which no listing tells us.',
+      'none', 'https://www.gov.uk/goods-sent-from-abroad/tax-and-duty'));
   }
 
   // 関税の事前納付（米国）。**「発生するが額を知らない」を画面に出すための行。**
@@ -422,7 +449,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const shippingYen = lines
     .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'ems')
     .reduce((acc, l) => acc + (l.amount ?? 0), 0);
-  lines.push(...taxLines(ctx.cc, ctx.province,
+  lines.push(...taxLines(ctx.cc, ctx.province, items,
     { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
   const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
     itemsYen,

@@ -34,7 +34,11 @@ describe('the duty note says something a buyer can read', () => {
 
   test('the other six still say which threshold they used', () => {
     const noteOf = (cc: CountryCode) => line(rowsFor(cc)[0]!, 'duty').note;
-    expect(noteOf('US')).toBe('12.5% of the item price');
+    // 米国は品目カテゴリで文言が変わる（T24）。この籠は分類できないので「仮定」と名乗る。
+    expect(noteOf('US')).toBe(
+      '12.5% of the item price — our assumption. It is the floor Section 301 puts on goods of'
+      + ' Japan; we could not place every item in this basket against a tariff heading, and'
+      + ' headings above it exist.');
     expect(noteOf('GB')).toBe('under the GBP 135 threshold');
     expect(noteOf('DE')).toBe('EUR 3 flat × 1 item');
     expect(noteOf('FR')).toBe('EUR 3 flat × 1 item');

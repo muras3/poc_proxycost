@@ -9,6 +9,9 @@ import {
 } from '@/lib/pricing/shipping-methods';
 import { LITHIUM_AIRMAIL_LISTED, RESTRICTED_GOODS } from '@/lib/pricing/restricted-goods';
 import {
+  US_DUTY_BY_CATEGORY, US_DUTY_CHECKED_ON, US_HTS_SOURCE_URL,
+} from '@/lib/pricing/us-duty';
+import {
   CA_POPULATION_AS_OF, CA_POPULATION_SOURCE_URL, CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE,
   CA_PROVINCE_CHECKED_ON, CA_PROVINCE_SOURCE_URL, COUNTRIES, COUNTRY_CODES, PROVINCE_CODES,
 } from '@/lib/pricing/countries';
@@ -251,6 +254,63 @@ export default function SourcesPage() {
         <div className="mt-4">
           <TaxTable />
         </div>
+
+        <h3 id="us-hts" className="mt-8 scroll-mt-20 text-sm font-semibold">
+          United States: what the 12.5% is, and where it is only a floor
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          The 12.5% on the US board is the rate Section 301 puts on goods of Japan, and it is
+          applied <em>net of MFN</em> — the duty you actually pay is the greater of the two. So the
+          12.5% is exactly right wherever the ordinary tariff rate is lower, and it is only a floor
+          wherever the ordinary rate is higher. We looked up the headings each of our weight
+          categories can fall under, on {US_DUTY_CHECKED_ON}, and left the amount alone: naming one
+          heading per item would need the material, the construction and the price per pair, and we
+          have none of those.
+        </p>
+        <div className="mt-3 max-w-3xl overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">US tariff headings checked for each category</caption>
+            <thead>
+              <tr className="border-b border-neutral-300 text-left text-[11px] uppercase tracking-wide text-neutral-500 dark:border-neutral-700">
+                <th scope="col" className="px-2 py-2 font-medium">Category</th>
+                <th scope="col" className="px-2 py-2 font-medium">Headings we read</th>
+                <th scope="col" className="px-2 py-2 font-medium">Is 12.5% the rate?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.values(US_DUTY_BY_CATEGORY).map((d) => (
+                <tr key={d.categoryId} className="border-b border-neutral-200 dark:border-neutral-800">
+                  <td className="px-2 py-2">{d.categoryId}</td>
+                  <td className="px-2 py-2">
+                    {d.headings.map((h) => (
+                      <span key={h.htsNo} className="block">
+                        <span className="tabular-nums">{h.htsNo}</span> {h.general} — {h.what}
+                      </span>
+                    ))}
+                  </td>
+                  <td className="px-2 py-2">
+                    {d.verdict === 'at-or-below' ? (
+                      'yes — nothing above it here'
+                    ) : (
+                      <span className={tierClass.estimate} title={tierTitle.estimate}>
+                        {d.verdict === 'can-exceed' ? 'no — a floor only' : 'no — charged per litre'}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 max-w-3xl text-xs text-neutral-600 dark:text-neutral-400">
+          MFN general rates read from the{' '}
+          <a className="underline" href={US_HTS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            USITC Harmonized Tariff Schedule
+          </a>{' '}
+          on {US_DUTY_CHECKED_ON}. Where a basket mixes categories we take the weaker reading — one
+          pair of sneakers is enough to make the whole duty line a floor. And where we cannot place
+          an item at all, the line says it is our assumption and keeps the confidence it had.
+        </p>
 
         <h3 id="ca-province" className="mt-8 scroll-mt-20 text-sm font-semibold">
           Canada: the province changes the bill

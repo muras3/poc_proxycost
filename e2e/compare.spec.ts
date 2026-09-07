@@ -1,11 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
+  addByHand,
   alcoholNote,
   breakdownTable,
   cart,
   cartItem,
   costRow,
   DECIDES,
+  emptyCart,
   emsOnlyNote,
   gotoCompare,
   headerCells,
@@ -218,24 +220,6 @@ test('4. changing the destination changes the numbers', async ({ page }) => {
 });
 
 /** 重量表に載らない名前で1点、手で足す。 */
-async function addByHand(
-  page: Page, title: string, priceYen: number, site?: string,
-): Promise<void> {
-  const form = page.getByRole('button', { name: 'Or add an item by hand' });
-  if (await form.count()) await form.click();
-  await page.getByLabel('Item name').fill(title);
-  await page.getByLabel('Price ¥').fill(String(priceYen));
-  if (site) await page.getByLabel('Site').selectOption(site);
-  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
-}
-
-/** カートを空にする。 */
-async function emptyCart(page: Page): Promise<void> {
-  await openCart(page);
-  const removes = cart(page).getByRole('button', { name: /^Remove / });
-  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
-}
-
 const PLUSH = 'plush toy, no weight data';
 
 test('5. an item with no weight data gets an assumed weight, says so, and is corrected in place', async ({ page }) => {
