@@ -9,13 +9,25 @@
    "duty": {
     "rule": {
      "type": "rate_of_item_price",
-     "rate": 0.125
+     "rate": 0.15,
+     "note": "Column 1 税率が15%未満の品目は Column 1 ＋ 追加で合計15%。15%以上の品目は追加ゼロ"
     },
-    "tier": "B_inferred",
-    "basis": "複数の貿易系情報源が『日本からの輸入に一律12.5%』で一致。CBP 原文は未取得",
+    "base": "goods",
+    "threshold_base": "goods",
+    "tier": "A_confirmed",
+    "source": "https://www.federalregister.gov/documents/2025/09/16/2025-17908/implementing-certain-tariff-related-elements-of-the-united-states-japan-agreement",
+    "quote": "For a product of Japan with a Column 1 Duty Rate that is less than 15 percent, the sum of its Column 1 Duty Rate and the additional ad valorem rate of duty is 15 percent.",
     "de_minimis": {
      "status": "suspended",
-     "note": "$800 免税は非郵便で2026-06から無期限停止、法律上2027で終了"
+     "effective_from": "2025-08-29",
+     "source": "https://www.help.cbp.gov/s/article/Article-1919",
+     "tier": "A_confirmed",
+     "quote": "Starting August 29, 2025, the order suspends the use of duty-free de minimis treatment on shipments valued $800 or less (EO 14324)",
+     "note": "郵便経由には一時的な例外があった。法律上の廃止は 2027-07-01"
+    },
+    "corrected_from": {
+     "rate": 0.125,
+     "why": "12.5% を裏づける一次資料が無かった。日米協定の実装官報で 15% を確認"
     }
    },
    "vat": {
@@ -23,7 +35,9 @@
      "type": "none_at_federal_level"
     },
     "tier": "A_confirmed",
-    "note": "州 sales tax は郵便番号依存で未取得"
+    "note": "州 sales tax は郵便番号依存で未取得",
+    "base": null,
+    "threshold_base": null
    },
    "clearance": [
     {
@@ -59,14 +73,18 @@
      "free_below": 135,
      "rate_above": "unknown"
     },
-    "tier": "C_unknown"
+    "tier": "C_unknown",
+    "base": "goods_plus_shipping",
+    "threshold_base": "goods"
    },
    "vat": {
     "rule": {
      "type": "rate",
      "rate": 0.2
     },
-    "tier": "A_confirmed"
+    "tier": "A_confirmed",
+    "base": "goods_plus_shipping",
+    "threshold_base": "goods"
    },
    "clearance": [
     {
@@ -77,8 +95,9 @@
       "amount": 8,
       "currency": "GBP"
      },
-     "tier": "A_confirmed",
-     "source": "https://www.royalmail.com/receiving-mail/pay-a-fee"
+     "tier": "B_inferred",
+     "source": "https://www.royalmail.com/receiving-mail/pay-a-fee",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     },
     {
      "route": "parcelforce",
@@ -88,8 +107,9 @@
       "amount": 12,
       "currency": "GBP"
      },
-     "tier": "A_confirmed",
-     "source": "https://www.parcelforce.com/receiving/customs-charge"
+     "tier": "B_inferred",
+     "source": "https://www.parcelforce.com/receiving/customs-charge",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     },
     {
      "route": "high_value",
@@ -102,8 +122,9 @@
        "goods_value_gbp_over": 900
       }
      },
-     "tier": "A_confirmed",
-     "source": "https://www.parcelforce.com/receiving/customs-charge"
+     "tier": "B_inferred",
+     "source": "https://www.parcelforce.com/receiving/customs-charge",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     }
    ],
    "conditional": {
@@ -114,9 +135,19 @@
    },
    "clearance_fee_vat": {
     "rule": {
-     "type": "unknown"
+     "type": "not_applicable"
     },
     "tier": "C_unknown"
+   },
+   "collected_at_source": {
+    "rule": {
+     "type": "seller_collects_vat",
+     "threshold_gbp": 135,
+     "rate": 0.2
+    },
+    "tier": "A_confirmed",
+    "source": "https://www.gov.uk/goods-sent-from-abroad/tax-and-duty",
+    "note": "£135 以下は売主・マーケットプレイスが決済時に VAT を徴収する。着地で税が発生しなければ Royal Mail の £8 も発生しない（税ゼロ→手数料ゼロ）。5社のうち誰が UK VAT 登録しているかは未取得（C）"
    }
   },
   {
@@ -125,19 +156,40 @@
    "tier": "A_confirmed",
    "duty": {
     "rule": {
-     "type": "threshold",
-     "free_below": 150,
-     "rate_above": "unknown"
+     "type": "flat_per_tariff_line",
+     "amount": 3,
+     "currency": "EUR",
+     "when": {
+      "consignment_value_eur_max": 150,
+      "b2c": true
+     },
+     "until": "2028-07-01",
+     "above_threshold": {
+      "type": "common_customs_tariff",
+      "rate": "unknown"
+     }
     },
-    "tier": "C_unknown",
-    "note": "src/data.js の flatDutyPerItem 3 は根拠未確認"
+    "base": "goods",
+    "threshold_base": "goods",
+    "tier": "A_confirmed",
+    "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
+    "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
+    "effective_from": "2026-07-01",
+    "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
+    "supersedes": {
+     "rule": "free_below 150",
+     "valid_until": "2026-06-30"
+    }
    },
    "vat": {
     "rule": {
      "type": "rate",
      "rate": 0.19
     },
-    "tier": "A_confirmed"
+    "tier": "A_confirmed",
+    "base": "goods_plus_shipping",
+    "threshold_base": null,
+    "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
    },
    "clearance": [
     {
@@ -182,18 +234,40 @@
    "tier": "A_confirmed",
    "duty": {
     "rule": {
-     "type": "threshold",
-     "free_below": 150,
-     "rate_above": "unknown"
+     "type": "flat_per_tariff_line",
+     "amount": 3,
+     "currency": "EUR",
+     "when": {
+      "consignment_value_eur_max": 150,
+      "b2c": true
+     },
+     "until": "2028-07-01",
+     "above_threshold": {
+      "type": "common_customs_tariff",
+      "rate": "unknown"
+     }
     },
-    "tier": "C_unknown"
+    "base": "goods",
+    "threshold_base": "goods",
+    "tier": "A_confirmed",
+    "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
+    "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
+    "effective_from": "2026-07-01",
+    "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
+    "supersedes": {
+     "rule": "free_below 150",
+     "valid_until": "2026-06-30"
+    }
    },
    "vat": {
     "rule": {
      "type": "rate",
      "rate": 0.2
     },
-    "tier": "A_confirmed"
+    "tier": "A_confirmed",
+    "base": "goods_plus_shipping",
+    "threshold_base": null,
+    "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
    },
    "clearance": [
     {
@@ -204,8 +278,9 @@
       "amount": 2,
       "currency": "EUR"
      },
-     "tier": "A_confirmed",
-     "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html"
+     "tier": "B_inferred",
+     "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     },
     {
      "route": "la_poste_large",
@@ -215,8 +290,9 @@
       "amount": 5,
       "currency": "EUR"
      },
-     "tier": "A_confirmed",
-     "source": "同上"
+     "tier": "B_inferred",
+     "source": "同上",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     },
     {
      "route": "la_poste_at_delivery",
@@ -238,8 +314,9 @@
       "amount": 21,
       "currency": "EUR"
      },
-     "tier": "A_confirmed",
-     "source": "同上"
+     "tier": "B_inferred",
+     "source": "同上",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     }
    ],
    "user_action": {
@@ -261,19 +338,40 @@
    "note": "現行の対象7カ国に無いが、実請求データが最も多く取れた国。EU の代表例として保持",
    "duty": {
     "rule": {
-     "type": "threshold",
-     "free_below": 150,
-     "rate_above": 0.025
+     "type": "flat_per_tariff_line",
+     "amount": 3,
+     "currency": "EUR",
+     "when": {
+      "consignment_value_eur_max": 150,
+      "b2c": true
+     },
+     "until": "2028-07-01",
+     "above_threshold": {
+      "type": "common_customs_tariff",
+      "rate": "unknown"
+     }
     },
-    "tier": "B_inferred",
-    "basis": "複数の利用者が『汎用コードで2.5%』と報告。2.5〜5% のばらつきあり"
+    "base": "goods",
+    "threshold_base": "goods",
+    "tier": "A_confirmed",
+    "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
+    "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
+    "effective_from": "2026-07-01",
+    "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
+    "supersedes": {
+     "rule": "free_below 150",
+     "valid_until": "2026-06-30"
+    }
    },
    "vat": {
     "rule": {
      "type": "rate",
      "rate": 0.21
     },
-    "tier": "A_confirmed"
+    "tier": "A_confirmed",
+    "base": "goods_plus_shipping",
+    "threshold_base": null,
+    "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
    },
    "clearance": [
     {
@@ -298,8 +396,9 @@
       "amount": 6,
       "currency": "EUR"
      },
-     "tier": "A_confirmed",
-     "source": "elotrolado.net（複数一致）"
+     "tier": "B_inferred",
+     "source": "elotrolado.net（複数一致）",
+     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
     },
     {
      "route": "fedex",
@@ -340,7 +439,7 @@
      "note": "実請求では IVA €56.15 に対する €15.90。DHL Express（DE）の『2% der Einfuhrabgaben』と同じ基準"
     },
     {
-     "route": "fedex_alt",
+     "route": "fedex",
      "carrier": "FedEx",
      "rule": {
       "type": "rate_of_import_charges",
@@ -349,7 +448,9 @@
      "tier": "A_confirmed",
      "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
      "quote": "Luego sacamos el 30% de 25,12€ a modo de gestión de FEdex --> 7,54€ y a eso le sumamos el 21% de IVA, quedando 9,12€",
-     "note": "『価額の3%・最低€15』と矛盾する第2の報告。帯・時期・契約で使い分けられている可能性。両方を残し、区間の幅の根拠にする（UPS 28.3% と同水準なので courier は税額の28〜30%が実態の可能性）"
+     "note": "『価額の3%・最低€15』と矛盾する第2の報告。帯・時期・契約で使い分けられている可能性。両方を残し、区間の幅の根拠にする（UPS 28.3% と同水準なので courier は税額の28〜30%が実態の可能性）",
+     "variant": "conflicting_report",
+     "resolution": "未解決。2つの形を区間の下端・上端として扱う"
     }
    ],
    "user_action": {
@@ -393,14 +494,19 @@
      "free_below": 1000,
      "rate_above": "unknown"
     },
-    "tier": "C_unknown"
+    "tier": "C_unknown",
+    "base": "goods",
+    "threshold_base": "goods"
    },
    "vat": {
     "rule": {
      "type": "rate",
      "rate": 0.1
     },
-    "tier": "A_confirmed"
+    "tier": "A_confirmed",
+    "base": "varies_by_collector",
+    "base_note": "代理徴収する会社ごとに違う。FROM JAPAN は Charge1+Charge2（手数料込み）、Buyee は商品代＋Buyee 手数料＋オプション料、ZenMarket は未取得",
+    "threshold_base": "customs_value"
    },
    "collected_at_source": {
     "tier": "A_confirmed",
@@ -437,7 +543,9 @@
      "rate_above": "unknown"
     },
     "tier": "C_unknown",
-    "note": "郵便経由の de minimis は CA$20"
+    "note": "郵便経由の de minimis は CA$20",
+    "base": "goods",
+    "threshold_base": "goods"
    },
    "vat": {
     "rule": {
@@ -445,17 +553,25 @@
      "rate": 0.05,
      "name": "GST"
     },
-    "tier": "A_confirmed"
+    "tier": "A_confirmed",
+    "base": "duty_paid_value",
+    "threshold_base": "goods"
    },
    "provincial_tax": {
     "rule": {
-     "type": "rate_range",
+     "type": "rate_by_province",
+     "min": 0.0,
+     "max": 0.1,
+     "note": "AB と準州3つは0%。HST 州（NS/NB/NL/PE）は州分10%。QC は QST 9.975%"
+    },
+    "tier": "B_inferred",
+    "basis": "州別の公表税率。郵便番号の先頭1文字で州が引ける",
+    "corrected_from": {
      "min": 0.05,
      "max": 0.0975,
-     "by": "postal_code"
+     "why": "下限0%（アルバータ・準州）と上限10%（HST州）を取り違えていた"
     },
-    "tier": "A_confirmed",
-    "impact": "現行コードは null で総額から脱落。下の実例では総額の 56% が消える"
+    "impact": "現行 src/calc.js は null で総額から脱落。実請求では総額の56%"
    },
    "clearance": [
     {
@@ -506,9 +622,11 @@
      "rate": 0.05,
      "name": "GST"
     },
-    "tier": "A_confirmed",
+    "tier": "B_inferred",
     "source": "Canada Post 公式ほか",
-    "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST"
+    "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST",
+    "conflict": "実請求（fixtures ca-canadapost-forum）は 99.44+139.21+9.95=248.60 で、CA$9.95 への GST 行が見えない。Canada Post 公式は『plus 5% GST』としており矛盾する。投稿者が省略したか、GST が内税表示か、実際に課されていないかのいずれか。未解決",
+    "inference_basis": "Canada Post 公式の『plus 5% GST』。ただし上記の実請求と矛盾する"
    }
   },
   {
@@ -521,7 +639,9 @@
      "rate": 0.0
     },
     "tier": "A_confirmed",
-    "note": "大半の物品で関税0"
+    "note": "大半の物品で関税0",
+    "base": "goods",
+    "threshold_base": "goods"
    },
    "vat": {
     "rule": {
@@ -530,7 +650,9 @@
      "name": "GST"
     },
     "tier": "A_confirmed",
-    "note": "2024-01-01 から 9%"
+    "note": "2024-01-01 から 9%",
+    "base": "goods_plus_shipping",
+    "threshold_base": "goods"
    },
    "collected_at_source": {
     "tier": "A_confirmed",
@@ -569,7 +691,9 @@
      "rate_above": "unknown"
     },
     "tier": "B_inferred",
-    "basis": "台湾の複数の解説サイトが一致。関税庁原文は未取得"
+    "basis": "台湾の複数の解説サイトが一致。関税庁原文は未取得",
+    "threshold_base": "cif",
+    "base": "cif"
    },
    "vat": {
     "rule": {
@@ -579,18 +703,22 @@
      "base": "完稅價格 ＋ 進口稅"
     },
     "tier": "B_inferred",
-    "basis": "複数の解説サイトが一致。税率5%は台湾で固定"
+    "basis": "複数の解説サイトが一致。税率5%は台湾で固定",
+    "threshold_base": "cif",
+    "base": "goods_plus_shipping_plus_duty",
+    "base_note": "營業稅 =（完稅價格 ＋ 進口稅）× 5%。完稅價格 = 商品価格＋国際送料＋保険"
    },
    "frequency_rule": {
     "rule": {
      "type": "import_count_window",
      "window_months": 6,
      "free_count": 6,
-     "note": "7回目以降は NT$1 でも課税。納税義務者単位で、淘宝・メルカリ・日本代購が同一枠を共有"
+     "note": "NT$2,000 以下**かつ**半年6回以内で免税（AND）。7回目以降は NT$1 でも課税。納税義務者単位で、淘宝・メルカリ・日本代購が同一枠を共有"
     },
     "tier": "B_inferred",
     "basis": "複数の解説サイトが一致",
-    "impact": "**国の税ルールが利用者の輸入履歴に依存する。**予測時点では前提を置くしかない（D 寄り）"
+    "impact": "**国の税ルールが利用者の輸入履歴に依存する。**予測時点では前提を置くしかない（D 寄り）",
+    "combination": "AND"
    },
    "clearance": [
     {
@@ -622,5 +750,22 @@
     }
    }
   }
- ]
+ ],
+ "schema": {
+  "required_on_duty_and_vat": [
+   "base",
+   "threshold_base"
+  ],
+  "base_vocabulary": [
+   "charge1_plus_charge2",
+   "cif",
+   "customs_value",
+   "duty_paid_value",
+   "goods",
+   "goods_plus_shipping",
+   "goods_plus_shipping_plus_duty",
+   "varies_by_collector",
+   null
+  ]
+ }
 }

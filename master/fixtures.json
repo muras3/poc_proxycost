@@ -1,61 +1,110 @@
 {
- "$comment": "実請求の固定データ。master/validate.py がこれを使ってマスタの再現性を検証する。complete=true は1注文の全行が揃っているもの",
+ "$comment": "実請求の固定データ。master/validate.py がこれを使ってマスタの再現性を検証する。complete=true は1注文の全行が揃っているもの source_same_as_master=true は『マスタの数値をこの請求書から導いた』＝循環。false のみ独立検証として数える",
  "checked_on": "2026-09-07",
  "fixtures": [
   {
    "id": "es-zenmarket-ups-2023-07-26",
    "complete": true,
-   "company": "zenmarket", "country": "ES", "carrier": "UPS",
+   "company": "zenmarket",
+   "country": "ES",
+   "carrier": "UPS",
    "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002 （投稿者 corsarioxxx）",
    "fx_jpy_per_eur": 155.04,
-   "input": { "items_jpy": 24750, "intl_shipping_jpy": 16667 },
+   "input": {
+    "items_jpy": 24750,
+    "intl_shipping_jpy": 16667
+   },
    "expected_eur": {
     "items_plus_shipping": 267.13,
     "import_tax": 56.15,
-    "clearance_fee": 15.90,
+    "clearance_fee": 15.9,
     "clearance_fee_vat": 3.34,
     "total": 342.52
    },
-   "note": "商品代の2.15倍。通関手数料は税額の28.3%、さらにその手数料に21%のIVA"
+   "note": "商品代の2.15倍。通関手数料は税額の28.3%、さらにその手数料に21%のIVA ／ UPS の 28.3% はこの請求書から導いた率なので循環。独立に確かめられるのは構造（税額比例の手数料→その手数料へのVAT）と合計の整合だけ",
+   "source_same_as_master": true,
+   "era_warning": "2023年の請求。EU は 2026-07-01 に €150 免税を廃止し €3 定額関税を導入したので、現行制度では再現しない"
   },
   {
    "id": "ca-canadapost-forum",
    "complete": true,
-   "company": null, "country": "CA", "carrier": "Canada Post",
+   "company": null,
+   "country": "CA",
+   "carrier": "Canada Post",
    "source": "利用者投稿（フォーラム）",
-   "input": { "declared_value_cad": 1988.70, "pst_rate": 0.07 },
-   "expected_cad": {
-    "duty": 0, "excise": 0, "gst": 99.44, "pst": 139.21,
-    "handling": 9.95, "total": 248.60
+   "input": {
+    "declared_value_cad": 1988.7,
+    "pst_rate": 0.07,
+    "pst_rate_note": "請求書の 139.21/1988.70 から逆算した値。customs.json は州別の範囲しか持たないので、この1数値は循環"
    },
-   "note": "PST 139.21 は総額 248.60 の 56%。現行コードは州税を null で総額から落としている"
+   "expected_cad": {
+    "duty": 0,
+    "excise": 0,
+    "gst": 99.44,
+    "pst": 139.21,
+    "handling": 9.95,
+    "total": 248.6
+   },
+   "note": "PST 139.21 は総額 248.60 の 56%。現行コードは州税を null で総額から落としている",
+   "source_same_as_master": false,
+   "known_conflict": "マスタは Canada Post 公式の『CA$9.95 + 5% GST』を持つが、この実請求には手数料への GST 行が無い（99.44+139.21+9.95=248.60）。マスタ通りに評価すると 249.10 で 0.50 ずれる。未解決"
   },
   {
    "id": "es-fedex-30pct",
    "complete": false,
-   "company": null, "country": "ES", "carrier": "FedEx",
+   "company": null,
+   "country": "ES",
+   "carrier": "FedEx",
    "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
-   "input": { "import_tax_eur": 25.12 },
-   "expected_eur": { "clearance_fee": 7.54, "clearance_fee_vat": 1.58, "clearance_total": 9.12 },
-   "note": "FedEx の gestión が『税額の30%』という報告。『価額の3%・最低€15』と矛盾する第2の形"
+   "input": {
+    "import_tax_eur": 25.12
+   },
+   "expected_eur": {
+    "clearance_fee": 7.54,
+    "clearance_fee_vat": 1.58,
+    "clearance_total": 9.12
+   },
+   "note": "FedEx の gestión が『税額の30%』という報告。『価額の3%・最低€15』と矛盾する第2の形",
+   "source_same_as_master": true
   },
   {
    "id": "es-correos-selfclear",
    "complete": false,
-   "company": null, "country": "ES", "carrier": "Correos",
+   "company": null,
+   "country": "ES",
+   "carrier": "Correos",
    "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）",
-   "input": { "taxable_base_eur": 124.99 },
-   "expected_eur": { "vat": 26.25, "clearance_fee": 1.29, "clearance_fee_vat": 0.27, "total": 27.81 },
-   "note": "事前に自分で払った場合。放置して配達時に払うと €6"
+   "input": {
+    "taxable_base_eur": 124.99
+   },
+   "expected_eur": {
+    "vat": 26.25,
+    "clearance_fee": 1.29,
+    "clearance_fee_vat": 0.27,
+    "total": 27.81
+   },
+   "note": "事前に自分で払った場合。放置して配達時に払うと €6 ／ €1.29 と 21% はこの支払画面から転記した値なので循環。検証しているのは 124.99×0.21 の掛け算だけ",
+   "source_same_as_master": true
   },
   {
    "id": "au-zenmarket-ems",
    "complete": false,
-   "company": "zenmarket", "country": "AU", "carrier": "EMS",
+   "company": "zenmarket",
+   "country": "AU",
+   "carrier": "EMS",
    "source": "https://nichigopress.jp/topics-item/78825/",
-   "input": { "items_jpy": 3612, "service_fee_era": "pre-2023-10-18" },
-   "expected_jpy": { "charge1_total": 4796, "intl_shipping": 4021, "total": 8817 },
-   "note": "豪州GST 10% が総額に現れていない。記事の省略か当時未適用か要確認"
+   "input": {
+    "items_jpy": 3612,
+    "service_fee_era": "pre-2023-10-18"
+   },
+   "expected_jpy": {
+    "charge1_total": 4796,
+    "intl_shipping": 4021,
+    "total": 8817
+   },
+   "note": "豪州GST 10% が総額に現れていない。記事の省略か当時未適用か要確認",
+   "source_same_as_master": false,
+   "not_reproducible_reason": "仕入先と国内送料が記事に無く Charge1 の内訳 ¥1,184 を分解できない。さらに豪州GSTが総額に現れておらずマスタと矛盾する"
   }
  ]
 }
