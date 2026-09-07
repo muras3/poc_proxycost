@@ -20,21 +20,23 @@
 
 ---
 
-## master/fees.json ── 70 行
+## マスタの規模（この節は `master/render-docs.py` が JSON から生成する）
 
-| tier | 行数 |
+<!-- generated:BEGIN counts -->
+| 数えたもの | 実数 |
 |---|---:|
-| A_confirmed | **58** |
-| B_inferred | **11** |
-| C_unknown（`not_included` のみ） | 1 |
+| `fees.json` の行 | **70** |
+| ├ A_confirmed | 58 |
+| ├ B_inferred | 11 |
+| ├ C_unknown | 1 |
+| └ うち `amount_tier: C_unknown`（額が未取得） | 8 |
+| `rule.type` の語彙 | 31 種 |
+| `catalog`（F01〜、欠番なし） | 41 |
+| `customs.json` の国 | 9 |
+| └ 通関経路 | 22 |
 
-| 会社 | 行数 |
-|---|---:|
-| ZenMarket | 20 |
-| FROM JAPAN | 17 |
-| Jauce | 13 |
-| Buyee | 12 |
-| Neokyo | 8 |
+会社ごとの行数：zenmarket 20 / fromjapan 17 / jauce 13 / buyee 12 / neokyo 8
+<!-- generated:END counts -->
 
 各行の形：
 
@@ -68,31 +70,52 @@
 
 ---
 
-## master/customs.json ── 9カ国 / 21 経路
+## 国 × 経路（この節も生成）
 
 **通関手数料は「国ごとに1つ」ではない。「国 × 配送業者 × 利用者の操作」で決まる。**
 
-| 国 | 郵便 | courier | 特記 |
+<!-- generated:BEGIN countries -->
+| 国 | 関税 | VAT/GST | 通関手数料（経路ごと） |
 |---|---|---|---|
-| **GB** | Royal Mail **£8** / Parcelforce **£12** | — | **£900 超は £25**。**税がゼロなら手数料もゼロ** |
-| **DE** | Deutsche Post・DHL標準・EMS **€6** | DHL Express **輸入税の2%、最低 €14.88**（€12.50＋19% USt） | 下限自体に VAT が乗った形 |
-| **FR** | La Poste **小型 €2 / 大型 €5 / 配達時 €8** | Chronopost **€21** | オンライン事前払いで €8 → €2・€5 |
-| **ES** | Correos **事前 €1.29＋21% ＝ €1.56** / 配達時 **€6** | FedEx **3%・最低€15** / DHL **最低€21＋IVA** / UPS **関税額の28.3%** | 実請求で確認。**€1.56〜€70 の 45 倍** |
-| **CA** | Canada Post **CA$9.95 ＋ その 5% GST** | UPS/FedEx/DHL **CA$10〜50+** | de minimis **CA$20**。**州税 5〜9.75%** |
-| **AU** | — | — | **A$1,000 以下は代行会社が決済時に徴収**。着地時は原則発生しない |
-| **SG** | — | — | **S$400 以下は OVR で決済時に徴収**（2023-01-01〜）。関税0・GST 9% |
-| **US** | 日本郵便は**8ヶ月停止後、2026-04 に前払い方式で再開** | DHL / FedEx が中心 | **de minimis 停止**。日本からは**一律 12.5%**（B） |
+| **US** | 12.5%† | — | USPS USD 9.35 |
+| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 |
+| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 14.88 |
+| **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 |
+| **ES** | EUR 3† | 21% | Correos（事前に自分で払う） EUR 1.29 ／ Correos（配達時・現金） EUR 6 ／ FedEx 3% / EUR 15 ／ DHL EUR 21 ／ UPS 28.3% ／ FedEx 30% |
+| **AU** | 1000 以下は免税‡ | 10% | ABF（Import Processing Charge） AUD 〜1000:0・〜10000:50・上限なし:152 |
+| **CA** | 20 以下は免税‡ | 5% | Canada Post CAD 9.95 ／ UPS / FedEx / DHL CAD 10〜50 |
+| **SG** | 0% | 9% | SingPost SGD 0 ／ SingPost SGD 10.9 |
+| **TW** | 2000 以下は免税† | 5%† | 快遞（代引き） TWD 30 |
 
-### 全7カ国に共通する構造（スペインだけの話ではなかった）
+† 推論（`inference_basis` あり）　‡ 未取得
+<!-- generated:END countries -->
+
+### 国をまたいで成り立った構造（生成）
+
+<!-- generated:BEGIN findings -->
+**通関手数料は輸入税が実際に発生するときだけ課される**（A_confirmed）
+
+- **GB**: If there is no duty or tax to pay, you will not be charged a handling fee
+- **DE**: Die Auslagepauschale wird fällig, wenn der Empfänger Einfuhrabgaben bezahlen muss
+- **FR**: frais administratifs liés au traitement de votre dédouanement（税が発生する処理に紐づく）
+- **SG**: S$400 以下は OVR で徴収済みなので SingPost が徴収するものが無い
+
+→ **手数料は独立した費目ではなく、税の発生に従属する。**免税帯では税も手数料も 0。国ごとに単一の定額を無条件で足すモデルは、免税帯で必ず過大になる
+
+**利用者が事前に自分で通関・納税すると手数料が下がる国がある**（A_confirmed）
+
+- **ES**: €6 → €1.29＋IVA ＝ €1.56
+- **FR**: €8 → €2・€5
+
+→ 料金表ではなく利用者の操作で決まる。予測はどちらを想定するか明示しなければならない
+<!-- generated:END findings -->
+
+そのほか、手で確かめた構造：
 
 1. **郵便は安い定額、courier は高い。**どの国でも例外なし
 2. **courier の課金形は国ごとに違う** ── 定額（GB）／率＋下限（DE・ES の FedEx）／下限のみ（ES の DHL）／税額比例（ES の UPS）／レンジ（CA）
 3. **手数料自体に VAT が乗る国がある**（ES・DE・CA で確認）
-4. **利用者が事前に自分で払えば安くなる国がある**（ES €6→€1.56、FR €8→€2）
-5. **手数料が税の発生に従属する国がある**（GB：税ゼロなら手数料ゼロ）
-6. **豪州・シンガポールは「着地で払う」のではなく「代行会社が決済時に取る」** ── 構造が逆
-
-**→ 現行 `COUNTRIES` の `clearanceFeePerParcel`（国ごとに単一値）は、7カ国すべてで実態と合わない。**
+4. **豪州・シンガポールは「着地で払う」のではなく「代行会社が決済時に取る」** ── 構造が逆
 
 ### CA の実請求（1件、全行）
 

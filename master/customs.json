@@ -44,13 +44,27 @@
    },
    "clearance": [
     {
-     "route": "carrier_brokerage",
-     "carrier": "DHL/FedEx",
+     "route": "usps",
+     "carrier": "USPS",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 9.35,
+      "currency": "USD"
+     },
+     "tier": "B_inferred",
+     "source": "https://pe.usps.com/text/imm/immc7_002.htm",
+     "inference_basis": "USPS Notice 123 の『Customs Clearance and Delivery Fee』$9.35／課税対象郵便物1個。原典 PDF に当たれていないので B（実装 src/lib/pricing/countries.ts も同じ tier unverified）",
+     "note": "de minimis 停止中で免税帯が無いため帯は1つ"
+    },
+    {
+     "route": "courier_brokerage",
+     "carrier": "DHL / FedEx",
      "rule": {
       "type": "unknown"
      },
      "tier": "C_unknown",
-     "source": "—"
+     "source": "—",
+     "note": "米国の courier brokerage は未取得"
     }
    ],
    "carrier_availability": {
@@ -64,6 +78,11 @@
      "type": "unknown"
     },
     "tier": "C_unknown"
+   },
+   "known_gap_cbp_fees": {
+    "tier": "C_unknown",
+    "note": "**実装側の docs/audit/taxes.md が『欠落』と自己申告している。**Inbound EMS は MPF 免除の対象外で、EMS 手数料 $1.00、informal entry の MPF は $2.69 / $8.06 / $12.09。まだどちらにも入っていない",
+    "source": "https://www.cbp.gov/trade/basic-import-export/user-fee-table"
    }
   },
   {
@@ -291,40 +310,35 @@
    },
    "clearance": [
     {
-     "route": "la_poste_small",
-     "carrier": "La Poste",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 2,
-      "currency": "EUR"
-     },
-     "tier": "B_inferred",
-     "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
-    },
-    {
-     "route": "la_poste_large",
-     "carrier": "La Poste",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 5,
-      "currency": "EUR"
-     },
-     "tier": "B_inferred",
-     "source": "同上",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
-    },
-    {
-     "route": "la_poste_at_delivery",
+     "route": "la_poste_default",
      "carrier": "La Poste",
      "rule": {
       "type": "fixed_per_parcel",
       "amount": 8,
-      "currency": "EUR"
+      "currency": "EUR",
+      "vat_included": true
      },
      "tier": "A_confirmed",
-     "source": "同上",
-     "quote": "2€ pour les petits colis, 5€ pour les gros colis, ou 8€ à la livraison"
+     "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
+     "quote": "le tarif plein s'applique dans ces 2 cas … France Métropolitaine: 8€ TTC",
+     "note": "配達時・窓口の全額。**利用者が何もしなければこれ。**海外県は 7.5€ / 7€（TVA 率で違う）"
+    },
+    {
+     "route": "la_poste_online",
+     "carrier": "La Poste",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": [
+       2,
+       5
+      ],
+      "currency": "EUR",
+      "vat_included": true
+     },
+     "tier": "A_confirmed",
+     "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
+     "quote": "En payant en ligne, vous bénéficiez de frais de gestion réduits (2 ou 5€ selon le type de colis)",
+     "note": "**利用者の操作で下がる。**小包の種別で €2 か €5"
     },
     {
      "route": "chronopost",
@@ -335,13 +349,14 @@
       "currency": "EUR"
      },
      "tier": "B_inferred",
-     "source": "同上",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+     "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
+     "inference_basis": "二次情報。公式で裏づけていない"
     }
    ],
    "user_action": {
     "tier": "A_confirmed",
-    "rule": "オンラインで事前に払えば €8 → €2 / €5 に下がる"
+    "rule": "オンラインで事前に払えば €8 → €2・€5 に下がる",
+    "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international"
    },
    "clearance_fee_vat": {
     "rule": {
@@ -541,13 +556,30 @@
    },
    "clearance": [
     {
-     "route": "post_or_courier",
-     "carrier": "—",
+     "route": "abf_import_processing",
+     "carrier": "ABF（Import Processing Charge）",
      "rule": {
-      "type": "unknown"
+      "type": "banded_by_value",
+      "bands": [
+       [
+        1000,
+        0
+       ],
+       [
+        10000,
+        50
+       ],
+       [
+        null,
+        152
+       ]
+      ],
+      "currency": "AUD"
      },
-     "tier": "C_unknown",
-     "source": "—"
+     "tier": "B_inferred",
+     "source": "https://www.abf.gov.au/",
+     "inference_basis": "実装（src/lib/pricing/countries.ts）が T24 で原文を取り、A$1,000 以下は A$0、以降 A$50 / A$152 の帯を持っている。マスタ側はその転記なので B",
+     "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）"
     }
    ],
    "clearance_fee_vat": {
@@ -686,13 +718,36 @@
    },
    "clearance": [
     {
-     "route": "post_or_courier",
-     "carrier": "—",
+     "route": "singpost_low_value",
+     "carrier": "SingPost",
      "rule": {
-      "type": "unknown"
+      "type": "fixed_per_parcel",
+      "amount": 0,
+      "currency": "SGD",
+      "when": {
+       "cif_sgd_max": 400
+      }
      },
-     "tier": "C_unknown",
-     "source": "—"
+     "tier": "A_confirmed",
+     "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
+     "quote": "the postal parcel contains goods of a total CIF value exceeding S$400",
+     "note": "**取得できた 0。**S$400 以下は OVR で決済時に GST が済んでおり、SingPost が国境で徴収するものが無いので手数料も発生しない"
+    },
+    {
+     "route": "singpost",
+     "carrier": "SingPost",
+     "rule": {
+      "type": "fixed_per_parcel",
+      "amount": 10.9,
+      "currency": "SGD",
+      "when": {
+       "cif_sgd_over": 400
+      }
+     },
+     "tier": "B_inferred",
+     "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
+     "inference_basis": "公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画のみ。**S$400 の閾値は公式本文で取れている**が、S$10.90 という額の文そのものは取れていない",
+     "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料"
     }
    ],
    "clearance_fee_vat": {
@@ -792,5 +847,27 @@
    "varies_by_collector",
    null
   ]
- }
+ },
+ "cross_country_findings": [
+  {
+   "finding": "通関手数料は輸入税が実際に発生するときだけ課される",
+   "confirmed_in": {
+    "GB": "If there is no duty or tax to pay, you will not be charged a handling fee",
+    "DE": "Die Auslagepauschale wird fällig, wenn der Empfänger Einfuhrabgaben bezahlen muss",
+    "FR": "frais administratifs liés au traitement de votre dédouanement（税が発生する処理に紐づく）",
+    "SG": "S$400 以下は OVR で徴収済みなので SingPost が徴収するものが無い"
+   },
+   "tier": "A_confirmed",
+   "impact": "**手数料は独立した費目ではなく、税の発生に従属する。**免税帯では税も手数料も 0。国ごとに単一の定額を無条件で足すモデルは、免税帯で必ず過大になる"
+  },
+  {
+   "finding": "利用者が事前に自分で通関・納税すると手数料が下がる国がある",
+   "confirmed_in": {
+    "ES": "€6 → €1.29＋IVA ＝ €1.56",
+    "FR": "€8 → €2・€5"
+   },
+   "tier": "A_confirmed",
+   "impact": "料金表ではなく利用者の操作で決まる。予測はどちらを想定するか明示しなければならない"
+  }
+ ]
 }
