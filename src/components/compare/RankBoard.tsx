@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Amount, tierClass } from '@/lib/ui/tiers';
 import { foreign, yen, yenRange, yenRounded } from '@/lib/ui/format';
 import { andList } from '@/lib/pricing/compare';
@@ -49,20 +49,56 @@ function totalText(row: Row, result: CompareResult): string {
  * **ただし順位そのものは重量で動く**（docs/DESIGN-NOTES.md §1）。
  * 動く条件では StabilityNote がそう書く。
  */
+/** 順位の行が入れ替わったときの滑り（prototypes/README.md の +260ms）。
+ *  **順位そのものは遅らせない。**遅らせたら、箱と表が新しい数字で、順位だけ古い
+ *  数字を出している時間ができる。動かすのは見た目の位置だけ（FLIP）。 */
+export const RANK_SLIDE_MS = 260;
+
+function useRankSlide(listRef: React.RefObject<HTMLOListElement | null>, key: string) {
+  const seen = useRef<Map<string, number>>(new Map());
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const lis = Array.from(list.querySelectorAll<HTMLLIElement>('li[data-row-id]'));
+    const next = new Map<string, number>();
+    for (const li of lis) next.set(li.dataset.rowId ?? '', li.getBoundingClientRect().top);
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (!reduce) {
+      for (const li of lis) {
+        const id = li.dataset.rowId ?? '';
+        const from = seen.current.get(id);
+        const to = next.get(id);
+        if (from == null || to == null || Math.abs(from - to) < 1) continue;
+        if (typeof li.animate !== 'function') continue;
+        li.animate(
+          [{ transform: `translateY(${from - to}px)` }, { transform: 'translateY(0)' }],
+          { duration: RANK_SLIDE_MS, easing: 'cubic-bezier(.2,.7,.3,1)' },
+        );
+      }
+    }
+    seen.current = next;
+  }, [key, listRef]);
+}
+
 export function RankBoard({ result }: { result: CompareResult }) {
   const [open, setOpen] = useState<string | null>(null);
+  const listRef = useRef<HTMLOListElement | null>(null);
   const rows = result.rows;
+  // 並びが変わったときだけ計り直す。開閉で行の高さが変わっても滑らせない。
+  useRankSlide(listRef, rows.map((r) => r.id).join(','));
   if (!rows.length) return null;
   const cheapest = rows[0]!;
   const maxDiff = Math.max(0, ...rows.filter((r) => r.comparable).map((r) => r.diff));
 
   return (
     <section aria-label="Ranking">
-      <ol className="divide-y divide-neutral-200 dark:divide-neutral-800">
+      <ol ref={listRef} className="divide-y divide-neutral-200 dark:divide-neutral-800">
         {rows.map((row) => {
           const isOpen = open === row.id;
           return (
-            <li key={row.id}>
+            <li key={row.id} data-row-id={row.id}>
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : row.id)}
