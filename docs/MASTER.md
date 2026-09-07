@@ -24,8 +24,8 @@
 
 | tier | 行数 |
 |---|---:|
-| A_confirmed | **60** |
-| B_inferred | 6 |
+| A_confirmed | **59** |
+| B_inferred | **7** |
 
 | 会社 | 行数 |
 |---|---:|
@@ -53,7 +53,7 @@
 
 **`rule.type` は 34 種類ある。**現行 `src/data.js` の `SERVICES` が表現できるのは4種類。
 
-### B_inferred の6行（推論の中身を全部書く）
+### B_inferred の7行（推論の中身を全部書く）
 
 | 行 | 推論 | 根拠 |
 |---|---|---|
