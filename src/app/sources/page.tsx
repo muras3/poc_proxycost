@@ -292,11 +292,13 @@ export default function SourcesPage() {
       <section className="mt-12">
         <H2 id="verified">A number we checked against a real invoice</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          ZenMarket takes 3.5% of the whole payment, which means the fee has to be grossed up: to end
-          up with ¥10,000 of balance you must send 10,000 / (1 − 0.035) = ¥10,362.7. A user in Taiwan
-          published the invoice they actually received: <span className="tabular-nums">¥10,363</span>.
-          One yen apart. Our deposit-fee model reproduces that, so we use gross-up rather than a flat
-          3.5% of the goods.{' '}
+          ZenMarket&apos;s own page gives its funds deposit fee only as &ldquo;from 1%&rdquo;. The
+          3.5% we charge is our figure, worked back from one invoice: to end up with ¥10,000 of
+          balance you must send 10,000 / (1 − 0.035) = ¥10,362.7, and a user in Taiwan published the
+          invoice they actually received: <span className="tabular-nums">¥10,363</span>. One yen
+          apart. That fixes the shape of the fee — it is grossed up on the whole payment, not a flat
+          3.5% of the goods — but the rate itself stays{' '}
+          <span className={tierClass.estimate}>our estimate</span> until the company publishes it.{' '}
           <a className="underline" href={ZENMARKET_INVOICE} target="_blank" rel="noopener noreferrer">
             The published invoice
           </a>

@@ -82,7 +82,14 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   },
   DE: {
     name: 'Germany', ccy: 'EUR', base: 'CIF',
-    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'fixed',
+    // €3 の定額関税そのものは EU の一次情報で確定している（2026-07-01〜2028-06-30、
+    // 1点あたり €3）。**確定していないのは「代行経由の購入がその対象か」。**
+    // 制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または
+    // 輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と書かれている。
+    // 代行が挟まる取引がここに当たるかは規則本文からは断定できない
+    // （docs/audit/taxes.md §「€3 の適用対象」）。当たらなければこの ¥489/点 は
+    // 総額から丸ごと消える。だから確定として描かない。
+    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
     vatRate: 0.19, vatFreeLimit: 0,
     clearanceFeePerParcel: null, clearanceCcy: 'EUR', clearanceTier: 'none',
     notes: [],
@@ -91,7 +98,8 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   },
   FR: {
     name: 'France', ccy: 'EUR', base: 'CIF',
-    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'fixed',
+    // DE と同じ €3。対象（DSIG）に当たるかを断定できないので確定として描かない。
+    dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
     vatRate: 0.20, vatFreeLimit: 0,
     clearanceFeePerParcel: null, clearanceCcy: 'EUR', clearanceTier: 'none',
     notes: [],
