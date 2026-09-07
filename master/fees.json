@@ -1,5 +1,5 @@
 {
- "$comment": "代行5社の費目マスタ。tier A_confirmed = 各社公式の明記（quote 付き）／tier B_inferred = 一次情報からの推論（inference_basis 付き）。C・D は本マスタに入れない（docs/MASTER.md 参照）",
+ "$comment": "代行5社の費目マスタ。tier A_confirmed = 各社公式の明記（quote 付き）／tier B_inferred = 一次情報からの推論（inference_basis 付き）。C・D は本マスタに入れない（docs/MASTER.md 参照） catalog は F01〜F38 の全費目を列挙し、fees.json に行があるか（in_fees_master）と、無い場合の理由（excluded_reason）を明示する。欠番を作らない",
  "checked_on": "2026-09-07",
  "rows": [
   {
@@ -1236,6 +1236,221 @@
    "source": "teetalk.de ほか独語圏の複数の書き手",
    "checked_on": "2026-09-07",
    "inference_basis": "複数の独立した書き手が 3.2%＋¥40 で一致。Jauce の ¥40＋3.9% と構造・水準が整合的。公式の方法別表は要ログインで未取得"
+  }
+ ],
+ "catalog": [
+  {
+   "id": "F01",
+   "name": "商品代（日本の消費税10%込み）",
+   "in_fees_master": false,
+   "kind": "actual_cost",
+   "excluded_reason": "入力値そのもの。5社共通で行にする意味が無い"
+  },
+  {
+   "id": "F02",
+   "name": "代行・入札手数料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F03",
+   "name": "↑ 仕入先による分岐",
+   "in_fees_master": false,
+   "excluded_reason": "F02 の rule 内（fixed_per_item_by_marketplace / conditions.marketplace）で表現。独立行にしない"
+  },
+  {
+   "id": "F04",
+   "name": "↑ 同一商品の複数個",
+   "in_fees_master": true
+  },
+  {
+   "id": "F05",
+   "name": "国内配送サービス料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F06",
+   "name": "特定仕入先の支払手数料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F07",
+   "name": "入金・決済手数料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F08",
+   "name": "コンビニ・郵便局払い",
+   "in_fees_master": true
+  },
+  {
+   "id": "F09",
+   "name": "出品者への国内銀行送金料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F10",
+   "name": "無形物の追加手数料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F11",
+   "name": "価格交渉手数料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F12",
+   "name": "プラン費",
+   "in_fees_master": true
+  },
+  {
+   "id": "F13",
+   "name": "国内送料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F13b",
+   "name": "「送料無料」でも国内送料が出る（リスクフラグ）",
+   "in_fees_master": true
+  },
+  {
+   "id": "F14",
+   "name": "初回梱包・まとめ梱包",
+   "in_fees_master": true
+  },
+  {
+   "id": "F15",
+   "name": "補強・保護梱包",
+   "in_fees_master": true
+  },
+  {
+   "id": "F16",
+   "name": "梱包後の変更・再梱包",
+   "in_fees_master": true
+  },
+  {
+   "id": "F17",
+   "name": "開梱",
+   "in_fees_master": true
+  },
+  {
+   "id": "F18",
+   "name": "写真",
+   "in_fees_master": true
+  },
+  {
+   "id": "F19",
+   "name": "検品",
+   "in_fees_master": true
+  },
+  {
+   "id": "F20",
+   "name": "保管無料期間",
+   "in_fees_master": true
+  },
+  {
+   "id": "F21",
+   "name": "保管超過",
+   "in_fees_master": true
+  },
+  {
+   "id": "F22",
+   "name": "購入後キャンセル",
+   "in_fees_master": true
+  },
+  {
+   "id": "F23",
+   "name": "廃棄",
+   "in_fees_master": true
+  },
+  {
+   "id": "F24",
+   "name": "特殊処理",
+   "in_fees_master": true
+  },
+  {
+   "id": "F25",
+   "name": "国際送料",
+   "in_fees_master": false,
+   "kind": "actual_cost",
+   "excluded_reason": "重量・容積・便の関数。料金表は EMS 表（src/data.js）と各社計算機の管轄で、費目マスタには置かない"
+  },
+  {
+   "id": "F26",
+   "name": "輸出通関手数料",
+   "in_fees_master": true
+  },
+  {
+   "id": "F27",
+   "name": "配送業者サーチャージ",
+   "in_fees_master": true
+  },
+  {
+   "id": "F28",
+   "name": "燃油・遠隔地サーチャージ",
+   "in_fees_master": false,
+   "excluded_reason": "全社で未取得（C）。マスタに入れない"
+  },
+  {
+   "id": "F29",
+   "name": "輸送保険",
+   "in_fees_master": true
+  },
+  {
+   "id": "F30",
+   "name": "配送方法の可否制限",
+   "in_fees_master": true
+  },
+  {
+   "id": "F31",
+   "name": "関税（買主負担）",
+   "in_fees_master": false,
+   "kind": "country_side",
+   "excluded_reason": "master/customs.json の duty に持つ"
+  },
+  {
+   "id": "F32",
+   "name": "VAT / GST / Sales tax（買主負担）",
+   "in_fees_master": false,
+   "kind": "country_side",
+   "excluded_reason": "master/customs.json の vat に持つ"
+  },
+  {
+   "id": "F33",
+   "name": "州・地方税",
+   "in_fees_master": false,
+   "kind": "country_side",
+   "excluded_reason": "master/customs.json の provincial_tax に持つ（CA のみ確認）"
+  },
+  {
+   "id": "F34",
+   "name": "通関手数料（配送業者）",
+   "in_fees_master": false,
+   "kind": "country_side",
+   "excluded_reason": "master/customs.json の clearance に持つ。国×業者×利用者の操作で決まる"
+  },
+  {
+   "id": "F35",
+   "name": "立替・DDP 手数料",
+   "in_fees_master": false,
+   "excluded_reason": "gastos suplidos として実請求に存在（ES €4.33/€5.32）が、算定式が不明（C）"
+  },
+  {
+   "id": "F36",
+   "name": "会社が輸入税を代理徴収",
+   "in_fees_master": true
+  },
+  {
+   "id": "F37",
+   "name": "カード・PayPal の外貨換算上乗せ",
+   "in_fees_master": false,
+   "excluded_reason": "モデルの管轄外（D）。判定は円で行う"
+  },
+  {
+   "id": "F38",
+   "name": "通関手数料にかかる VAT",
+   "in_fees_master": false,
+   "kind": "country_side",
+   "excluded_reason": "master/customs.json の clearance_fee_vat に持つ。ES・DE・CA の実請求3件で確認"
   }
  ]
 }
