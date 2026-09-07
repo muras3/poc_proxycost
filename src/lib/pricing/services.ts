@@ -1,4 +1,4 @@
-import type { CountryCode, SiteId, Tier } from './types';
+import type { CountryCode, PostalMethod, SiteId, Tier } from './types';
 
 export interface FeeModel {
   /** 点あたりの定額手数料（既定）。 */
@@ -127,6 +127,36 @@ export interface PrepaidImportTax {
   checkedOn: string;
 }
 
+/** その社のその方式の料金。公表額に率を掛けて出す。 */
+export interface PostageRate {
+  /**
+   * 公表額に対する上乗せ。0 = 公表額そのまま。
+   *
+   * **率か定額かは、観測1点からは決められない。**ZenMarket の小形包装物(航空)は
+   * ドイツ宛 600g で ¥2,047 対 公表 ¥1,410 の1点しか無く、+¥637 の定額とも +45.2% の
+   * 率とも読める。2kg では前者が ¥4,567、後者が ¥5,706 で大きく違う。
+   * ここは率として持つが、**だから tier は `estimate`**——重量を変えた観測
+   * （`docs/O2-CALCULATOR-RUN.md` フェーズ2）が来たら形ごと見直す。
+   */
+  markup: number;
+  /**
+   * **上乗せの確度であって、重量の確度ではない。**料金表そのものは日本郵便の公表値
+   * （一次情報）なので、この tier は「その社が公表額をそのまま転嫁しているか」だけを表す。
+   * 重量が推定であることは Items 行の重量 tier と `Row.approximate` が別に持つ
+   * （`docs/COMPLETENESS.md` T16）。
+   *   fixed    … 公開計算機で公表額と一致することを確認した
+   *   estimate … 上乗せがあり、率か定額かを決められていない
+   */
+  tier: Tier;
+  /** 観測した画面。 */
+  sourceUrl: string;
+  checkedOn: string;
+  /** その社の画面での呼び方（原文）。訳さない。 */
+  labelRaw: string;
+  /** 上乗せがある方式だけ、観測の中身を残す。 */
+  observed?: string;
+}
+
 export interface Service {
   id: string;
   name: string;
@@ -144,18 +174,22 @@ export interface Service {
   parcelVerified: boolean;
   /** 同梱を申請できるか。 */
   consolidationOnRequest: boolean;
-  /** 国際送料のマークアップ。0 = EMS 公表料金そのまま。 */
-  emsMarkup: number;
   /**
-   * **マークアップの確度であって、重量の確度ではない。**
-   * EMS の料金表そのものは日本郵便の公表値（一次情報）なので、EMS 行の tier は
-   * 「その社が公表額をそのまま転嫁しているか」だけを表す。重量が推定であることは
-   * Items 行の重量 tier と `Row.approximate` が別に持つ（docs/COMPLETENESS.md T16）。
-   *   fixed      … その社自身が「上乗せしない」と書いている
-   *   unverified … 実請求（二次情報）が公表額と一致した。社の記述は無い
-   *   estimate   … 我々の仮定。裏付けが無いか、実請求と食い違う
+   * **その社が売っている日本郵便の方式と、公表額に対する上乗せ。**
+   *
+   * 2026-09-07 に5社の公開計算機を実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、
+   * ドイツ宛 600g）して分かったことが2つあり、それが以前の形（社ごとに1つの
+   * `emsMarkup`）では表せなかった:
+   *
+   * 1. **品揃えが社で違う。**FROM JAPAN は5方式、Jauce は2方式しか出さない。
+   *    全社が全方式を出すことにしていたのは嘘だった。**キーが無い方式は売っていない。**
+   * 2. **上乗せは方式ごと。**ZenMarket は EMS が公表額どおりなのに小形包装物(航空)だけ
+   *    +45.2%、Jauce は EMS どおりで国際小包(船便)だけ +10.0%。
+   *    社ごとに1つの率では、この2件を再現できない。
+   *
+   * **EMS は5社とも1円まで一致した**（全社 ¥3,400 = 公表額）ので、そこだけ `fixed`。
    */
-  emsMarkupTier: Tier;
+  postage: Partial<Record<PostalMethod, PostageRate>>;
   optional: OptionalFee[];
   /**
    * 受取国ごとの前徴収税。**確認できた国だけ。** 未確認の国は欄ごと無い。
@@ -209,10 +243,28 @@ export const SERVICES: Service[] = [
     parcelDefault: 'one',
     parcelVerified: true,
     consolidationOnRequest: false,
-    emsMarkup: 0,
-    // 原文（fees、2026-09-06 取得）:「We do not charge any Neokyo fee on shipping cost,
-    // you pay the actual provider price.」— 社自身が上乗せ無しと書いている。
-    emsMarkupTier: 'fixed',
+    // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
+    // 小形包装物を出していない（国際小包のみ）。郵便番号と寸法が必須入力
+    postage: {
+      'parcel-surface': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'Japan Post / Surface (2-4 months)',
+        sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
+        checkedOn: '2026-09-07',
+      },
+      'ems': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'Japan Post / EMS (2-5 days)',
+        sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-air': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'Japan Post / Airmail (6-10 days)',
+        sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
+        checkedOn: '2026-09-07',
+      },
+    },
     optional: [
       // 原文:「You will be charged 1000¥ **plus the price of the packing fee**
       // (Example: 500¥ Packing Fee, 1500¥ Unpacking Fee).」
@@ -293,12 +345,35 @@ export const SERVICES: Service[] = [
     parcelDefault: 'one',
     parcelVerified: false,
     consolidationOnRequest: false,
-    emsMarkup: 0,
-    // **上げられない。** 料金ページ（Arquivo.pt 2025-11-27 の写し）は国際送料を
-    // 「Always pay」と書くだけで、公表額そのままとは書いていない。実請求は
-    // 1件が公表額と完全一致（R2 ¥2,700）、1件はどの段とも一致しない（R3 ¥4,021）。
-    // 一致しない実例がある以上、これは我々の仮定である（docs/audit/reality.md §3.4）。
-    emsMarkupTier: 'estimate',
+    // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
+    // 船便の小形包装物は出していない。NOVA GLOBAL・ECMS EXPRESS は自社独自方式で未価格化
+    postage: {
+      'small-packet-air': {
+        markup: 0.452, tier: 'estimate',
+        labelRaw: 'AIRMAIL (AVIA) Small Parcel',
+        observed: 'DE 600g: ¥2,047 対 公表 ¥1,410 = +¥637。率か定額か未決（観測1点）',
+        sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-surface': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'SURFACE Standard Parcel',
+        sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-07',
+      },
+      'ems': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'EMS Standard Parcel',
+        sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-air': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'AIRMAIL (AVIA) Standard Parcel',
+        sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-07',
+      },
+    },
     optional: [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
@@ -402,10 +477,40 @@ export const SERVICES: Service[] = [
     parcelDefault: 'one',
     parcelVerified: true,
     consolidationOnRequest: false,
-    emsMarkup: 0,
-    // 会員ランクで国際送料が %OFF になると自社の翻訳ファイルに書いてあるが、率が
-    // テンプレ変数のままで読めない（docs/audit/fees.md §3）。上乗せ 0 は我々の仮定。
-    emsMarkupTier: 'estimate',
+    // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
+    // **5社で唯一、既定で方式が選ばれている**（最安を自動選択）。International ePacket Light ¥1,780 は未価格化
+    postage: {
+      'small-packet-surface': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'Surface (Small Packet)',
+        sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-07',
+      },
+      'small-packet-air': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'AirMail (Small Packet)',
+        sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-surface': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'Surface',
+        sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-07',
+      },
+      'ems': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'EMS',
+        sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-air': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'AirMail',
+        sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-07',
+      },
+    },
     optional: [
       // **Product Protection Plan をここに置いてはいけない。** 原文
       // title_serviceRule_670:「Members agree that all purchased items will be covered by
@@ -492,11 +597,34 @@ export const SERVICES: Service[] = [
     parcelDefault: 'per-order',
     parcelVerified: true,
     consolidationOnRequest: true,
-    emsMarkup: 0,
-    // 社の記述は無い（料金ページは見積りツールに飛ばすだけ）。根拠は実請求1件で、
-    // イタリア宛 9kg の国際送料 ¥15,300 が当時の第3地帯 9.0kg 段と1円違わず一致した
-    // （docs/audit/reality.md R4）。**一次情報ではないので点線で描く。**
-    emsMarkupTier: 'unverified',
+    // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
+    // EMS に Recommended バッジが付くが、既定では選択されていない。SAL は小形・小包とも Shipping not available
+    postage: {
+      'small-packet-air': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'Small Packet (AIR) / Airmail (without tracking)',
+        sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-surface': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'International Parcel Post (Surface Mail)',
+        sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
+        checkedOn: '2026-09-07',
+      },
+      'ems': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'EMS / Express Mail Service',
+        sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-air': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'International Parcel Post (AIR)',
+        sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
+        checkedOn: '2026-09-07',
+      },
+    },
     optional: [
       { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
@@ -593,8 +721,23 @@ export const SERVICES: Service[] = [
     parcelVerified: true,
     consolidationOnRequest: false,
     // 国際送料は EMS 公表料金そのまま。マークアップ 0 を実測で確認した。
-    emsMarkup: 0,
-    emsMarkupTier: 'fixed',
+    // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
+    // **2方式しか出さない。**小形包装物・宅配便いずれも無い。SAL は行が残るが Not available
+    postage: {
+      'ems': {
+        markup: 0, tier: 'fixed',
+        labelRaw: 'EMS',
+        sourceUrl: 'https://www.jauce.com/price_check.php',
+        checkedOn: '2026-09-07',
+      },
+      'parcel-surface': {
+        markup: 0.1, tier: 'estimate',
+        labelRaw: 'Surface',
+        observed: 'DE 600g: ¥2,750 対 公表 ¥2,500 = +¥250。率か定額か未決（観測1点）',
+        sourceUrl: 'https://www.jauce.com/price_check.php',
+        checkedOn: '2026-09-07',
+      },
+    },
     optional: [
       // 以下すべて japan_auction_detail の原文（2026-09-07 取得）。
       // 「Fragile Packing : JPY 600 per package + JPY 240/kg」。既定の Smart Packing
