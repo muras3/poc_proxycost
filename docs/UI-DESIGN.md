@@ -475,6 +475,9 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 | `BreakdownMatrix` | `lg` 以上の全表。列順＝順位。一次／二次で見出し下線の線種を変える |
 | ~~`WeightStepTable`~~ | 撤去（§4 改訂）。重量欄が常時編集可能になったため |
 | `WeightBox`（`ItemList` 内） | 重量入力（常に数字入り）。出どころ（表のライン／仮置き／利用者）、P25–P75、`reset to ~439 g`、`⚠ This weight decides the cheapest: …`（`weightSensitivity`） |
+| `ParcelView` | 箱・EMS の段・**送料の差分**。順位の下・内訳の上（答え → その根拠 → 全費目）。数字は `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()` だけから来る。**跨がなかった回は「+¥0」を出して静止する** |
+| `PackingBox` | 段ボール箱。**「詰める」絵ではない**（EMS は重量だけで決まり体積は効かない）。大きさは段の添字からだけ、離散的に決まる。推定重量の品は半透明 |
+| `WeightLadder` | EMS 42段の目盛り。現在段と段の中の進み。表の外は `···` の先に置き、料金は `—` |
 | `ConsolidationCallout` | Buyee 同梱の呼びかけ（`n ≥ 2` のときのみ） |
 | `OptionalExtras` | 任意費目を「選ぶと +¥」で列挙（総額に入れない。DESIGN-NOTES §2） |
 | `WhatCouldBeOff` | 外れうる点の箇条書き（国別） |
