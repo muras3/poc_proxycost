@@ -126,7 +126,7 @@ const NOT_OBTAINED = [
     id: 'cameras',
     labelEn: 'Cameras and lenses',
     labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight.',
+    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
   },
   {
     id: 'apparel',
@@ -142,6 +142,7 @@ const PARTIAL_GAPS = [
   { category: 'sneakers', gap: 'Mainstream athletic shoes (Nike, adidas, New Balance)', reason: 'Every sneaker store that publishes grams charges a flat band (1,000 / 3,000 / 4,000 g). Only traditional and work footwear survived the check.' },
   { category: 'sports-goods', gap: 'Baseball, soccer and golf', reason: 'Only martial-arts equipment came through. Baseball and golf stores publish pound-rounded constants; no Shopify soccer store was found.' },
   { category: 'food-tea-sake', gap: 'Chilled, frozen and fresh food', reason: 'Stores that ship abroad stock shelf-stable goods only, so fish, wagyu and fresh sweets are absent from the sample.' },
+  { category: 'kpop', gap: 'Video discs outside K-pop', reason: 'The 1,750 g DVD / Blu-ray line was read in K-pop shops, where a release is a concert box with a photobook. A film on one disc is roughly a tenth of that, and no catalogue publishing per-title grams for video was found, so src/lib/pricing/weights.ts refuses a bare DVD or Blu-ray rather than lending it the K-pop number.' },
   { category: 'kpop', gap: 'A Japan-based seller', reason: 'The adopted stores are Korean or US based. The one Japan-based store found publishes grams=0 for all 1,432 products.' },
   { category: 'used-luxury', gap: 'Used watches', reason: 'The 839 g line comes from a new-watch store and includes the presentation box; a used watch shipped without its box is far lighter.' },
   { category: 'games', gap: 'Handheld consoles', reason: 'The adopted shop has only 26 handheld rows, below the threshold of 50, and they range from 400 g to 4,100 g. A Chinese pocket handheld and a boxed Game Boy are not the same object, and there is nothing to separate them with, so nothing is claimed.' },
