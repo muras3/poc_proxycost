@@ -318,10 +318,9 @@ describe('titles that must still resolve', () => {
 
   test('トレカ resolves — the word the live search returns most', () => {
     // 実タイトル37件中7件がトレカの出品で、全部落ちていた。50 g は tcg-singles の
-    // 梱包込み単カード中央値。K-POP のフォトカード（kpop 28 g）より重い側なので安全に倒れる。
+    // 梱包込み単カード中央値。
     for (const t of [
       'トレカ プロモカード 非売品カード 5種11枚 - メルカリ',
-      'RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ',
       'ポケモンカード トレーディングカード ピカチュウ',
       'One Piece trading card Luffy',
     ]) {
@@ -329,6 +328,50 @@ describe('titles that must still resolve', () => {
       expect(r.lineId).toBe('single-card');
       expect(r.grams).toBe(50);
     }
+  });
+
+  test('トレカ in a K-pop title is the photocard, not the tcg single', () => {
+    // 母数の 6 件が「K-POP のトレカ」で、28 g のフォトカードに 50 g が付いていた。
+    // 決めているのは KPOP_CONTEXT のグループ名だけ。**文脈が無ければ動かさない。**
+    for (const t of [
+      'RIIZE ソンチャン 会報 トレカ 紹介特典 - メルカリ',
+      'BOYNEXTDOOR 新規入会 ボネクド トレカ 紹介',
+      '超特急 リョウガ トレカ NO.135 サバイバー - メルカリ',
+    ]) {
+      const r = resolveWeight(t);
+      expect(r.lineId, t).toBe('photocard');
+      expect(r.grams, t).toBe(28);
+    }
+    // グループ名が無ければ今までどおり TCG のシングル。
+    expect(resolveWeight('トレカ 1枚 美品 - メルカリ').lineId).toBe('single-card');
+  });
+
+  test('a disc is 100 g outside K-pop and the album package inside it', () => {
+    // 同じ 'アルバム' が別の物を指す。8 倍ちがうので、どちらに倒すかは文脈で決める。
+    expect(resolveWeight('初音ミク「マジカルミライ 2023」OFFICIAL ALBUM【限定盤】 | HMV&BOOKS online').lineId).toBe('cd');
+    expect(resolveWeight('SEVENTEEN 11th Mini Album「SEVENTEENTH HEAVEN」').lineId).toBe('album');
+    // Weverse 版はプラットフォームアルバム（400 g）で、通常盤の箱ではない。
+    expect(resolveWeight('ARIRANG (Weverse Albums Ver.) : BTS | HMV&BOOKS online').lineId).toBe('platform-album');
+    // ディスクと写真集の同梱はアルバムの箱。写真集単体（1,000 g）ではない。
+    expect(resolveWeight('【中古:盤質A】 #TWICE 【初回限定盤A】 (CD+写真集)').lineId).toBe('album');
+    expect(resolveWeight('TWICE サナ 写真集 Yes, I am Sana.').lineId).toBe('photobook');
+  });
+
+  test('the game names and the platform-plus-ソフト forms find the card and the cartridge', () => {
+    expect(resolveWeight('遊戯王カード PSYフレームギア・δ レリーフ アルティメット').lineId).toBe('single-card');
+    expect(resolveWeight('Pokemon Card Game s8a 25th Anniversary Collection Meu UR').lineId).toBe('single-card');
+    expect(resolveWeight('ファミコンソフト - メルカリ').lineId).toBe('game-software');
+    // 機種名だけなら今までどおり本体を名乗らせない。
+    expect(resolveWeight('ファミコン 中古').grams).toBeNull();
+  });
+
+  test('an English complete set is the set, not one volume', () => {
+    for (const t of [
+      'Jump Comics/Akira Toriyama "Dragon Ball Complete 42 Volume First Edition Set"',
+      'Manga WILD HALF Yuko Asami Complete Volume Set Complete 17 Volumes',
+      'The Girl I Want is So Handsome! - The Complete Manga Collection',
+    ]) expect(resolveWeight(t).lineId, t).toBe('manga-set');
+    expect(resolveWeight('ONE PIECE 漫画 105巻').lineId).toBe('manga-volume');
   });
 
   test('the generic figure line catches the plain listings and loses to every specific one', () => {
@@ -373,6 +416,9 @@ describe('titles that must still resolve', () => {
       'sar', 'csr', 'ssr',
       '1800ml', '1,800ml', '1.8l', '1800ｍｌ', '720ml', '750ml', '700ml', '720ｍｌ', '300ml', '300ｍｌ',
       'obi', '杖',
+      // 'シングル' はカードの枚数にも CD の形式にも、茶やコーヒーの産地にも使う。
+      // 'single card' は語そのものが裏付け（'card' を含む）なので門を通る。
+      'シングル',
       // 機種名。'ファミコン ソフト' は 100 g のカセットで、3,350 g の本体ではない。
       'ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube',
       'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo',
@@ -381,12 +427,19 @@ describe('titles that must still resolve', () => {
       // 映像ディスク。1,750 g は K-POP のライブ箱の値で、映画の1枚とは別物。
       'dvd', 'ブルーレイ', 'blu-ray', 'bluray',
     ]);
+    // 語だけなら**別の行が正しい**もの。K-POP のアルバム（800 g）と日本の CD（100 g）は
+    // 8 倍ちがい、'アルバム' だけならディスク1枚と読むのが正しい。
+    const rerouted: Record<string, string> = { 'アルバム': 'cd', 'album': 'cd' };
     const missed: string[] = [];
     for (const c of WEIGHT_CATEGORIES) {
       for (const l of c.lines) {
         for (const m of l.match) {
           if (gated.has(m)) {
-            expect(resolveWeight(m).grams).toBeNull();
+            expect(resolveWeight(m).grams, m).toBeNull();
+            continue;
+          }
+          if (m in rerouted) {
+            expect(resolveWeight(m).lineId, m).toBe(rerouted[m]);
             continue;
           }
           if (resolveWeight(m).lineId !== l.id) missed.push(`${c.category}/${l.id}: "${m}"`);
@@ -400,7 +453,7 @@ describe('titles that must still resolve', () => {
 // ── 当たらないときに何かを返してはいけない。ここが崩れると総額が嘘になる。
 describe('a title we cannot resolve stays unresolved', () => {
   test('no fallback, no guess, no zero', () => {
-    const r = resolveWeight('ぬいぐるみ');
+    const r = resolveWeight('ミラーレス一眼 カメラ ボディ');
     expect(r.grams).toBeNull();
     expect(r.grams).not.toBe(0);
     expect(r.tier).toBe('none');
@@ -439,7 +492,7 @@ describe('the weight the calculator puts on a cart item', () => {
   });
 
   test('a title off the table gets the assumed weight and says so', () => {
-    const w = weightFieldsFor('plush toy, no weight data');
+    const w = weightFieldsFor('ミラーレス一眼 カメラ ボディ');
     expect(w.weightG).toBe(ASSUMED_WEIGHT_G);
     expect(w.weightG).not.toBeNull();
     expect(w.weightG).not.toBe(0);
@@ -463,15 +516,15 @@ describe('the weight the calculator puts on a cart item', () => {
   });
 
   test('resolveWeight itself still refuses to guess — the assumption lives one layer up', () => {
-    expect(resolveWeight('plush toy, no weight data').grams).toBeNull();
-    expect(weightFieldsFor('plush toy, no weight data').weightG).toBe(ASSUMED_WEIGHT_G);
+    expect(resolveWeight('ミラーレス一眼 カメラ ボディ').grams).toBeNull();
+    expect(weightFieldsFor('ミラーレス一眼 カメラ ボディ').weightG).toBe(ASSUMED_WEIGHT_G);
   });
 });
 
 describe('a category the user picked by hand', () => {
   test('the category average is used only when the user names the category', () => {
-    expect(resolveWeight('ぬいぐるみ').grams).toBeNull();
-    const r = resolveWeight('ぬいぐるみ', 'figures');
+    expect(resolveWeight('ミラーレス一眼 カメラ ボディ').grams).toBeNull();
+    const r = resolveWeight('ミラーレス一眼 カメラ ボディ', 'figures');
     expect(r.grams).toBe(1000);
     expect(r.tier).toBe('estimate');
     expect(r.source).toBe('Figures category average');

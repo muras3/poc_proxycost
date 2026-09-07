@@ -77,21 +77,37 @@ describe('what the weight table does with those titles (dev split only)', () => 
   const rep = report(score(dev));
 
   test('coverage does not fall', () => {
-    // 2026-09-07 時点: 123/137。**下がる変更はここで止まる。**
-    expect(rep.resolved).toBeGreaterThanOrEqual(123);
+    // 2026-09-08 時点: 134/137。**下がる変更はここで止まる。**
+    expect(rep.resolved).toBeGreaterThanOrEqual(134);
   });
 
   test('accuracy does not fall', () => {
-    // 2026-09-07 時点: 106/123 が期待どおりの行。
+    // 2026-09-08 時点: 131/134 が期待どおりの行。
     // **網羅を上げて正確を下げる変更は、ここで落ちる。**
-    expect(rep.correct).toBeGreaterThanOrEqual(106);
-    expect(rep.correct / rep.resolved).toBeGreaterThanOrEqual(0.85);
+    expect(rep.correct).toBeGreaterThanOrEqual(131);
+    expect(rep.correct / rep.resolved).toBeGreaterThanOrEqual(0.95);
   });
 
   test('the number of titles that must stay silent but get a weight does not grow', () => {
-    // 2026-09-07 時点: 1（off-target 0 + listing-no-data 1）。**目標は 0。**
-    // 間違った行に当たるのは当たらないより悪い。黙って別物の重量で総額と順位を出す。
-    expect(rep.misfire).toBeLessThanOrEqual(1);
+    // **目標は 0。**間違った行に当たるのは当たらないより悪い（黙って別物の重量で
+    // 総額と順位を出す）。数ではなく**どの行か**で固定する。数だけだと、1件直して
+    // 1件増やす変更が緑のまま通る。
+    const known: Record<string, string> = {
+      // 題名が切れていて、かつおのたたき（食品）か たたきのたれ（調味料）か決まらない。
+      // 母数の注記もそう言っている。語では分けられない。
+      'h-7995ef84': 'the title is truncated and does not say which of the two things it sells',
+      // 2026-09-08 に figures へ plush 行（184 g）が入った。この3件は
+      // 「Toys are outside the table」と書かれた時期のラベルで、表に値が入った今は
+      // listing として付け直す仕事が残っている。**辞書側で黙らせて数を良くしない。**
+      'h-e6d2f5d6': 'label predates the plush line added to the table on 2026-09-08',
+      'h-e4cc8ccd': 'label predates the plush line added to the table on 2026-09-08',
+      'h-f1aee95b': 'label predates the plush line added to the table on 2026-09-08',
+    };
+    const unexpected = score(dev)
+      .filter((r) => r.kind !== 'listing' && r.gotLine !== null && !(r.id in known))
+      .map((r) => `${r.id} got ${r.gotLine} on ${r.title.slice(0, 40)}`);
+    expect(unexpected).toEqual([]);
+    expect(rep.misfire).toBeLessThanOrEqual(Object.keys(known).length);
     // 店頭・カテゴリページに重量が付くことは、もう1件も許さない。
     expect(rep.misfireOffTarget).toBe(0);
   });
