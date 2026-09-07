@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { isListingUrl } from '@/lib/search/sites';
 import type { Draft } from '@/components/compare/useCompare';
 import type { Candidate, SearchResponse } from './types';
 import { CandidateDialog } from './CandidateDialog';
@@ -23,6 +24,16 @@ export function SearchBox({ onAdd }: { onAdd: (d: Draft) => void }) {
     setNotice(null);
     try {
       if (/^https?:\/\//i.test(text)) {
+        // 一覧ページを貼られたら取りに行かない。**取っても値段は付かない**
+        // （検索結果ページに商品の値段は書いていない）。取得を1往復ぶん節約して、
+        // 何を貼ればいいかを先に言う。形を知らないサイトは素通しする。
+        if (!isListingUrl(text)) {
+          setNotice(
+            'That looks like a search or category page, not one listing.'
+            + ' Open the item you want and paste its URL.',
+          );
+          return;
+        }
         const r = await fetch(`/api/product?url=${encodeURIComponent(text)}`);
         const body = (await r.json()) as {
           ok?: boolean; title?: string; priceYen?: number | null;

@@ -27,7 +27,15 @@ export interface AlternativeShipping {
   tier: Tier;
   /** 原文の URL。読めなかった社も、どこを読もうとしたかは残す。 */
   sourceUrl: string;
+  /** 我々がその原文を読んだ日。 */
   checkedOn: string;
+  /**
+   * **読んだのが保存版だったときだけ、その保存版が採取された日。**生きているページを
+   * 読めた社は null。生きたページが我々を弾く社は保存版から読むほかないが、
+   * そのとき `checkedOn` は「我々が読んだ日」であって「その内容が正しかった日」ではない。
+   * 両方を持たないと、9か月前の写しを今日の実測のように見せてしまう。
+   */
+  capturedOn: string | null;
   /** 一次情報に届かなかった社だけ、なぜ届かなかったかを書く。 */
   note: string | null;
 }
@@ -53,6 +61,7 @@ export const ALTERNATIVE_SHIPPING: AlternativeShipping[] = [
     tier: 'fixed',
     sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-method?lang=en',
     checkedOn: '2026-09-06',
+    capturedOn: null,
     note: null,
   },
   {
@@ -63,6 +72,7 @@ export const ALTERNATIVE_SHIPPING: AlternativeShipping[] = [
     tier: 'fixed',
     sourceUrl: 'https://neokyo.com/en/shipping',
     checkedOn: '2026-09-06',
+    capturedOn: null,
     note: null,
   },
   {
@@ -80,6 +90,7 @@ export const ALTERNATIVE_SHIPPING: AlternativeShipping[] = [
     tier: 'fixed',
     sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt',
     checkedOn: '2026-09-06',
+    capturedOn: null,
     note: null,
   },
   {
@@ -90,19 +101,38 @@ export const ALTERNATIVE_SHIPPING: AlternativeShipping[] = [
     tier: 'fixed',
     sourceUrl: 'https://www.jauce.com/japan_auction_detail',
     checkedOn: '2026-09-06',
+    capturedOn: null,
     note: null,
   },
   {
     serviceId: 'zenmarket',
     serviceName: 'ZenMarket',
-    // **原文を読めていない。** 配送ページは Cloudflare が 403 を返し、Wayback にも
-    // 届かなかった（2026-09-06）。方式名は検索エンジンが持っていた同ページの写しから。
-    // 読めないことを理由に「EMS だけ」と書くのは、調べていない社を有利にも不利にもする。
-    methods: ['Airmail small packet (AVIA)', 'Surface mail', 'DHL / FedEx / UPS'],
-    tier: 'unverified',
-    sourceUrl: 'https://zenmarket.jp/en/shipping.aspx',
+    // 原文「We offer you the following shipping methods for international shipping, which can be
+    // divided into two categories: Postal Service and Courier. / Postal Service: EMS, AVIA, Surface
+    // / Courier: FedEx, UPS, DHL, SF Express, ECMS Express」。EMS を除いた並び。
+    // AVIA は「AVIA Small Packet（2kg 未満）」と「AVIA (standard)」の2段構えだと同ページが書く。
+    // SF Express は「mainly for Asian regions」、ECMS Express は台湾・香港・馬・泰・星・韓・豪・
+    // 越・比の9か国限定と但し書きがある。**行き先によっては選べない**が、選べない社ではない。
+    // SAL はこのページのどこにも無い（日本郵便の SAL 停止と整合する）。
+    //
+    // 生きている https://zenmarket.jp/en/shipping.aspx は Cloudflare の managed challenge が
+    // 403 を返して読めない（cf-mitigated: challenge。docs/audit/gaps.md G-ZM1）。読んだのは
+    // Arquivo.pt が 2025-11-27 に採った WARC の生バイト（id_ 付きで無改変）で、
+    // 中身は ZenMarket 自身が書いたページそのもの。**検索エンジンの写しではない。**
+    methods: [
+      'AVIA (airmail; Small Packet under 2 kg, or standard)',
+      'Surface',
+      'FedEx',
+      'UPS',
+      'DHL',
+      'SF Express',
+      'ECMS Express',
+    ],
+    tier: 'fixed',
+    sourceUrl: 'https://arquivo.pt/wayback/20251127063048/https://zenmarket.jp/en/shipping.aspx',
     checkedOn: '2026-09-06',
-    note: 'Cloudflare returns 403 to us; this list comes from a search-engine copy of that page, not from the page itself.',
+    capturedOn: '2025-11-27',
+    note: null,
   },
 ];
 

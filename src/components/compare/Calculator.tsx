@@ -5,14 +5,16 @@ import { AdSlot } from '@/components/chrome/AdSlot';
 import { ManualAdd } from '@/components/search/ManualAdd';
 import { SearchBox } from '@/components/search/SearchBox';
 import { TierLegend, tierClass } from '@/lib/ui/tiers';
-import type { CountryCode, Item } from '@/lib/pricing/types';
+import type { CountryCode, Item, ProvinceCode } from '@/lib/pricing/types';
 import { ConsolidationCallout } from './ConsolidationCallout';
 import { CostTable } from './CostTable';
 import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
 import { ItemList, type ItemListHandle } from './ItemList';
 import { OptionalExtras } from './OptionalExtras';
+import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
+import { AlcoholInCartNote, RestrictedGoodsNote } from './RestrictedGoodsNote';
 import { StabilityNote } from './StabilityNote';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
 import { useCompare, type Draft } from './useCompare';
@@ -22,7 +24,7 @@ import { useCompare, type Draft } from './useCompare';
  * 順位 → 凡例 → 内訳 → 弱点 → 広告の順で、確かな情報ほど上に置く。
  */
 export function Calculator() {
-  const { items, country, seq, unpriced, result, dispatch } = useCompare();
+  const { items, country, province, seq, unpriced, result, dispatch } = useCompare();
   // URL 取得で確定値になった項目の取得日。Item に日付欄が無いのでここで持つ。
   // 追加は必ずクライアント側の操作なので、SSR と食い違わない。
   const [readOn, setReadOn] = useState<Record<string, string>>({});
@@ -53,11 +55,19 @@ export function Calculator() {
     <div className="mt-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         {/* モバイルでは行き先を先に決めさせる（幅が狭いので入力欄と並べない）。 */}
-        <div className="order-first sm:order-last sm:shrink-0">
+        <div className="order-first flex flex-wrap items-center gap-x-4 gap-y-2 sm:order-last sm:shrink-0">
           <CountryPicker
             value={country}
             onChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
           />
+          {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
+              他国で常に出しておくと、選べない欄が画面に残る。 */}
+          {country === 'CA' && (
+            <ProvincePicker
+              value={province}
+              onChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
+            />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <SearchBox onAdd={onAdd} />
@@ -98,6 +108,10 @@ export function Calculator() {
             {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
                 「読んでいない人には言っていない」のと同じになる。 */}
             <EmsOnlyNote result={result} />
+            {/* **送れるかは一度も見ていない。**同じ理由で同じ場所に、常に出す。
+                酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
+            <RestrictedGoodsNote result={result} country={country} />
+            <AlcoholInCartNote result={result} items={items} />
           </div>
 
           <div className="mt-4">

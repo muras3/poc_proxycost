@@ -35,13 +35,14 @@ export interface ConfidenceSlice {
 export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
   {
     tier: 'fixed',
-    what: 'Published price lists — the fee exists and the amount is printed',
-    yen: 17550, share: '47%',
+    what: 'Published price lists and the Japan Post EMS table — every amount is printed somewhere.'
+      + ' The weight we look the EMS rate up with is still ours',
+    yen: 30250, share: '80%',
   },
   {
     tier: 'estimate',
-    what: 'The fee certainly applies, the amount is our estimate — domestic and international shipping',
-    yen: 16700, share: '44%',
+    what: 'The fee certainly applies, the amount is our assumption — domestic postage inside Japan',
+    yen: 4000, share: '11%',
   },
   {
     tier: 'unverified',
@@ -51,7 +52,7 @@ export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
 ];
 
 /** 同じカートを英国へ送ったときの「公表」対「推論」。米国より公表側に寄る（VAT が公表税率）。 */
-export const GB_SPLIT = { publishedShare: '59%', inferredShare: '41%' };
+export const GB_SPLIT = { publishedShare: '86%', inferredShare: '14%' };
 
 /**
  * 1点あたりの重量だけを動かしたときの1位と総額（米国）。

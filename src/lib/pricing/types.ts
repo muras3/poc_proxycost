@@ -7,6 +7,16 @@ export type Tier = 'fixed' | 'estimate' | 'unverified' | 'none';
 
 export type CountryCode = 'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG';
 
+/**
+ * カナダの州・準州。**州によって国境で取られる税が違う**（CBSA D2-3-6）ので、
+ * カナダだけは国コードでは足りない。null = 利用者が選んでいない
+ * ——そのときも `—` にはせず、人口加重の代表値を tier estimate で出す
+ * （`countries.ts` の `CA_PROVINCE_AVERAGE_RATE`）。
+ */
+export type ProvinceCode =
+  | 'ON' | 'QC' | 'BC' | 'AB' | 'MB' | 'SK' | 'NS' | 'NB' | 'NL' | 'PE'
+  | 'YT' | 'NT' | 'NU';
+
 /** 出品元のサイト。Jauce のサービス料が無料になるかがここで決まる。 */
 export type SiteId =
   | 'yahoo-auctions'
@@ -83,11 +93,21 @@ export interface Row {
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;
-  /** 1 始まり。総額のみで決まる。 */
+  /**
+   * 1 始まり。総額のみで決まる。**同額なら同じ数字**（競技順位。1-1-3 で次は飛ぶ）。
+   * 社名の辞書順のようなタイブレークは使わない（compare.ts の `rank()` に理由）。
+   */
   rank: number;
   /** 1位との差額（円）。 */
   diff: number;
+  /** 比較可能な行の中で総額が最小か。**同額なら全部 true。** */
   cheapest: boolean;
+  /**
+   * 総額が同じ比較可能な行が他にあるか。
+   * **同順位の行の縦の並びは何も意味しない**ので、画面はこれを見て `tied` と書き、
+   * 上に並んだ側が勝っているという読みを打ち消す。
+   */
+  tied: boolean;
   /** アフィリエイト報酬の有無。**順位計算には一切使わない。** */
   paysUs: boolean;
   referralNote: string | null;
@@ -116,8 +136,10 @@ export interface Band {
   /** '500 g' / '1.5 kg' */
   label: string;
   rows: Row[];
-  cheapestRowId: string;
-  cheapestServiceName: string;
+  /** この段で最安の行の id。**同額なら複数**。比較可能な行が無ければ空。 */
+  cheapestRowIds: string[];
+  /** 同じ行の label。画面と note はここから作る。 */
+  cheapestServiceNames: string[];
 }
 
 /**
@@ -129,14 +151,20 @@ export interface WeightSensitivity {
   /** 試した下限・上限（g／点）。表のラインなら P25–P75、仮置きなら 500 g〜10 kg。 */
   lowG: number;
   highG: number;
-  /** その重量で1位になる行の label。比較可能な行が無ければ null。 */
+  /** その重量で1位になる行の label。**同額なら 'A and B' と並べる。**
+   *  比較可能な行が無ければ null。 */
   winnerAtLow: string | null;
   winnerAtHigh: string | null;
   /** その端で比較可能な行が減っていたら true。そのときの winner は「最安」ではなく
    *  「唯一値段が付く社」。画面ではそう書く。 */
   onlyPricedAtLow: boolean;
   onlyPricedAtHigh: boolean;
-  /** この点の重量だけで1位が替わるか。null（比べられない）は「替わった」に数えない。 */
+  /**
+   * この点の重量だけで1位が替わるか。null（比べられない）は「替わった」に数えない。
+   * **同額のときは「基準の重量で最安だった行が、その端でも最安のままか」で見る。**
+   * 同額の中のどれが `rows[0]` に来るかは並びの偶然なので、それで判定したら
+   * 動いていない順位が動いたことになる。
+   */
   decisive: boolean;
 }
 
@@ -172,4 +200,10 @@ export interface CompareResult {
 export interface CompareInput {
   items: Item[];
   country: CountryCode;
+  /**
+   * カナダ宛のときの州。**未指定でも州税は出す**（発生が確実なので `—` にしない）。
+   * 未指定なら人口加重の代表値を tier estimate で、「州を選ぶと確定する」と note に書く。
+   * カナダ以外では無視する。
+   */
+  province?: ProvinceCode | null;
 }

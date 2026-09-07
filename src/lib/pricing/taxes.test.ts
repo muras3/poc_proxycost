@@ -34,7 +34,11 @@ describe('the duty note says something a buyer can read', () => {
 
   test('the other six still say which threshold they used', () => {
     const noteOf = (cc: CountryCode) => line(rowsFor(cc)[0]!, 'duty').note;
-    expect(noteOf('US')).toBe('12.5% of the item price');
+    // 米国は品目カテゴリで文言が変わる（T24）。この籠は分類できないので「仮定」と名乗る。
+    expect(noteOf('US')).toBe(
+      '12.5% of the item price — our assumption. It is the floor Section 301 puts on goods of'
+      + ' Japan; we could not place every item in this basket against a tariff heading, and'
+      + ' headings above it exist.');
     expect(noteOf('GB')).toBe('under the GBP 135 threshold');
     expect(noteOf('DE')).toBe('EUR 3 flat × 1 item');
     expect(noteOf('FR')).toBe('EUR 3 flat × 1 item');
@@ -51,6 +55,33 @@ describe('the duty note says something a buyer can read', () => {
         }
       }
     }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // T17: 我々が原典に当たれていない数字を、確定の顔で出さない。
+  // ───────────────────────────────────────────────────────────────────────────
+  test('the EU flat €3 is charged but drawn as second-hand, in both EU countries', () => {
+    // 制度の原文（EU の暫定定額関税ガイダンス）は取れている。取れていないのは
+    // 「代行経由の購入が distance sale of imported goods に当たるか」で、
+    // 当たらなければこの ¥489/点 は総額から丸ごと消える。額を出しつつ点線で描く。
+    for (const cc of ['DE', 'FR'] as CountryCode[]) {
+      for (const row of rowsFor(cc)) {
+        const duty = line(row, 'duty');
+        expect(duty.amount, `${cc} ${row.id}`).toBeGreaterThan(0);
+        expect(duty.tier, `${cc} ${row.id}`).toBe('unverified');
+      }
+      expect(COUNTRIES[cc].dutyTier, cc).toBe('unverified');
+    }
+  });
+
+  test('ZenMarket 3.5% deposit fee is our figure — the page says only "from 1%"', () => {
+    const zen = rowsFor('US').find((r) => r.serviceId === 'zenmarket')!;
+    const deposit = line(zen, 'deposit');
+    expect(deposit.amount).toBeGreaterThan(0);
+    expect(deposit.tier).toBe('estimate');
+    expect(deposit.note).toContain('from 1%');
+    // 推定が1つでも混ざれば総額に `~` が付く。
+    expect(zen.approximate).toBe(true);
   });
 
   test('the country table itself still carries the limit we branch on', () => {
@@ -270,5 +301,52 @@ describe('the GST the service collects at checkout is shown per service', () => 
       if (cc === 'AU' || cc === 'SG') continue;
       expect(COUNTRIES[cc].sellerCollectsBelow, cc).toBeNull();
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **数字には出典と確認日が要る。**額だけ出して日付を伏せたら、いつの値か言えない
+// 数字を公表していることになる。監査で AU の A$50/A$152/A$48 と CA の C$9.95 が
+// 日付なしで公開されていたのが見つかった。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('every fetched clearance fee carries its source and the day we read it', () => {
+  test('a country with clearance bands has a source URL and a checked-on date', () => {
+    for (const cc of COUNTRY_CODES) {
+      const c = COUNTRIES[cc];
+      if (!c.clearanceBands?.length) continue;
+      expect(c.clearanceSourceUrl, `${cc}: bands without a source`).toBeTruthy();
+      expect(c.clearanceSourceUrl, cc).toMatch(/^https:\/\//);
+      expect(c.clearanceCheckedOn, `${cc}: bands without a checked-on date`).toBeTruthy();
+      expect(c.clearanceCheckedOn, cc).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(new Date(c.clearanceCheckedOn!).getTime(), `${cc}: read in the future`)
+        .toBeLessThanOrEqual(Date.now());
+    }
+  });
+
+  test('**AU cites the department whose charge it is, not only the one that collects it**', () => {
+    // A$48 は DAFF（農漁林業省）の生物検疫費用回収額で、ABF は代わりに徴収しているだけ。
+    // 徴収者のページだけを出典に立てると、額の出どころを取り違える。
+    const au = COUNTRIES.AU;
+    expect(au.clearanceSourceUrl).toContain('abf.gov.au');
+    expect(au.clearanceSourceUrl2, 'the biosecurity charge has no source of its own')
+      .toContain('agriculture.gov.au');
+    expect(au.clearanceBands!.some((b) => b.note.includes('biosecurity'))).toBe(true);
+  });
+});
+
+// **二次情報を一次情報に見せない。**確認日が付いたからといって原典に当たった
+// ことにはならない。tier が unverified の国は、note か画面で二次情報だと分かること。
+describe('a second-hand clearance fee still says it is second-hand', () => {
+  test('unverified bands are drawn as second-hand, not as published figures', () => {
+    for (const cc of COUNTRY_CODES) {
+      const c = COUNTRIES[cc];
+      if (!c.clearanceBands?.length) continue;
+      if (c.clearanceTier !== 'unverified') continue;
+      // 確度が画面の描き分けに効くのは tier。ここが fixed に変わったら、
+      // 原典を読んだという主張になる。
+      expect(c.clearanceTier, cc).toBe('unverified');
+    }
+    // 少なくとも1国は二次情報のまま（全部 fixed になったらこのテストが形骸化する）。
+    expect(COUNTRY_CODES.some((cc) => COUNTRIES[cc].clearanceTier === 'unverified')).toBe(true);
   });
 });

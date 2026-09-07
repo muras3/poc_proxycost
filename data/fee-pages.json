@@ -1,19 +1,22 @@
 {
   "https://neokyo.com/en/fees": {
     "url": "https://neokyo.com/en/fees",
-    "hash": "5c48c9abe4fa150b",
+    "hash": "535709fb6b1b7586",
+    "figures": "8d2be2cead3c6c13",
     "checkedOn": "2026-09-06",
     "note": "Neokyo の料金ページ"
   },
   "https://zenmarket.jp/ja/fees.aspx": {
     "url": "https://zenmarket.jp/ja/fees.aspx",
     "hash": "efa548dea511103e",
+    "figures": "68a939011a1ed2fe",
     "checkedOn": "2026-09-06",
     "note": "ZenMarket の料金ページ"
   },
   "https://www.fromjapan.co.jp/translate/en_help.txt": {
     "url": "https://www.fromjapan.co.jp/translate/en_help.txt",
     "hash": "71ddaf9d26e5c7ed",
+    "figures": "44d615302a7edd35",
     "checkedOn": "2026-09-06",
     "note": "FROM JAPAN の料金ページ"
   },
@@ -23,33 +26,56 @@
     "checkedOn": "2026-09-06",
     "note": "Buyee の料金ページ"
   },
+  "https://www.jauce.com/japan_auction_detail": {
+    "url": "https://www.jauce.com/japan_auction_detail",
+    "hash": "bed7cf391d3618ad",
+    "figures": "bed5d0d5d90fb944",
+    "checkedOn": "2026-09-06",
+    "note": "Jauce の料金ページ"
+  },
   "https://www.post.japanpost.jp/send/oversea/charge/list-ems/all.html": {
     "url": "https://www.post.japanpost.jp/send/oversea/charge/list-ems/all.html",
     "hash": "36375e81b464f742",
+    "figures": "ac9f9c588f8d17af",
     "checkedOn": "2026-09-06",
     "note": "日本郵便 EMS 料金表"
+  },
+  "https://www.post.japanpost.jp/service/send/oversea/information/json/oversea_information.json": {
+    "url": "https://www.post.japanpost.jp/service/send/oversea/information/json/oversea_information.json",
+    "mark": "2026/09/04 15:00",
+    "checkedOn": "2026-09-06",
+    "note": "日本郵便 国際郵便のお知らせ（一覧は https://www.post.japanpost.jp/service/send/oversea/information/）"
+  },
+  "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml": {
+    "url": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml",
+    "checkedOn": "2026-09-06",
+    "note": "為替の出典（ECB 日次参照レート）"
   },
   "https://hts.usitc.gov/": {
     "url": "https://hts.usitc.gov/",
     "hash": "bdc1bbcb1752a625",
+    "figures": "e3b0c44298fc1c14",
     "checkedOn": "2026-09-06",
     "note": "US の税・免税限度"
   },
   "https://www.gov.uk/goods-sent-from-abroad": {
     "url": "https://www.gov.uk/goods-sent-from-abroad",
     "hash": "66901da65ccdcde6",
+    "figures": "a416ea84421fa7e1",
     "checkedOn": "2026-09-06",
     "note": "GB の税・免税限度"
   },
   "https://www.douane.gouv.fr/": {
     "url": "https://www.douane.gouv.fr/",
     "hash": "54bf742ce61171d1",
+    "figures": "3a38852ca0551ce2",
     "checkedOn": "2026-09-06",
     "note": "FR の税・免税限度"
   },
   "https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/cost-of-importing-goods": {
     "url": "https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/cost-of-importing-goods",
     "hash": "fe8826b846be62c1",
+    "figures": "70b92b8914daad04",
     "checkedOn": "2026-09-06",
     "note": "AU の税・免税限度"
   }

@@ -37,6 +37,28 @@ describe('the methods we do not price', () => {
     }
   });
 
+  test('a row read off an archive says when that copy was taken, and it predates our reading', () => {
+    for (const s of ALTERNATIVE_SHIPPING) {
+      if (s.capturedOn === null) continue;
+      expect(s.capturedOn, s.serviceName).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      // 写しは我々が読んだ日より前にしか採れない。逆なら日付のどちらかが間違っている。
+      expect(s.capturedOn.localeCompare(s.checkedOn), s.serviceName).toBeLessThan(0);
+      // **写しから読んだと言う以上、出典は写しを指していないといけない。**
+      // 生きたページの URL を置いたまま capturedOn を付けると、読めなかった日の
+      // 内容を今日読んだように見せられる。
+      expect(s.sourceUrl, `${s.serviceName} は写しから読んだのに出典が写しでない`)
+        .toMatch(/arquivo\.pt|web\.archive\.org|archive\.(ph|today)/);
+    }
+    // ZenMarket は生きたページが Cloudflare で読めない。**それでも二次情報ではない。**
+    const zm = ALTERNATIVE_SHIPPING.find((s) => s.serviceId === 'zenmarket')!;
+    expect(zm.tier).toBe('fixed');
+    expect(zm.capturedOn).not.toBeNull();
+    // 原文が2分類で挙げている方式のうち、EMS 以外が全部載っていること。
+    for (const m of ['AVIA', 'Surface', 'FedEx', 'UPS', 'DHL', 'SF Express', 'ECMS Express']) {
+      expect(zm.methods.join(' | '), `ZenMarket の原文にある ${m} が落ちている`).toContain(m);
+    }
+  });
+
   test('a row we could not read the original for is second-hand and says why', () => {
     for (const s of ALTERNATIVE_SHIPPING) {
       // 確度は2値だけ。'estimate' や 'none' を置くと画面の描き分けが決まらない。

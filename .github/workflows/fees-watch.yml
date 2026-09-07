@@ -21,6 +21,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # data/fee-pages.json（前回の記録）は **この Action では更新しない。**
+      # 比べる相手は常に git に入っている記録で、issue を読んだ人が原文を確かめて
+      # 手で更新する。自動で書き戻すと「読んだことにする」だけになる。
       - id: diff
         run: npm run fees:check
         env:

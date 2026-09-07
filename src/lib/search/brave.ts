@@ -1,12 +1,14 @@
 import { z } from 'zod';
-import { siteFilter, siteFromUrl } from './sites';
+import { isListingUrl, siteFilter, siteFromUrl } from './sites';
 import type { Candidate, SearchResponse } from './types';
 import { cacheGet, cachePut, TTL_SEARCH } from './cache';
 
 const ENDPOINT = 'https://api.search.brave.com/res/v1/web/search';
 
-// thumbnail と product.price はスキーマに存在するが型が any? で返却保証の記載が無い
-// （REQUIREMENTS §8.5）。**通らなければ落として null にする。推測で埋めない。**
+// **公式ドキュメントは thumbnail も product も書いていない**（Web Search の
+// 説明ページ全文を取得して確認、2026-09-07。docs/audit/search-reality.md）。
+// thumbnail は実測で 4 割強に付いてくるが、product.price は 40 クエリ 790 件で
+// 1 件も返っていない。どちらも「来たら使う、来なければ null」。**推測で埋めない。**
 const resultSchema = z.object({
   title: z.string(),
   url: z.string(),
@@ -79,6 +81,11 @@ export async function braveSearch(query: string): Promise<SearchResponse> {
     if (!p.success) continue;
     const site = siteFromUrl(p.data.url);
     if (site.id === 'other') continue; // 対象サイト以外は出さない
+    // **一覧ページを候補に混ぜない。**Brave は検索結果ページ・カテゴリ・記事も返す
+    // （実測 790 件中 316 件。とくにヤフオクは 129 件すべてが一覧で、うち 59 件は
+    // 終了済みの /closedsearch/ ＝ もう買えない）。カードを押すとそのまま籠に入る
+    // 画面なので、値段の付かない行を入れるより件数が減る方がまし。
+    if (!isListingUrl(p.data.url)) continue;
     results.push({
       title: p.data.title.replace(/<\/?strong>/g, '').slice(0, 200),
       url: p.data.url,

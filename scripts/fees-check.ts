@@ -4,22 +4,86 @@
  * **数字は自動更新しない。**料金は一次情報の転記であって、推論させてよい対象では
  * ない。ここがやるのは「変わったぞ」と知らせるところまで。直すのは人間。
  *
- * data/fee-pages.json に前回のハッシュを持つ。差分が出たら
- * GITHUB_TOKEN があれば issue を立て、無ければ標準出力に出して非ゼロで終わる。
+ * data/fee-pages.json に前回の記録を持つ。差分が出たら GITHUB_TOKEN があれば
+ * issue を立て、無ければ標準出力に出す。
+ *
+ * 見張り方は出典によって違う。同じ「ハッシュ差分」で見ると、毎週必ず変わるものは
+ * 出た瞬間に意味を失うため:
+ *   text    … 本文テキストのハッシュ。料金ページ・税のページ。差分が出たら
+ *             **確かめ取りをしてから報せる**（同じ日に取り直しても別物になる
+ *             ページがあるため。figuresOf のコメント）。
+ *   value   … 中身の値のずれで見る。為替（毎日変わるのでハッシュは無意味）。
+ *   notices … 前回より後に増えた見出しだけを見る。日本郵便のお知らせ（運行情報が
+ *             週に何本も増えるのでハッシュは無意味）。
+ *
+ * 見た出典と HTTP status は毎回すべて出す。**「全件 200 だったか」を実行ログだけで
+ * 確かめられるように。**取れなかった出典があっても終了コードは 0 のまま
+ * （issue と実行ログに残す。Action を赤くして毎週無視されるより、記録に残す）。
  */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
-import { SERVICES } from '../src/lib/pricing/services';
+import { SERVICES, EXPORT_DECLARATION_FEE_SOURCE } from '../src/lib/pricing/services';
 import { EMS_SOURCE_URL } from '../src/lib/pricing/ems';
-import { COUNTRIES } from '../src/lib/pricing/countries';
+import { CA_PROVINCE_SOURCE_URL, COUNTRIES } from '../src/lib/pricing/countries';
+import { RESTRICTED_GOODS } from '../src/lib/pricing/restricted-goods';
 import { RATES, RATES_AS_OF, RATES_SOURCE_URL } from '../src/lib/pricing/rates';
-import { fetchEcbDaily, yenPer, ECB_DAILY_URL } from './lib/ecb';
+import { parseEcbDaily, yenPer, ECB_DAILY_URL } from './lib/ecb';
+import {
+  SOURCES as SITE_SOURCES, fetchSource, diffLabels, unmappedLabels,
+  type SitesStore,
+} from './lib/proxy-sites';
 
 const STORE = 'data/fee-pages.json';
+/** 代行5社の対応サイト一覧の記録。**この Action では書き換えない**（料金ページと同じ作法）。 */
+const SITES_STORE = 'data/proxy-sites.json';
 const UA = 'proxycost-fee-watch/0.1 (+https://github.com/muras3/poc_proxycost)';
+/** XML(ECB) と JSON(日本郵便) も取りに行くので、HTML だけを名乗らない。 */
+const ACCEPT = 'text/html,text/plain,application/json,application/xml;q=0.9,*/*;q=0.8';
 
-interface Snapshot { url: string; hash: string; checkedOn: string; note: string }
+/**
+ * 日本郵便「国際郵便に関するお知らせ」。**EMS の料金改定はここに出る。**
+ * 料金表 (list-ems/all.html) は改定が効いた後にしか変わらないので、予告を拾うには
+ * こちらも要る。
+ *
+ * **人が読むページではなく、そのページが読んでいる JSON を見ている。**
+ * https://www.post.japanpost.jp/service/send/oversea/information/ の一覧は
+ * 空の <div id="newslist"> に JS が描いていて、その JS の get_json() がこの URL を
+ * 叩く。つまり HTML をハッシュしても、お知らせが増えた日に1バイトも変わらない
+ * （確認日 2026-09-06、ページの原文で確認）。
+ * 旧 https://www.post.japanpost.jp/int/information/ は 4 回の転送でここに来る。
+ */
+const NOTICE_URL =
+  'https://www.post.japanpost.jp/service/send/oversea/information/json/oversea_information.json';
+/** issue に載せる、人が読める方の入口。 */
+const NOTICE_PAGE = 'https://www.post.japanpost.jp/service/send/oversea/information/';
+
+/** 増えたお知らせのうち、料金に触れていそうなものを目立たせる語。**選り分けはしない。** */
+const FEE_WORDS = ['料金', '改定', '値上げ', '値下げ', '運賃'];
+
+/**
+ * issue に並べるお知らせの上限。
+ * 週次なら増えるのは数件だが、**data/fee-pages.json は Action では更新されない**
+ * ので、記録を人が更新しないまま放っておくと差分は溜まり続ける。全部貼ると
+ * issue が読めなくなるので、件数だけ添えて一覧に送る。
+ */
+const MAX_NOTICES = 20;
+
+type Watch = 'text' | 'value' | 'notices';
+
+interface Target { url: string; note: string; watch: Watch }
+
+interface Snapshot {
+  url: string;
+  /** watch: 'text' のときだけ入る。 */
+  hash?: string;
+  /** watch: 'text' のときだけ入る。本文の数字だけの指紋（figuresOf のコメント）。 */
+  figures?: string;
+  /** watch: 'notices' のときだけ入る。前回時点で最新だったお知らせの日時。 */
+  mark?: string;
+  checkedOn: string;
+  note: string;
+}
 
 /**
  * 為替がこれ以上ずれていたら報せる。
@@ -42,15 +106,17 @@ const daysBetween = (a: string, b: string) =>
  * ハッシュ差分は毎週必ず出て、出た瞬間に意味を失う。見るべきは
  * 「rates.ts の値と出典の値がどれだけ離れたか」と「いつの値を転記したままか」。
  * ここも数字は自動更新しない。直すのは人間（npm run fx:fetch で転記する値が出る）。
+ *
+ * 本文は上の取得ループが取ってきたものを受け取る。**同じ URL を二度叩かないため。**
  */
-async function checkFx(today: string): Promise<{ changed: string[]; unreachable: string[] }> {
+function checkFx(today: string, xml: string | null): { changed: string[]; unreachable: string[] } {
   const changed: string[] = [];
   const unreachable: string[] = [];
   if (RATES_SOURCE_URL !== ECB_DAILY_URL) {
     changed.push(`- **為替の出典 URL が食い違っている**: rates.ts=${RATES_SOURCE_URL} / ecb.ts=${ECB_DAILY_URL}`);
     return { changed, unreachable };
   }
-  const daily = await fetchEcbDaily();
+  const daily = xml == null ? null : parseEcbDaily(xml);
   if (!daily) {
     unreachable.push(`- 為替の出典（ECB 日次参照レート）— 取得できず: ${ECB_DAILY_URL}`);
     return { changed, unreachable };
@@ -83,38 +149,116 @@ async function checkFx(today: string): Promise<{ changed: string[]; unreachable:
   return { changed, unreachable };
 }
 
+interface Notice { title: string; url: string; type: string; date: string }
+
+/** 日本郵便のお知らせ JSON を読む。**BOM 付きで配信されている**ので剥がす。 */
+export function parseNotices(body: string): Notice[] | null {
+  let rows: unknown;
+  try {
+    rows = JSON.parse(body.replace(/^\uFEFF/, ''));
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(rows)) return null;
+  const out: Notice[] = [];
+  for (const row of rows) {
+    if (typeof row !== 'object' || row == null) continue;
+    const r = row as Record<string, unknown>;
+    // 日付と見出しが無い行は数えない。形が変わったのを「0件」と取り違えないため。
+    if (typeof r['title'] !== 'string' || typeof r['date'] !== 'string') continue;
+    out.push({
+      title: r['title'],
+      date: r['date'],
+      url: typeof r['url'] === 'string' ? r['url'] : '',
+      type: typeof r['type'] === 'string' ? r['type'] : '',
+    });
+  }
+  return out.length ? out : null;
+}
+
+/**
+ * 前回の印（＝前回時点の最新お知らせの日時）より後に増えたものを返す。
+ * 日付は "YYYY/MM/DD HH:MM" 固定なので、文字列の大小がそのまま時刻の前後になる。
+ * **初回（印が無い）は「全部が新しい」とは言わない。**608 件の見出しを issue に
+ * 流し込んでも読まれない。印だけ打って、次回から差分で見る。
+ */
+export function newNotices(notices: Notice[], mark: string | undefined): Notice[] {
+  if (!mark) return [];
+  return notices.filter((n) => n.date > mark).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+export function latestMark(notices: Notice[]): string {
+  return notices.reduce((max, n) => (n.date > max ? n.date : max), '');
+}
+
 /** 見た目だけの差分でうるさくならないよう、本文のテキストだけを見る。 */
-function digest(html: string): string {
-  const text = html
+function stripText(html: string): string {
+  return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<[^>]+>/g, ' ')
     .replace(/&[a-z]+;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return createHash('sha256').update(text).digest('hex').slice(0, 16);
 }
 
-async function fetchText(url: string): Promise<string | null> {
+const hashOf = (s: string) => createHash('sha256').update(s).digest('hex').slice(0, 16);
+
+/**
+ * 本文に出てくる数字だけを並べた指紋。
+ *
+ * **本文ハッシュが毎回変わるページのための逃げ道。**Neokyo の料金ページは読み込み
+ * ごとに「Trivia : …」をランダムに差し込むので、本文ハッシュは同じ日に取り直しても
+ * 別物になる（2026-09-06 に3回取得して3回とも別ハッシュ、と2回取りで再確認）。
+ * それをそのまま差分として報せると、料金が1円も動かない週にも毎週 issue が立ち、
+ * 本当に動いた週の1件がその中に埋もれる。
+ *
+ * 数字だけなら文章の入れ替えでは動かない（同じ2回取りで、監視中の10ページ全部で
+ * 指紋は一致した）。**ただし数字が動かない改定（「送料無料」の削除など）は
+ * 見落とす。**だから本文ハッシュを捨てず、本文が安定しているページでは今まで
+ * 通り本文で見る。指紋を使うのは、本文が当てにならないと実測できた場合だけ。
+ */
+const figuresOf = (text: string) => hashOf((text.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).join(' '));
+
+/** 取れたかどうかだけでなく **status もそのまま返す**。週次の実行ログで全件 200 を確かめるため。 */
+async function fetchDoc(url: string): Promise<{ status: number; body: string | null }> {
   try {
     const r = await fetch(url, {
-      headers: { 'user-agent': UA, accept: 'text/html,text/plain' },
-      signal: AbortSignal.timeout(15000),
+      headers: { 'user-agent': UA, accept: ACCEPT },
+      signal: AbortSignal.timeout(20000),
     });
-    return r.ok ? await r.text() : null;
+    return { status: r.status, body: r.ok ? await r.text() : null };
   } catch {
-    return null;
+    // 届かなかった（DNS・TLS・時間切れ）。status が無いので 0 を立てる。
+    return { status: 0, body: null };
   }
 }
 
-function targets(): { url: string; note: string }[] {
-  const out: { url: string; note: string }[] = [];
+function targets(): Target[] {
+  const out: Target[] = [];
   for (const s of SERVICES) {
-    if (s.sourceUrl) out.push({ url: s.sourceUrl, note: `${s.name} の料金ページ` });
+    if (s.sourceUrl) out.push({ url: s.sourceUrl, note: `${s.name} の料金ページ`, watch: 'text' });
   }
-  out.push({ url: EMS_SOURCE_URL, note: '日本郵便 EMS 料金表' });
+  out.push({ url: EMS_SOURCE_URL, note: '日本郵便 EMS 料金表', watch: 'text' });
+  // 輸出申告代行手数料 ¥2,800。**5社の任意欄がこの1ページの数字に乗っている**
+  // （3社は自社ページにも書いているが、Neokyo・ZenMarket は書いていない）。
+  // ここが動いたら5社ぶん同時に古くなるので、社の料金ページと同じ扱いで見る。
+  out.push({ url: EXPORT_DECLARATION_FEE_SOURCE, note: '日本郵便 輸出申告代行手数料', watch: 'text' });
+  out.push({ url: NOTICE_URL, note: `日本郵便 国際郵便のお知らせ（一覧は ${NOTICE_PAGE}）`, watch: 'notices' });
+  out.push({ url: ECB_DAILY_URL, note: '為替の出典（ECB 日次参照レート）', watch: 'value' });
   for (const [cc, c] of Object.entries(COUNTRIES)) {
-    if (c.sourceUrl) out.push({ url: c.sourceUrl, note: `${cc} の税・免税限度` });
+    if (c.sourceUrl) out.push({ url: c.sourceUrl, note: `${cc} の税・免税限度`, watch: 'text' });
+    // 通関手数料の出典が税のページと別なら、それも見る（カナダは Canada Post）。
+    if (c.clearanceSourceUrl && c.clearanceSourceUrl !== c.sourceUrl) {
+      out.push({ url: c.clearanceSourceUrl, note: `${cc} の通関手数料`, watch: 'text' });
+    }
+  }
+  // **カナダの州税は国コードでは足りない。**率が動けば7カ国のうち1つの総額が丸ごと動く。
+  out.push({ url: CA_PROVINCE_SOURCE_URL, note: 'CA の州税（CBSA D2-3-6 Appendix A）', watch: 'text' });
+  // 送れないかもしれない品の原文。**数字ではなく開示文がここから来ている**ので、
+  // 消えたり書き換わったら、我々は根拠の無い文を画面に出していることになる。
+  for (const g of RESTRICTED_GOODS) {
+    out.push({ url: g.sourceUrl, note: `禁制品（${g.labelEn}）`, watch: 'text' });
   }
   return out;
 }
@@ -147,30 +291,128 @@ const today = new Date().toISOString().slice(0, 10);
 const next: Record<string, Snapshot> = {};
 const changed: string[] = [];
 const unreachable: string[] = [];
+const seen: { status: number; url: string; note: string }[] = [];
+let ecbBody: string | null = null;
 
 for (const t of targets()) {
-  const html = await fetchText(t.url);
-  if (html == null) {
-    unreachable.push(`- ${t.note} — 取得できず: ${t.url}`);
+  const { status, body } = await fetchDoc(t.url);
+  seen.push({ status, url: t.url, note: t.note });
+  const prev = previous[t.url];
+  if (body == null) {
+    unreachable.push(`- ${t.note} — 取得できず（HTTP ${status || '接続不可'}）: ${t.url}`);
     // 取れなかっただけで前回の記録を消さない。次回また試す。
-    const prev = previous[t.url];
     if (prev) next[t.url] = prev;
     continue;
   }
-  const hash = digest(html);
-  const prev = previous[t.url];
-  if (prev && prev.hash !== hash) {
-    changed.push(`- **${t.note}** が変わった（${prev.checkedOn} → ${today}）: ${t.url}`);
+
+  if (t.watch === 'value') {
+    // 値のずれは checkFx が見る。ここは「叩けた」ことだけを残す（ハッシュは持たない）。
+    ecbBody = body;
+    next[t.url] = { url: t.url, checkedOn: today, note: t.note };
+    continue;
   }
-  next[t.url] = { url: t.url, hash, checkedOn: today, note: t.note };
+
+  if (t.watch === 'notices') {
+    const notices = parseNotices(body);
+    if (!notices) {
+      // 200 で返ってきたのに読めない＝配信の形が変わった。**空扱いで流さない。**
+      unreachable.push(`- ${t.note} — 200 だが JSON として読めない（配信の形が変わった疑い）: ${t.url}`);
+      if (prev) next[t.url] = prev;
+      continue;
+    }
+    const fresh = newNotices(notices, prev?.mark);
+    for (const n of fresh.slice(0, MAX_NOTICES)) {
+      const hit = FEE_WORDS.some((w) => n.title.includes(w));
+      const link = n.url.startsWith('http') ? n.url : `https://www.post.japanpost.jp${n.url}`;
+      changed.push(
+        `- ${hit ? '**料金に触れている疑い** ' : ''}日本郵便のお知らせ ${n.date}`
+        + `［${n.type}］${hit ? `**${n.title}**` : n.title}: ${link}`,
+      );
+    }
+    if (fresh.length > MAX_NOTICES) {
+      changed.push(
+        `- 日本郵便のお知らせ 他 ${fresh.length - MAX_NOTICES} 件（前回の記録 ${prev?.mark} が古いほど溜まる。`
+        + `読んだら data/fee-pages.json を更新すること）: ${NOTICE_PAGE}`,
+      );
+    }
+    next[t.url] = { url: t.url, mark: latestMark(notices), checkedOn: today, note: t.note };
+    if (!prev?.mark) {
+      console.log(`日本郵便のお知らせ: 初回なので印だけ打った（${notices.length} 件、最新 ${latestMark(notices)}）`);
+    }
+    continue;
+  }
+
+  const text = stripText(body);
+  const hash = hashOf(text);
+  const figures = figuresOf(text);
+  if (prev?.hash && prev.hash !== hash) {
+    // **報せる前に確かめ取りをする。**同じ日に取り直して別物になるページは、
+    // 「変わった」のではなく毎回変わっているだけ（figuresOf のコメント）。
+    const again = await fetchDoc(t.url);
+    const flaps = again.body != null && hashOf(stripText(again.body)) !== hash;
+    if (!flaps) {
+      changed.push(`- **${t.note}** が変わった（${prev.checkedOn} → ${today}）: ${t.url}`);
+    } else if (prev.figures && prev.figures !== figures) {
+      changed.push(
+        `- **${t.note}** の数字が変わった（${prev.checkedOn} → ${today}`
+        + `／本文は取得ごとに変わるページなので数字の指紋で見た）: ${t.url}`,
+      );
+    } else if (!prev.figures) {
+      // **判定できないことを「差分なし」に混ぜない。**次回からは指紋で見られる。
+      unreachable.push(
+        `- ${t.note} — 本文が取得ごとに変わるページで、前回の記録に数字の指紋が無いため`
+        + `今回は判定できない（今回ぶんを記録した。次回から数字で見る）: ${t.url}`,
+      );
+    } else {
+      console.log(`${t.note}: 本文は取得ごとに変わるが数字は動いていない（${t.url}）`);
+    }
+  }
+  next[t.url] = { url: t.url, hash, figures, checkedOn: today, note: t.note };
 }
 
 // 為替は本文のハッシュではなく値のずれで見る（checkFx のコメント）。
-const fx = await checkFx(today);
+const fx = checkFx(today, ecbBody);
 changed.push(...fx.changed);
 unreachable.push(...fx.unreachable);
 
+/**
+ * 代行5社の「対応サイト」一覧。**ハッシュでは見ない。**トップページは在庫や広告で
+ * 毎回変わるので、ハッシュ差分は毎週必ず出て意味を失う。見るのは
+ * 「並んでいたサイト名が増えたか／消えたか」だけ。
+ * ここも自動更新しない（`npm run sites:fetch -- --write` を人が回す）。
+ */
+const sitesStore: SitesStore | null = existsSync(SITES_STORE)
+  ? (JSON.parse(readFileSync(SITES_STORE, 'utf8')) as SitesStore)
+  : null;
+for (const src of SITE_SOURCES) {
+  const rec = await fetchSource(src, today);
+  seen.push({ status: rec.status ?? 0, url: rec.url, note: `${rec.service} の対応サイト一覧` });
+  if (!rec.ok) {
+    unreachable.push(`- ${rec.service} の対応サイト一覧 — ${rec.reason}: ${rec.url}`);
+    continue;
+  }
+  const { added, gone } = diffLabels(sitesStore?.sources?.[rec.url], rec);
+  if (added.length) {
+    changed.push(`- **${rec.service} の対応サイトが増えた**: ${added.join(' / ')} — ${rec.url}`);
+  }
+  if (gone.length) {
+    changed.push(`- **${rec.service} の対応サイトが消えた**: ${gone.join(' / ')} — ${rec.url}`);
+  }
+  const unmapped = unmappedLabels(rec, sitesStore?.known ?? {});
+  if (unmapped.length) {
+    changed.push(
+      `- ${rec.service} に host を対応づけていない名前がある: ${unmapped.join(' / ')}`
+      + `（data/proxy-sites.json の known に一次情報を見て書く。**推測で埋めない**）`,
+    );
+  }
+}
+
 writeFileSync(STORE, `${JSON.stringify(next, null, 2)}\n`);
+
+// **毎回、対象と HTTP status を全部出す。**「全件 200 だったか」を実行ログだけで確かめられるように。
+console.log(`## 見た出典（${seen.length} 件 / ${today}）`);
+for (const s of seen) console.log(`${String(s.status || 'ERR').padStart(3)} ${s.url} — ${s.note}`);
+console.log('');
 
 if (!changed.length && !unreachable.length) {
   console.log(`差分なし（${Object.keys(next).length} ページ / ${today}）`);
@@ -182,6 +424,8 @@ const body = [
   unreachable.length ? `## 取得できなかったページ\n\n${unreachable.join('\n')}` : '',
   '\n**数字は自動更新していない。**原文を読んで、変わっていれば',
   '`src/lib/pricing/services.ts` / `ems.ts` / `countries.ts` を手で直し、',
+  '対応サイトが増減していれば `npm run sites:fetch -- --write` で記録を更新し、',
+  '検索対象（`src/lib/search/sites.ts`）に足すかどうかを判断すること。',
   '確認日を更新すること。為替なら `npm run fx:fetch` が出典の値を出すので、',
   'それを `src/lib/pricing/rates.ts` に転記し、参照日と取得日の両方を更新すること。',
 ].filter(Boolean).join('\n\n');
