@@ -22,9 +22,10 @@ const ISSUES = 'https://github.com/muras3/poc_proxycost/issues';
 const NOT_COVERED = [
   { id: 'instruments', label: 'Musical instruments', why: 'the one catalogue we probed put 180 kg on every guitar' },
   { id: 'cameras', label: 'Cameras and lenses', why: 'the shop we probed puts 1,500 g on every item' },
-  { id: 'books', label: 'Books', why: 'no catalogue with per-product grams found yet' },
-  { id: 'manga', label: 'Manga and doujinshi', why: 'no catalogue with per-product grams found yet' },
   { id: 'games', label: 'Games and consoles', why: 'no catalogue with per-product grams found yet' },
+  { id: 'apparel', label: 'Clothing and outfit sets', why: 'not attempted yet' },
+  { id: 'books-manga-illustrated', label: 'Illustrated reference books', why: 'the book line was read from novels; a large-format art book or encyclopedia is a different object' },
+  { id: 'games-handheld', label: 'Handheld consoles', why: 'only 26 rows in the one catalogue that publishes console weights, under our threshold of 50' },
 ];
 
 export default function WeightsPage() {

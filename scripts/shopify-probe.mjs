@@ -2,6 +2,14 @@
 // Shopify の公開商品JSON から発送重量を集め、値が実測に近いか擬似値かを判定する。
 //
 //   node scripts/shopify-probe.mjs <domain> [--pages N] [--out FILE]
+//                                   [--dump FILE] [--from FILE] [--slice "kw1,kw2"]
+//
+// --dump は取ってきた行（title / product_type / grams）をそのまま置く。--from はその置いた行を
+// 読み直して、店を叩かずに同じ判定をやり直す。--slice はタイトルか product_type にその語を含む行
+// だけを残し、--not はその語を含む行を落として判定する。**判定はスライスにも同じものを掛ける。**
+// カテゴリ全体が usable でも、その中の1ラインだけが定数（フィギュアの 1/7 が全件 1,500g）と
+// いうことがあるため。総称ライン（他のどのラインにも当たらなかったとき用）の中央値は
+// --slice figure --not "1/7,nendoroid,..." のように、既存ラインを引いた残りで測る。
 //
 // grams は送料計算用の入力値であって実測ではない。店が一律送料・帯別送料を使っていると
 // 全件同じ値や 100 の倍数だらけになる（カメラ店で全件 1500g、楽器店でギター 180kg が実在）。
@@ -10,7 +18,8 @@
 const args = process.argv.slice(2);
 const domain = args[0];
 if (!domain || domain.startsWith('--')) {
-  console.error('usage: node scripts/shopify-probe.mjs <domain> [--pages N] [--out FILE]');
+  console.error('usage: node scripts/shopify-probe.mjs <domain> [--pages N] [--out FILE]'
+    + ' [--dump FILE] [--from FILE] [--slice "kw1,kw2"] [--not "kw1,kw2"]');
   process.exit(2);
 }
 const flag = (name, dflt) => {
@@ -19,6 +28,12 @@ const flag = (name, dflt) => {
 };
 const maxPages = Number(flag('pages', 20));
 const outFile = flag('out', null);
+const dumpFile = flag('dump', null);
+const fromFile = flag('from', null);
+const sliceWords = (flag('slice', '') || '')
+  .split(',').map((w) => w.trim().toLowerCase()).filter(Boolean);
+const notWords = (flag('not', '') || '')
+  .split(',').map((w) => w.trim().toLowerCase()).filter(Boolean);
 
 const UA = 'proxycost-research/0.1 (+https://github.com/muras3/poc_proxycost; weight data survey)';
 
@@ -125,27 +140,52 @@ function stats(values) {
 }
 
 const host = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-const robots = await robotsAllows(host);
-if (!robots.allowed) {
-  console.log(JSON.stringify({ domain: host, ok: false, error: `robots.txt disallows: ${robots.note}` }, null, 2));
-  process.exit(0);
-}
 
-let products;
-try {
-  products = await fetchAll(host);
-} catch (e) {
-  console.log(JSON.stringify({ domain: host, ok: false, error: e.message }, null, 2));
-  process.exit(0);
-}
+let rows = [];
+let productCount = 0;
+let robots = { note: 'not fetched (--from)' };
 
-const rows = [];
-for (const p of products) {
-  for (const v of p.variants || []) {
-    if (typeof v.grams === 'number' && v.grams > 0) {
-      rows.push({ title: p.title, type: p.product_type || '', tags: p.tags || [], grams: v.grams });
+if (fromFile) {
+  const { readFileSync } = await import('node:fs');
+  const dump = JSON.parse(readFileSync(fromFile, 'utf8'));
+  rows = dump.rows;
+  productCount = dump.products;
+  robots = { note: dump.robots ?? 'recorded in the dump' };
+} else {
+  robots = await robotsAllows(host);
+  if (!robots.allowed) {
+    console.log(JSON.stringify({ domain: host, ok: false, error: `robots.txt disallows: ${robots.note}` }, null, 2));
+    process.exit(0);
+  }
+  let products;
+  try {
+    products = await fetchAll(host);
+  } catch (e) {
+    console.log(JSON.stringify({ domain: host, ok: false, error: e.message }, null, 2));
+    process.exit(0);
+  }
+  productCount = products.length;
+  for (const p of products) {
+    for (const v of p.variants || []) {
+      if (typeof v.grams === 'number' && v.grams > 0) {
+        rows.push({ title: p.title, type: p.product_type || '', tags: p.tags || [], grams: v.grams });
+      }
     }
   }
+  if (dumpFile) {
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync(dumpFile, JSON.stringify({ domain: host, robots: robots.note, products: productCount, rows }) + '\n');
+    console.error(`wrote ${dumpFile} — ${rows.length} rows`);
+  }
+}
+
+const all = rows;
+if (sliceWords.length > 0 || notWords.length > 0) {
+  rows = rows.filter((r) => {
+    const hay = `${r.title} ${r.type}`.toLowerCase();
+    if (sliceWords.length > 0 && !sliceWords.some((w) => hay.includes(w))) return false;
+    return !notWords.some((w) => hay.includes(w));
+  });
 }
 const values = rows.map((r) => r.grams);
 
@@ -166,7 +206,10 @@ const out = {
   domain: host,
   ok: true,
   robots: robots.note,
-  products: products.length,
+  products: productCount,
+  slice: sliceWords.length > 0 || notWords.length > 0
+    ? { words: sliceWords, without: notWords, rowsInSlice: rows.length, rowsInCatalogue: all.length }
+    : null,
   variantsWithGrams: rows.length,
   overall: values.length ? stats(values) : null,
   quality: judge(values),

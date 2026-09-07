@@ -143,6 +143,30 @@ UI の文言は英語（利用者は Reddit から来る海外の買い手。現
 - 文言は「the weight you gave us」ではなく **「our weight estimate」**（表の中央値・仮置きのとき）。
 - **`WeightStepTable` は撤去。** 全点に重量が入って直せる今、「重量が X なら総額は」に答えるのは重量欄そのもの。全点を同じ重量に置く表は、全点が不明だったときにしか意味が無かった。`compare()` の `bands` 経路は `weightG: null` を渡す呼び出し側のために残す（計算機の UI は null を渡さない）。
 
+**追記（2026-09-07）— 仮置きを「1点ずつ書く」だけでは弱かった**
+
+本番で3点入れて3点とも重量表に当たらず、合計 ~3.9 kg が全部こちらの置いた数字だったのに、
+利用者はそれに気づかなかった。行ごとの `assumed` は在ったが、**1点ずつ読まないと分からない
+形は、言っていないのと同じ。**推論を出すこと自体は禁じない（このプロダクトは推論を推論と
+分かる形で出す）。足りなかったのは**推論だと分かる強さ**なので、強くするのはそこだけにする。
+
+- カートの見出しの直下に注記を**1つ**（`AssumedWeightsNote`）。「3点のうち3点は重量が不明で、
+  仮の ~1 kg を使っている」を**1か所**で言う。1点ずつ見て回らないと気づけない形にしない。
+  - 総額と順位への影響まで書く（`the totals and the ranking below rest on those numbers, not on data.`）。
+    仮置きのどれかが1位を決めているなら（`weightSensitivity`）`⚠` の1行を足す。
+  - `Enter the real weights` で最初の仮置きの品の重量欄へ飛ばす。`Check the weights in your cart`
+    と同じ経路（開いてから `focus()`）。文だけ出して欄を探させない。
+  - **畳まれる `ul` の外**に置く（畳んだ開示は開示ではない）。`aria-live` の器は注記が無いときも
+    残す — 器ごと現れる領域は読み上げられず、「足したら仮置きだった」が漏れる。
+  - 一部だけが仮置きなら割合（`~2 kg, 43% of this parcel's weight`）、全部なら「箱ぜんぶ」。
+    丸めて 0% / 100% になる割合は `under 1%` / `over 99%`（持っていない精度を主張しない）。
+- 行の重量には `?` を後置（§6）。行の文も
+  `no weight data for this title, so this number is ours, not a measurement.` まで書き切る。
+- 箱は仮置きを既に「不明」の形（点線の輪郭）で描いていたが、但し書きは半透明（＝推定）しか
+  説明しておらず、点線が何なのかはどこにも書いていなかった。但し書きと読み上げの両方で名指しする。
+- **引き当たっている品しか無いカートでは全部黙る。**注記も `?` も点線の説明も出さない。
+  邪魔にしないことは、言うことと同じだけ守る。
+
 **実測（2026-09-06、米国、`compare()` を走らせた値）**
 
 | カート | 1位 | `rankStable` | 名指しされる品 |
@@ -231,6 +255,10 @@ UI の文言は英語（利用者は Reddit から来る海外の買い手。現
 追加規則:
 
 - 推定かつ利用者編集: `~` に加えて鉛筆記号（`✎`）を後置。色は推定と同じ。
+- 推定のうち**重量表に当たらなかった仮置き**: `~` に加えて `?` を後置（`AssumedMark`）。色は推定と同じ。
+  `✎`（利用者編集）とも `⚠`（1位を決める品）とも衝突しない記号として `?` を当てた。
+  「表から引いた中央値」と「何も知らないので置いた数」が同じ顔で並ぶのを止めるための印で、
+  カートに何点あるかは §4 の注記が1か所で数える。箱では点線の輪郭（「不明」の形）。
 - 一次／二次の線種は数字以外にも適用する。会社列の見出し下線: 一次 `border-b border-solid`、料金が二次の会社（現状 FROM JAPAN）は `border-b border-dashed`。`/sources` の行区切りも同じ。
 - 総額: 推定を含めば `~`（実質常に）。未取得を含めば行の下に `excl. duty` のように**何が入っていないか**を列挙する（総額が低く見える方向の誤りは特に明示する）。
 - 凡例（`TierLegend`）を順位リストの直下に常設。1行: `Plain = published price list. ~amber = our estimate. Dotted = second-hand source. — = not included, not zero.`
@@ -250,13 +278,15 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 ├──────────────────────────────────────────────────────────────────────────┤
 │ [ Paste a listing URL, or search by keyword                    ] [Add]   │
 │                                                                          │
-│ CART                                                                     │
-│  1/7 scale figure ...     ¥3,000   Yahoo! Auctions · read 09-06        ✕ │
-│                           shipping included by seller                    │
-│                           ~1,500 g · 1/7 scale · n=647 → /weights        │
-│  Nendoroid ...           ~¥2,800 ✎  from mercari.com search · reference ✕ │
-│                           ~¥800 domestic assumed · paste URL to know     │
-│                           ~440 g · Nendoroid · n=426 → /weights          │
+│ PARCEL — IF EVERYTHING SHIPS TOGETHER │ CART                             │
+│  ┌───────────────┐  EMS STEPS         │  1/7 scale figure ...    ¥3,000 ✕ │
+│  │  ▯   ▯        │  2 kg     ¥7,900   │   Yahoo! Auctions · read 09-06   │
+│  │               │ [3 kg    ¥10,300]  │   shipping included by seller    │
+│  └───────────────┘  3.5 kg  ¥11,500   │   ~1,500 g · 1/7 scale · n=647   │
+│  Weight     ~2.6 kg after packing     │  Nendoroid ...        ~¥2,800 ✎ ✕ │
+│  EMS postage ¥10,300 zone 4, 1 parcel │   from mercari.com · reference   │
+│  +¥0 same step, so the box did not …  │   ~¥800 domestic assumed         │
+│  EMS is priced by weight alone — …     │   ~440 g · Nendoroid · n=426     │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ Neokyo is cheapest. FROM JAPAN costs ¥1,250 more, ZenMarket ¥2,950,      │
 │ Buyee (default) ¥5,250.                                                  │
@@ -309,6 +339,15 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 ┌────────────────────────────┐
 │ proxycost    Ship to [US ▾]│
 │ [Paste URL or search    ][+]│
+│ PARCEL — IF EVERYTHING …   │
+│ ┌────────────────────────┐ │
+│ │   ▯    ▯               │ │
+│ └────────────────────────┘ │
+│ Weight  ~2.6 kg after pack.│
+│ EMS postage ¥10,300 zone 4 │
+│ +¥0 same step, box unchanged│
+│ EMS STEPS ‹2 kg [3 kg] 3.5›│
+│ EMS is priced by weight … │
 │ CART (2)  ▸                │
 ├────────────────────────────┤
 │ Neokyo is cheapest.        │
@@ -356,6 +395,15 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 
 - カートはモバイルでは折りたたみ（件数表示）。編集時に開く。
 - 展開は複数行同時に開けてよい（閉じる操作を強いない）。
+- **箱は入力とカートと同じ視界に置く**（2026-09-07）。足した品が箱に落ちる絵は、
+  見られなければ何も伝えない。順位表の下に置いていたときは入力から1画面以上下で、
+  誰も見ていないあいだに動いて終わっていた。
+  - `lg` 以上: 入力の直下に2列（左＝箱＋段、右＝カート）。横に並べるので順位表は下がらない。
+  - `< lg`: 縦積みで**箱をカートの上**に。カートは足すたびに開き1点で 300px 以上あるので、
+    下に置くと2点目から画面の外に出る。**スクロールで解決しない**（`scrollIntoView` が
+    祖先ごと動かして常時開示を画面外へ押し出した前科がある）。位置で解決する。
+  - DOM の順＝画面の順＝フォーカスの順。だから縦積みで先に来る箱が `lg` では左の列になる。
+  - カートが空でも箱は残す（落ちる先を先に見せる）。**空の箱は数字を1つも出さない。**
 
 ### 7.3 `/` 重量が分からない場合（差分のみ）— **廃止（2026-09-06、§4 改訂）**
 
@@ -475,7 +523,7 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 | `BreakdownMatrix` | `lg` 以上の全表。列順＝順位。一次／二次で見出し下線の線種を変える |
 | ~~`WeightStepTable`~~ | 撤去（§4 改訂）。重量欄が常時編集可能になったため |
 | `WeightBox`（`ItemList` 内） | 重量入力（常に数字入り）。出どころ（表のライン／仮置き／利用者）、P25–P75、`reset to ~439 g`、`⚠ This weight decides the cheapest: …`（`weightSensitivity`） |
-| `ParcelView` | 箱・EMS の段・**送料の差分**。順位の下・内訳の上（答え → その根拠 → 全費目）。数字は `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()` だけから来る。**跨がなかった回は「+¥0」を出して静止する** |
+| `ParcelView` | 箱・EMS の段・**送料の差分**。**入力の直下**、カートと同じ視界（`lg` で左の列、モバイルでカートの上）。数字は `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()` だけから来る。**跨がなかった回は「+¥0」を出して静止する**。カートが空のときは空の箱だけを出し、数字は出さない |
 | `PackingBox` | 段ボール箱。**「詰める」絵ではない**（EMS は重量だけで決まり体積は効かない）。大きさは段の添字からだけ、離散的に決まる。推定重量の品は半透明 |
 | `WeightLadder` | EMS 42段の目盛り。現在段と段の中の進み。表の外は `···` の先に置き、料金は `—` |
 | `ConsolidationCallout` | Buyee 同梱の呼びかけ（`n ≥ 2` のときのみ） |

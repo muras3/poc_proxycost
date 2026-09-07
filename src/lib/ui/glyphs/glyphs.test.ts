@@ -17,8 +17,8 @@ describe('glyph coverage', () => {
     expect(missing).toEqual([]);
   });
 
-  it('covers all 69 lines and nothing else', () => {
-    expect(ALL_LINES).toHaveLength(69);
+  it('covers all 75 lines and nothing else', () => {
+    expect(ALL_LINES).toHaveLength(75);
     const ids = new Set(ALL_LINES.map((l) => l.id));
     // 重量表から消えたラインの形が残り続けないようにする。
     const orphans = Object.keys(SHAPES).filter((id) => !ids.has(id));

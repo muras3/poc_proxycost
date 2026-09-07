@@ -87,15 +87,34 @@ export function Calculator() {
         </div>
       </div>
 
-      <ItemList
-        items={items}
-        readOn={readOn}
-        unpriced={unpriced}
-        sensitivity={result.weightSensitivity}
-        ref={cart}
-        onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
-        onRemove={(id: string) => dispatch({ type: 'remove', id })}
-      />
+      {/**
+        * **箱は入力とカートと同じ視界に置く。**
+        * 足した品が箱に落ちるのを見せるための絵なので、順位表の下に置いたら
+        * （前の配置）誰も見ない位置で動くことになり、動きが何も伝えない。
+        *
+        * 縦積み（モバイル）では箱をカートの**上**に置く。カートは足すたびに開き、
+        * 1点で 300px 以上あるので、カートの下に置くと2点目からは画面の外に出る。
+        * **勝手にスクロールさせて解決しない**（scrollIntoView が祖先ごと動かして
+        * 常時開示を画面外に押し出した前科がある）。位置で解決する。
+        *
+        * lg 以上では横に2つ。**DOM の順＝画面の順＝フォーカスの順**にしたいので、
+        * モバイルで先に来る箱がそのまま左の列になる（order-* で入れ替えると、
+        * どちらかの幅で読み上げ順とタブ順が画面と食い違う）。
+        * 横に並べるぶん順位表は押し下がらない。
+        */}
+      <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+        <ParcelView items={priced} country={country} className="lg:w-[32rem] lg:shrink-0" />
+        <ItemList
+          items={items}
+          readOn={readOn}
+          unpriced={unpriced}
+          sensitivity={result.weightSensitivity}
+          ref={cart}
+          className="min-w-0 flex-1"
+          onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
+          onRemove={(id: string) => dispatch({ type: 'remove', id })}
+        />
+      </div>
 
       {empty ? (
         <p className="mt-10 text-sm text-neutral-500">Add a listing to compare.</p>
@@ -131,10 +150,9 @@ export function Calculator() {
             <TierLegend className="mt-3" />
           </div>
 
-          {/* **順位の下、内訳の上。** 答え（順位）より上に置くと、答えが押し下がる。
-              内訳より下に置くと、EMS 行の数字を読んだ後に「なぜその段なのか」を出す
-              ことになって順番が逆になる。ここが「答え → その根拠 → 全費目」の境目。 */}
-          <ParcelView items={priced} country={country} className="mt-8" />
+          {/* 箱はここに居た（順位の下・内訳の上）。読み順としては筋が通っていたが、
+              **足した瞬間に動く絵が、入力から1画面以上下に居た。**動きは見られなければ
+              何も伝えないので、入力とカートの隣（上）へ移した。 */}
 
           <div className="mt-4 empty:mt-0">
             <ConsolidationCallout result={result} />
