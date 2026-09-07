@@ -1,8 +1,8 @@
 name: ci
 
 # **pull_request だけで焚く。** push でも焚くと、PR にプッシュするたび
-# 同じコミットを2回検証することになる（E2E だけで1回4分）。
-# concurrency group を分けても event が違えば別 group になるので効かない。
+# 同じコミットを2回検証することになる。concurrency group を分けても
+# event が違えば別 group になるので効かない。
 # main への push は deploy.yml が受け持つ。
 on:
   pull_request:
@@ -11,10 +11,23 @@ concurrency:
   group: ci-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+# 速さのために安定性を売らない。
+#   - retries は 0 のまま（playwright.config.ts）。**再試行で不安定さを隠さない**
+#   - テストは1件も削らない。分けて同時に走らせるだけ
+#   - 落ちたらトレースとスクリーンショットを残す。ログを追わせない
+#
+# 分け方は実測で決めた（2026-09-07、4コアの機械、212件）:
+#   workers=1 → 4.9分 / workers=2 → 3.6分 / workers=4 → 3.0分（いずれも201件緑）
+# **並列にして落ちるテストは1件も無かった**ので、隠れた状態依存は無い。
+# ただし workers を上げても3分で頭打ち。ビルド（約40秒）と1本のサーバが
+# ボトルネックなので、**ジョブごと分ける**（各シャードが自分のビルドとサーバを持つ）。
 jobs:
-  check:
+  # 速い門を先に、単独で。lint・型・単体・マスタは1分弱で答えが出る。
+  # E2E の4分を待たずに「壊れている」と分かる方が、直すのが早い。
+  fast:
+    name: lint / types / unit / master
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,5 +44,79 @@ jobs:
       # docs/MASTER.md の生成節が JSON とずれていないか。
       # 手書きの表は必ずずれるので、生成して CI で縛る。
       - run: python3 master/render-docs.py --check
+
+  e2e:
+    name: e2e ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      # **1つ落ちても残りを走らせる。** どこまで壊れているかが1回で分かる方が、
+      # 落ちるたびに次の1件を見つけて回るより早い。
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # ブラウザは毎回 25 秒かけて落としていた。版で鍵を切って使い回す。
+      # **鍵は package-lock から取る。** 手で書くと上げ忘れて古いブラウザで
+      # 検証し続けることになる。
+      - name: Resolve Playwright version
+        id: pw
+        run: |
+          v=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      # キャッシュに当たっても OS の依存ライブラリは要る。当たらなければ本体も入れる。
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+      - run: npx playwright install-deps chromium
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+
+      # 各シャードが自分のビルドとサーバを持つ（playwright.config.ts の webServer）。
+      # **--shard は projects をまたいで件数で割る**ので、desktop と mobile が
+      # 混ざったまま4等分される。
+      # シャード内は直列のまま（`workers: 1` は playwright.config.ts が持つ）。
+      # **シャード間の並列だけで速くする。** 1台の中で同時に走らせても速くはなるが
+      # （実測 3.6分）、共有サーバの状態を触るテストが互いに干渉しうる。
+      # いまは干渉しないと確かめたが、**速さのために依存を増やさない。**
+      - run: npx playwright test --shard=${{ matrix.shard }}/4
+
+      # 落ちた理由をログから掘らせない。トレースは Playwright で開ける。
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # **分けたぶん、緑の意味が薄れないようにする。**
+  # ブランチ保護から見る対象をこの1つにできるよう、全ジョブの成否を集約する。
+  # skipped や cancelled を成功と数えない（`needs.*.result == 'success'` で明示）。
+  all-green:
+    name: all green
+    runs-on: ubuntu-latest
+    needs: [fast, e2e]
+    if: always()
+    steps:
+      - name: Fail unless every job succeeded
+        run: |
+          fast='${{ needs.fast.result }}'
+          e2e='${{ needs.e2e.result }}'
+          echo "fast=$fast e2e=$e2e"
+          [ "$fast" = success ] && [ "$e2e" = success ] || {
+            echo "::error::CI is not green (fast=$fast, e2e=$e2e)"
+            exit 1
+          }
