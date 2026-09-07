@@ -1,0 +1,123 @@
+{
+  "category": "games",
+  "labelJa": "ゲーム",
+  "labelEn": "Video games",
+  "checkedOn": "2026-09-07",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "www.retroasia.com",
+      "url": "https://www.retroasia.com/products.json?limit=250&page=1",
+      "products": 591,
+      "variantsWithGrams": 692,
+      "verdict": "usable",
+      "reason": "distinct=81 (11.7%), top value 11%, multiples of 100: 69%. Adopted for the console line. Sliced to console listings (title or type naming a system or a set) it is n=587, median 3,350 g, p25 2,750 / p75 3,700, spread 1.35. Product types are console families: Famicom 185, Nintendo 64 133, Neogeo 50, Saturn 50, Dreamcast 45, Panasonic Q 42, Playstation 29, PC Engine 28, Megadrive 20. Every unit is sold as a refurbished set with cables, a controller and often a video-output mod, so the figure is a boxed set and not a bare console.",
+      "reasonJa": "distinct=81 (11.7%), 最頻値 11%, 100の倍数 69%。本体ラインに採用。本体の出品（タイトルか product_type が機種名か set を名乗るもの）に絞ると n=587、中央値 3,350g、p25 2,750 / p75 3,700、spread 1.35。product_type が機種そのもの: Famicom 185, Nintendo 64 133, Neogeo 50, Saturn 50, Dreamcast 45, Panasonic Q 42, Playstation 29, PC Engine 28, Megadrive 20。全品が整備済みの「セット」（ケーブル・コントローラ・映像出力の改造込み）として売られているので、この値は箱入りセットであって本体単体ではない"
+    },
+    {
+      "domain": "japan-figure.com",
+      "url": "https://japan-figure.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 9078,
+      "verdict": "usable",
+      "reason": "distinct=437 (4.8%), top value 9%, multiples of 100: 27%. Adopted for the software line. product_type='Video Games New' is n=1,691, but it mixes software with pouches, cases, grips and card holders; with those words removed the slice is n=1,495, median 190 g, p25 160 / p75 250, spread 1.56, and only 5% of the values are round hundreds.",
+      "reasonJa": "distinct=437 (4.8%), 最頻値 9%, 100の倍数 27%。ソフトのラインに採用。product_type='Video Games New' は 1,691件あるが、ポーチ・ケース・グリップ・カードホルダーが混ざっている。それらの語を落とすと n=1,495、中央値 190g、p25 160 / p75 250、spread 1.56、100の倍数は 5% しかない"
+    },
+    {
+      "domain": "www.emporiumretrogamingshop.com",
+      "url": "https://www.emporiumretrogamingshop.com/products.json?limit=250&page=1",
+      "products": 1000,
+      "variantsWithGrams": 1000,
+      "verdict": "pseudo",
+      "reason": "distinct=33, top value 66% of all rows. Not adopted: two thirds of the catalogue carries the same number.",
+      "reasonJa": "distinct=33, 最頻値が全体の 66%。不採用。3分の2が同じ値"
+    },
+    {
+      "domain": "hakushin-retro-game-shop.myshopify.com",
+      "url": "https://hakushin-retro-game-shop.myshopify.com/products.json?limit=250&page=1",
+      "products": 1000,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "1,000 products and not one of them carries grams.",
+      "reasonJa": "1,000件あって grams が1件も入っていない"
+    },
+    {
+      "domain": "nin-nin-game.com",
+      "url": "https://nin-nin-game.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTML, not JSON. Not a Shopify catalogue we can read.",
+      "reasonJa": "products.json が JSON ではなく HTML を返す。読めない"
+    },
+    {
+      "domain": "www.retrogamecity.com",
+      "url": "https://www.retrogamecity.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTTP 400.",
+      "reasonJa": "products.json が HTTP 400"
+    }
+  ],
+  "lines": [
+    {
+      "id": "home-console",
+      "labelEn": "Home console, boxed set",
+      "match": [
+        "ファミコン",
+        "famicom",
+        "ニンテンドー64",
+        "nintendo 64",
+        "ゲームキューブ",
+        "gamecube",
+        "ドリームキャスト",
+        "dreamcast",
+        "セガサターン",
+        "sega saturn",
+        "ネオジオ",
+        "neogeo",
+        "neo geo",
+        "pcエンジン",
+        "pc engine",
+        "pc-fx",
+        "pcfx",
+        "メガドライブ",
+        "mega drive",
+        "megadrive",
+        "プレイステーション",
+        "playstation",
+        "プレステ"
+      ],
+      "medianG": 3350,
+      "p25": 2750,
+      "p75": 3700,
+      "n": 587,
+      "spread": 1.35,
+      "tier": "estimate",
+      "sourceDomain": "www.retroasia.com"
+    },
+    {
+      "id": "game-software",
+      "labelEn": "Video game, software",
+      "match": [
+        "ゲームソフト",
+        "video game",
+        "video games",
+        "game software"
+      ],
+      "medianG": 190,
+      "p25": 160,
+      "p75": 250,
+      "n": 1495,
+      "spread": 1.56,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    }
+  ],
+  "fallbackG": null,
+  "fallbackTier": "none",
+  "notes": "Two shops adopted: www.retroasia.com (usable) for hardware and japan-figure.com (usable) for software. grams is an input to a shipping calculator, not a measurement, so measured: false. This category was listed as not obtained until 2026-09-07.\n\nThe two lines are 18 times apart, which is the point of splitting them: a console and a game for that console are not the same parcel. There is no category average, because averaging 3,350 g and 190 g would produce a number describing nothing. fallbackG is null.\n\nThe console line is the weaker of the two and its limit has to be read with it. Every retroasia unit is a refurbished set — console, cables, a controller, usually a video-output mod — packed for export. So 3,350 g is a boxed set, not a bare console, and a used bare Famicom off an auction site is far lighter. The value is on the heavy side rather than the light side, which is the safe direction for a postage estimate, but it is not the weight of the machine. It is also one shop; no second catalogue publishing console grams was found.\n\nBecause the console line would be badly wrong on the wrong listing (a Famicom game is 100 g, not 3,350 g), src/lib/pricing/weights.ts requires a corroborating word — 本体, ゲーム機, console or system — before any system name resolves to it. A title that only says 'ファミコン ソフト' resolves to nothing.\n\nNot obtained: handheld consoles and current-generation consoles. retroasia has 26 handheld rows, under the threshold of 50, spanning 400 g to 4,100 g — a Chinese pocket handheld and a boxed Game Boy in one bucket, with nothing to separate them. Rather than average them, handhelds are left out of the table, and a handheld listing falls back to the calculator's assumed weight.",
+  "notesJa": "採用はハードが www.retroasia.com（usable）、ソフトが japan-figure.com（usable）の2店。grams は送料計算用の入力値であって実測ではないので measured:false。2026-09-07 まで「取れていないカテゴリ」に入れていた。\n\n2本のラインは18倍離れている。分けた理由がそこで、本体とそのソフトは同じ小包ではない。カテゴリ平均は置かない — 3,350g と 190g を平均しても何も指さない数字になる。fallbackG は null。\n\n本体ラインは2本のうち弱いほうで、限界も一緒に読む必要がある。retroasia の商品は全部が整備済みの「セット」（本体・ケーブル・コントローラ・多くは映像出力の改造）を輸出用に梱包したもの。だから 3,350g は箱入りセットであって本体単体ではなく、オークションの中古本体単体はこれよりずっと軽い。軽い側ではなく重い側に振れているので送料見積もりとしては安全方向だが、機械の重量ではない。しかも1店のみで、本体の grams を公開している2店目は見つからなかった。\n\n本体ラインは当たる相手を間違えると大きく外れる（ファミコンのソフトは 100g であって 3,350g ではない）ので、src/lib/pricing/weights.ts で機種名に裏づけの語（本体 / ゲーム機 / console / system）を要求している。「ファミコン ソフト」だけのタイトルは何にも当たらない。\n\n取れなかったもの: 携帯機と現行世代機。retroasia の携帯機は 26件で判定閾値 50 に届かず、400g〜4,100g に散っている（中華のポケット機と箱入りゲームボーイが同じ袋に入っていて、分ける手掛かりが無い）。平均を取るくらいなら表に載せない。携帯機の出品は計算機の仮置き重量に落ちる。"
+}

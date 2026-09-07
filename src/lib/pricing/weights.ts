@@ -18,7 +18,9 @@ const UNRESOLVED: WeightResolution = {
 };
 
 function describe(cat: WeightCategory, line: WeightLine): string {
-  const domain = cat.sources[0]?.domain ?? 'unknown source';
+  // 行ごとに出所が違うカテゴリがある（games は本体と ソフトで別の店）。
+  // 行が名乗っていればそれを、無ければカテゴリの1店目を出す。
+  const domain = line.sourceDomain ?? cat.sources[0]?.domain ?? 'unknown source';
   const spread = line.spread === 1 ? '1.0x' : `${line.spread}x`;
   // n=0 は「0件で測った」ではなく「件数を記録していない」。0 と書くと嘘になる。
   const n = line.n > 0 ? `n=${line.n}` : 'sample size not recorded';
@@ -40,18 +42,11 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
   // **実際に当たった語**が長いものを採る。行が持つ最長語で並べると、
   // 'ねんどろいど CD' が cd（3文字で命中）ではなく nendoroid 行の
   // 最長語 'ねんどろいど' に負ける、といった取り違えが起きる。
-  let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
-  for (const cat of search) {
-    for (const line of cat.lines) {
-      if (namesSomethingElse(t, cat, line)) continue;
-      for (const m of line.match) {
-        if (!matches(t, m)) continue;
-        if (!corroborated(t, m)) continue;
-        const hit = m.trim().length;
-        if (!best || hit > best.hit) best = { cat, line, hit };
-      }
-    }
-  }
+  //
+  // ただし総称ライン（generic）は長さで competing させない。'フィギュア' は '1/7' より
+  // 長いので、同じ土俵に載せると総称がスケール行を全部食う。**先に個別ラインだけで探し、
+  // 1本も当たらなかったときだけ総称ラインを見る。**段階で分ける。
+  const best = pick(t, search, false) ?? pick(t, search, true);
   if (best) {
     const { cat, line } = best;
     return {
@@ -79,6 +74,26 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
   }
 
   return UNRESOLVED;
+}
+
+/** generic が一致するラインだけを見て、当たった語が一番長いものを返す。 */
+function pick(
+  t: string, search: readonly WeightCategory[], generic: boolean,
+): { cat: WeightCategory; line: WeightLine } | null {
+  let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
+  for (const cat of search) {
+    for (const line of cat.lines) {
+      if ((line.generic === true) !== generic) continue;
+      if (namesSomethingElse(t, cat, line)) continue;
+      for (const m of line.match) {
+        if (!matches(t, m)) continue;
+        if (!corroborated(t, m)) continue;
+        const hit = m.trim().length;
+        if (!best || hit > best.hit) best = { cat, line, hit };
+      }
+    }
+  }
+  return best;
 }
 
 
@@ -159,6 +174,32 @@ const REQUIRES_CORROBORATION: Corroboration[] = [
     needs: ['空手', '柔道', '剣道', '合気道', '武道', '道着', 'karate', 'judo', 'kendo', 'aikido', 'martial'],
     why: 'A record obi strip and a martial-arts belt share the same romanisation',
   },
+  {
+    // 'ファミコン ソフト マリオ' は 100 g のカセット。本体（3,350 g）ではない。
+    // 本体ラインの出典は改造済みの箱入りセットなので、当てる相手を間違えると 30 倍外す。
+    tokens: [
+      'ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube',
+      'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo',
+      'pcエンジン', 'pc engine', 'pc-fx', 'pcfx', 'メガドライブ', 'mega drive', 'megadrive',
+      'プレイステーション', 'playstation', 'プレステ',
+    ],
+    needs: ['本体', 'ゲーム機', 'console', 'system', 'コンソール'],
+    why: 'A system name is on the game as much as on the machine; only the machine is 3.35 kg',
+  },
+  {
+    // 'カメラを止めるな! [DVD]' に 1,750 g が付いていた（本番検索の実タイトル、2件）。
+    // 1,750 g は K-POP 専門店で測った DVD/Blu-ray の値で、中身はライブ映像の箱
+    // （写真集込み）。映画のディスク1枚とは別の物で、17倍ちがう。
+    // **映像ディスク一般の重量は取れていない**（data/weights/index.json partialGaps: kpop）。
+    // K-POP の文脈を示す語が同じタイトルに無ければ、当てずに仮置きへ落とす。
+    tokens: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray'],
+    needs: [
+      'kpop', 'k-pop', 'ケイポップ', 'アルバム', 'album', 'フォトカード', 'photocard', 'トレカ',
+      'ペンライト', 'lightstick', 'weverse', 'ウィバース', 'コンサート', 'concert',
+      'ワールドツアー', 'world tour', 'ファンミ', 'fanmeeting',
+    ],
+    why: 'The 1,750 g came from K-pop concert releases; a film on one disc is not that object',
+  },
 ];
 
 interface Exclusion {
@@ -216,15 +257,32 @@ const EXCLUSIONS: Exclusion[] = [
   {
     // 「腕時計の図鑑」「フィギュアの達人 |本 | 通販 | Amazon」。**X についての本は X ではない。**
     // 実測37件のうち4件がこれで、うち1件（図鑑）は本に腕時計の 839 g が付いていた。
-    // 書籍そのものの重量は取れていない（data/weights/index.json の notObtained: books-manga）ので、
-    // ここは当てずに仮置きへ落とす。当てられないことと、別の物の重量を当てることは違う。
+    // 図鑑・教科書・ムックは大判で、books-manga が持っている小説の 408 g とも別物
+    // （index.json partialGaps 参照）。当てられないことと、別の物の重量を当てることは違う。
     allCategories: true,
     when: [
       '図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック', '単行本',
       // Amazon 日本のパンくず。'本' 単独は「日本」「本体」「3本」に当たるので使えない。
       '本 | 通販', '|本 |', '｜本｜',
     ],
-    why: 'A book about a thing is not the thing, and we have no weight for books',
+    // 書籍のラインはこの門を通す。「Xについての本」を落とすための門であって、
+    // 本そのものを落とすためではない。
+    exceptCategoryIds: ['books-manga'],
+    why: 'A book about a thing is not the thing',
+  },
+  {
+    // 'フィギュアスケート' は競技であって完成品フィギュアではない。
+    lineIds: ['figure-generic'],
+    when: ['スケート', 'skating', 'skate'],
+    why: 'Figure skating is not a figure',
+  },
+  {
+    // 'ワンピース 全巻セット' は 2,000 g の箱で、210 g の単巻ではない。
+    // いまは語の長さでもラインの並び順でもセット行が勝つが、**どちらも偶然**なので
+    // 「セットの語があるなら単巻には当てない」をここに書いて固定する。
+    lineIds: ['manga-volume'],
+    when: ['全巻', 'complete set', 'コミックセット'],
+    why: 'A complete set is not one volume, and the set has its own line',
   },
 ];
 

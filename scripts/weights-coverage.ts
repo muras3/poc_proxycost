@@ -20,6 +20,8 @@ interface CorpusTitle {
   kind: 'listing' | 'off-target';
   note: string;
   title: string;
+  /** 当たるべき行（当てないなら null）。weights.corpus.test.ts が固定している。 */
+  expectLine: string | null;
 }
 
 const corpus = JSON.parse(
@@ -31,7 +33,10 @@ const asJson = process.argv.includes('--json');
 
 const rows = corpus.titles.map((t) => {
   const r = resolveWeight(t.title);
-  return { ...t, hit: r.grams != null, lineId: r.lineId, grams: r.grams, categoryId: r.categoryId };
+  return {
+    ...t, hit: r.grams != null, lineId: r.lineId, grams: r.grams, categoryId: r.categoryId,
+    asExpected: r.lineId === t.expectLine,
+  };
 });
 
 const listings = rows.filter((r) => r.kind === 'listing');
@@ -44,20 +49,25 @@ if (asJson) {
     resolved: hits.length,
     offTarget: rows.length - listings.length,
     offTargetResolved: rows.filter((r) => r.kind === 'off-target' && r.hit).length,
+    offExpectation: rows.filter((r) => !r.asExpected).map((r) => ({ n: r.n, expected: r.expectLine, got: r.lineId })),
     rows,
   }, null, 2));
 } else {
   for (const r of showAll ? rows : listings) {
     const mark = r.hit ? `${r.grams} g` : '—';
     const kind = r.kind === 'listing' ? ' ' : '~';
+    // 期待と違う行に当たったら印を出す。率だけ見ていると、当たり先が変わったのを見落とす。
+    const flag = r.asExpected ? ' ' : `!  expected ${r.expectLine ?? '(none)'}`;
     console.log(
-      `${kind}${String(r.n).padStart(2)} ${(r.lineId ?? '(none)').padEnd(20)} ${mark.padStart(8)}  ${r.title.slice(0, 64)}`,
+      `${kind}${String(r.n).padStart(2)} ${(r.lineId ?? '(none)').padEnd(20)} ${mark.padStart(8)} ${flag} ${r.title.slice(0, 60)}`,
     );
   }
   const offHit = rows.filter((r) => r.kind === 'off-target' && r.hit);
   console.log();
   console.log(`listings resolved: ${hits.length}/${listings.length} = ${(hits.length / listings.length * 100).toFixed(0)}%`);
   console.log(`off-target titles that still got a weight: ${offHit.length}/${rows.length - listings.length}`);
+  const drift = rows.filter((r) => !r.asExpected);
+  console.log(`titles resolving to a line other than the one recorded in the corpus: ${drift.length}`);
   const byQuery = new Map<string, [number, number]>();
   for (const r of listings) {
     const [h, n] = byQuery.get(r.query) ?? [0, 0];

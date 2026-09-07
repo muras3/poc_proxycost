@@ -11,260 +11,298 @@
       "n": 1,
       "query": "スニーカー",
       "kind": "off-target",
-      "note": "Yahoo! store front, not one item",
-      "title": "スニーカー - ハニーズ Yahoo!店"
+      "note": "Yahoo! store front, not one item — The table cannot tell a shop name from an item, so the word スニーカー resolves. Frozen here so a search-side fix shows up as a change.",
+      "title": "スニーカー - ハニーズ Yahoo!店",
+      "expectLine": "sneaker-casual"
     },
     {
       "n": 2,
       "query": "スニーカー",
       "kind": "off-target",
-      "note": "Rakuten category page, not one item",
-      "title": "【楽天市場】シューズ・靴 > スニーカー：SHOPLIST"
+      "note": "Rakuten category page, not one item — Same: a category page carrying the word スニーカー.",
+      "title": "【楽天市場】シューズ・靴 > スニーカー：SHOPLIST",
+      "expectLine": "sneaker-casual"
     },
     {
       "n": 3,
       "query": "スニーカー",
       "kind": "listing",
       "note": "Vintage Nike sneakers on Yahoo! Auctions",
-      "title": "レア 当時物 ヴィンテージ NIKE スニーカー コレ... - Yahoo!オークション"
+      "title": "レア 当時物 ヴィンテージ NIKE スニーカー コレ... - Yahoo!オークション",
+      "expectLine": "sneaker-casual"
     },
     {
       "n": 4,
       "query": "カメラ",
       "kind": "off-target",
       "note": "A music album whose title is the word 'camera'",
-      "title": "Amazon.co.jp: カメラ!カメラ!カメラ!: Music"
+      "title": "Amazon.co.jp: カメラ!カメラ!カメラ!: Music",
+      "expectLine": null
     },
     {
       "n": 5,
       "query": "カメラ",
       "kind": "listing",
-      "note": "A USB webcam on Amazon",
-      "title": "Amazon.co.jp: Webカメラ Enevox ウェブカメラ 2KフルHD 400万画素マイク内蔵 30FPS 125°広角 PCカメラ 自動光補正 USBカメラ 手動フォーカス 三脚スタンド付き 会議 在宅勤務 動画配信 ネット授業 ゲーム実況 ビデオ通話用等 Windows XP/7/8/10/ 2000/Mac OS X/Android TV/PCシステム Mac Xbox YouT"
+      "note": "A USB webcam on Amazon — No weight data for cameras or webcams. Every camera catalogue probed publishes one constant for the whole shop.",
+      "title": "Amazon.co.jp: Webカメラ Enevox ウェブカメラ 2KフルHD 400万画素マイク内蔵 30FPS 125°広角 PCカメラ 自動光補正 USBカメラ 手動フォーカス 三脚スタンド付き 会議 在宅勤務 動画配信 ネット授業 ゲーム実況 ビデオ通話用等 Windows XP/7/8/10/ 2000/Mac OS X/Android TV/PCシステム Mac Xbox YouT",
+      "expectLine": null
     },
     {
       "n": 6,
       "query": "カメラ",
       "kind": "listing",
-      "note": "A film on DVD — the title contains the word 'camera'",
-      "title": "Amazon.co.jp: カメラを止めるな! [DVD] : 濱津隆之, 真魚, しゅはまはるみ, 上田慎一郎: DVD"
+      "note": "A film on DVD — the title contains the word 'camera' — No weight data for a film on a disc. The only DVD line in the table was measured in K-pop shops and describes a concert box, not one disc.",
+      "title": "Amazon.co.jp: カメラを止めるな! [DVD] : 濱津隆之, 真魚, しゅはまはるみ, 上田慎一郎: DVD",
+      "expectLine": null
     },
     {
       "n": 7,
       "query": "カメラ",
       "kind": "off-target",
       "note": "An artist/album page, not one item",
-      "title": "フリッパーズ・ギター - カメラ!カメラ!カメラ!"
+      "title": "フリッパーズ・ギター - カメラ!カメラ!カメラ!",
+      "expectLine": null
     },
     {
       "n": 8,
       "query": "カメラ",
       "kind": "listing",
-      "note": "The same film on Blu-ray",
-      "title": "Amazon.co.jp: カメラを止めるな! [Blu-ray] : 濱津隆之, 真魚, しゅはまはるみ, 上田慎一郎: DVD"
+      "note": "The same film on Blu-ray — Same as 6.",
+      "title": "Amazon.co.jp: カメラを止めるな! [Blu-ray] : 濱津隆之, 真魚, しゅはまはるみ, 上田慎一郎: DVD",
+      "expectLine": null
     },
     {
       "n": 9,
       "query": "腕時計",
       "kind": "listing",
       "note": "An analogue wristwatch on Yahoo! Shopping",
-      "title": "腕時計 アナログウォッチ ブラック 355940 : ワッツオンライン - 通販 - Yahoo!ショッピング"
+      "title": "腕時計 アナログウォッチ ブラック 355940 : ワッツオンライン - 通販 - Yahoo!ショッピング",
+      "expectLine": "luxury-watch"
     },
     {
       "n": 10,
       "query": "腕時計",
       "kind": "off-target",
-      "note": "A picture book about watches, returned for a watch query",
-      "title": "腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ..."
+      "note": "A picture book about watches, returned for a watch query — A book about watches. Blocked on purpose: 図鑑 is a large-format book and the book line was measured on novels.",
+      "title": "腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ...",
+      "expectLine": null
     },
     {
       "n": 11,
       "query": "フィギュア",
       "kind": "off-target",
-      "note": "Suruga-ya store front, not one item",
-      "title": "駿河屋Yahoo!店 - フィギュア"
+      "note": "Suruga-ya store front, not one item — Same: a shop front carrying the word フィギュア.",
+      "title": "駿河屋Yahoo!店 - フィギュア",
+      "expectLine": "figure-generic"
     },
     {
       "n": 12,
       "query": "フィギュア",
       "kind": "off-target",
-      "note": "A how-to book about figure making",
-      "title": "フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon"
+      "note": "A how-to book about figure making — A how-to book. Blocked on purpose, same reason as 10.",
+      "title": "フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon",
+      "expectLine": null
     },
     {
       "n": 13,
       "query": "フィギュア",
       "kind": "off-target",
-      "note": "A how-to book about figure making",
-      "title": "フィギュアの達人 初級編 | フィギュア製作向上委員会 |本 | 通販 | Amazon"
+      "note": "A how-to book about figure making — A how-to book. Blocked on purpose, same reason as 10.",
+      "title": "フィギュアの達人 初級編 | フィギュア製作向上委員会 |本 | 通販 | Amazon",
+      "expectLine": null
     },
     {
       "n": 14,
       "query": "フィギュア",
       "kind": "listing",
       "note": "A generic imported figure on Amazon",
-      "title": "Amazon.co.jp: 海外直輸入 フィギュア フィギア 人形 おもちゃ [並行輸入品] : Toys & Games"
+      "title": "Amazon.co.jp: 海外直輸入 フィギュア フィギア 人形 おもちゃ [並行輸入品] : Toys & Games",
+      "expectLine": "figure-generic"
     },
     {
       "n": 15,
       "query": "フィギュア",
       "kind": "listing",
       "note": "Bandai Ultra Action Figure on Rakuten",
-      "title": "【楽天市場】バンダイ ウルトラアクションフィギュア ウルトラマンエース UAFｳﾙﾄﾗﾏﾝｴ-ｽ [UAFｳﾙﾄﾗﾏﾝｴ-ｽ]：エディオン 楽天市場店"
+      "title": "【楽天市場】バンダイ ウルトラアクションフィギュア ウルトラマンエース UAFｳﾙﾄﾗﾏﾝｴ-ｽ [UAFｳﾙﾄﾗﾏﾝｴ-ｽ]：エディオン 楽天市場店",
+      "expectLine": "figure-generic"
     },
     {
       "n": 16,
       "query": "フィギュア",
       "kind": "off-target",
-      "note": "A how-to book about garage kits",
-      "title": "フィギュアの教科書 原型入門編 (How to build GARAGE KIT vol.01) | 模型の王国 |本 | 通販 | Amazon"
+      "note": "A how-to book about garage kits — A how-to book. Blocked on purpose, same reason as 10.",
+      "title": "フィギュアの教科書 原型入門編 (How to build GARAGE KIT vol.01) | 模型の王国 |本 | 通販 | Amazon",
+      "expectLine": null
     },
     {
       "n": 17,
       "query": "フィギュア",
       "kind": "listing",
       "note": "A 1/4 scale anime figure on Amazon",
-      "title": "Amazon.co.jp: YEMEIZHEN 変態フィギュア エクチフィギュア オリジナルキャラクター - バニーメイドルーシー - 1/4 セクシーアニメガールフィギュアコレクションモデルトイ"
+      "title": "Amazon.co.jp: YEMEIZHEN 変態フィギュア エクチフィギュア オリジナルキャラクター - バニーメイドルーシー - 1/4 セクシーアニメガールフィギュアコレクションモデルトイ",
+      "expectLine": "scale-1-4"
     },
     {
       "n": 18,
       "query": "トレカ",
       "kind": "listing",
       "note": "Promo trading cards, 11 cards, on Mercari",
-      "title": "トレカ プロモカード 非売品カード 5種11枚 - メルカリ"
+      "title": "トレカ プロモカード 非売品カード 5種11枚 - メルカリ",
+      "expectLine": "single-card"
     },
     {
       "n": 19,
       "query": "トレカ",
       "kind": "listing",
       "note": "K-pop photocard (BOYNEXTDOOR)",
-      "title": "BOYNEXTDOOR 新規入会 ボネクド ボイネク トレカ 紹介 ..."
+      "title": "BOYNEXTDOOR 新規入会 ボネクド ボイネク トレカ 紹介 ...",
+      "expectLine": "single-card"
     },
     {
       "n": 20,
       "query": "トレカ",
       "kind": "listing",
       "note": "K-pop photocard (RIIZE)",
-      "title": "RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ"
+      "title": "RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ",
+      "expectLine": "single-card"
     },
     {
       "n": 21,
       "query": "トレカ",
       "kind": "listing",
       "note": "K-pop photocard (realromantic)",
-      "title": "realromantic SORA トレカ - メルカリ"
+      "title": "realromantic SORA トレカ - メルカリ",
+      "expectLine": "single-card"
     },
     {
       "n": 22,
       "query": "トレカ",
       "kind": "listing",
       "note": "K-pop photocards, 5 of them",
-      "title": "ボイプラ2 アーカイブ展 2週目 トレカ 5枚 ホンユー - メルカリ"
+      "title": "ボイプラ2 アーカイブ展 2週目 トレカ 5枚 ホンユー - メルカリ",
+      "expectLine": "single-card"
     },
     {
       "n": 23,
       "query": "トレカ",
       "kind": "listing",
       "note": "Idol photocard (Bullet Train)",
-      "title": "超特急 リョウガ トレカ NO.135 サバイバー   - メルカリ"
+      "title": "超特急 リョウガ トレカ NO.135 サバイバー   - メルカリ",
+      "expectLine": "single-card"
     },
     {
       "n": 24,
       "query": "トレカ",
       "kind": "listing",
       "note": "K-pop photocards, a full set of 10",
-      "title": "ボイプラ2 アーカイブ展 2週目 トレカ 10枚コンプ イジョン"
+      "title": "ボイプラ2 アーカイブ展 2週目 トレカ 10枚コンプ イジョン",
+      "expectLine": "single-card"
     },
     {
       "n": 25,
       "query": "メンズファッション",
       "kind": "listing",
-      "note": "A three-piece men's outfit set on Rakuten",
-      "title": "【楽天市場】夏コーデ メンズ マネキン買い 30代 ファッション メンズ コーデセット 3点セット 全身コーデセット 着まわし ちょいワル サブスク 福袋 set コーデ コーディネート 春夏 夏 40代 メンズファッション 30代メンズファッション 30代メンズ メンズ服 服 カットソー チノパン：MENZ-STYLE メンズスタイル"
+      "note": "A three-piece men's outfit set on Rakuten — No weight data for clothing, and this listing is three garments in one item anyway.",
+      "title": "【楽天市場】夏コーデ メンズ マネキン買い 30代 ファッション メンズ コーデセット 3点セット 全身コーデセット 着まわし ちょいワル サブスク 福袋 set コーデ コーディネート 春夏 夏 40代 メンズファッション 30代メンズファッション 30代メンズ メンズ服 服 カットソー チノパン：MENZ-STYLE メンズスタイル",
+      "expectLine": null
     },
     {
       "n": 26,
       "query": "メンズファッション",
       "kind": "off-target",
       "note": "Yahoo! store front, not one item",
-      "title": "MENZ-STYLE メンズスタイル - 30代コーデセット｜Yahoo!ショッピング"
+      "title": "MENZ-STYLE メンズスタイル - 30代コーデセット｜Yahoo!ショッピング",
+      "expectLine": null
     },
     {
       "n": 27,
       "query": "メンズファッション",
       "kind": "off-target",
       "note": "Yahoo! store front, not one item",
-      "title": "MENZ-STYLE メンズスタイル - 40代コーデセット｜Yahoo!ショッピング"
+      "title": "MENZ-STYLE メンズスタイル - 40代コーデセット｜Yahoo!ショッピング",
+      "expectLine": null
     },
     {
       "n": 28,
       "query": "ゲーム機",
       "kind": "off-target",
       "note": "Yahoo! store front, not one item",
-      "title": "AT Shop Otsuka - ゲーム機｜Yahoo!ショッピング"
+      "title": "AT Shop Otsuka - ゲーム機｜Yahoo!ショッピング",
+      "expectLine": null
     },
     {
       "n": 29,
       "query": "ゲーム機",
       "kind": "off-target",
       "note": "Yahoo! store front, not one item",
-      "title": "販売一丁目 - ゲーム機 - Yahoo!ショッピング"
+      "title": "販売一丁目 - ゲーム機 - Yahoo!ショッピング",
+      "expectLine": null
     },
     {
       "n": 30,
       "query": "ゲーム機",
       "kind": "listing",
-      "note": "A PowKiddy handheld console on Mercari",
-      "title": "ひ*ん様 中華ゲーム PowKiddy 64bit GAME ゲーム機 - メルカリ"
+      "note": "A PowKiddy handheld console on Mercari — No weight data for handheld consoles: 26 rows in the adopted shop, under the threshold of 50.",
+      "title": "ひ*ん様 中華ゲーム PowKiddy 64bit GAME ゲーム機 - メルカリ",
+      "expectLine": null
     },
     {
       "n": 31,
       "query": "ゲーム機",
       "kind": "listing",
       "note": "An NEC PC-FX console",
-      "title": "NEC PCFX PC-FX 日本電気ホームエレクトロニクス ゲーム機"
+      "title": "NEC PCFX PC-FX 日本電気ホームエレクトロニクス ゲーム機",
+      "expectLine": "home-console"
     },
     {
       "n": 32,
       "query": "ゲーム機",
       "kind": "listing",
-      "note": "A NEOCADE handheld console on Rakuten",
-      "title": "【楽天市場】NEOCADE ポータブルハンドルゲーム機 300種類ゲーム ポケットゲーム機 5000mAh 軽量 携帯 ゲーム機 電子ゲーム 手持ちゲーム 持ち運び便利 ハンドヘルドゲーム機 誕生日、クリスマス、新年プレゼント【英語版】：UNICO SHOP"
+      "note": "A NEOCADE handheld console on Rakuten — Same as 30.",
+      "title": "【楽天市場】NEOCADE ポータブルハンドルゲーム機 300種類ゲーム ポケットゲーム機 5000mAh 軽量 携帯 ゲーム機 電子ゲーム 手持ちゲーム 持ち運び便利 ハンドヘルドゲーム機 誕生日、クリスマス、新年プレゼント【英語版】：UNICO SHOP",
+      "expectLine": null
     },
     {
       "n": 33,
       "query": "漫画本",
       "kind": "listing",
       "note": "A book about the history of manga",
-      "title": "日本の漫画本300年:「鳥羽絵」本からコミック本まで | 清水 勲, 猪俣紀子 |本 | 通販 | Amazon"
+      "title": "日本の漫画本300年:「鳥羽絵」本からコミック本まで | 清水 勲, 猪俣紀子 |本 | 通販 | Amazon",
+      "expectLine": "manga-volume"
     },
     {
       "n": 34,
       "query": "バッグ",
       "kind": "off-target",
       "note": "Rakuten category page, not one item",
-      "title": "【楽天市場】アイテム別 > バッグ：news-webshop（ニューズ）"
+      "title": "【楽天市場】アイテム別 > バッグ：news-webshop（ニューズ）",
+      "expectLine": null
     },
     {
       "n": 35,
       "query": "バッグ",
       "kind": "off-target",
-      "note": "A shop name, not one item",
-      "title": "五番街〜バッグ・財布のお店"
+      "note": "A shop name, not one item — Same: a shop name carrying the word 財布.",
+      "title": "五番街〜バッグ・財布のお店",
+      "expectLine": "wallet-small-leather"
     },
     {
       "n": 36,
       "query": "バッグ",
       "kind": "off-target",
       "note": "Rakuten category page, not one item",
-      "title": "【楽天市場】 バッグ : こどもじかん"
+      "title": "【楽天市場】 バッグ : こどもじかん",
+      "expectLine": null
     },
     {
       "n": 37,
       "query": "バッグ",
       "kind": "off-target",
       "note": "Rakuten category page, not one item",
-      "title": "【楽天市場】ブランド > NEW ERA（ニューエラ） > バッグ：ＯＮＳＰＯＴＺ"
+      "title": "【楽天市場】ブランド > NEW ERA（ニューエラ） > バッグ：ＯＮＳＰＯＴＺ",
+      "expectLine": null
     }
-  ]
+  ],
+  "expectLine": "The line resolveWeight() must return for this title, or null for none. Frozen by src/lib/pricing/weights.corpus.test.ts. null on a listing means we have no data for that kind of thing and say so, rather than lending it another category's number."
 }
