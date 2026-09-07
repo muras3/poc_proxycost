@@ -30,6 +30,10 @@ interface WeightLine {
   n: number;
   spread: number;
   tier: WeightTier;
+  /** カテゴリの総称ライン。他のどのラインも当たらなかったときだけ使う。 */
+  generic?: boolean;
+  /** このラインを出した店。カテゴリが複数の店を持つとき、行ごとに出所が違う。 */
+  sourceDomain?: string;
 }
 
 interface WeightSource {
@@ -60,6 +64,7 @@ interface WeightCategory {
 const CATEGORY_ORDER = [
   'figures',
   'music',
+  'books-manga',
   'tcg-singles',
   'kpop',
   'used-luxury',
@@ -67,6 +72,7 @@ const CATEGORY_ORDER = [
   'food-tea-sake',
   'fishing-tackle',
   'sports-goods',
+  'games',
 ];
 
 // ── 誤爆する match 語を落とす。**数値は一切いじらない。**当てる語を狭めるだけ。
@@ -123,16 +129,10 @@ const NOT_OBTAINED = [
     reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight.',
   },
   {
-    id: 'books-manga',
-    labelEn: 'Books and manga',
-    labelJa: '書籍・漫画',
-    reason: 'No Shopify catalogue found with per-title grams.',
-  },
-  {
-    id: 'games',
-    labelEn: 'Video games',
-    labelJa: 'ゲーム',
-    reason: 'No Shopify catalogue found with per-title grams.',
+    id: 'apparel',
+    labelEn: 'Clothing and outfit sets',
+    labelJa: 'アパレル・コーデセット',
+    reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
   },
 ];
 
@@ -144,6 +144,10 @@ const PARTIAL_GAPS = [
   { category: 'food-tea-sake', gap: 'Chilled, frozen and fresh food', reason: 'Stores that ship abroad stock shelf-stable goods only, so fish, wagyu and fresh sweets are absent from the sample.' },
   { category: 'kpop', gap: 'A Japan-based seller', reason: 'The adopted stores are Korean or US based. The one Japan-based store found publishes grams=0 for all 1,432 products.' },
   { category: 'used-luxury', gap: 'Used watches', reason: 'The 839 g line comes from a new-watch store and includes the presentation box; a used watch shipped without its box is far lighter.' },
+  { category: 'games', gap: 'Handheld consoles', reason: 'The adopted shop has only 26 handheld rows, below the threshold of 50, and they range from 400 g to 4,100 g. A Chinese pocket handheld and a boxed Game Boy are not the same object, and there is nothing to separate them with, so nothing is claimed.' },
+  { category: 'games', gap: 'Current-generation consoles', reason: 'The console line is built from retro systems (Famicom through Wii) sold as boxed sets. No shop publishing grams for a Switch or a PS5 console was found.' },
+  { category: 'books-manga', gap: 'Illustrated reference books', reason: 'The general-book line comes from 84 novels. A 図鑑 or a 教科書 is a different object, so titles that name one resolve to nothing rather than to the novel median.' },
+  { category: 'figures', gap: 'Prize figures and plush', reason: 'The adopted shop has no prize-figure product type and only 33 plush rows, below the threshold of 50.' },
 ];
 
 // ── フィギュア / レコード・CD の種。JSON が無いときだけ書き出す。
@@ -259,6 +263,28 @@ function readCategory(file: string): WeightCategory {
     // 四分位が中央値を挟んでいないと、画面の「幅」が嘘になる。
     check(l.p25 <= l.medianG && l.p75 >= l.medianG, file, `line "${l.id}": p25 <= median <= p75 does not hold`);
     check(TIERS.has(l.tier), file, `line "${l.id}" tier "${l.tier}" is not one of ${[...TIERS].join('/')}`);
+    check(l.generic === undefined || l.generic === true, file, `line "${l.id}" generic must be true or absent`);
+    // 行ごとの出所は、そのカテゴリが実際に叩いた店でなければならない。
+    if (l.sourceDomain !== undefined) {
+      check(
+        c.sources.some((s) => s.domain === l.sourceDomain),
+        file,
+        `line "${l.id}" sourceDomain "${l.sourceDomain}" is not one of this category's sources`,
+      );
+    }
+  }
+  // 総称ラインはカテゴリに1本まで。2本あるとどちらが受け皿か決まらない。
+  const generics = c.lines.filter((l) => l.generic === true);
+  check(generics.length <= 1, file, `${generics.length} generic lines; a category may have at most one`);
+
+  // 英語で出す欄に日本語の散文を混ぜない。UI は英語で、e2e が仮名6文字以上の連なりを
+  // 検出する（e2e/pages.spec.ts の noJapanese）。**そこで落ちる前にここで落とす。**
+  // 照合語（match）とカテゴリ和名（labelJa）は日本の出品にそのまま出る名称なので対象外。
+  const KANA_RUN = /[\u3040-\u309f\u30a0-\u30ff]{6,}/;
+  const prose: [string, string][] = [['notes', c.notes], ...c.lines.map((l): [string, string] => [`line "${l.id}" labelEn`, l.labelEn])];
+  for (const [where, text] of prose) {
+    const m = KANA_RUN.exec(text);
+    check(!m, file, `${where} has Japanese prose ("${m?.[0]}"); the published page is English`);
   }
 
   for (const s of c.sources) {
@@ -268,6 +294,8 @@ function readCategory(file: string): WeightCategory {
     for (const k of ['products', 'variantsWithGrams'] as const) {
       check(typeof s[k] === 'number' && Number.isFinite(s[k]), file, `source "${s.domain}" field "${k}" is not a number`);
     }
+    const m = KANA_RUN.exec(s.reason);
+    check(!m, file, `source "${s.domain}" reason has Japanese prose ("${m?.[0]}"); the published page is English`);
   }
   return c;
 }
@@ -319,8 +347,11 @@ function longString(s: string, indent: string): string {
 
 function emitLine(l: WeightLine): string {
   const match = l.match.map(q).join(', ');
+  const extra = (l.generic === true ? ', generic: true' : '')
+    + (l.sourceDomain ? `, sourceDomain: ${q(l.sourceDomain)}` : '');
   return `      { id: ${q(l.id)}, labelEn: ${q(l.labelEn)}, match: [${match}],`
-    + ` medianG: ${l.medianG}, p25: ${l.p25}, p75: ${l.p75}, n: ${l.n}, spread: ${l.spread}, tier: ${q(l.tier)} },`;
+    + ` medianG: ${l.medianG}, p25: ${l.p25}, p75: ${l.p75}, n: ${l.n}, spread: ${l.spread},`
+    + ` tier: ${q(l.tier)}${extra} },`;
 }
 
 function emitSource(s: WeightSource): string {
@@ -382,6 +413,14 @@ export interface WeightLine {
   /** P75 / P25。1.0 に近いほど事実上の定数。 */
   spread: number;
   tier: WeightTier;
+  /**
+   * カテゴリの総称ライン。**他のどのラインにも当たらなかったときだけ**使う。
+   * 'フィギュア' は '1/7' より長いので、当たった語の長さで決めると総称が
+   * 個別ラインを食う。だから長さではなく段階で分ける。
+   */
+  generic?: boolean;
+  /** このラインを出した店。カテゴリが複数の店を持つとき、行ごとに出所が違う。 */
+  sourceDomain?: string;
 }
 
 export interface WeightSource {

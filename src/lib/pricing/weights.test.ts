@@ -116,7 +116,8 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
 
   test('a book about a thing is not the thing', () => {
     // 「腕時計の図鑑」に腕時計の 839 g が付いていた（本番検索の実タイトル）。
-    // 書籍の重量は取れていない（index.json notObtained: books-manga）ので、当てずに落とす。
+    // 図鑑・教科書・ムックは大判で、books-manga が持つ小説の 408 g とも別物なので、
+    // 書籍カテゴリにも当てさせない（index.json partialGaps 参照）。
     expect(resolveWeight('腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ...').grams).toBeNull();
     expect(resolveWeight('フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
     expect(resolveWeight('フィギュアの教科書 原型入門編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
@@ -131,6 +132,16 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
       expect(resolveWeight(t).lineId).toBe('graded-slab');
       expect(resolveWeight(t).grams).toBe(100);
     }
+  });
+
+  test('a film on a disc does not get the weight of a K-pop concert box', () => {
+    // 1,750 g は K-POP 専門店で測った DVD/Blu-ray の値（ライブ映像＋写真集の箱）。
+    // 映画1枚に当てると17倍ちがう。本番検索が返した実タイトル2件がこれだった。
+    expect(resolveWeight('Amazon.co.jp: カメラを止めるな! [DVD] : 濱津隆之: DVD').grams).toBeNull();
+    expect(resolveWeight('君の名は。 Blu-ray 通常版').grams).toBeNull();
+    // K-POP の文脈があれば今までどおり当たる。
+    expect(resolveWeight('SEVENTEEN ワールドツアー DVD').lineId).toBe('dvd-bluray');
+    expect(resolveWeight('BTS concert blu-ray').grams).toBe(1750);
   });
 
   test('a hakama listing still resolves — the guard must not eat the real hits', () => {
@@ -209,6 +220,13 @@ describe('titles that must still resolve', () => {
       'sar', 'csr', 'ssr',
       '1800ml', '1,800ml', '1.8l', '1800ｍｌ', '720ml', '750ml', '700ml', '720ｍｌ', '300ml', '300ｍｌ',
       'obi', '杖',
+      // 機種名。'ファミコン ソフト' は 100 g のカセットで、3,350 g の本体ではない。
+      'ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube',
+      'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo',
+      'pcエンジン', 'pc engine', 'pc-fx', 'pcfx', 'メガドライブ', 'mega drive', 'megadrive',
+      'プレイステーション', 'playstation', 'プレステ',
+      // 映像ディスク。1,750 g は K-POP のライブ箱の値で、映画の1枚とは別物。
+      'dvd', 'ブルーレイ', 'blu-ray', 'bluray',
     ]);
     const missed: string[] = [];
     for (const c of WEIGHT_CATEGORIES) {

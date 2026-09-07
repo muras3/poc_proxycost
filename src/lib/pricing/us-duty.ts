@@ -57,6 +57,15 @@ export const US_DUTY_BY_CATEGORY: Record<string, UsCategoryDuty> = {
     ],
     sayEn: 'checked against HTS 8523.80.10 and 8523.49.30 (records and discs), both Free',
   },
+  'books-manga': {
+    categoryId: 'books-manga',
+    verdict: 'at-or-below',
+    headings: [
+      { htsNo: '4901.99.00', general: 'Free', what: 'printed books, other' },
+      { htsNo: '4911.99.80', general: 'Free', what: 'other printed matter' },
+    ],
+    sayEn: 'checked against HTS 4901.99.00 (printed books) and 4911.99.80 (other printed matter), both Free',
+  },
   'tcg-singles': {
     categoryId: 'tcg-singles',
     // **どちらの見出しに落ちるかを決める必要が無い。**候補が2つとも Free なので、
@@ -125,6 +134,19 @@ export const US_DUTY_BY_CATEGORY: Record<string, UsCategoryDuty> = {
     verdict: 'can-exceed',
     sayEn: 'the equipment sits near 4% in HTS 9506, but the uniforms, hakama and obi in this'
       + ' category are apparel, and apparel runs to 16% and beyond',
+  },
+  games: {
+    categoryId: 'games',
+    // 本体・光ディスク・カートリッジの3通りとも Free なので、**どれに落ちるかを我々が
+    // 決める必要が無い。**決めれば推測になる。
+    verdict: 'at-or-below',
+    headings: [
+      { htsNo: '9504.50.00', general: 'Free', what: 'video game consoles and machines, and parts' },
+      { htsNo: '8523.49.40', general: 'Free', what: 'discs carrying instructions, data, sound and image' },
+      { htsNo: '8523.51.00', general: 'Free', what: 'solid-state non-volatile storage (a game card)' },
+    ],
+    sayEn: 'checked against HTS 9504.50.00 (consoles), 8523.49.40 (discs) and 8523.51.00'
+      + ' (game cards) — every candidate heading is Free',
   },
   'food-tea-sake': {
     categoryId: 'food-tea-sake',
