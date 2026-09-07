@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
-import { SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service } from './services';
+import {
+  EXPORT_DECLARATION_FEE_YEN, SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
+} from './services';
 import type { Item, Line, Row, SiteId } from './types';
 
 // 出品サイトは Jauce と ZenMarket で料金が変わる。全サイトを一度に回すために並べておく。
@@ -120,6 +122,115 @@ describe('the service table itself', () => {
             }
           }
         }
+      }
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T21: 任意欄が、各社の原文一覧（docs/audit/fees.md）と一致すること。
+// 任意欄は総額に入らないので静かに腐る。**費目の在り／無しを社ごとに固定する。**
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the optional extras match what each company publishes', () => {
+  const keysOf = (serviceId: string) => one(serviceId).optionalLines.map((l) => l.key).sort();
+  const optional = (serviceId: string, key: string, over: Partial<Item> = {}): Line =>
+    one(serviceId, over).optionalLines.find((l) => l.key === key)
+    ?? (() => { throw new Error(`no optional ${key} for ${serviceId}`); })();
+
+  test('each service offers exactly the extras its own page lists', () => {
+    expect(keysOf('neokyo')).toEqual(['export-clearance', 'konbini', 'storage', 'unpacking']);
+    expect(keysOf('zenmarket')).toEqual(['export-clearance', 'photos', 'repack', 'storage']);
+    expect(keysOf('fromjapan')).toEqual([
+      'export-clearance', 'konbini', 'outsourced-packing', 'photos', 'repack', 'storage',
+    ]);
+    expect(keysOf('buyee')).toEqual([
+      'export-clearance', 'photos', 'protective-packing', 'special-packing', 'storage',
+    ]);
+    expect(keysOf('jauce')).toEqual([
+      'customized-processing', 'expedited', 'export-clearance', 'fragile-packing',
+      'photos', 'premium-insurance', 'storage',
+    ]);
+  });
+
+  test('the ¥200,000 export clearance fee is on every service that ships by Japan Post', () => {
+    // 以前は FROM JAPAN と Buyee にしか無かった。同じ EMS を使う5社で費目の在り無しが
+    // 分かれていたら、それは料金差ではなく我々の調査量の差である。
+    // 額は日本郵便の「輸出申告代行手数料 2,800円／件」＝一次情報なので5社とも fixed。
+    expect(EXPORT_DECLARATION_FEE_YEN).toBe(2800);
+    for (const s of SERVICES) {
+      const l = optional(s.id, 'export-clearance');
+      expect(l.amount, s.id).toBe(EXPORT_DECLARATION_FEE_YEN);
+      expect(l.note, s.id).toContain('200,000');
+      expect(l.tier, s.id).toBe('fixed');
+    }
+    // 申告1件あたりで、個口あたりではない（原文「全ての梱包を合わせて1件となります」）。
+    // Buyee は注文ごとに別個口なので、ここを取り違えると3点で ¥8,400 になる。
+    const threeParcels = rowsFor([item({ id: 'a' }), item({ id: 'b' }), item({ id: 'c' })])
+      .find((r) => r.id === 'buyee:default')!;
+    expect(threeParcels.parcels).toBe(3);
+    expect(threeParcels.optionalLines.find((l) => l.key === 'export-clearance')!.amount)
+      .toBe(2800);
+    // 額を書いていない2社は、書いていないことを画面の note で明かす。
+    for (const id of ['neokyo', 'zenmarket']) {
+      expect(optional(id, 'export-clearance').note, id).toMatch(/does not? (print|.*print)/);
+      expect(optional(id, 'export-clearance').note, id).toContain('Japan Post');
+    }
+  });
+
+  test('Neokyo unpacking is ¥1,000 plus that parcel packing fee, not a flat ¥1,000', () => {
+    // 原文の例:「500¥ Packing Fee, 1500¥ Unpacking Fee」。
+    expect(optional('neokyo', 'unpacking', { weightG: 200 }).amount).toBe(1500);  // packing 500
+    expect(optional('neokyo', 'unpacking', { weightG: 3000 }).amount).toBe(1800); // packing 800
+    expect(optional('neokyo', 'unpacking').note).toContain('plus the packing fee');
+  });
+
+  test('Jauce fragile packing is ¥600 per package + ¥240/kg, and says what it replaces', () => {
+    // 梱包後 1,020 g → 2 kg 開始 → 600 + 480。必須の Smart Packing は 300 + 240 = ¥540。
+    const l = optional('jauce', 'fragile-packing', { weightG: 600 });
+    expect(l.amount).toBe(1080);
+    expect(amount(one('jauce', { weightG: 600 }), 'packing')).toBe(540);
+    expect(l.note).toContain('instead of the Smart Packing already in the total');
+  });
+
+  test('Jauce premium insurance is offered without a number, because the base is not published', () => {
+    const l = optional('jauce', 'premium-insurance');
+    expect(l.amount).toBeNull();
+    expect(l.tier).toBe('none');
+    expect(l.note).toContain('1.9%');
+  });
+
+  test('Jauce expedited shipping follows the parcel weight', () => {
+    expect(optional('jauce', 'expedited', { weightG: 600 }).amount).toBe(360); // 200 + 80×2kg
+  });
+
+  test('Buyee photo service is per package, so a split order pays it twice', () => {
+    const split = rowsFor([item({ id: 'a' }), item({ id: 'b' })])
+      .find((r) => r.id === 'buyee:default')!;
+    expect(split.optionalLines.find((l) => l.key === 'photos')!.amount).toBe(600);
+    expect(optional('buyee', 'photos').amount).toBe(300);
+  });
+
+  test('an optional fee we do not have an amount for is — and never ¥0', () => {
+    // 総額の行と同じ規律を任意欄にも掛ける。「実費」「率の基数が不明」を 0 で埋めると、
+    // 掛かる社を掛からない社として見せることになる。
+    for (const s of SERVICES) {
+      for (const l of one(s.id).optionalLines) {
+        if (l.tier === 'none') expect(l.amount, `${s.id} ${l.key}`).toBeNull();
+        if (l.amount === null) expect(l.tier, `${s.id} ${l.key}`).toBe('none');
+        // 額が無い行は、なぜ無いかを note で言う。ラベルだけの「—」は読めない。
+        if (l.amount === null) expect(l.note.length, `${s.id} ${l.key}`).toBeGreaterThan(0);
+      }
+    }
+    expect(optional('fromjapan', 'outsourced-packing').amount).toBeNull();
+    expect(optional('fromjapan', 'outsourced-packing').note).toContain('actual cost');
+  });
+
+  test('no optional line repeats a fee that is already in the total', () => {
+    for (const s of SERVICES) {
+      const row = one(s.id);
+      const lineKeys = new Set(row.lines.map((l) => l.key));
+      for (const l of row.optionalLines) {
+        expect(lineKeys.has(l.key), `${s.id} ${l.key}`).toBe(false);
       }
     }
   });
@@ -346,10 +457,14 @@ describe('FROM JAPAN — ¥500 per item, and ¥200 only on a Yahoo! Auctions win
     }
   });
 
-  test('the product protection plan is optional and stays out of the total', () => {
+  test('the product protection plan is mandatory, so it is charged once and never offered twice', () => {
+    // 原文 title_serviceRule_670:「Use of the Product Protection Plan is mandatory for all
+    // items.」その ¥500/点 は service-fee として総額に入っている。任意欄にも同じ費目を
+    // 並べていたので、同じ ¥500 を二度見せていた（docs/audit/fees.md §3 の「幻」）。
     const row = one('fromjapan');
-    expect(row.optionalLines.map((l) => l.key)).toContain('protection');
-    expect(row.lines.some((l) => l.key === 'protection')).toBe(false);
+    expect(amount(row, 'service-fee')).toBe(500);
+    expect(row.optionalLines.map((l) => l.key)).not.toContain('protection');
+    expect(row.optionalLines.some((l) => /protection/i.test(l.label))).toBe(false);
     expect(row.total).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
   });
 });

@@ -156,6 +156,25 @@ export interface Service {
 
 export const SERVICES_CHECKED_ON = '2026-09-06';
 
+/**
+ * 輸出申告代行手数料 ¥2,800。**代行5社の費目ではなく日本郵便の費目。**
+ * だから5社すべての任意欄に同じ額で出す。3社（Buyee・Jauce・FROM JAPAN）は自社ページに
+ * 額を書いており、Neokyo は「代行する」とだけ書き、ZenMarket は何も書いていない。
+ * **書いていない社に出さなければ、その社が安いのではなく我々が調べていないだけの表になる。**
+ *
+ * 原文（2026-09-07 取得）:
+ *   「内容品の合計価格が20万円を超える（税込み20万1円以上の）郵便物を海外へ発送する
+ *     場合、税関への輸出申告の実施および輸出許可の取得が必要です。」
+ *   「郵便料金とは別に、輸出申告代行手数料を1件につき2,800円お支払いください。」
+ *   「同じ受取人あてに2個以上発送する場合は、全ての梱包を合わせて1件となります。」
+ *
+ * 最後の1文から、これは個口あたりではなく申告1件あたり。よって `amountFor` を持たせず
+ * 定額で出す。**同時発送でなければ別の申告になるが、発送のタイミングは入力に無い。**
+ */
+export const EXPORT_DECLARATION_FEE_YEN = 2800;
+export const EXPORT_DECLARATION_FEE_SOURCE =
+  'https://www.post.japanpost.jp/service/send/oversea/attention/sendover20/';
+
 export const SERVICES: Service[] = [
   {
     id: 'neokyo',
@@ -178,8 +197,25 @@ export const SERVICES: Service[] = [
     // you pay the actual provider price.」— 社自身が上乗せ無しと書いている。
     emsMarkupTier: 'fixed',
     optional: [
-      { key: 'unpacking', label: 'Unpacking / removing original box', amountYen: 1000, note: 'per parcel', tier: 'fixed' },
+      // 原文:「You will be charged 1000¥ **plus the price of the packing fee**
+      // (Example: 500¥ Packing Fee, 1500¥ Unpacking Fee).」
+      // 梱包料はこの行が実際に積んでいる額なので、そこから出す。¥1,000 だけ出すのは過小。
+      {
+        key: 'unpacking', label: 'Unpacking / removing original box', amountYen: 1000,
+        amountFor: (ctx) => 1000 + ctx.packingYen,
+        note: '¥1,000 plus the packing fee for the same parcel', tier: 'fixed',
+      },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
+      // 額の出どころは日本郵便（EXPORT_DECLARATION_FEE_SOURCE）。**Neokyo 自身は額を
+      // 書いていない**（FAQ は「any item worth more than 200,000 yen is subject to
+      // special export procedures on our part」＝申告を代行するとだけ書く）。
+      // 額は一次情報なので fixed。誰が書いていないかは note に出す。
+      {
+        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        note: 'only over ¥200,000 — Neokyo says it handles the export declaration but does'
+          + ' not print the amount; ¥2,800 is the fee Japan Post itself publishes',
+        tier: 'fixed',
+      },
       // https://neokyo.com/en/storage（2026-09-07 取得）。原文の表:
       //   Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost
       //   Small 350 yen / 210 yen ・ Average 700 yen / 490 yen ・ Large 1400 yen / 980 yen
@@ -247,6 +283,17 @@ export const SERVICES: Service[] = [
     optional: [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
+      // 額の出どころは日本郵便（EXPORT_DECLARATION_FEE_SOURCE）。**ZenMarket の写しには
+      // 記載が無い**（料金ページ・help とも「Customs fees may apply upon delivery」まで。
+      // Arquivo.pt 2025-11-27 の写しを 2026-09-07 に全文検索して 200,000 も 2,800 も
+      // 出ないことを確認した）。5社とも同じ日本郵便で送る以上、この費目を ZenMarket
+      // にだけ出さなければ、料金差ではなく我々の調査量の差を安さとして見せることになる。
+      {
+        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        note: 'only over ¥200,000 — ZenMarket does not print this fee anywhere we can read;'
+          + ' ¥2,800 is the export declaration fee Japan Post itself publishes',
+        tier: 'fixed',
+      },
       // 料金ページ原文（Arquivo.pt 2025-11-27 の写し、2026-09-07 読了）:
       //   「Storage Over 60 Days: 50 JPY a day per item.」
       // help の同じ説明:「free for 60 days … a fee of 50 JPY will start to be taken for
@@ -304,11 +351,31 @@ export const SERVICES: Service[] = [
     // テンプレ変数のままで読めない（docs/audit/fees.md §3）。上乗せ 0 は我々の仮定。
     emsMarkupTier: 'estimate',
     optional: [
-      { key: 'protection', label: 'Product Protection Plan', amountYen: 500, note: 'per item', tier: 'fixed' },
-      { key: 'export-clearance', label: 'Export clearance fee', amountYen: 2800, note: 'only over ¥200,000', tier: 'fixed' },
+      // **Product Protection Plan をここに置いてはいけない。** 原文
+      // title_serviceRule_670:「Members agree that all purchased items will be covered by
+      // our Product Protection Plan. Use of the Product Protection Plan is mandatory for
+      // all items.」＝必須で、その ¥500/点 は既に service-fee として総額に入っている。
+      // 任意欄にも並べると同じ費目を二度見せることになる（docs/audit/fees.md §3）。
+      {
+        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        note: 'only over ¥200,000', tier: 'fixed',
+      },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1500, note: 'from ¥1,500', tier: 'fixed' },
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: '3 photos', tier: 'fixed' },
+      // 翻訳ファイル原文（2026-09-07 読了）: help_fee_720「Outsourced Packing」＋
+      // help_fee_721「Actual cost」、help_logistics_1730「Items that cannot be packed by
+      // FROM JAPAN will require outsourced packing. You must pay the actual cost to have a
+      // packing company pack the items.」、title_serviceRule_1870「Items that meet any of the
+      // conditions below will require outsourced packing.」
+      // **額は「実費」としか書かれていない。**社が決める額ではないので推定もできない。
+      // null で出して「—」にする。0 と書けば、掛かる社を掛からない社として見せる。
+      {
+        key: 'outsourced-packing', label: 'Outsourced packing', amountYen: null,
+        note: 'actual cost — charged when FROM JAPAN judges an item too difficult to pack itself,'
+          + ' and the amount is never published',
+        tier: 'none',
+      },
       // 翻訳ファイル原文（2026-09-07 読了）: help_fee_390「Free storage (60 days)」、
       // help_logistics_110「If an item is not instructed for shipping within 60 days, it
       // will be discarded. The storage period cannot be extended.」
@@ -376,7 +443,20 @@ export const SERVICES: Service[] = [
     optional: [
       { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
-      { key: 'customs-doc', label: 'Customs clearance handling', amountYen: 2800, note: 'when required', tier: 'fixed' },
+      // 他社と同じ費目なので同じキー・同じラベルにする（社をまたいで並べるのが任意欄の役目）。
+      // 原文:「If you send item(s) valued over 200,000 yen with EMS … a customs clearance
+      // commission fee (2,800 yen) will be charged.」
+      {
+        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        note: 'only over ¥200,000', tier: 'fixed',
+      },
+      // /helpcenter/guide/photo-shoot（2026-09-07 取得）:「Photo Service Fee is 300 yen /
+      // $3 per package(5 photos).」
+      {
+        key: 'photos', label: 'Photo service', amountYen: 300,
+        amountFor: (ctx) => 300 * ctx.parcels,
+        note: '5 photos per package', tier: 'fixed',
+      },
       // https://buyee.jp/helpcenter/guide/storage?lang=en（2026-09-07 取得）。原文の表:
       //   ～10,000g JPY100 / 1 day、10,001g～20,000g JPY200 / 1 day、20,001g～ JPY300 / 1 day
       //   「free for the first 30 days」「Maximum storage period is 90 days」
@@ -458,6 +538,54 @@ export const SERVICES: Service[] = [
     emsMarkup: 0,
     emsMarkupTier: 'fixed',
     optional: [
+      // 以下すべて japan_auction_detail の原文（2026-09-07 取得）。
+      // 「Fragile Packing : JPY 600 per package + JPY 240/kg」。既定の Smart Packing
+      // （¥300 + ¥120/kg、必須なので総額に入っている）**の代わり**に選ぶもの。
+      // 差額ではなく全額を出し、置き換えであることを note に書く。
+      {
+        key: 'fragile-packing', label: 'Fragile packing', amountYen: 600,
+        amountFor: (ctx) => ctx.parcelGrossG.reduce(
+          (a, g) => a + 600 + 240 * Math.ceil(g / 1000), 0,
+        ),
+        note: '¥600 per package + ¥240/kg, instead of the Smart Packing already in the total',
+        tier: 'fixed',
+      },
+      // 「If the total value of the contents of a package exceeds JPY 200,000, Japan Post
+      //  will apply an additional fee of JPY 2,800 for the customs clearance.」
+      {
+        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        note: 'only over ¥200,000', tier: 'fixed',
+      },
+      // 「it costs 300 yen per auction. … If the auction closing price is 20,000 yen or
+      //  higher, we provide this service for the supported categories for free!」
+      {
+        key: 'photos', label: 'Picture service', amountYen: 300,
+        note: '3 photos per auction — free when the auction closed at ¥20,000 or more',
+        tier: 'fixed',
+      },
+      // 「The fee for 'Expedited Shipping' service is JPY 200 + JPY 80/kg.」
+      {
+        key: 'expedited', label: 'Expedited shipping', amountYen: 200,
+        amountFor: (ctx) => ctx.parcelGrossG.reduce(
+          (a, g) => a + 200 + 80 * Math.ceil(g / 1000), 0,
+        ),
+        note: '¥200 + ¥80/kg — dispatched within one business day',
+        tier: 'fixed',
+      },
+      // 「Customized Processing Option … priced at 2,000¥ per hour.」
+      {
+        key: 'customized-processing', label: 'Customized processing', amountYen: 2000,
+        note: '¥2,000 per hour of handling', tier: 'fixed',
+      },
+      // 「Premium Insurance More peace of mind for only 1.9% over the total amount!」
+      // **どの合計に掛かるのかが原文から読めない**（商品代か、送料込みの支払総額か）。
+      // 率を勝手に当てて数字を出せば、その額は我々の推測になる。額は出さない。
+      {
+        key: 'premium-insurance', label: 'Premium insurance', amountYen: null,
+        note: '1.9% of "the total amount" — the page does not say which total, so we do not'
+          + ' put a number on it',
+        tier: 'none',
+      },
       // 原文（japan_auction_detail、2026-09-07 取得）:「We store them in our warehouse
       // free for 60 days … After the free period elapses we will charge a monthly storage
       // fee up to 120 days.」**額はページのどこにも無い**（/storage も同じ文面）。
