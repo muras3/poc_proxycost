@@ -125,6 +125,92 @@ describe('the service table itself', () => {
   });
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// T19: 保管料。**時間は入力に無い**ので総額には入れない。だが5社で無料期間も単価も
+// 違い、同梱前提の使い方では必ず効く。任意欄に単位つきで並べる。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('storage is offered as an optional line for every service', () => {
+  const storageOf = (serviceId: string, over: Partial<Item> = {}): Line => {
+    const row = one(serviceId, over);
+    return row.optionalLines.find((l) => l.key === 'storage')
+      ?? (() => { throw new Error(`no storage line for ${serviceId}`); })();
+  };
+
+  test('all five carry a storage line, and none of it enters the total', () => {
+    for (const s of SERVICES) {
+      const row = one(s.id);
+      const storage = storageOf(s.id);
+      expect(storage.label, s.id).toMatch(/^Storage/);
+      expect(storage.sourceUrl, s.id).toBe(s.sourceUrl);
+      expect(row.lines.some((l) => l.key === 'storage'), s.id).toBe(false);
+      expect(row.total, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
+    }
+  });
+
+  test('each label names the free period and the unit it is charged in', () => {
+    expect(storageOf('neokyo').label).toBe('Storage, per week after 45 free days');
+    expect(storageOf('zenmarket').label).toBe('Storage, per day after 60 free days');
+    expect(storageOf('fromjapan').label).toBe('Storage after 60 free days');
+    expect(storageOf('buyee').label).toBe('Storage, per day after 30 free days');
+    expect(storageOf('jauce').label).toBe('Storage, per month after 60 free days');
+  });
+
+  test('Buyee charges by parcel weight, so the band follows the parcel we built', () => {
+    // 原文の表: ～10,000g ¥100/日、10,001〜20,000g ¥200/日、20,001g〜 ¥300/日。
+    // 梱包後重量 = net × 1.2 + 300 g。
+    expect(storageOf('buyee', { weightG: 600 }).amount).toBe(100);    // gross 1,020 g
+    expect(storageOf('buyee', { weightG: 8083 }).amount).toBe(100);   // gross 10,000 g ちょうど
+    expect(storageOf('buyee', { weightG: 8084 }).amount).toBe(200);   // gross 10,001 g
+    expect(storageOf('buyee', { weightG: 20000 }).amount).toBe(300);  // gross 24,300 g
+  });
+
+  test('Buyee counts every parcel: two orders in the split row are two daily fees', () => {
+    const split = rowsFor([item({ id: 'a' }), item({ id: 'b' })])
+      .find((r) => r.id === 'buyee:default')!;
+    expect(split.parcels).toBe(2);
+    expect(split.optionalLines.find((l) => l.key === 'storage')!.amount).toBe(200);
+  });
+
+  test('ZenMarket charges per item, so three items is ¥150 a day', () => {
+    expect(storageOf('zenmarket').amount).toBe(50);
+    expect(storageOf('zenmarket', { qty: 3 }).amount).toBe(150);
+  });
+
+  test('Neokyo prints the smallest size step and says the rest of the range', () => {
+    // 寸法は入力に無い。一番小さい段を出し、幅と「あなたの寸法は分からない」を note に書く。
+    const storage = storageOf('neokyo');
+    expect(storage.amount).toBe(350);
+    expect(storage.tier).toBe('fixed');
+    expect(storage.note).toContain('¥1,400 large');
+    expect(storage.note).toContain('We do not know your parcel size');
+  });
+
+  test('FROM JAPAN has no paid extension at all — a sourced ¥0, not an unknown', () => {
+    // help_logistics_110「it will be discarded. The storage period cannot be extended.」
+    const storage = storageOf('fromjapan');
+    expect(storage.amount).toBe(0);
+    expect(storage.tier).toBe('fixed');
+    expect(storage.note).toContain('discarded');
+  });
+
+  test('Jauce publishes no amount, so the line is — and never 0', () => {
+    const storage = storageOf('jauce');
+    expect(storage.amount).toBeNull();
+    expect(storage.tier).toBe('none');
+    expect(storage.note).toContain('does not publish the amount');
+  });
+
+  test('an optional line with tier none is null, and one with an amount is never none', () => {
+    // 本体の行と同じ不変条件を任意欄にも掛ける。任意欄は総額に入らないぶん見落としやすい。
+    for (const s of SERVICES) {
+      for (const l of one(s.id).optionalLines) {
+        if (l.tier === 'none') expect(l.amount, `${s.id} ${l.key}`).toBeNull();
+        if (l.amount === null) expect(l.tier, `${s.id} ${l.key}`).toBe('none');
+      }
+    }
+  });
+});
+
 describe('Neokyo — ¥350 per item, charged on top of the domestic shipping', () => {
   test('the ¥350 does not swallow the domestic shipping', () => {
     const row = one('neokyo');

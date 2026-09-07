@@ -61,10 +61,31 @@ export interface PackingFee {
   tier: Tier;
 }
 
+/**
+ * 任意費目の額を決めるのに要る、その行の実際の姿。
+ * 「1個口あたり」「1kgあたり」「1点あたり」の費目を、**持っている数字で実額にする**
+ * ために渡す。持っていない数字（保管日数など）は額にしない。
+ */
+export interface OptionalFeeContext {
+  parcels: number;
+  /** 個口ごとの梱包後重量（g）。 */
+  parcelGrossG: number[];
+  /** 点数（qty の合計）。 */
+  units: number;
+  /** その行で実際に積んだ梱包料（円）。Neokyo の開梱料が「¥1,000 ＋ 梱包料」なので要る。 */
+  packingYen: number;
+}
+
 export interface OptionalFee {
   key: string;
   label: string;
-  amountYen: number;
+  /** 円。**null = 額が公表されていない。** 画面では「—」。0 とは書かない。 */
+  amountYen: number | null;
+  /**
+   * 個口・重量・点数で額が決まる費目。あれば amountYen より優先する。
+   * null を返せば「この入力では額を出せない」。
+   */
+  amountFor?: (ctx: OptionalFeeContext) => number | null;
   note: string;
   tier: Tier;
 }
@@ -159,6 +180,17 @@ export const SERVICES: Service[] = [
     optional: [
       { key: 'unpacking', label: 'Unpacking / removing original box', amountYen: 1000, note: 'per parcel', tier: 'fixed' },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
+      // https://neokyo.com/en/storage（2026-09-07 取得）。原文の表:
+      //   Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost
+      //   Small 350 yen / 210 yen ・ Average 700 yen / 490 yen ・ Large 1400 yen / 980 yen
+      // 「45 days for items and 7 days for packages」「up to a limit of six unpaid weeks」。
+      // **寸法は入力に無い**ので一番小さい段を出し、幅を note に書く（実勢はこれより高い）。
+      {
+        key: 'storage', label: 'Storage, per week after 45 free days', amountYen: 350,
+        note: 'per order: ¥350 small / ¥700 average / ¥1,400 large — parcels ¥210 / ¥490 / ¥980.'
+          + ' We do not know your parcel size, so this is the smallest step',
+        tier: 'fixed',
+      },
     ],
     // 豪州の GST は自社で徴収すると公式に書いている（確認日 2026-09-06）。原文:
     // 「effective March 24th, 2023, we will be charging 10% of the declared value for
@@ -215,6 +247,16 @@ export const SERVICES: Service[] = [
     optional: [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
+      // 料金ページ原文（Arquivo.pt 2025-11-27 の写し、2026-09-07 読了）:
+      //   「Storage Over 60 Days: 50 JPY a day per item.」
+      // help の同じ説明:「free for 60 days … a fee of 50 JPY will start to be taken for
+      //   each item per day」。**点ごと**なので点数で出せる。
+      {
+        key: 'storage', label: 'Storage, per day after 60 free days', amountYen: 50,
+        amountFor: (ctx) => 50 * ctx.units,
+        note: '¥50 a day per item, counted from the day it arrived at the warehouse',
+        tier: 'fixed',
+      },
     ],
     // 料金ページの「To Australian customers」（確認日 2026-09-06、直アクセスは 403 なので
     // r.jina.ai 経由で本文を取得）。原文:「we are required to collect 10% GST for all parcels
@@ -267,6 +309,16 @@ export const SERVICES: Service[] = [
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1500, note: 'from ¥1,500', tier: 'fixed' },
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: '3 photos', tier: 'fixed' },
+      // 翻訳ファイル原文（2026-09-07 読了）: help_fee_390「Free storage (60 days)」、
+      // help_logistics_110「If an item is not instructed for shipping within 60 days, it
+      // will be discarded. The storage period cannot be extended.」
+      // → **延長そのものが無いので、超過料金は「未取得」ではなく存在しない。**
+      // 分かっている 0 は 0 と書く（分かっていない 0 は書かない、の裏返し）。
+      {
+        key: 'storage', label: 'Storage after 60 free days', amountYen: 0,
+        note: 'there is no paid extension — items not shipped within 60 days are discarded',
+        tier: 'fixed',
+      },
     ],
     // 公式配信の翻訳ファイル（確認日 2026-09-06）。原文:
     //  help_fee_780「For sales with a customs value under 1,000 AUD, 10% of the total order
@@ -325,6 +377,20 @@ export const SERVICES: Service[] = [
       { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
       { key: 'customs-doc', label: 'Customs clearance handling', amountYen: 2800, note: 'when required', tier: 'fixed' },
+      // https://buyee.jp/helpcenter/guide/storage?lang=en（2026-09-07 取得）。原文の表:
+      //   ～10,000g JPY100 / 1 day、10,001g～20,000g JPY200 / 1 day、20,001g～ JPY300 / 1 day
+      //   「free for the first 30 days」「Maximum storage period is 90 days」
+      // **重量帯は個口の重量で決まる。**我々は梱包後重量を持っているので実額を出せる。
+      // 5社で無料期間が最短（30日）なのは Buyee なので、ここを空欄にすると
+      // 一番効く社の費目だけが表から消える。
+      {
+        key: 'storage', label: 'Storage, per day after 30 free days', amountYen: 100,
+        amountFor: (ctx) => ctx.parcelGrossG.reduce(
+          (a, g) => a + (g <= 10000 ? 100 : g <= 20000 ? 200 : 300), 0,
+        ),
+        note: '¥100 a day up to 10 kg, ¥200 to 20 kg, ¥300 above — per parcel, max 90 days',
+        tier: 'fixed',
+      },
     ],
     // 豪州（確認日 2026-09-06）:「Please pay the 10% GST along with the total price of the
     // goods, Buyee's service fee, and other optional fees during handling.」
@@ -391,7 +457,18 @@ export const SERVICES: Service[] = [
     // 国際送料は EMS 公表料金そのまま。マークアップ 0 を実測で確認した。
     emsMarkup: 0,
     emsMarkupTier: 'fixed',
-    optional: [],
+    optional: [
+      // 原文（japan_auction_detail、2026-09-07 取得）:「We store them in our warehouse
+      // free for 60 days … After the free period elapses we will charge a monthly storage
+      // fee up to 120 days.」**額はページのどこにも無い**（/storage も同じ文面）。
+      // 0 と書けば無料という嘘、行ごと省けば費目が無いという嘘。だから null で出す。
+      {
+        key: 'storage', label: 'Storage, per month after 60 free days', amountYen: null,
+        note: 'the company does not publish the amount — free for 60 days, then a monthly'
+          + ' fee up to 120 days, after which unclaimed items are discarded',
+        tier: 'none',
+      },
+    ],
     // 豪州（確認日 2026-09-06、https://www.jauce.com/australian-gst）。原文:
     //「If the total amount including the item price, domestic and international
     //  packing/delivery fees, our service fee, and optional fees is less than A$1,000,

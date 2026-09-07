@@ -2,7 +2,7 @@ import { COUNTRIES } from './countries';
 import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
-import { SERVICES, type Service } from './services';
+import { SERVICES, type OptionalFeeContext, type Service } from './services';
 import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import type {
@@ -384,6 +384,13 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const weightEstimated = items.some((i) => i.weightTier !== 'fixed');
   const approximate = priceEstimated || weightEstimated || lines.some((l) => l.tier === 'estimate');
 
+  const optionalCtx: OptionalFeeContext = {
+    parcels,
+    parcelGrossG: parcelGross,
+    units,
+    packingYen: pack?.amount ?? 0,
+  };
+
   const label = variant === 'consolidated' ? `${svc.name}, consolidated`
     : variant === 'default' ? `${svc.name}, default`
     : svc.name;
@@ -402,8 +409,14 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     tag,
     lines,
     total,
-    optionalLines: svc.optional.map((o) =>
-      L(o.key, o.label, o.amountYen, o.note, o.tier, svc.sourceUrl)),
+    // 任意費目。**総額には入れない。** 個口・重量・点数で決まる費目は、この行の実際の
+    // 姿から実額にする（「per parcel」と書いてあるものを1個口ぶんだけ出したら、
+    // 個口が分かれる行で嘘になる）。額が公表されていない費目は null のまま。
+    optionalLines: svc.optional.map((o) => L(
+      o.key, o.label,
+      o.amountFor ? o.amountFor(optionalCtx) : o.amountYen,
+      o.note, o.tier, svc.sourceUrl,
+    )),
     excluded,
     parcels,
     rank: 0,
