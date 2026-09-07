@@ -2,7 +2,10 @@ import {
   CA_POPULATION_AS_OF, CA_POPULATION_SOURCE_URL, CA_PROVINCES,
   CA_PROVINCE_AVERAGE_RATE, CA_PROVINCE_SOURCE_URL, COUNTRIES,
 } from './countries';
-import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
+import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
+import {
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, POSTAL_ZONE, maxGramsFor, postageFor,
+} from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import { SERVICES, type OptionalFeeContext, type Service } from './services';
@@ -11,6 +14,7 @@ import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import { alcoholItems } from './restricted-goods';
 import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
 import type {
+  PostalMethod,
   Band, CompareInput, CompareResult, Item, Line, ProvinceCode, Row, Tier, WeightSensitivity,
 } from './types';
 
@@ -30,6 +34,20 @@ const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 /** 梱包後の重量。仮定であって実測ではない。 */
 const grossG = (netG: number) => Math.round(netG * PACKING_MULTIPLIER + PACKING_ADD_G);
 
+/**
+ * 方式を指定しなかったときの既定。**EMS のまま据え置いている。**
+ *
+ * 「運べる中で最安」を既定にしたくなるが、それは**「利用者は最安を選ぶ」という
+ * 未検証の仮定**を置くことになる。しかも最安はたいてい船便で、所要 1〜3 か月
+ * （Buyee 原文）——**ほぼ誰も払わない額を既定の総額として出す**ことになり、
+ * 「可能な限り正確な総額」から遠ざかる。
+ *
+ * **各社の画面が既定でどの方式を選んでいるかは、まだ誰も調べていない。**
+ * `docs/O2-CALCULATOR-RUN.md` のフェーズ1がそれを取りに行く。**答えが出たら
+ * ここを1行変える。**それまでは、テストが校正されている EMS を動かさない。
+ */
+const DEFAULT_METHOD: PostalMethod = 'ems';
+
 interface Ctx {
   items: Item[];
   cc: CompareInput['country'];
@@ -39,6 +57,8 @@ interface Ctx {
   assumeUnknownG: number | null;
   /** 既知の重量にこの倍率を掛ける（順位の頑健性チェック用）。 */
   weightScale: number;
+  /** 国際配送の方式。'cheapest' なら行ごとに「運べる中で最安」を選ぶ。 */
+  method: PostalMethod | 'cheapest';
 }
 
 function itemWeightG(item: Item, ctx: Ctx): number | null {
@@ -428,7 +448,6 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const orders = grouping.groups.length;
   const units = items.reduce((a, i) => a + i.qty, 0);
   const itemsYen = items.reduce((a, i) => a + i.priceYen * i.qty, 0);
-  const zone = EMS_ZONE[ctx.cc];
 
   const weights = items.map((i) => itemWeightG(i, ctx));
   if (weights.some((w) => w == null)) return null; // 重量が決まらない。呼び出し側が段に落とす。
@@ -447,19 +466,39 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     ? grouping.groups.map((g) => grossG(g.reduce((a, idx) => a + netPerItem[idx]!, 0)))
     : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
 
-  // **表の外（30kg 超）の重量では料金を持っていない。丸めない。**
-  // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた
-  // （当時は表を 15kg までしか転記していなかった）。
-  const each = parcelGross.map((g) => emsFor(g, zone));
-  const overMax = each.some((e) => e.overMax);
-  const emsYen: number | null = overMax
-    ? null
-    : Math.round(each.reduce((a, e) => a + (e.yen ?? 0), 0) * (1 + svc.emsMarkup));
+  // **国際配送の方式を決める。**利用者が指定していなければ、この行の荷物を
+  // **実際に運べる**方式のうち最安を選ぶ（`method: 'cheapest'`）。
+  // 以前は EMS 固定だったが、EMS は日本郵便の中でどの重量でも最安ではない。
+  //
+  // **個口ごとに料金が決まるので、方式の可否も個口ごとに見る。**注文ごとに別送する
+  // Buyee の既定は1個口が軽くなるので、同梱では上限を超える小形包装物が使えることがある
+  // ——これは実在する差で、モデルから落とすと Buyee の既定が不当に高く出る。
+  const wanted = ctx.method ?? 'cheapest';
+  const priceAll = (m: PostalMethod): number | null => {
+    const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
+    if (each.some((e) => e == null)) return null;   // 1個口でも運べなければ、その方式は使えない
+    return Math.round(each.reduce((a, e) => a + e!.yen, 0) * (1 + svc.emsMarkup));
+  };
+  const method: PostalMethod = wanted === 'cheapest'
+    // 全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
+    ? (POSTAL_METHODS
+        .map((s) => ({ id: s.id, yen: priceAll(s.id) }))
+        .filter((x): x is { id: PostalMethod; yen: number } => x.yen != null)
+        .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0]?.id ?? 'ems')
+    : wanted;
+  const spec = POSTAL_METHODS.find((s) => s.id === method)!;
+  const zone = POSTAL_ZONE[ctx.cc];
+
+  // **表の外の重量では料金を持っていない。丸めない。**
+  // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
+  const each = parcelGross.map((g) => postageFor(method, ctx.cc, g));
+  const overMax = each.some((e) => e == null);
+  const shipYen: number | null = overMax ? null : priceAll(method);
   const stepLabel = overMax
-    ? `over ${formatStep(EMS_MAX_GRAMS)} — no published rate`
+    ? `over ${formatStep(maxGramsFor(method, ctx.cc))} — outside this method's table`
     : split
       ? `${plural(parcels, 'parcel')}`
-      : `1 parcel, ${formatStep(each[0]!.stepG!)} step`;
+      : `1 parcel, ${formatStep(each[0]!.stepGrams)} step`;
 
   const priceEstimated = items.some((i) => i.priceTier === 'estimate');
   const lines: Line[] = [
@@ -484,17 +523,20 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 何も言わなくなっていた（docs/audit/logic.md C4）。重量の確度は Items 行の重量 tier
   // と `Row.approximate` が持つ。**段に入れた重量が梱包後の仮定（×1.2 + 300 g）である
   // ことは、この行の note に必ず書く**（tier からは読めないので、文字で書く）。
-  const emsTier: Tier = overMax ? 'none' : svc.emsMarkupTier;
+  const shipTier: Tier = overMax ? 'none' : svc.emsMarkupTier;
   const markupNote = overMax ? ''
     : svc.emsMarkup !== 0 ? `, +${(svc.emsMarkup * 100).toFixed(0)}% markup`
     : svc.emsMarkupTier === 'fixed' ? ', published rate, no markup'
     : svc.emsMarkupTier === 'unverified' ? ', published rate — the company does not say'
     : ', we assume the published rate';
-  lines.push(L('ems', `EMS to ${COUNTRIES[ctx.cc].name}`, emsYen,
+  // **速さと追跡を額と同じ行に出す。**船便は 3kg で EMS より ¥5,100 安いが 1〜3 か月かかる。
+  // 額だけ出して日数を出さなければ、安いほうを選ばせる誤誘導になる。
+  lines.push(L('intl-shipping', `${spec.label} to ${COUNTRIES[ctx.cc].name}`, shipYen,
     `zone ${zone}, ${stepLabel}`
     + (overMax ? '' : ' (weight after our packing allowance)')
-    + markupNote,
-    emsTier, EMS_SOURCE_URL));
+    + markupNote
+    + (overMax ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
+    shipTier, method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL));
 
   // 入金手数料は送金合計額に対する率なので gross-up。
   // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
@@ -512,7 +554,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **税の行を積む前に測る**（社の原文がそろって「before GST」と書いている）。
   const preTaxYen = sum(lines);
   const shippingYen = lines
-    .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'ems')
+    .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'intl-shipping')
     .reduce((acc, l) => acc + (l.amount ?? 0), 0);
   // **その社がこの国で自分で税を取るか。**閾値は intrinsic value（商品代）で測る
   // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declared` と同じ。
@@ -521,7 +563,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const companyCollects = ownPrepaid?.collectsBelow != null
     && declaredForCc / parcels <= ownPrepaid.collectsBelow;
   lines.push(...taxLines(ctx.cc, ctx.province, items,
-    { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }, companyCollects));
+    { itemsYen, domYen: domCharged, emsYen: shipYen ?? 0, units, parcels }, companyCollects));
   const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
     itemsYen,
     // **個口あたり**。閾値は consignment 単位なので、カート全額で渡すと
@@ -531,8 +573,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     shippingYen,
     // その国の課税ベース（CIF）。徴収者が確認できない社の推定に使う。
     // `taxLines` が使っているのと同じ組み立て（実際に払う国内送料＋国際送料）。
-    cifYen: itemsYen + domCharged + (emsYen ?? 0),
-    shippingKnown: emsYen != null,
+    cifYen: itemsYen + domCharged + (shipYen ?? 0),
+    shippingKnown: shipYen != null,
   });
   if (prepaid) lines.push(prepaid);
 
@@ -564,6 +606,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   return {
     id: svc.id + (variant ? `:${variant}` : ''),
     serviceId: svc.id,
+    method,
     serviceName: svc.name,
     variant,
     label,
@@ -600,9 +643,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       .map((x) => ({ itemId: x.item.id, title: x.item.title, url: x.link.url })),
     approximate,
     // 国際送料が取れていない行は、取れている行と総額を比べられない。
-    comparable: emsYen != null,
-    notComparableReason: emsYen == null
-      ? `Japan Post publishes no EMS rate above ${formatStep(EMS_MAX_GRAMS)} in our table, so this total is missing its largest line`
+    comparable: shipYen != null,
+    notComparableReason: shipYen == null
+      ? `${spec.label} has no published rate above ${formatStep(maxGramsFor(method, ctx.cc))}`
+        + ' in our table, so this total is missing its largest line'
       : null,
   };
 }
@@ -714,6 +758,7 @@ function sensitivityRange(item: Item): [number, number] | null {
  */
 function weightSensitivityFor(
   items: Item[], cc: CompareInput['country'], province: ProvinceCode | null, base: Row[],
+  method: PostalMethod | 'cheapest',
 ): Record<string, WeightSensitivity> {
   const out: Record<string, WeightSensitivity> = {};
   const baseIds = cheapestIds(base);
@@ -726,7 +771,7 @@ function weightSensitivityFor(
     const at = (g: number) => {
       const rows = rowsFor({
         items: items.map((i) => (i.id === item.id ? { ...i, weightG: g } : i)),
-        cc, province, assumeUnknownG: null, weightScale: 1,
+        cc, province, assumeUnknownG: null, weightScale: 1, method,
       });
       const ids = cheapestIds(rows);
       return {
@@ -800,7 +845,9 @@ function assertUsableInput({ items, country, province }: CompareInput): void {
   }
 }
 
-export function compare({ items, country, province = null }: CompareInput): CompareResult {
+export function compare(
+  { items, country, province = null, method = DEFAULT_METHOD }: CompareInput,
+): CompareResult {
   assertUsableInput({ items, country, province });
   const currency = {
     code: COUNTRIES[country].ccy,
@@ -819,14 +866,14 @@ export function compare({ items, country, province = null }: CompareInput): Comp
   const hasUnknownWeight = items.some((i) => i.weightG == null);
 
   if (!hasUnknownWeight) {
-    const base = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: 1 });
+    const base = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: 1, method });
     // 一番大きく一番弱い数字（重量）を 1/3・3倍 に振って、1位が動くか見る。
     // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（30kg）を
     // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
     // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
     const baseComparable = base.filter((r) => r.comparable).length;
     const winners = [1 / 3, 3].map((sc) => {
-      const rows = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: sc });
+      const rows = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: sc, method });
       const comparable = rows.filter((r) => r.comparable);
       // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
       // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
@@ -887,7 +934,7 @@ export function compare({ items, country, province = null }: CompareInput): Comp
               .join('; ')
           }.`,
       hasUnknownWeight: false,
-      weightSensitivity: weightSensitivityFor(items, country, province, base),
+      weightSensitivity: weightSensitivityFor(items, country, province, base, method),
     };
   }
 
@@ -896,7 +943,7 @@ export function compare({ items, country, province = null }: CompareInput): Comp
   // null を渡す呼び出し側のために残す。
   const bands: Band[] = [];
   for (const stepG of UNKNOWN_WEIGHT_STEPS_G) {
-    const rows = rowsFor({ items, cc: country, province, assumeUnknownG: stepG, weightScale: 1 });
+    const rows = rowsFor({ items, cc: country, province, assumeUnknownG: stepG, weightScale: 1, method });
     if (!rows.length) continue;
     // 段ごとの最安も**集合**で持つ。同額のとき `rows[0]` を最安と呼ぶと、
     // 並びの偶然を段ごとの答えとして出すことになる。

@@ -5,7 +5,7 @@ import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE, PROVINCE_CODES } from './countr
 import { EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G } from './ems';
 import { rateFor } from './rates';
 import { weightFieldsFor } from './weights';
-import type { CountryCode, Item, ProvinceCode, Row } from './types';
+import type { CompareInput, CountryCode, Item, ProvinceCode, Row } from './types';
 
 const COUNTRIES_ALL: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
 
@@ -540,12 +540,12 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     // 梱包後 = round(net × 1.2 + 300)。24,750g がちょうど 30kg。
     const inside = byId(compare({ items: items(1, 24750), country: 'US' }).rows, 'neokyo');
     expect(inside.comparable).toBe(true);
-    expect(line(inside, 'ems').amount).toBe(75100);
+    expect(line(inside, 'intl-shipping').amount).toBe(75100);
     const outside = byId(compare({ items: items(1, 24751), country: 'US' }).rows, 'neokyo');
     expect(outside.comparable).toBe(false);
-    expect(line(outside, 'ems').amount).toBeNull();
-    expect(line(outside, 'ems').note).toContain(`over ${EMS_MAX_GRAMS / 1000} kg`);
-    expect(line(outside, 'ems').tier).toBe('none');
+    expect(line(outside, 'intl-shipping').amount).toBeNull();
+    expect(line(outside, 'intl-shipping').note).toContain(`over ${EMS_MAX_GRAMS / 1000} kg`);
+    expect(line(outside, 'intl-shipping').tier).toBe('none');
   });
 
   test('**a row missing its EMS line has a lower total and must still rank last**', () => {
@@ -565,7 +565,7 @@ describe('a parcel above the published EMS table drops out of the comparison', (
       expect(row.rank, row.id).toBeGreaterThan(top.rank);
       expect(row.cheapest, row.id).toBe(false);
       expect(row.diff, row.id).toBe(0);
-      expect(line(row, 'ems').amount, row.id).toBeNull();
+      expect(line(row, 'intl-shipping').amount, row.id).toBeNull();
       expect(row.notComparableReason, row.id).toContain('EMS');
       expect(row.excluded, row.id).toContain('EMS to United States');
     }
@@ -732,7 +732,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
     const de = compare({ items: items(3, 600, 20_000), country: 'DE' }).rows;
     const one = byId(de, 'buyee:consolidated');
     const three = byId(de, 'buyee:default');
-    expect(line(three, 'ems').amount!).toBeGreaterThan(line(one, 'ems').amount!);
+    expect(line(three, 'intl-shipping').amount!).toBeGreaterThan(line(one, 'intl-shipping').amount!);
     expect(three.total).toBeGreaterThan(one.total);
   });
 
@@ -836,6 +836,91 @@ describe('domestic shipping is charged by every service, and taxed where the bas
 // ─────────────────────────────────────────────────────────────────────────────
 // Buyee だけが既定で注文ごとに別送する。同梱は申請しないと得られない。
 // ─────────────────────────────────────────────────────────────────────────────
+describe('the international method is an input, and the default is still EMS', () => {
+  const shipOf = (r: Row) => line(r, 'intl-shipping');
+
+  test('with nothing chosen every row goes by EMS — the default did not silently move', () => {
+    // **既定を「運べる中で最安」にしなかった。**最安はたいてい船便で 1〜3 か月かかる
+    // （Buyee 原文）。それを既定にすると**ほぼ誰も払わない額**を総額として出すことになる。
+    // 各社の画面が既定で何を選んでいるかは未取得（`docs/O2-CALCULATOR-RUN.md` フェーズ1）。
+    for (const row of compare({ items: items(5, 600), country: 'DE' }).rows) {
+      expect(row.method, row.id).toBe('ems');
+      expect(shipOf(row).label, row.id).toContain('EMS');
+    }
+  });
+
+  test('choosing a method changes the postage, the label and the total', () => {
+    const de = (m: CompareInput['method']) =>
+      byId(compare({ items: items(5, 600), country: 'DE', method: m }).rows, 'neokyo');
+    const ems = de('ems');
+    const surface = de('parcel-surface');
+    // 5点×600g = 梱包後 3.9kg。EMS は 4.0kg 段、国際小包(船便)も 4.0kg 段。
+    expect(shipOf(ems).amount).toBe(10900);
+    expect(shipOf(surface).amount).toBe(4300);
+    expect(shipOf(surface).label).toContain('International parcel (surface)');
+    expect(surface.total).toBeLessThan(ems.total);
+    // **輸入側にも波及する。**ドイツは CIF 課税なので、送料が下がれば VAT も下がる。
+    expect(line(surface, 'vat').amount!).toBeLessThan(line(ems, 'vat').amount!);
+  });
+
+  test('the row says how long it takes and whether it is tracked, next to the price', () => {
+    // 額だけ出して日数を出さなければ、遅いほうを選ばせる誤誘導になる。
+    const row = byId(compare({ items: items(5, 600), country: 'DE', method: 'parcel-surface' }).rows, 'neokyo');
+    expect(shipOf(row).note).toContain('1–3 months');
+    expect(shipOf(row).note).toContain('tracked');
+    const air = byId(compare({ items: items(1, 300), country: 'DE', method: 'small-packet-air' }).rows, 'neokyo');
+    expect(shipOf(air).note).toContain('10 days or less');
+    expect(shipOf(air).note).toContain('no tracking');
+  });
+
+  test('a method that cannot carry the parcel makes the row non-comparable, not cheap', () => {
+    // 小形包装物は 2kg まで。5点×600g は同梱すると梱包後 3.9kg で入らない。
+    // **上限超を最上段の額で通すと、送れないものを最安に見せる。**
+    const rows = compare({ items: items(5, 600), country: 'DE', method: 'small-packet-air' }).rows;
+    for (const row of rows.filter((r) => r.parcels === 1)) {
+      expect(shipOf(row).amount, row.id).toBeNull();
+      expect(row.comparable, row.id).toBe(false);
+      expect(row.notComparableReason, row.id).toContain('Small packet');
+    }
+    // **Buyee の既定だけが残る。**注文ごとに別送するので1個口が梱包後 1.02kg で入る。
+    // つまりこの方式を選ぶと、表に比較可能な行が1つしか残らない
+    // ——「Buyee が安い」ではなく「他社はこの方式で送れない」。
+    const usable = rows.filter((r) => r.comparable);
+    expect(usable.map((r) => r.id)).toEqual(['buyee:default']);
+    expect(shipOf(usable[0]!).amount).toBe(11550);
+  });
+
+  test("'cheapest' picks per row, so a service that splits parcels can use a method the others cannot", () => {
+    // Buyee の既定は注文ごとに別送するので**1個口が軽い**。3点なら1個口 1.3kg で
+    // 小形包装物（2kg 上限）に入るが、同梱する社は 1個口 3.0kg で入らない。
+    // **これは実在する差**で、モデルから落とすと Buyee の既定が不当に高く出る。
+    const rows = compare({ items: items(3, 600), country: 'DE', method: 'cheapest' }).rows;
+    const split = byId(rows, 'buyee:default');
+    const together = byId(rows, 'buyee:consolidated');
+    expect(split.parcels).toBe(3);
+    expect(together.parcels).toBe(1);
+    expect(split.method).toBe('small-packet-surface');
+    expect(together.method).toBe('parcel-surface');
+  });
+
+  test("'cheapest' never picks a method that costs more than another eligible one", () => {
+    for (const cc of COUNTRIES_ALL) {
+      for (const n of [1, 3, 5]) {
+        for (const row of compare({ items: items(n, 600), country: cc, method: 'cheapest' }).rows) {
+          const chosen = shipOf(row).amount;
+          if (chosen == null) continue;
+          for (const m of ['ems', 'small-packet-air', 'small-packet-surface',
+            'parcel-air', 'parcel-surface'] as const) {
+            const alt = line(byId(compare({ items: items(n, 600), country: cc, method: m }).rows,
+              row.id), 'intl-shipping').amount;
+            if (alt != null) expect(chosen, `${cc} ${n}点 ${row.id} vs ${m}`).toBeLessThanOrEqual(alt);
+          }
+        }
+      }
+    }
+  });
+});
+
 describe('Buyee splits parcels by order', () => {
   test('two rows once there is more than one order', () => {
     const rows = compare({ items: items(3, 600), country: 'US' }).rows;
@@ -853,8 +938,8 @@ describe('Buyee splits parcels by order', () => {
     const rows = compare({ items: items(3, 600), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
-    expect(line(consolidated, 'ems').amount).toBe(9100);
-    expect(line(dflt, 'ems').amount).toBe(17970);
+    expect(line(consolidated, 'intl-shipping').amount).toBe(9100);
+    expect(line(dflt, 'intl-shipping').amount).toBe(17970);
     // **3点×¥3,000 は $2,500 の事前納付帯の中**。Zonos で関税が事前納付されるので
     // 配達時に徴収するものが無く、USPS の手数料も立たない（IMM 712.11）。
     // 個口を増やしても 0 のまま——**個口が効くのは手数料が立つ帯だけ**。
@@ -1239,8 +1324,8 @@ describe('edges', () => {
       // EMS 行が公表料金として立つ。
       const row = byId(compare({ items: [certain()], country: 'GB' }).rows, 'neokyo');
       expect(row.lines.filter((l) => l.tier === 'estimate')).toEqual([]);
-      expect(line(row, 'ems').tier).toBe('fixed');
-      expect(line(row, 'ems').note).toContain('published rate');
+      expect(line(row, 'intl-shipping').tier).toBe('fixed');
+      expect(line(row, 'intl-shipping').note).toContain('published rate');
       expect(row.approximate).toBe(false);
     });
 
@@ -1250,7 +1335,7 @@ describe('edges', () => {
       const row = byId(compare({
         items: [certain({ weightTier: 'estimate' })], country: 'GB',
       }).rows, 'neokyo');
-      expect(line(row, 'ems').tier).toBe('fixed');
+      expect(line(row, 'intl-shipping').tier).toBe('fixed');
       expect(row.approximate).toBe(true);
     });
 
@@ -1267,25 +1352,25 @@ describe('edges', () => {
       // ZenMarket は実請求1件が公表額と一致し1件が一致しない。どちらも我々の仮定。
       for (const id of ['fromjapan', 'zenmarket']) {
         const row = byId(compare({ items: [certain()], country: 'GB' }).rows, id);
-        expect(line(row, 'ems').tier, id).toBe('estimate');
+        expect(line(row, 'intl-shipping').tier, id).toBe('estimate');
         expect(row.approximate, id).toBe(true);
       }
       // Buyee は社の記述が無く、実請求（二次情報）が一致しただけ。点線で描く。
       const buyee = byId(compare({ items: [certain()], country: 'GB' }).rows, 'buyee');
-      expect(line(buyee, 'ems').tier).toBe('unverified');
+      expect(line(buyee, 'intl-shipping').tier).toBe('unverified');
       expect(buyee.approximate).toBe(false);
     });
 
     test('the EMS note always says the weight went through our packing allowance', () => {
       for (const row of compare({ items: [certain()], country: 'US' }).rows) {
-        expect(line(row, 'ems').note, row.id).toContain('after our packing allowance');
+        expect(line(row, 'intl-shipping').note, row.id).toContain('after our packing allowance');
       }
     });
 
     test('over the top EMS step there is no rate at all, so the line is neither published nor an estimate', () => {
       const row = byId(compare({ items: [certain({ weightG: 30000 })], country: 'US' }).rows, 'neokyo');
-      expect(line(row, 'ems').amount).toBeNull();
-      expect(line(row, 'ems').tier).toBe('none');
+      expect(line(row, 'intl-shipping').amount).toBeNull();
+      expect(line(row, 'intl-shipping').tier).toBe('none');
       expect(row.comparable).toBe(false);
     });
   });

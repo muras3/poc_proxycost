@@ -186,7 +186,7 @@ export function isNonDecreasing(xs: number[]): boolean {
  * 順位が出ているあいだは畳まれも消えもしない、という約束をここで引く。
  */
 export function emsOnlyNote(page: Page): Locator {
-  return page.locator('p').filter({ hasText: /Compared using Japan Post EMS only/ });
+  return page.locator('p').filter({ hasText: /Courier rates are not priced/ });
 }
 
 /**

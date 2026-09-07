@@ -264,7 +264,7 @@ describe('the GST the service collects at checkout is shown per service', () => 
     const row = (id: string) => rows.find((r) => r.serviceId === id)!;
     const preTax = (r: Row) => nonTaxLines(r).reduce((a, l) => a + (l.amount ?? 0), 0);
     const shipping = (r: Row) => r.lines
-      .filter((l) => ['domestic-shipping', 'packing', 'ems'].includes(l.key))
+      .filter((l) => ['domestic-shipping', 'packing', 'intl-shipping'].includes(l.key))
       .reduce((a, l) => a + (l.amount ?? 0), 0);
 
     // Neokyo・ZenMarket は「declared value（内容品価格）の 10%」と書いている。

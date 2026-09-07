@@ -396,7 +396,7 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
     // items 5,610 + fee 800 + domestic 0 + EMS 4,180 = 10,590
     const row = one('zenmarket', { priceYen: 5610, weightG: 200, domesticShippingYen: 0 });
     expect(amount(row, 'items')).toBe(5610);
-    expect(amount(row, 'ems')).toBe(4180);
+    expect(amount(row, 'intl-shipping')).toBe(4180);
     expect(amount(row, 'deposit')).toBe(384);
     expect(Math.round(10590 * 0.035)).toBe(371); // 素の率で計算したときの値。これではない。
   });
@@ -418,7 +418,7 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
 
   test('the deposit sits after EMS and before the taxes, so it grosses up the shipping too', () => {
     const keys = one('zenmarket').lines.map((l) => l.key);
-    expect(keys.indexOf('deposit')).toBeGreaterThan(keys.indexOf('ems'));
+    expect(keys.indexOf('deposit')).toBeGreaterThan(keys.indexOf('intl-shipping'));
     expect(keys.indexOf('deposit')).toBeLessThan(keys.indexOf('duty'));
   });
 });
