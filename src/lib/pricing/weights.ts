@@ -88,10 +88,10 @@ function pick(
     for (const line of cat.lines) {
       if ((line.generic === true) !== generic) continue;
       if (namesSomethingElse(t, cat, line)) continue;
-      for (const m of line.match) {
-        if (!matches(t, m)) continue;
-        if (!corroborated(t, m)) continue;
-        const hit = m.trim().length;
+      for (const m of [...line.match, ...extraWordsFor(line.id)]) {
+        const hit = hitLength(t, m);
+        if (hit === null) continue;
+        if (!corroborated(t, m, line.id)) continue;
         if (!best || hit > best.hit) best = { cat, line, hit };
       }
     }
@@ -109,14 +109,27 @@ function pick(
 // の取りこぼし）。同じ種類の文字が続くときだけ弾けば 'sculpture' の 'lp'、
 // '11/4' の中の '1/4' は今までどおり落ちる。
 const ASCII = /^[\x20-\x7e]+$/;
-function matches(title: string, raw: string): boolean {
+function matches(title: string, raw: Word): boolean {
+  return hitLength(title, raw) !== null;
+}
+
+/**
+ * 当たったなら**題名の中で実際に当たった文字数**、当たらなければ null。
+ * 長さを語の長さではなく当たった長さで測るのは、'complete 42 volume' のような
+ * 形（正規表現）も語と同じ土俵で競わせるため。
+ */
+function hitLength(title: string, raw: Word): number | null {
+  if (raw instanceof RegExp) {
+    const m = raw.exec(title);
+    return m ? m[0].length : null;
+  }
   const m = raw.trim().toLowerCase();
-  if (!m) return false;
-  if (!ASCII.test(m)) return title.includes(m);
+  if (!m) return null;
+  if (!ASCII.test(m)) return title.includes(m) ? m.length : null;
   const esc = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const left = boundary(m[0]!, 'left');
   const right = boundary(m[m.length - 1]!, 'right');
-  return new RegExp(`${left}${esc}${right}`, 'i').test(title);
+  return new RegExp(`${left}${esc}${right}`, 'i').test(title) ? m.length : null;
 }
 
 /** 語の端が英字なら英字を、数字なら数字を隣に許さない。記号なら何も要求しない。 */
@@ -124,6 +137,101 @@ function boundary(char: string, side: 'left' | 'right'): string {
   const cls = /[a-z]/i.test(char) ? '[a-z]' : /[0-9]/.test(char) ? '[0-9]' : null;
   if (!cls) return '';
   return side === 'left' ? `(?<!${cls})` : `(?!${cls})`;
+}
+
+/** 表の語も、ここで足す語も、同じ扱い。正規表現は「語では書けない形」のときだけ。 */
+type Word = string | RegExp;
+
+// ── 追加の語彙。**数値はここに置かない。**行 id と語だけで、重量は表のまま。
+//
+// data/weights/*.json は shopify-probe の測定結果で、そこに載る `match` は
+// 「その店でその区分を切り出した語」。**本番の題名がその物をどう呼ぶか**は別の知識で、
+// 母数（data/weights-corpus.json）を見て人が決める judgement なので、
+// 「データは判断を持たない、判断はコード」（docs/DESIGN-FEES-DATA.md §2）に従ってここに置く。
+// 語が増えて安定したら、データ側の担当が JSON に畳んでよい。
+interface ExtraWords {
+  lineId: string;
+  match: Word[];
+  /** なぜこの語がこの行を指すのか。母数のどの取りこぼしから足したか。 */
+  why: string;
+}
+
+const EXTRA_WORDS: ExtraWords[] = [
+  {
+    // 表の語は 'トレカ' 'シングル' などの総称だけで、**遊戯王・ポケカと名乗る題名に当たらない**。
+    // 母数 dev で 6 件が黙っていた（遊戯王のレリーフ 3 件、ポケカの英語題名 2 件、楽天 1 件）。
+    lineId: 'single-card',
+    match: [
+      '遊戯王', 'yugioh', 'yu-gi-oh', 'ポケモンカード', 'ポケカ', 'pokemon card', 'pokémon card',
+      'デュエマ', 'デュエル・マスターズ', 'ワンピースカード', 'ヴァイスシュヴァルツ',
+      'バトルスピリッツ', 'カードファイト', 'mtg',
+    ],
+    why: 'The game names say the object is a trading-card single',
+  },
+  {
+    // 'トレカ' は K-POP の題名ではフォトカード（28 g）を指す。TCG のシングル（50 g）ではない。
+    // 単独では決められないので、K-POP の文脈を裏付けに要求する（REQUIRES_CORROBORATION）。
+    lineId: 'photocard',
+    match: ['トレカ', 'トレーディングカード'],
+    why: 'In a K-pop title トレカ is the photocard, which is where the 28 g was measured',
+  },
+  {
+    // 表の語 'weverse album' は 'Weverse **Albums** Ver.' に当たらない（英字の境界で落ちる）。
+    // 母数 dev で 3 件がこれ（2 件は 800 g の album に流れ、1 件は黙っていた）。
+    lineId: 'platform-album',
+    match: ['weverse'],
+    why: 'Weverse editions write "Weverse Albums Ver."',
+  },
+  {
+    // 'CD+写真集' は写真集（1,000 g）ではなく、写真集を同梱したアルバムの箱（800 g）。
+    lineId: 'album',
+    match: ['cd+写真集', 'cd＋写真集', 'cd+photobook', 'cd+photo book', 'cd＋photobook'],
+    why: 'A disc bundled with a book is the album package, not the book',
+  },
+  {
+    // K-POP の外では「アルバム」はただのCD。'初音ミク … OFFICIAL ALBUM' に
+    // K-POP アルバムの 800 g が付いていた（8 倍）。K-POP の題名では逆に cd を閉じる（EXCLUSIONS）。
+    lineId: 'cd',
+    match: ['アルバム', 'album'],
+    why: 'Outside K-pop an album is a disc in a case, not the 800 g K-pop package',
+  },
+  {
+    // 英語の全巻セットの形。'Complete 42 Volume First Edition Set'、'Complete Volume Set'、
+    // 'The Complete Manga Collection'。表の 'complete set' はどれにも当たらない。
+    lineId: 'manga-set',
+    match: [/complete\s+(\d+\s+)?(manga\s+)?(volumes?|collection|series|set)/],
+    why: 'English listings write the complete set in a dozen ways around "complete"',
+  },
+  {
+    // 'ファミコンソフト' は本体（3,350 g）ではなくカセット（190 g）。表の語は 'ゲームソフト' だけ。
+    lineId: 'game-software',
+    match: [
+      'ファミコンソフト', 'スーファミソフト', 'スーパーファミコンソフト', 'ゲームカセット',
+      'psソフト', 'ps2ソフト', 'ps3ソフト', 'ps4ソフト', 'ps5ソフト', 'switchソフト', 'ソフト 中古',
+    ],
+    why: 'A platform name glued to ソフト names the cartridge, not the machine',
+  },
+  {
+    // 型番だけの靴。ブランド名（ナイキ）は鞄にも服にも付くので**型名**だけを採る。
+    lineId: 'sneaker-casual',
+    match: [
+      'エアジョーダン', 'air jordan', 'エアフォース', 'air force 1', 'エアマックス', 'air max',
+      'ダンク ロー', 'dunk low', 'ニューバランス', 'new balance', 'スタンスミス', 'stan smith',
+    ],
+    why: 'A shoe model name is on shoes only; the brand name alone is on bags and shirts too',
+  },
+  {
+    // 'グラスファイバー弓 「直心 1」 並寸【付属品付き 弓具 弓道】'。表は 'グラス弓' しか持たない。
+    lineId: 'kyudo-yumi',
+    match: ['グラスファイバー弓', 'カーボンファイバー弓', '弓具'],
+    why: 'The bow is written in more ways than the two the slice used',
+  },
+];
+
+const EXTRA_BY_LINE = new Map<string, Word[]>();
+for (const e of EXTRA_WORDS) EXTRA_BY_LINE.set(e.lineId, [...(EXTRA_BY_LINE.get(e.lineId) ?? []), ...e.match]);
+function extraWordsFor(lineId: string): readonly Word[] {
+  return EXTRA_BY_LINE.get(lineId) ?? [];
 }
 
 // ── 段0の門。**題名が1点の商品を指していない**とき、どの行にも当てない。
@@ -192,8 +300,30 @@ interface Corroboration {
   tokens: string[];
   /** タイトルに needs のどれかが無ければ当てない。 */
   needs: string[];
+  /** 名指した行だけに効かせる（同じ語が別の行では裏付け無しで正しいとき）。 */
+  lineIds?: string[];
   why: string;
 }
+
+/**
+ * **K-POP の題名だと分かる語。**グループ名と、その界隈にしかない物の名前だけを置く。
+ * 'アルバム' 'トレカ' のような、どちらの世界にも出る語は入れない（裏付けにならない）。
+ *
+ * K-POP の行（album 800 g・dvd-bluray 1,750 g・photocard 28 g）は K-POP 専門店で
+ * 測った値で、同じ言葉で呼ばれる日本の CD（100 g）やTCGのシングル（50 g）とは別の物。
+ * **どちらの世界の題名かを決めるのはこの一覧だけ**なので、増やすときは母数で測ること。
+ */
+const KPOP_CONTEXT = [
+  'kpop', 'k-pop', 'ケイポップ', '韓流', 'weverse', 'ウィバース', 'ペンライト', 'lightstick',
+  'フォトカード', 'photocard', 'photo card', '会報', 'ヨントン', 'サノク',
+  'bts', '防弾少年団', 'バンタン', 'twice', 'トゥワイス', 'blackpink', 'ブラックピンク',
+  'seventeen', 'セブチ', 'セブンティーン', 'nct', 'enhypen', 'エンハイプン',
+  'le sserafim', 'ルセラフィム', 'newjeans', 'ニュージーンズ', 'aespa', 'エスパ',
+  'stray kids', 'straykids', 'ストレイキッズ', 'スキズ', 'ateez', 'riize',
+  'boynextdoor', 'ボネクド', 'ボイネク', 'zerobaseone', 'ゼベワン', 'illit',
+  'red velvet', 'レッドベルベット', 'exo', 'shinee', 'super junior', 'kep1er', 'ケプラー',
+  'nmixx', 'itzy', 'ボイプラ', '超特急',
+];
 
 /**
  * その語だけでは行を決められないもの。**裏付けの語を同じタイトルに要求する。**
@@ -253,11 +383,33 @@ const REQUIRES_CORROBORATION: Corroboration[] = [
     // K-POP の文脈を示す語が同じタイトルに無ければ、当てずに仮置きへ落とす。
     tokens: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray'],
     needs: [
-      'kpop', 'k-pop', 'ケイポップ', 'アルバム', 'album', 'フォトカード', 'photocard', 'トレカ',
-      'ペンライト', 'lightstick', 'weverse', 'ウィバース', 'コンサート', 'concert',
-      'ワールドツアー', 'world tour', 'ファンミ', 'fanmeeting',
+      ...KPOP_CONTEXT, 'アルバム', 'album', 'トレカ',
+      'コンサート', 'concert', 'ワールドツアー', 'world tour', 'ファンミ', 'fanmeeting',
     ],
     why: 'The 1,750 g came from K-pop concert releases; a film on one disc is not that object',
+  },
+  {
+    // '静岡 煎茶 … シングルオリジン 酔える茶葉' にカード 50 g が付いていた。
+    // 'シングル' はカードの枚数にも、CD の形式にも、コーヒー・茶の産地にも使う。
+    tokens: ['シングル', 'single card'],
+    needs: ['カード', 'card', 'cards', 'トレカ', 'ポケカ', '遊戯王', 'tcg'],
+    why: 'シングル on its own says nothing about cards — single origin tea uses the same word',
+  },
+  {
+    // K-POP のアルバム（800 g）は専門店で測った箱で、日本の CD（100 g）とは別の物。
+    // K-POP と分かる語が無ければこの行は名乗れない。無ければ cd の 100 g に落ちる。
+    tokens: ['アルバム', 'album'],
+    lineIds: ['album'],
+    needs: KPOP_CONTEXT,
+    why: 'The 800 g album was measured at a K-pop shop; a Japanese CD album is not that package',
+  },
+  {
+    // 追加語の 'トレカ' は photocard のときだけ、K-POP の裏付けを要る。
+    // TCG の題名では表の 'トレカ'（single-card）がそのまま正しい。
+    tokens: ['トレカ', 'トレーディングカード'],
+    lineIds: ['photocard'],
+    needs: KPOP_CONTEXT,
+    why: 'トレカ is a photocard only when the title is a K-pop one',
   },
 ];
 
@@ -461,8 +613,9 @@ const EXCLUSIONS: Exclusion[] = [
     // '遊戯王 ブラックマジシャン ユニクロ Tシャツ' はTシャツ。作品名はグッズにも付く。
     categoryIds: ['figures', 'tcg-singles', 'kpop'],
     when: [
+      // 'ぬいぐるみ' は入れない。figures に plush の行があり、**それ自体が商品**。
       'tシャツ', 't-shirt', 'ティーシャツ', 'パーカー', 'マグカップ', 'キーホルダー',
-      'クリアファイル', '缶バッジ', 'タペストリー', 'ぬいぐるみ',
+      'クリアファイル', '缶バッジ', 'タペストリー',
     ],
     why: 'The character is on the merchandise as much as on the thing we weighed',
   },
@@ -483,6 +636,19 @@ const EXCLUSIONS: Exclusion[] = [
     why: 'A mixed lot of complete sets is not one complete set',
   },
   {
+    // K-POP の題名の 'CD' は、写真集やフォトカードの入ったアルバムの箱（800 g）で、
+    // 100 g のディスク1枚ではない。**同じ 'CD' が世界によって別の物を指す。**
+    lineIds: ['cd', 'lp'],
+    when: KPOP_CONTEXT,
+    why: 'A disc in a K-pop title ships as the album package, not as a bare CD',
+  },
+  {
+    // K-POP の題名の 'トレカ' はフォトカード（28 g）で、TCG のシングル（50 g）ではない。
+    lineIds: ['single-card'],
+    when: KPOP_CONTEXT,
+    why: 'K-pop トレカ is a photocard; the tcg single line was measured on game cards',
+  },
+  {
     // ガシャポン・食玩の小さい人形。総称の 800 g は 1/7 前後の完成品で測った値で、
     // 20〜50 g のミニフィギュアとは 20 倍ちがう。**小さい人形の重量は取れていない。**
     // 'SDガンダムフルカラー' は食玩の商品名（母数 h-5be50c17）。一番くじ・プライズは
@@ -497,9 +663,12 @@ const EXCLUSIONS: Exclusion[] = [
 ];
 
 /** 当たった語に裏付けが要るなら、それがタイトルにあるか。 */
-function corroborated(title: string, raw: string): boolean {
+function corroborated(title: string, raw: Word, lineId: string): boolean {
+  if (raw instanceof RegExp) return true;
   const m = raw.trim().toLowerCase();
-  const rule = REQUIRES_CORROBORATION.find((r) => r.tokens.includes(m));
+  const rule = REQUIRES_CORROBORATION.find(
+    (r) => r.tokens.includes(m) && (r.lineIds === undefined || r.lineIds.includes(lineId)),
+  );
   if (!rule) return true;
   return rule.needs.some((w) => matches(title, w));
 }
