@@ -8,15 +8,22 @@
    "tier": "C_unknown",
    "duty": {
     "rule": {
-     "type": "rate_of_item_price",
-     "rate": 0.15,
-     "note": "Column 1 税率が15%未満の品目は Column 1 ＋ 追加で合計15%。15%以上の品目は追加ゼロ"
+     "type": "max_of_mfn_or_rate",
+     "rate": 0.125,
+     "note": "MFN と Section 301 の合計が 12.5% になるよう調整。MFN が 12.5% 以上なら 301 はゼロ＝実効 max(MFN, 12.5%)"
     },
     "base": "goods",
     "threshold_base": "goods",
-    "tier": "A_confirmed",
-    "source": "https://www.federalregister.gov/documents/2025/09/16/2025-17908/implementing-certain-tariff-related-elements-of-the-united-states-japan-agreement",
-    "quote": "For a product of Japan with a Column 1 Duty Rate that is less than 15 percent, the sum of its Column 1 Duty Rate and the additional ad valorem rate of duty is 15 percent.",
+    "tier": "B_inferred",
+    "source": "https://ustr.gov/sites/default/files/files/Press/Releases/2026/FLIP%20301%20Investigation%20Final%20Action%20FRN%207-23-26%20FINAL.pdf",
+    "inference_basis": "USTR 最終措置 FRN (2026-07-23) p.28/p.78。実装側は USITC の HTS API で MFN を実引きしている（docs/audit/taxes.md §1）",
+    "effective_from": "2026-07-24",
+    "corrected_from": {
+     "rate": 0.15,
+     "source": "日米協定の実装官報 (2025-09-16)",
+     "why": "**私の 15% は 2025-09 の相互関税で、2026-07-24 発効の Section 301 措置に置き換わっていた。実装側（docs/audit/taxes.md）の方が新しく、しかも品目別に MFN を引いている。**『一次情報の原文引用』は鮮度を担保しない、という自分の指摘に自分が引っかかった"
+    },
+    "known_gap": "原産国が入力に無い。12.5% は products of Japan に紐づくが、日本の出品でも中国製は普通にある",
     "de_minimis": {
      "status": "suspended",
      "effective_from": "2025-08-29",
@@ -24,10 +31,6 @@
      "tier": "A_confirmed",
      "quote": "Starting August 29, 2025, the order suspends the use of duty-free de minimis treatment on shipments valued $800 or less (EO 14324)",
      "note": "郵便経由には一時的な例外があった。法律上の廃止は 2027-07-01"
-    },
-    "corrected_from": {
-     "rate": 0.125,
-     "why": "12.5% を裏づける一次資料が無かった。日米協定の実装官報で 15% を確認"
     }
    },
    "vat": {
@@ -171,7 +174,7 @@
     },
     "base": "goods",
     "threshold_base": "goods",
-    "tier": "A_confirmed",
+    "tier": "B_inferred",
     "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
     "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
     "effective_from": "2026-07-01",
@@ -179,6 +182,11 @@
     "supersedes": {
      "rule": "free_below 150",
      "valid_until": "2026-06-30"
+    },
+    "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
+    "corrected_from": {
+     "tier": "A_confirmed",
+     "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
     }
    },
    "vat": {
@@ -197,12 +205,19 @@
      "carrier": "Deutsche Post / DHL 標準 / EMS",
      "rule": {
       "type": "fixed_per_parcel",
-      "amount": 6,
-      "currency": "EUR"
+      "amount": 7.5,
+      "currency": "EUR",
+      "vat_included": true
      },
-     "tier": "A_confirmed",
+     "tier": "B_inferred",
      "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
-     "quote": "seit März 2018 mit zusätzlichen 6 Euro Gebühren"
+     "inference_basis": "業界紙と paketda.de が €7.50 で一致。公式「Leistungen und Preise」(2026-07-01版) に当たれていない",
+     "effective_from": "2026-03-10",
+     "condition": "輸入税が実際に発生する通にだけ課される",
+     "corrected_from": {
+      "amount": 6,
+      "why": "€6 は 2018-03-01 の導入時の額。2026-03-10 に €7.50 へ上がっていた"
+     }
     },
     {
      "route": "dhl_express",
@@ -249,7 +264,7 @@
     },
     "base": "goods",
     "threshold_base": "goods",
-    "tier": "A_confirmed",
+    "tier": "B_inferred",
     "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
     "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
     "effective_from": "2026-07-01",
@@ -257,6 +272,11 @@
     "supersedes": {
      "rule": "free_below 150",
      "valid_until": "2026-06-30"
+    },
+    "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
+    "corrected_from": {
+     "tier": "A_confirmed",
+     "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
     }
    },
    "vat": {
@@ -353,7 +373,7 @@
     },
     "base": "goods",
     "threshold_base": "goods",
-    "tier": "A_confirmed",
+    "tier": "B_inferred",
     "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
     "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
     "effective_from": "2026-07-01",
@@ -361,6 +381,11 @@
     "supersedes": {
      "rule": "free_below 150",
      "valid_until": "2026-06-30"
+    },
+    "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
+    "corrected_from": {
+     "tier": "A_confirmed",
+     "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
     }
    },
    "vat": {

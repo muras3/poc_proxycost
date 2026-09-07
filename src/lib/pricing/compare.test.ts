@@ -83,13 +83,26 @@ describe('the breakdown explains the total', () => {
   });
 
   test('a clearance fee we never fetched is null in every country that lacks one', () => {
-    // **CA と AU はここから抜けた**（T23 / T24 で Canada Post と ABF の原文を取った）。
+    // **CA・AU・DE はここから抜けた**（CA/AU は T23 / T24、DE は Auslagepauschale €7.50）。
     // 抜けたことを空振りにしないため、下の test がそれぞれに数字と出典が在ることを見る。
-    for (const cc of ['DE', 'FR', 'SG'] as const) {
+    // **FR に残っているのは「手数料が無い」ではない。**La Poste の frais de dossier は
+    // 実在するが、額（€2 / €5 / €8 という報告）を公式で裏づけられなかったので入れていない。
+    // 推測で置けば、DE を €6（2018年の値）のまま置いていたのと同じ誤りになる。
+    for (const cc of ['FR', 'SG'] as const) {
       const clearance = line(compare({ items: items(1, 600), country: cc }).rows[0]!, 'clearance');
       expect(clearance.amount, cc).toBeNull();
       expect(clearance.tier, cc).toBe('none');
     }
+  });
+
+  test('the German Auslagepauschale is EUR 7.50 per consignment — the 2026-03-10 amount, not the 2018 one', () => {
+    // €6 は 2018-03-01 の導入時の額で、**2026-03-10 に €7.50 へ上がっている。**
+    // 「一次情報だから正しい」ではなく「いつの一次情報か」を見ないと、7年前の値を今日の値として出す。
+    const fee = line(compare({ items: items(1, 600), country: 'DE' }).rows[0]!, 'clearance');
+    expect(fee.amount).not.toBeNull();
+    expect(fee.note).toContain('EUR 7.5 × 1 parcel');
+    // 原典（Deutsche Post「Leistungen und Preise」）には当たれていない。二次情報として出す。
+    expect(fee.tier).toBe('unverified');
   });
 
   test('the Canada Post handling fee is a published number, per parcel, and zero below CAD 20', () => {
@@ -1068,10 +1081,13 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 課税ベースの違い（内容品価格のみ／総額）で並びまで変わった。
     // SG は徴収を確認できた Buyee・FROM JAPAN にだけ税が乗り、他3社は「—」なので
     // **その3社の総額は税のぶん低いまま**（excluded にそう書いてある）。
+    // **DE は Auslagepauschale €7.50 が入って全行 +¥1,362 動いた**（Buyee の別送だけ
+    // 5個口ぶんで +¥6,810）。以前 DE が安く見えていたのは手数料が安いからではなく、
+    // **我々がドイツの手数料を1円も入れていなかったから。**
     expect(totals).toEqual({
       US: [37586, 38536, 40036, 40331, 42066, 63130],
       GB: [40121, 41071, 42571, 42801, 44528, 66256],
-      DE: [41373, 42323, 43823, 44053, 45780, 60602],
+      DE: [42735, 43685, 45185, 45415, 47142, 67412],
       FR: [41699, 42649, 44149, 44379, 46106, 61069],
       AU: [33950, 36630, 36740, 36900, 40543, 51000],
       CA: [36762, 37712, 39212, 39442, 41169, 59552],

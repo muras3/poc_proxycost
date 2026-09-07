@@ -129,7 +129,23 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     // 総額から丸ごと消える。だから確定として描かない。
     dutyFreeLimit: 150, flatDutyPerItem: 3, dutyRate: null, dutyTier: 'unverified',
     vatRate: 0.19, vatFreeLimit: 0,
-    clearanceCcy: 'EUR', clearanceTier: 'none',
+    // Deutsche Post / DHL の Auslagepauschale。**2026-03-10 に €6 → €7.50 へ上がった**
+    // （公式「Leistungen und Preise」2026-07-01 版で €7.50／通、消費税込み）。
+    // 額は総額によらず一律。**輸入税が実際に発生する通にだけ課される**
+    // ——ドイツは免税枠が無い（`vatFreeLimit: 0`）ので、この計算機が扱う帯では常に発生する。
+    // 独自通関（Selbstverzollung）を選べば回避できるが、それは利用者の操作であって
+    // 料金表ではない（`docs/MASTER.md` の D_unpredictable と同じ扱い）。
+    clearanceBands: [{
+      upTo: Number.POSITIVE_INFINITY, amount: 7.5,
+      note: 'Deutsche Post / DHL Auslagepauschale, per consignment, incl. VAT',
+    }],
+    clearanceCcy: 'EUR', clearanceTier: 'unverified',
+    // **原典（Deutsche Post「Leistungen und Preise」）に当たれていない。**
+    // 額と改定日は業界紙と paketda.de（複数が €7.50 で一致）から。tier はそのため unverified。
+    // 以前この国は帯そのものを持たず「—」を出していたが、それは
+    // 「手数料が無い」ではなく「我々が調べていない」であり、DE だけ安く見えていた。
+    clearanceSourceUrl: 'https://www.paketda.de/zoll/auslagepauschale.html',
+    clearanceCheckedOn: '2026-09-07',
     notes: [],
     sourceUrl: 'https://www.zoll.de/EN/Private-individuals/private-individuals_node.html',
     sellerCollectsBelow: null,
