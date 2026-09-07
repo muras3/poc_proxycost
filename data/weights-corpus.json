@@ -1,0 +1,270 @@
+{
+  "capturedOn": "2026-09-07",
+  "source": "https://proxycost.3amoncall.workers.dev/api/search",
+  "what": "Titles the live search returned for nine ordinary queries. Kept verbatim, truncation and store names included, because that is what resolveWeight() is handed in production.",
+  "kinds": {
+    "listing": "One purchasable item. resolveWeight() is expected to find it.",
+    "off-target": "A store front, a category page, or a result from another genre than the query. Not one item, so there is no weight to find — a search-side problem, out of the weight table's reach. Recorded so the hit rate is not measured against them, and so an added match word is not allowed to invent a weight for them."
+  },
+  "titles": [
+    {
+      "n": 1,
+      "query": "スニーカー",
+      "kind": "off-target",
+      "note": "Yahoo! store front, not one item",
+      "title": "スニーカー - ハニーズ Yahoo!店"
+    },
+    {
+      "n": 2,
+      "query": "スニーカー",
+      "kind": "off-target",
+      "note": "Rakuten category page, not one item",
+      "title": "【楽天市場】シューズ・靴 > スニーカー：SHOPLIST"
+    },
+    {
+      "n": 3,
+      "query": "スニーカー",
+      "kind": "listing",
+      "note": "Vintage Nike sneakers on Yahoo! Auctions",
+      "title": "レア 当時物 ヴィンテージ NIKE スニーカー コレ... - Yahoo!オークション"
+    },
+    {
+      "n": 4,
+      "query": "カメラ",
+      "kind": "off-target",
+      "note": "A music album whose title is the word 'camera'",
+      "title": "Amazon.co.jp: カメラ!カメラ!カメラ!: Music"
+    },
+    {
+      "n": 5,
+      "query": "カメラ",
+      "kind": "listing",
+      "note": "A USB webcam on Amazon",
+      "title": "Amazon.co.jp: Webカメラ Enevox ウェブカメラ 2KフルHD 400万画素マイク内蔵 30FPS 125°広角 PCカメラ 自動光補正 USBカメラ 手動フォーカス 三脚スタンド付き 会議 在宅勤務 動画配信 ネット授業 ゲーム実況 ビデオ通話用等 Windows XP/7/8/10/ 2000/Mac OS X/Android TV/PCシステム Mac Xbox YouT"
+    },
+    {
+      "n": 6,
+      "query": "カメラ",
+      "kind": "listing",
+      "note": "A film on DVD — the title contains the word 'camera'",
+      "title": "Amazon.co.jp: カメラを止めるな! [DVD] : 濱津隆之, 真魚, しゅはまはるみ, 上田慎一郎: DVD"
+    },
+    {
+      "n": 7,
+      "query": "カメラ",
+      "kind": "off-target",
+      "note": "An artist/album page, not one item",
+      "title": "フリッパーズ・ギター - カメラ!カメラ!カメラ!"
+    },
+    {
+      "n": 8,
+      "query": "カメラ",
+      "kind": "listing",
+      "note": "The same film on Blu-ray",
+      "title": "Amazon.co.jp: カメラを止めるな! [Blu-ray] : 濱津隆之, 真魚, しゅはまはるみ, 上田慎一郎: DVD"
+    },
+    {
+      "n": 9,
+      "query": "腕時計",
+      "kind": "listing",
+      "note": "An analogue wristwatch on Yahoo! Shopping",
+      "title": "腕時計 アナログウォッチ ブラック 355940 : ワッツオンライン - 通販 - Yahoo!ショッピング"
+    },
+    {
+      "n": 10,
+      "query": "腕時計",
+      "kind": "off-target",
+      "note": "A picture book about watches, returned for a watch query",
+      "title": "腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ..."
+    },
+    {
+      "n": 11,
+      "query": "フィギュア",
+      "kind": "off-target",
+      "note": "Suruga-ya store front, not one item",
+      "title": "駿河屋Yahoo!店 - フィギュア"
+    },
+    {
+      "n": 12,
+      "query": "フィギュア",
+      "kind": "off-target",
+      "note": "A how-to book about figure making",
+      "title": "フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon"
+    },
+    {
+      "n": 13,
+      "query": "フィギュア",
+      "kind": "off-target",
+      "note": "A how-to book about figure making",
+      "title": "フィギュアの達人 初級編 | フィギュア製作向上委員会 |本 | 通販 | Amazon"
+    },
+    {
+      "n": 14,
+      "query": "フィギュア",
+      "kind": "listing",
+      "note": "A generic imported figure on Amazon",
+      "title": "Amazon.co.jp: 海外直輸入 フィギュア フィギア 人形 おもちゃ [並行輸入品] : Toys & Games"
+    },
+    {
+      "n": 15,
+      "query": "フィギュア",
+      "kind": "listing",
+      "note": "Bandai Ultra Action Figure on Rakuten",
+      "title": "【楽天市場】バンダイ ウルトラアクションフィギュア ウルトラマンエース UAFｳﾙﾄﾗﾏﾝｴ-ｽ [UAFｳﾙﾄﾗﾏﾝｴ-ｽ]：エディオン 楽天市場店"
+    },
+    {
+      "n": 16,
+      "query": "フィギュア",
+      "kind": "off-target",
+      "note": "A how-to book about garage kits",
+      "title": "フィギュアの教科書 原型入門編 (How to build GARAGE KIT vol.01) | 模型の王国 |本 | 通販 | Amazon"
+    },
+    {
+      "n": 17,
+      "query": "フィギュア",
+      "kind": "listing",
+      "note": "A 1/4 scale anime figure on Amazon",
+      "title": "Amazon.co.jp: YEMEIZHEN 変態フィギュア エクチフィギュア オリジナルキャラクター - バニーメイドルーシー - 1/4 セクシーアニメガールフィギュアコレクションモデルトイ"
+    },
+    {
+      "n": 18,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "Promo trading cards, 11 cards, on Mercari",
+      "title": "トレカ プロモカード 非売品カード 5種11枚 - メルカリ"
+    },
+    {
+      "n": 19,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "K-pop photocard (BOYNEXTDOOR)",
+      "title": "BOYNEXTDOOR 新規入会 ボネクド ボイネク トレカ 紹介 ..."
+    },
+    {
+      "n": 20,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "K-pop photocard (RIIZE)",
+      "title": "RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ"
+    },
+    {
+      "n": 21,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "K-pop photocard (realromantic)",
+      "title": "realromantic SORA トレカ - メルカリ"
+    },
+    {
+      "n": 22,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "K-pop photocards, 5 of them",
+      "title": "ボイプラ2 アーカイブ展 2週目 トレカ 5枚 ホンユー - メルカリ"
+    },
+    {
+      "n": 23,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "Idol photocard (Bullet Train)",
+      "title": "超特急 リョウガ トレカ NO.135 サバイバー   - メルカリ"
+    },
+    {
+      "n": 24,
+      "query": "トレカ",
+      "kind": "listing",
+      "note": "K-pop photocards, a full set of 10",
+      "title": "ボイプラ2 アーカイブ展 2週目 トレカ 10枚コンプ イジョン"
+    },
+    {
+      "n": 25,
+      "query": "メンズファッション",
+      "kind": "listing",
+      "note": "A three-piece men's outfit set on Rakuten",
+      "title": "【楽天市場】夏コーデ メンズ マネキン買い 30代 ファッション メンズ コーデセット 3点セット 全身コーデセット 着まわし ちょいワル サブスク 福袋 set コーデ コーディネート 春夏 夏 40代 メンズファッション 30代メンズファッション 30代メンズ メンズ服 服 カットソー チノパン：MENZ-STYLE メンズスタイル"
+    },
+    {
+      "n": 26,
+      "query": "メンズファッション",
+      "kind": "off-target",
+      "note": "Yahoo! store front, not one item",
+      "title": "MENZ-STYLE メンズスタイル - 30代コーデセット｜Yahoo!ショッピング"
+    },
+    {
+      "n": 27,
+      "query": "メンズファッション",
+      "kind": "off-target",
+      "note": "Yahoo! store front, not one item",
+      "title": "MENZ-STYLE メンズスタイル - 40代コーデセット｜Yahoo!ショッピング"
+    },
+    {
+      "n": 28,
+      "query": "ゲーム機",
+      "kind": "off-target",
+      "note": "Yahoo! store front, not one item",
+      "title": "AT Shop Otsuka - ゲーム機｜Yahoo!ショッピング"
+    },
+    {
+      "n": 29,
+      "query": "ゲーム機",
+      "kind": "off-target",
+      "note": "Yahoo! store front, not one item",
+      "title": "販売一丁目 - ゲーム機 - Yahoo!ショッピング"
+    },
+    {
+      "n": 30,
+      "query": "ゲーム機",
+      "kind": "listing",
+      "note": "A PowKiddy handheld console on Mercari",
+      "title": "ひ*ん様 中華ゲーム PowKiddy 64bit GAME ゲーム機 - メルカリ"
+    },
+    {
+      "n": 31,
+      "query": "ゲーム機",
+      "kind": "listing",
+      "note": "An NEC PC-FX console",
+      "title": "NEC PCFX PC-FX 日本電気ホームエレクトロニクス ゲーム機"
+    },
+    {
+      "n": 32,
+      "query": "ゲーム機",
+      "kind": "listing",
+      "note": "A NEOCADE handheld console on Rakuten",
+      "title": "【楽天市場】NEOCADE ポータブルハンドルゲーム機 300種類ゲーム ポケットゲーム機 5000mAh 軽量 携帯 ゲーム機 電子ゲーム 手持ちゲーム 持ち運び便利 ハンドヘルドゲーム機 誕生日、クリスマス、新年プレゼント【英語版】：UNICO SHOP"
+    },
+    {
+      "n": 33,
+      "query": "漫画本",
+      "kind": "listing",
+      "note": "A book about the history of manga",
+      "title": "日本の漫画本300年:「鳥羽絵」本からコミック本まで | 清水 勲, 猪俣紀子 |本 | 通販 | Amazon"
+    },
+    {
+      "n": 34,
+      "query": "バッグ",
+      "kind": "off-target",
+      "note": "Rakuten category page, not one item",
+      "title": "【楽天市場】アイテム別 > バッグ：news-webshop（ニューズ）"
+    },
+    {
+      "n": 35,
+      "query": "バッグ",
+      "kind": "off-target",
+      "note": "A shop name, not one item",
+      "title": "五番街〜バッグ・財布のお店"
+    },
+    {
+      "n": 36,
+      "query": "バッグ",
+      "kind": "off-target",
+      "note": "Rakuten category page, not one item",
+      "title": "【楽天市場】 バッグ : こどもじかん"
+    },
+    {
+      "n": 37,
+      "query": "バッグ",
+      "kind": "off-target",
+      "note": "Rakuten category page, not one item",
+      "title": "【楽天市場】ブランド > NEW ERA（ニューエラ） > バッグ：ＯＮＳＰＯＴＺ"
+    }
+  ]
+}
