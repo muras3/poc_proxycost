@@ -37,7 +37,7 @@ export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
     tier: 'fixed',
     what: 'Published price lists and the Japan Post EMS table — every amount is printed somewhere.'
       + ' The weight we look the EMS rate up with is still ours',
-    yen: 30250, share: '80%',
+    yen: 30250, share: '84%',
   },
   {
     tier: 'estimate',
@@ -46,8 +46,9 @@ export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
   },
   {
     tier: 'unverified',
-    what: 'Second-hand figures — US duty 12.5%, USPS handling $9.35',
-    yen: 3336, share: '9%',
+    what: 'Second-hand figures — US duty 12.5%. The USPS $9.35 used to sit here;'
+      + ' it is now read off Notice 123 itself, and is zero inside the prepayment band',
+    yen: 1875, share: '5%',
   },
 ];
 
@@ -69,10 +70,10 @@ export interface WeightShiftRow {
 }
 
 export const WEIGHT_SHIFT: WeightShiftRow[] = [
-  { weight: '200 g', perItemG: 200, totalYen: 31186, delta: '−17%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 37586, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', perItemG: 1500, totalYen: 52886, delta: '+41%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', perItemG: 3000, totalYen: 74536, delta: '+98%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
+  { weight: '200 g', perItemG: 200, totalYen: 29725, delta: '−18%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 36125, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '1,500 g', perItemG: 1500, totalYen: 51425, delta: '+42%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '3,000 g', perItemG: 3000, totalYen: 73075, delta: '+102%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
 ];
 
 /** 1位が入れ替わる重量（点数ごと、25g 刻みの走査）。画面の文章がこの3つを名指しする。 */

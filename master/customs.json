@@ -1,873 +1,935 @@
 {
- "$comment": "国×経路の輸入側マスタ。tier A_confirmed=公式または実請求で確認／B_inferred=推論（basis 付き）／C_unknown=未取得（点予測に使わない）。clearance は『国ごとに1つ』ではなく『国×配送業者×利用者の操作』 clearance_fee_vat は F38（通関手数料自体にかかる VAT）。同じ国・同じ業者で矛盾する報告がある場合は両方を行として残し、区間の根拠にする",
- "checked_on": "2026-09-07",
- "countries": [
-  {
-   "country": "US",
-   "currency": "USD",
-   "tier": "C_unknown",
-   "duty": {
-    "rule": {
-     "type": "max_of_mfn_or_rate",
-     "rate": 0.125,
-     "note": "MFN と Section 301 の合計が 12.5% になるよう調整。MFN が 12.5% 以上なら 301 はゼロ＝実効 max(MFN, 12.5%)"
-    },
-    "base": "goods",
-    "threshold_base": "goods",
-    "tier": "B_inferred",
-    "source": "https://ustr.gov/sites/default/files/files/Press/Releases/2026/FLIP%20301%20Investigation%20Final%20Action%20FRN%207-23-26%20FINAL.pdf",
-    "inference_basis": "USTR 最終措置 FRN (2026-07-23) p.28/p.78。実装側は USITC の HTS API で MFN を実引きしている（docs/audit/taxes.md §1）",
-    "effective_from": "2026-07-24",
-    "corrected_from": {
-     "rate": 0.15,
-     "source": "日米協定の実装官報 (2025-09-16)",
-     "why": "**私の 15% は 2025-09 の相互関税で、2026-07-24 発効の Section 301 措置に置き換わっていた。実装側（docs/audit/taxes.md）の方が新しく、しかも品目別に MFN を引いている。**『一次情報の原文引用』は鮮度を担保しない、という自分の指摘に自分が引っかかった"
-    },
-    "known_gap": "原産国が入力に無い。12.5% は products of Japan に紐づくが、日本の出品でも中国製は普通にある",
-    "de_minimis": {
-     "status": "suspended",
-     "effective_from": "2025-08-29",
-     "source": "https://www.help.cbp.gov/s/article/Article-1919",
-     "tier": "A_confirmed",
-     "quote": "Starting August 29, 2025, the order suspends the use of duty-free de minimis treatment on shipments valued $800 or less (EO 14324)",
-     "note": "郵便経由には一時的な例外があった。法律上の廃止は 2027-07-01"
-    }
-   },
-   "vat": {
-    "rule": {
-     "type": "none_at_federal_level"
-    },
-    "tier": "A_confirmed",
-    "note": "州 sales tax は郵便番号依存で未取得",
-    "base": null,
-    "threshold_base": null
-   },
-   "clearance": [
+  "$comment": "国×経路の輸入側マスタ。tier A_confirmed=公式または実請求で確認／B_inferred=推論（basis 付き）／C_unknown=未取得（点予測に使わない）。clearance は『国ごとに1つ』ではなく『国×配送業者×利用者の操作』 clearance_fee_vat は F38（通関手数料自体にかかる VAT）。同じ国・同じ業者で矛盾する報告がある場合は両方を行として残し、区間の根拠にする",
+  "checked_on": "2026-09-07",
+  "countries": [
     {
-     "route": "usps",
-     "carrier": "USPS",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 9.35,
-      "currency": "USD"
-     },
-     "tier": "B_inferred",
-     "source": "https://pe.usps.com/text/imm/immc7_002.htm",
-     "inference_basis": "USPS Notice 123 の『Customs Clearance and Delivery Fee』$9.35／課税対象郵便物1個。原典 PDF に当たれていないので B（実装 src/lib/pricing/countries.ts も同じ tier unverified）",
-     "note": "de minimis 停止中で免税帯が無いため帯は1つ"
+      "country": "US",
+      "currency": "USD",
+      "tier": "C_unknown",
+      "duty": {
+        "rule": {
+          "type": "max_of_mfn_or_rate",
+          "rate": 0.125,
+          "note": "MFN と Section 301 の合計が 12.5% になるよう調整。MFN が 12.5% 以上なら 301 はゼロ＝実効 max(MFN, 12.5%)"
+        },
+        "base": "goods",
+        "threshold_base": "goods",
+        "tier": "B_inferred",
+        "source": "https://ustr.gov/sites/default/files/files/Press/Releases/2026/FLIP%20301%20Investigation%20Final%20Action%20FRN%207-23-26%20FINAL.pdf",
+        "inference_basis": "USTR 最終措置 FRN (2026-07-23) p.28/p.78。実装側は USITC の HTS API で MFN を実引きしている（docs/audit/taxes.md §1）",
+        "effective_from": "2026-07-24",
+        "corrected_from": {
+          "rate": 0.15,
+          "source": "日米協定の実装官報 (2025-09-16)",
+          "why": "**私の 15% は 2025-09 の相互関税で、2026-07-24 発効の Section 301 措置に置き換わっていた。実装側（docs/audit/taxes.md）の方が新しく、しかも品目別に MFN を引いている。**『一次情報の原文引用』は鮮度を担保しない、という自分の指摘に自分が引っかかった"
+        },
+        "de_minimis": {
+          "status": "suspended",
+          "effective_from": "2025-08-29",
+          "source": "https://www.help.cbp.gov/s/article/Article-1919",
+          "tier": "A_confirmed",
+          "quote": "Starting August 29, 2025, the order suspends the use of duty-free de minimis treatment on shipments valued $800 or less (EO 14324)",
+          "note": "郵便経由には一時的な例外があった。法律上の廃止は 2027-07-01"
+        },
+        "origin_assumption": {
+          "value": "JP",
+          "tier": "B_inferred",
+          "decided_on": "2026-09-07",
+          "basis": "プロダクトの前提として原産国＝日本に固定する（利用者判断）。この計算機は**日本の商品を代行で買う人**のためのもので、12.5% は products of Japan に紐づく。**反証: 日本の出品でも中国製・スイス製は普通にあり、その場合 MFN も 301 も別になる。**誤差はこの仮定に丸ごと帰属するので、入力軸を足すまでは既知の系統誤差として扱う。"
+        }
+      },
+      "vat": {
+        "rule": {
+          "type": "none_at_federal_level"
+        },
+        "tier": "A_confirmed",
+        "note": "州 sales tax は郵便番号依存で未取得",
+        "base": null,
+        "threshold_base": null
+      },
+      "clearance": [
+        {
+          "route": "usps",
+          "carrier": "USPS",
+          "rule": {
+            "type": "banded_by_value",
+            "currency": "USD",
+            "basis": "declared_value_per_parcel_usd",
+            "bands": [
+              [
+                2500,
+                0.0
+              ],
+              [
+                null,
+                9.35
+              ]
+            ]
+          },
+          "tier": "A_confirmed",
+          "source": "https://pe.usps.com/text/dmm300/Notice123.htm",
+          "note": "de minimis 停止中で免税帯が無いため帯は1つ",
+          "source2": "https://pe.usps.com/text/imm/immc7_002.htm",
+          "quote": "Customs Clearance and Delivery / Per dutiable item All other qualifying classes of inbound mail $9.35",
+          "condition_quote": "IMM 712.11: Post Office facilities must collect a Postal Service fee from the addressee for each item on which customs duty or Internal Revenue tax is collected.",
+          "exemption_quote": "IMM 712.2: Post Office facilities will not collect a Postal Service fee for customs clearance and delivery ... 3. On mail items examined and passed free of duty by U.S. Customs.",
+          "zero_band_basis": "日本郵便は米国宛を『差出人が Zonos で関税を事前納付すること』を条件に引き受ける（$2,500 まで）。事前納付されていれば配達時に徴収するものが無く、712.11 の条件が立たない。Notice 123 自身も『USPS Delivered Duty Paid (DDP) / Per piece $0.00』を別立てしている。",
+          "checked_on": "2026-09-07"
+        },
+        {
+          "route": "courier_brokerage",
+          "carrier": "DHL / FedEx",
+          "rule": {
+            "type": "unknown"
+          },
+          "tier": "C_unknown",
+          "source": "—",
+          "note": "米国の courier brokerage は未取得"
+        }
+      ],
+      "carrier_availability": {
+        "tier": "A_confirmed",
+        "note": "日本郵便は米国向けを8ヶ月停止し2026-04に前払い方式で再開。日本から米国を扱えるのは DHL と FedEx が中心",
+        "source": "複数の業界情報源"
+      },
+      "impact": "現行コードの『EMS to United States』は、存在が怪しい経路を前提にしている",
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "unknown"
+        },
+        "tier": "C_unknown"
+      },
+      "known_gap_cbp_fees": {
+        "tier": "C_unknown",
+        "note": "**実装側の docs/audit/taxes.md が『欠落』と自己申告している。**Inbound EMS は MPF 免除の対象外で、EMS 手数料 $1.00、informal entry の MPF は $2.69 / $8.06 / $12.09。まだどちらにも入っていない",
+        "source": "https://www.cbp.gov/trade/basic-import-export/user-fee-table"
+      },
+      "federal_fees": [
+        {
+          "name": "CBP Dutiable Mail Fee",
+          "applies": false,
+          "amount": 7.39,
+          "currency": "USD",
+          "tier": "A_confirmed",
+          "source": "https://www.ecfr.gov/current/title-19/chapter-I/part-24/section-24.22",
+          "quote": "24.22(f)(2) Dutiable Inbound EMS items. The fee specified in paragraph (f)(1) of this section does not apply to dutiable Inbound EMS items.",
+          "why_not": "この計算機の既定の輸送手段は EMS。EMS には適用されない。EMS 以外の郵便では名宛人に $7.39 が課される。",
+          "checked_on": "2026-09-07"
+        },
+        {
+          "name": "CBP Inbound EMS Fee",
+          "applies": false,
+          "amount": 1.0,
+          "currency": "USD",
+          "tier": "A_confirmed",
+          "source": "https://www.ecfr.gov/current/title-19/chapter-I/part-24/section-24.22",
+          "quote": "24.22(l)(2) United States Postal Service must remit to CBP on a quarterly basis 50 percent of the payments required by paragraph (l)(1)(i) ... for which settlement with foreign postal operators has occurred.",
+          "why_not": "USPS と外国郵便事業者（日本郵便）の settlement で決済される。名宛人には課されない。日本郵便の EMS 料金に内包されている可能性はあるが、買い手が配達時に払う行ではない。",
+          "checked_on": "2026-09-07"
+        },
+        {
+          "name": "Merchandise Processing Fee (MPF)",
+          "applies": "only_above_formal_entry_threshold",
+          "formal_entry_threshold_usd": 2500,
+          "formal_rule": {
+            "type": "rate_of_value_with_min_max",
+            "rate": 0.003464,
+            "min": 33.58,
+            "max": 651.5,
+            "currency": "USD"
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ecfr.gov/current/title-19/chapter-I/part-24/section-24.23",
+          "quote": "24.23(c)(v) Merchandise described in General Note 19, HTSUS, merchandise released under 19 U.S.C. 1321, and merchandise imported by mail, other than Inbound EMS items that are formally entered on or after September 3, 2020.",
+          "quote2": "24.22(l)(1)(ii) If an Inbound EMS item is formally entered, the fee provided for under Sec. 24.23(b)(1).",
+          "implementation_gap": "$2,500 超の帯で未実装。clearanceBands は固定額しか表現できず、ad valorem＋最低額を持てない。",
+          "checked_on": "2026-09-07"
+        }
+      ]
     },
     {
-     "route": "courier_brokerage",
-     "carrier": "DHL / FedEx",
-     "rule": {
-      "type": "unknown"
-     },
-     "tier": "C_unknown",
-     "source": "—",
-     "note": "米国の courier brokerage は未取得"
-    }
-   ],
-   "carrier_availability": {
-    "tier": "A_confirmed",
-    "note": "日本郵便は米国向けを8ヶ月停止し2026-04に前払い方式で再開。日本から米国を扱えるのは DHL と FedEx が中心",
-    "source": "複数の業界情報源"
-   },
-   "impact": "現行コードの『EMS to United States』は、存在が怪しい経路を前提にしている",
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "unknown"
-    },
-    "tier": "C_unknown"
-   },
-   "known_gap_cbp_fees": {
-    "tier": "C_unknown",
-    "note": "**実装側の docs/audit/taxes.md が『欠落』と自己申告している。**Inbound EMS は MPF 免除の対象外で、EMS 手数料 $1.00、informal entry の MPF は $2.69 / $8.06 / $12.09。まだどちらにも入っていない",
-    "source": "https://www.cbp.gov/trade/basic-import-export/user-fee-table"
-   }
-  },
-  {
-   "country": "GB",
-   "currency": "GBP",
-   "tier": "A_confirmed",
-   "duty": {
-    "rule": {
-     "type": "threshold",
-     "free_below": 135,
-     "rate_above": "unknown"
-    },
-    "tier": "C_unknown",
-    "base": "goods_plus_shipping",
-    "threshold_base": "goods"
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.2
-    },
-    "tier": "A_confirmed",
-    "base": "goods_plus_shipping",
-    "threshold_base": "goods"
-   },
-   "clearance": [
-    {
-     "route": "royal_mail",
-     "carrier": "Royal Mail",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 8,
-      "currency": "GBP"
-     },
-     "tier": "B_inferred",
-     "source": "https://www.royalmail.com/receiving-mail/pay-a-fee",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
-    },
-    {
-     "route": "parcelforce",
-     "carrier": "Parcelforce",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 12,
-      "currency": "GBP"
-     },
-     "tier": "B_inferred",
-     "source": "https://www.parcelforce.com/receiving/customs-charge",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
-    },
-    {
-     "route": "high_value",
-     "carrier": "Royal Mail / Parcelforce",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 25,
+      "country": "GB",
       "currency": "GBP",
-      "when": {
-       "goods_value_gbp_over": 900
-      }
-     },
-     "tier": "B_inferred",
-     "source": "https://www.parcelforce.com/receiving/customs-charge",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
-    }
-   ],
-   "conditional": {
-    "tier": "A_confirmed",
-    "rule": "税がゼロなら手数料もゼロ",
-    "quote": "If there is no duty or tax to pay, you will not be charged a handling fee.",
-    "impact": "手数料は税の発生に従属する。免税帯では手数料も0"
-   },
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "not_applicable"
-    },
-    "tier": "C_unknown"
-   },
-   "collected_at_source": {
-    "rule": {
-     "type": "seller_collects_vat",
-     "threshold_gbp": 135,
-     "rate": 0.2
-    },
-    "tier": "A_confirmed",
-    "source": "https://www.gov.uk/goods-sent-from-abroad/tax-and-duty",
-    "note": "£135 以下は売主・マーケットプレイスが決済時に VAT を徴収する。着地で税が発生しなければ Royal Mail の £8 も発生しない（税ゼロ→手数料ゼロ）。5社のうち誰が UK VAT 登録しているかは未取得（C）"
-   }
-  },
-  {
-   "country": "DE",
-   "currency": "EUR",
-   "tier": "A_confirmed",
-   "duty": {
-    "rule": {
-     "type": "flat_per_tariff_line",
-     "amount": 3,
-     "currency": "EUR",
-     "when": {
-      "consignment_value_eur_max": 150,
-      "b2c": true
-     },
-     "until": "2028-07-01",
-     "above_threshold": {
-      "type": "common_customs_tariff",
-      "rate": "unknown"
-     }
-    },
-    "base": "goods",
-    "threshold_base": "goods",
-    "tier": "B_inferred",
-    "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
-    "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
-    "effective_from": "2026-07-01",
-    "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
-    "supersedes": {
-     "rule": "free_below 150",
-     "valid_until": "2026-06-30"
-    },
-    "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
-    "corrected_from": {
-     "tier": "A_confirmed",
-     "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
-    }
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.19
-    },
-    "tier": "A_confirmed",
-    "base": "goods_plus_shipping",
-    "threshold_base": null,
-    "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
-   },
-   "clearance": [
-    {
-     "route": "deutsche_post",
-     "carrier": "Deutsche Post / DHL 標準 / EMS",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 7.5,
-      "currency": "EUR",
-      "vat_included": true
-     },
-     "tier": "B_inferred",
-     "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
-     "inference_basis": "業界紙と paketda.de が €7.50 で一致。公式「Leistungen und Preise」(2026-07-01版) に当たれていない",
-     "effective_from": "2026-03-10",
-     "condition": "輸入税が実際に発生する通にだけ課される",
-     "corrected_from": {
-      "amount": 6,
-      "why": "€6 は 2018-03-01 の導入時の額。2026-03-10 に €7.50 へ上がっていた"
-     }
-    },
-    {
-     "route": "dhl_express",
-     "carrier": "DHL Express",
-     "rule": {
-      "type": "rate_of_import_charges_with_min",
-      "rate": 0.02,
-      "min": 14.88,
-      "currency": "EUR",
-      "min_note": "€12.50 ＋ 19% USt"
-     },
-     "tier": "A_confirmed",
-     "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
-     "quote": "Kapitalbereitstellungsprovision … 2% der Einfuhrabgaben, mindestens aber 14,88 Euro"
-    }
-   ],
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "included_in_min",
-     "note": "最低額 €14.88 は €12.50＋19% USt"
-    },
-    "tier": "A_confirmed",
-    "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html"
-   }
-  },
-  {
-   "country": "FR",
-   "currency": "EUR",
-   "tier": "A_confirmed",
-   "duty": {
-    "rule": {
-     "type": "flat_per_tariff_line",
-     "amount": 3,
-     "currency": "EUR",
-     "when": {
-      "consignment_value_eur_max": 150,
-      "b2c": true
-     },
-     "until": "2028-07-01",
-     "above_threshold": {
-      "type": "common_customs_tariff",
-      "rate": "unknown"
-     }
-    },
-    "base": "goods",
-    "threshold_base": "goods",
-    "tier": "B_inferred",
-    "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
-    "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
-    "effective_from": "2026-07-01",
-    "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
-    "supersedes": {
-     "rule": "free_below 150",
-     "valid_until": "2026-06-30"
-    },
-    "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
-    "corrected_from": {
-     "tier": "A_confirmed",
-     "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
-    }
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.2
-    },
-    "tier": "A_confirmed",
-    "base": "goods_plus_shipping",
-    "threshold_base": null,
-    "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
-   },
-   "clearance": [
-    {
-     "route": "la_poste_default",
-     "carrier": "La Poste",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 8,
-      "currency": "EUR",
-      "vat_included": true
-     },
-     "tier": "A_confirmed",
-     "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
-     "quote": "le tarif plein s'applique dans ces 2 cas … France Métropolitaine: 8€ TTC",
-     "note": "配達時・窓口の全額。**利用者が何もしなければこれ。**海外県は 7.5€ / 7€（TVA 率で違う）"
-    },
-    {
-     "route": "la_poste_online",
-     "carrier": "La Poste",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": [
-       2,
-       5
+      "tier": "A_confirmed",
+      "duty": {
+        "rule": {
+          "type": "threshold",
+          "free_below": 135,
+          "rate_above": "unknown"
+        },
+        "tier": "C_unknown",
+        "base": "goods_plus_shipping",
+        "threshold_base": "goods"
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.2
+        },
+        "tier": "A_confirmed",
+        "base": "goods_plus_shipping",
+        "threshold_base": "goods"
+      },
+      "clearance": [
+        {
+          "route": "royal_mail",
+          "carrier": "Royal Mail",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 8,
+            "currency": "GBP"
+          },
+          "tier": "B_inferred",
+          "source": "https://www.royalmail.com/receiving-mail/pay-a-fee",
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+        },
+        {
+          "route": "parcelforce",
+          "carrier": "Parcelforce",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 12,
+            "currency": "GBP"
+          },
+          "tier": "B_inferred",
+          "source": "https://www.parcelforce.com/receiving/customs-charge",
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+        },
+        {
+          "route": "high_value",
+          "carrier": "Royal Mail / Parcelforce",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 25,
+            "currency": "GBP",
+            "when": {
+              "goods_value_gbp_over": 900
+            }
+          },
+          "tier": "B_inferred",
+          "source": "https://www.parcelforce.com/receiving/customs-charge",
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+        }
       ],
+      "conditional": {
+        "tier": "A_confirmed",
+        "rule": "税がゼロなら手数料もゼロ",
+        "quote": "If there is no duty or tax to pay, you will not be charged a handling fee.",
+        "impact": "手数料は税の発生に従属する。免税帯では手数料も0"
+      },
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "not_applicable"
+        },
+        "tier": "C_unknown"
+      },
+      "collected_at_source": {
+        "rule": {
+          "type": "seller_collects_vat",
+          "threshold_gbp": 135,
+          "rate": 0.2
+        },
+        "tier": "A_confirmed",
+        "source": "https://www.gov.uk/goods-sent-from-abroad/tax-and-duty",
+        "note": "£135 以下は売主・マーケットプレイスが決済時に VAT を徴収する。着地で税が発生しなければ Royal Mail の £8 も発生しない（税ゼロ→手数料ゼロ）。5社のうち誰が UK VAT 登録しているかは未取得（C）"
+      }
+    },
+    {
+      "country": "DE",
       "currency": "EUR",
-      "vat_included": true
-     },
-     "tier": "A_confirmed",
-     "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
-     "quote": "En payant en ligne, vous bénéficiez de frais de gestion réduits (2 ou 5€ selon le type de colis)",
-     "note": "**利用者の操作で下がる。**小包の種別で €2 か €5"
-    },
-    {
-     "route": "chronopost",
-     "carrier": "Chronopost",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 21,
-      "currency": "EUR"
-     },
-     "tier": "B_inferred",
-     "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
-     "inference_basis": "二次情報。公式で裏づけていない"
-    }
-   ],
-   "user_action": {
-    "tier": "A_confirmed",
-    "rule": "オンラインで事前に払えば €8 → €2・€5 に下がる",
-    "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international"
-   },
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "unknown"
-    },
-    "tier": "C_unknown"
-   }
-  },
-  {
-   "country": "ES",
-   "currency": "EUR",
-   "tier": "A_confirmed",
-   "in_current_scope": false,
-   "note": "現行の対象7カ国に無いが、実請求データが最も多く取れた国。EU の代表例として保持",
-   "duty": {
-    "rule": {
-     "type": "flat_per_tariff_line",
-     "amount": 3,
-     "currency": "EUR",
-     "when": {
-      "consignment_value_eur_max": 150,
-      "b2c": true
-     },
-     "until": "2028-07-01",
-     "above_threshold": {
-      "type": "common_customs_tariff",
-      "rate": "unknown"
-     }
-    },
-    "base": "goods",
-    "threshold_base": "goods",
-    "tier": "B_inferred",
-    "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
-    "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
-    "effective_from": "2026-07-01",
-    "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
-    "supersedes": {
-     "rule": "free_below 150",
-     "valid_until": "2026-06-30"
-    },
-    "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
-    "corrected_from": {
-     "tier": "A_confirmed",
-     "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
-    }
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.21
-    },
-    "tier": "A_confirmed",
-    "base": "goods_plus_shipping",
-    "threshold_base": null,
-    "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
-   },
-   "clearance": [
-    {
-     "route": "correos_self_clear",
-     "carrier": "Correos（事前に自分で払う）",
-     "rule": {
-      "type": "fixed_plus_vat",
-      "base": 1.29,
-      "vat_rate": 0.21,
-      "total": 1.56,
-      "currency": "EUR"
-     },
-     "tier": "A_confirmed",
-     "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）",
-     "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 € / Total: 1.56 €"
-    },
-    {
-     "route": "correos_at_delivery",
-     "carrier": "Correos（配達時・現金）",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 6,
-      "currency": "EUR"
-     },
-     "tier": "B_inferred",
-     "source": "elotrolado.net（複数一致）",
-     "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
-    },
-    {
-     "route": "fedex",
-     "carrier": "FedEx",
-     "rule": {
-      "type": "rate_of_value_with_min",
-      "rate": 0.03,
-      "min": 15,
-      "currency": "EUR"
-     },
-     "tier": "A_confirmed",
-     "source": "elotrolado.net",
-     "quote": "cobraron de gestión 15€ por ser mas de 150€ de bienes (3% del valor 15€ minimo)"
-    },
-    {
-     "route": "dhl",
-     "carrier": "DHL",
-     "rule": {
-      "type": "fixed_min",
-      "min": 21,
-      "currency": "EUR",
-      "plus_vat": true
-     },
-     "tier": "A_confirmed",
-     "source": "elotrolado.net",
-     "quote": "DHL que son mínimo 21€ + IVA sin importar la cantidad"
-    },
-    {
-     "route": "ups",
-     "carrier": "UPS",
-     "rule": {
-      "type": "rate_of_import_charges",
-      "rate": 0.283
-     },
-     "tier": "A_confirmed",
-     "source": "elotrolado.net",
-     "quote": "15,90€ (the 28,3% de 56,15€)",
-     "note": "実請求では IVA €56.15 に対する €15.90。DHL Express（DE）の『2% der Einfuhrabgaben』と同じ基準"
-    },
-    {
-     "route": "fedex",
-     "carrier": "FedEx",
-     "rule": {
-      "type": "rate_of_import_charges",
-      "rate": 0.3
-     },
-     "tier": "A_confirmed",
-     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
-     "quote": "Luego sacamos el 30% de 25,12€ a modo de gestión de FEdex --> 7,54€ y a eso le sumamos el 21% de IVA, quedando 9,12€",
-     "note": "『価額の3%・最低€15』と矛盾する第2の報告。帯・時期・契約で使い分けられている可能性。両方を残し、区間の幅の根拠にする（UPS 28.3% と同水準なので courier は税額の28〜30%が実態の可能性）",
-     "variant": "conflicting_report",
-     "resolution": "未解決。2つの形を区間の下端・上端として扱う"
-    }
-   ],
-   "user_action": {
-    "tier": "A_confirmed",
-    "rule": "事前に自己申告すれば €6 → €1.56（約4分の1）"
-   },
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "rate_of_clearance_fee",
-     "rate": 0.21
-    },
-    "tier": "A_confirmed",
-    "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）／elotrolado.net",
-    "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 €"
-   },
-   "observations": [
-    {
-     "tier": "A_confirmed",
-     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
-     "note": "申告額 ¥50（€0.30）の品に €5強。ほぼ全額が gestión。定額の下限が効く実例"
-    },
-    {
-     "tier": "A_confirmed",
-     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
-     "note": "€37 相当（¥5,600）の注文に IVA＋gestión で €14。総額の 38%"
-    },
-    {
-     "tier": "A_confirmed",
-     "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
-     "note": "€150 未満は gestión €1.50〜5、超えると €20 以上に跳ねる"
-    }
-   ]
-  },
-  {
-   "country": "AU",
-   "currency": "AUD",
-   "tier": "A_confirmed",
-   "duty": {
-    "rule": {
-     "type": "threshold",
-     "free_below": 1000,
-     "rate_above": "unknown"
-    },
-    "tier": "C_unknown",
-    "base": "goods",
-    "threshold_base": "goods"
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.1
-    },
-    "tier": "A_confirmed",
-    "base": "varies_by_collector",
-    "base_note": "代理徴収する会社ごとに違う。FROM JAPAN は Charge1+Charge2（手数料込み）、Buyee は商品代＋Buyee 手数料＋オプション料、ZenMarket は未取得",
-    "threshold_base": "customs_value"
-   },
-   "collected_at_source": {
-    "tier": "A_confirmed",
-    "rule": "A$1,000 以下は海外の販売者・マーケットプレイス・再送業者が徴収",
-    "note": "代行会社が『再送業者』としてこれに該当する。ZenMarket・FROM JAPAN・Neokyo・Buyee で確認済み",
-    "impact": "着地時の通関手数料は原則発生しない。会社側の請求に入る"
-   },
-   "clearance": [
-    {
-     "route": "abf_import_processing",
-     "carrier": "ABF（Import Processing Charge）",
-     "rule": {
-      "type": "banded_by_value",
-      "bands": [
-       [
-        1000,
-        0
-       ],
-       [
-        10000,
-        50
-       ],
-       [
-        null,
-        152
-       ]
+      "tier": "A_confirmed",
+      "duty": {
+        "rule": {
+          "type": "flat_per_tariff_line",
+          "amount": 3,
+          "currency": "EUR",
+          "when": {
+            "consignment_value_eur_max": 150,
+            "b2c": true
+          },
+          "until": "2028-07-01",
+          "above_threshold": {
+            "type": "common_customs_tariff",
+            "rate": "unknown"
+          }
+        },
+        "base": "goods",
+        "threshold_base": "goods",
+        "tier": "B_inferred",
+        "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
+        "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
+        "effective_from": "2026-07-01",
+        "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
+        "supersedes": {
+          "rule": "free_below 150",
+          "valid_until": "2026-06-30"
+        },
+        "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
+        "corrected_from": {
+          "tier": "A_confirmed",
+          "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
+        }
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.19
+        },
+        "tier": "A_confirmed",
+        "base": "goods_plus_shipping",
+        "threshold_base": null,
+        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
+      },
+      "clearance": [
+        {
+          "route": "deutsche_post",
+          "carrier": "Deutsche Post / DHL 標準 / EMS",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 7.5,
+            "currency": "EUR",
+            "vat_included": true
+          },
+          "tier": "B_inferred",
+          "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
+          "inference_basis": "業界紙と paketda.de が €7.50 で一致。公式「Leistungen und Preise」(2026-07-01版) に当たれていない",
+          "effective_from": "2026-03-10",
+          "condition": "輸入税が実際に発生する通にだけ課される",
+          "corrected_from": {
+            "amount": 6,
+            "why": "€6 は 2018-03-01 の導入時の額。2026-03-10 に €7.50 へ上がっていた"
+          }
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "rule": {
+            "type": "rate_of_import_charges_with_min",
+            "rate": 0.02,
+            "min": 14.88,
+            "currency": "EUR",
+            "min_note": "€12.50 ＋ 19% USt"
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
+          "quote": "Kapitalbereitstellungsprovision … 2% der Einfuhrabgaben, mindestens aber 14,88 Euro"
+        }
       ],
-      "currency": "AUD"
-     },
-     "tier": "B_inferred",
-     "source": "https://www.abf.gov.au/",
-     "inference_basis": "実装（src/lib/pricing/countries.ts）が T24 で原文を取り、A$1,000 以下は A$0、以降 A$50 / A$152 の帯を持っている。マスタ側はその転記なので B",
-     "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）"
-    }
-   ],
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "unknown"
-    },
-    "tier": "C_unknown"
-   }
-  },
-  {
-   "country": "CA",
-   "currency": "CAD",
-   "tier": "A_confirmed",
-   "duty": {
-    "rule": {
-     "type": "threshold",
-     "free_below": 20,
-     "rate_above": "unknown"
-    },
-    "tier": "C_unknown",
-    "note": "郵便経由の de minimis は CA$20",
-    "base": "goods",
-    "threshold_base": "goods"
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.05,
-     "name": "GST"
-    },
-    "tier": "A_confirmed",
-    "base": "duty_paid_value",
-    "threshold_base": "goods"
-   },
-   "provincial_tax": {
-    "rule": {
-     "type": "rate_by_province",
-     "min": 0.0,
-     "max": 0.1,
-     "note": "AB と準州3つは0%。HST 州（NS/NB/NL/PE）は州分10%。QC は QST 9.975%"
-    },
-    "tier": "B_inferred",
-    "basis": "州別の公表税率。郵便番号の先頭1文字で州が引ける",
-    "corrected_from": {
-     "min": 0.05,
-     "max": 0.0975,
-     "why": "下限0%（アルバータ・準州）と上限10%（HST州）を取り違えていた"
-    },
-    "impact": "現行 src/calc.js は null で総額から脱落。実請求では総額の56%"
-   },
-   "clearance": [
-    {
-     "route": "canada_post",
-     "carrier": "Canada Post",
-     "rule": {
-      "type": "fixed_per_parcel_plus_gst",
-      "amount": 9.95,
-      "gst_rate": 0.05,
-      "currency": "CAD"
-     },
-     "tier": "A_confirmed",
-     "source": "Canada Post 公式ほか複数",
-     "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST"
-    },
-    {
-     "route": "courier",
-     "carrier": "UPS / FedEx / DHL",
-     "rule": {
-      "type": "range",
-      "min": 10,
-      "max": 50,
-      "currency": "CAD"
-     },
-     "tier": "B_inferred",
-     "source": "複数の業界情報源",
-     "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得"
-    }
-   ],
-   "real_invoice": {
-    "tier": "A_confirmed",
-    "source": "利用者投稿（フォーラム）",
-    "lines": {
-     "declared_value": 1988.7,
-     "duty": 0,
-     "excise": 0,
-     "gst": 99.44,
-     "pst": 139.21,
-     "handling": 9.95,
-     "total": 248.6,
-     "currency": "CAD"
-    },
-    "note": "PST 139.21 は総額 248.60 の 56%。現行コードはこれを丸ごと落としている"
-   },
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "rate_of_clearance_fee",
-     "rate": 0.05,
-     "name": "GST"
-    },
-    "tier": "B_inferred",
-    "source": "Canada Post 公式ほか",
-    "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST",
-    "conflict": "実請求（fixtures ca-canadapost-forum）は 99.44+139.21+9.95=248.60 で、CA$9.95 への GST 行が見えない。Canada Post 公式は『plus 5% GST』としており矛盾する。投稿者が省略したか、GST が内税表示か、実際に課されていないかのいずれか。未解決",
-    "inference_basis": "Canada Post 公式の『plus 5% GST』。ただし上記の実請求と矛盾する"
-   }
-  },
-  {
-   "country": "SG",
-   "currency": "SGD",
-   "tier": "A_confirmed",
-   "duty": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.0
-    },
-    "tier": "A_confirmed",
-    "note": "大半の物品で関税0",
-    "base": "goods",
-    "threshold_base": "goods"
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.09,
-     "name": "GST"
-    },
-    "tier": "A_confirmed",
-    "note": "2024-01-01 から 9%",
-    "base": "goods_plus_shipping",
-    "threshold_base": "goods"
-   },
-   "collected_at_source": {
-    "tier": "A_confirmed",
-    "rule": "S$400 以下は OVR 制度で海外事業者が決済時に徴収（2023-01-01 から）",
-    "impact": "着地時の GST は原則発生しない"
-   },
-   "clearance": [
-    {
-     "route": "singpost_low_value",
-     "carrier": "SingPost",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 0,
-      "currency": "SGD",
-      "when": {
-       "cif_sgd_max": 400
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "included_in_min",
+          "note": "最低額 €14.88 は €12.50＋19% USt"
+        },
+        "tier": "A_confirmed",
+        "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html"
       }
-     },
-     "tier": "A_confirmed",
-     "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
-     "quote": "the postal parcel contains goods of a total CIF value exceeding S$400",
-     "note": "**取得できた 0。**S$400 以下は OVR で決済時に GST が済んでおり、SingPost が国境で徴収するものが無いので手数料も発生しない"
     },
     {
-     "route": "singpost",
-     "carrier": "SingPost",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 10.9,
-      "currency": "SGD",
-      "when": {
-       "cif_sgd_over": 400
+      "country": "FR",
+      "currency": "EUR",
+      "tier": "A_confirmed",
+      "duty": {
+        "rule": {
+          "type": "flat_per_tariff_line",
+          "amount": 3,
+          "currency": "EUR",
+          "when": {
+            "consignment_value_eur_max": 150,
+            "b2c": true
+          },
+          "until": "2028-07-01",
+          "above_threshold": {
+            "type": "common_customs_tariff",
+            "rate": "unknown"
+          }
+        },
+        "base": "goods",
+        "threshold_base": "goods",
+        "tier": "B_inferred",
+        "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
+        "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
+        "effective_from": "2026-07-01",
+        "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
+        "supersedes": {
+          "rule": "free_below 150",
+          "valid_until": "2026-06-30"
+        },
+        "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
+        "corrected_from": {
+          "tier": "A_confirmed",
+          "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
+        }
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.2
+        },
+        "tier": "A_confirmed",
+        "base": "goods_plus_shipping",
+        "threshold_base": null,
+        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
+      },
+      "clearance": [
+        {
+          "route": "la_poste_default",
+          "carrier": "La Poste",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 8,
+            "currency": "EUR",
+            "vat_included": true
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
+          "quote": "le tarif plein s'applique dans ces 2 cas … France Métropolitaine: 8€ TTC",
+          "note": "配達時・窓口の全額。**利用者が何もしなければこれ。**海外県は 7.5€ / 7€（TVA 率で違う）"
+        },
+        {
+          "route": "la_poste_online",
+          "carrier": "La Poste",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": [
+              2,
+              5
+            ],
+            "currency": "EUR",
+            "vat_included": true
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
+          "quote": "En payant en ligne, vous bénéficiez de frais de gestion réduits (2 ou 5€ selon le type de colis)",
+          "note": "**利用者の操作で下がる。**小包の種別で €2 か €5"
+        },
+        {
+          "route": "chronopost",
+          "carrier": "Chronopost",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 21,
+            "currency": "EUR"
+          },
+          "tier": "B_inferred",
+          "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
+          "inference_basis": "二次情報。公式で裏づけていない"
+        }
+      ],
+      "user_action": {
+        "tier": "A_confirmed",
+        "rule": "オンラインで事前に払えば €8 → €2・€5 に下がる",
+        "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international"
+      },
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "unknown"
+        },
+        "tier": "C_unknown"
       }
-     },
-     "tier": "B_inferred",
-     "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
-     "inference_basis": "公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画のみ。**S$400 の閾値は公式本文で取れている**が、S$10.90 という額の文そのものは取れていない",
-     "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料"
-    }
-   ],
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "unknown"
     },
-    "tier": "C_unknown"
-   }
-  },
-  {
-   "country": "TW",
-   "currency": "TWD",
-   "tier": "B_inferred",
-   "why_added": "Buyee の購入手数料が台湾のみ ¥300（BEENOS プレスリリース・一次）。会社×国で手数料が変わる実例なので、対象国に台湾が要る",
-   "duty": {
-    "rule": {
-     "type": "threshold",
-     "free_below": 2000,
-     "currency": "TWD",
-     "base": "CIF（商品価格＋国際送料＋保険）",
-     "rate_above": "unknown"
-    },
-    "tier": "B_inferred",
-    "basis": "台湾の複数の解説サイトが一致。関税庁原文は未取得",
-    "threshold_base": "cif",
-    "base": "cif"
-   },
-   "vat": {
-    "rule": {
-     "type": "rate",
-     "rate": 0.05,
-     "name": "營業稅",
-     "base": "完稅價格 ＋ 進口稅"
-    },
-    "tier": "B_inferred",
-    "basis": "複数の解説サイトが一致。税率5%は台湾で固定",
-    "threshold_base": "cif",
-    "base": "goods_plus_shipping_plus_duty",
-    "base_note": "營業稅 =（完稅價格 ＋ 進口稅）× 5%。完稅價格 = 商品価格＋国際送料＋保険"
-   },
-   "frequency_rule": {
-    "rule": {
-     "type": "import_count_window",
-     "window_months": 6,
-     "free_count": 6,
-     "note": "NT$2,000 以下**かつ**半年6回以内で免税（AND）。7回目以降は NT$1 でも課税。納税義務者単位で、淘宝・メルカリ・日本代購が同一枠を共有"
-    },
-    "tier": "B_inferred",
-    "basis": "複数の解説サイトが一致",
-    "impact": "**国の税ルールが利用者の輸入履歴に依存する。**予測時点では前提を置くしかない（D 寄り）",
-    "combination": "AND"
-   },
-   "clearance": [
     {
-     "route": "courier_cod",
-     "carrier": "快遞（代引き）",
-     "rule": {
-      "type": "fixed_per_parcel",
-      "amount": 30,
-      "currency": "TWD"
-     },
-     "tier": "B_inferred",
-     "source": "台湾の解説サイト（複数）",
-     "inference_basis": "『税金代収手数料 約30元』で複数一致",
-     "note": "中華郵政の報関費は未取得（C）"
-    }
-   ],
-   "clearance_fee_vat": {
-    "rule": {
-     "type": "unknown"
+      "country": "ES",
+      "currency": "EUR",
+      "tier": "A_confirmed",
+      "in_current_scope": false,
+      "note": "現行の対象7カ国に無いが、実請求データが最も多く取れた国。EU の代表例として保持",
+      "duty": {
+        "rule": {
+          "type": "flat_per_tariff_line",
+          "amount": 3,
+          "currency": "EUR",
+          "when": {
+            "consignment_value_eur_max": 150,
+            "b2c": true
+          },
+          "until": "2028-07-01",
+          "above_threshold": {
+            "type": "common_customs_tariff",
+            "rate": "unknown"
+          }
+        },
+        "base": "goods",
+        "threshold_base": "goods",
+        "tier": "B_inferred",
+        "source": "https://taxation-customs.ec.europa.eu/news/guidance-and-legal-text-temporary-flat-fee-low-value-imports-which-will-apply-until-1-july-2028-2026-06-08_en",
+        "quote": "parcels valued at €150 or below shipped from non-EU countries to EU consumers (B2C) will be subject to a transitional €3 customs duty per item or tariff line, until 1 July 2028",
+        "effective_from": "2026-07-01",
+        "note": "2026-07-01 に €150 免税が廃止された。Council 最終承認 2026-02-11／規則公布 2026-04-30。本リポジトリの実請求データ（2023〜2025年のスペイン投稿）は旧制度下のもので、そのままでは使えない",
+        "supersedes": {
+          "rule": "free_below 150",
+          "valid_until": "2026-06-30"
+        },
+        "inference_basis": "€3 定額そのものは EU 一次情報で確定（2026-07-01〜2028-06-30、1点あたり €3）。**確定していないのは『代行経由の購入がその対象か』。**制度は distance sale of imported goods (DSIG) に限り、申告者は売り手または輸入者（IOSS 保有者・special arrangements 利用者・間接代理人）と規定されている。代行が挟まる取引がここに当たるかは規則本文から断定できない（docs/audit/taxes.md）",
+        "corrected_from": {
+          "tier": "A_confirmed",
+          "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
+        }
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.21
+        },
+        "tier": "A_confirmed",
+        "base": "goods_plus_shipping",
+        "threshold_base": null,
+        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
+      },
+      "clearance": [
+        {
+          "route": "correos_self_clear",
+          "carrier": "Correos（事前に自分で払う）",
+          "rule": {
+            "type": "fixed_plus_vat",
+            "base": 1.29,
+            "vat_rate": 0.21,
+            "total": 1.56,
+            "currency": "EUR"
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）",
+          "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 € / Total: 1.56 €"
+        },
+        {
+          "route": "correos_at_delivery",
+          "carrier": "Correos（配達時・現金）",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 6,
+            "currency": "EUR"
+          },
+          "tier": "B_inferred",
+          "source": "elotrolado.net（複数一致）",
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx",
+          "rule": {
+            "type": "rate_of_value_with_min",
+            "rate": 0.03,
+            "min": 15,
+            "currency": "EUR"
+          },
+          "tier": "A_confirmed",
+          "source": "elotrolado.net",
+          "quote": "cobraron de gestión 15€ por ser mas de 150€ de bienes (3% del valor 15€ minimo)"
+        },
+        {
+          "route": "dhl",
+          "carrier": "DHL",
+          "rule": {
+            "type": "fixed_min",
+            "min": 21,
+            "currency": "EUR",
+            "plus_vat": true
+          },
+          "tier": "A_confirmed",
+          "source": "elotrolado.net",
+          "quote": "DHL que son mínimo 21€ + IVA sin importar la cantidad"
+        },
+        {
+          "route": "ups",
+          "carrier": "UPS",
+          "rule": {
+            "type": "rate_of_import_charges",
+            "rate": 0.283
+          },
+          "tier": "A_confirmed",
+          "source": "elotrolado.net",
+          "quote": "15,90€ (the 28,3% de 56,15€)",
+          "note": "実請求では IVA €56.15 に対する €15.90。DHL Express（DE）の『2% der Einfuhrabgaben』と同じ基準"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx",
+          "rule": {
+            "type": "rate_of_import_charges",
+            "rate": 0.3
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+          "quote": "Luego sacamos el 30% de 25,12€ a modo de gestión de FEdex --> 7,54€ y a eso le sumamos el 21% de IVA, quedando 9,12€",
+          "note": "『価額の3%・最低€15』と矛盾する第2の報告。帯・時期・契約で使い分けられている可能性。両方を残し、区間の幅の根拠にする（UPS 28.3% と同水準なので courier は税額の28〜30%が実態の可能性）",
+          "variant": "conflicting_report",
+          "resolution": "未解決。2つの形を区間の下端・上端として扱う"
+        }
+      ],
+      "user_action": {
+        "tier": "A_confirmed",
+        "rule": "事前に自己申告すれば €6 → €1.56（約4分の1）"
+      },
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "rate_of_clearance_fee",
+          "rate": 0.21
+        },
+        "tier": "A_confirmed",
+        "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）／elotrolado.net",
+        "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 €"
+      },
+      "observations": [
+        {
+          "tier": "A_confirmed",
+          "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+          "note": "申告額 ¥50（€0.30）の品に €5強。ほぼ全額が gestión。定額の下限が効く実例"
+        },
+        {
+          "tier": "A_confirmed",
+          "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+          "note": "€37 相当（¥5,600）の注文に IVA＋gestión で €14。総額の 38%"
+        },
+        {
+          "tier": "A_confirmed",
+          "source": "https://www.elotrolado.net/hilo_aduanas-ya-no-perdona-ni-una_1421002",
+          "note": "€150 未満は gestión €1.50〜5、超えると €20 以上に跳ねる"
+        }
+      ]
     },
-    "tier": "C_unknown"
-   },
-   "company_specific": {
-    "buyee": {
-     "purchase_fee_jpy": 300,
-     "tier": "A_confirmed",
-     "source": "https://beenos.com/news-center/detail/20191220_tcm_pr/",
-     "note": "英語版公式は ¥500。台湾のみ ¥300。BuyeePASS・コンビニ受取も台湾限定"
+    {
+      "country": "AU",
+      "currency": "AUD",
+      "tier": "A_confirmed",
+      "duty": {
+        "rule": {
+          "type": "threshold",
+          "free_below": 1000,
+          "rate_above": "unknown"
+        },
+        "tier": "C_unknown",
+        "base": "goods",
+        "threshold_base": "goods"
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.1
+        },
+        "tier": "A_confirmed",
+        "base": "varies_by_collector",
+        "base_note": "代理徴収する会社ごとに違う。FROM JAPAN は Charge1+Charge2（手数料込み）、Buyee は商品代＋Buyee 手数料＋オプション料、ZenMarket は未取得",
+        "threshold_base": "customs_value"
+      },
+      "collected_at_source": {
+        "tier": "A_confirmed",
+        "rule": "A$1,000 以下は海外の販売者・マーケットプレイス・再送業者が徴収",
+        "note": "代行会社が『再送業者』としてこれに該当する。ZenMarket・FROM JAPAN・Neokyo・Buyee で確認済み",
+        "impact": "着地時の通関手数料は原則発生しない。会社側の請求に入る"
+      },
+      "clearance": [
+        {
+          "route": "abf_import_processing",
+          "carrier": "ABF（Import Processing Charge）",
+          "rule": {
+            "type": "banded_by_value",
+            "bands": [
+              [
+                1000,
+                0
+              ],
+              [
+                10000,
+                50
+              ],
+              [
+                null,
+                152
+              ]
+            ],
+            "currency": "AUD"
+          },
+          "tier": "B_inferred",
+          "source": "https://www.abf.gov.au/",
+          "inference_basis": "実装（src/lib/pricing/countries.ts）が T24 で原文を取り、A$1,000 以下は A$0、以降 A$50 / A$152 の帯を持っている。マスタ側はその転記なので B",
+          "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）"
+        }
+      ],
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "unknown"
+        },
+        "tier": "C_unknown"
+      }
+    },
+    {
+      "country": "CA",
+      "currency": "CAD",
+      "tier": "A_confirmed",
+      "duty": {
+        "rule": {
+          "type": "threshold",
+          "free_below": 20,
+          "rate_above": "unknown"
+        },
+        "tier": "C_unknown",
+        "note": "郵便経由の de minimis は CA$20",
+        "base": "goods",
+        "threshold_base": "goods"
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.05,
+          "name": "GST"
+        },
+        "tier": "A_confirmed",
+        "base": "duty_paid_value",
+        "threshold_base": "goods"
+      },
+      "provincial_tax": {
+        "rule": {
+          "type": "rate_by_province",
+          "min": 0.0,
+          "max": 0.1,
+          "note": "AB と準州3つは0%。HST 州（NS/NB/NL/PE）は州分10%。QC は QST 9.975%"
+        },
+        "tier": "B_inferred",
+        "basis": "州別の公表税率。郵便番号の先頭1文字で州が引ける",
+        "corrected_from": {
+          "min": 0.05,
+          "max": 0.0975,
+          "why": "下限0%（アルバータ・準州）と上限10%（HST州）を取り違えていた"
+        },
+        "impact": "現行 src/calc.js は null で総額から脱落。実請求では総額の56%"
+      },
+      "clearance": [
+        {
+          "route": "canada_post",
+          "carrier": "Canada Post",
+          "rule": {
+            "type": "fixed_per_parcel_plus_gst",
+            "amount": 9.95,
+            "gst_rate": 0.05,
+            "currency": "CAD"
+          },
+          "tier": "A_confirmed",
+          "source": "Canada Post 公式ほか複数",
+          "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST"
+        },
+        {
+          "route": "courier",
+          "carrier": "UPS / FedEx / DHL",
+          "rule": {
+            "type": "range",
+            "min": 10,
+            "max": 50,
+            "currency": "CAD"
+          },
+          "tier": "B_inferred",
+          "source": "複数の業界情報源",
+          "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得"
+        }
+      ],
+      "real_invoice": {
+        "tier": "A_confirmed",
+        "source": "利用者投稿（フォーラム）",
+        "lines": {
+          "declared_value": 1988.7,
+          "duty": 0,
+          "excise": 0,
+          "gst": 99.44,
+          "pst": 139.21,
+          "handling": 9.95,
+          "total": 248.6,
+          "currency": "CAD"
+        },
+        "note": "PST 139.21 は総額 248.60 の 56%。現行コードはこれを丸ごと落としている"
+      },
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "unknown"
+        },
+        "tier": "C_unknown",
+        "source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d5/d5-1-1-eng.html",
+        "quote": "To process goods imported as mail that are subject to duty and/or tax, the CPC charges the recipient a $9.95 handling fee.",
+        "why_unknown": "一次情報（CBSA Memorandum D5-1-1）は手数料の額しか書かず、**その手数料に GST/HST が乗るかを一切述べていない**。以前このマスタは『Canada Post 公式は C$9.95＋5% GST』を B_inferred で持ち、実請求（手数料への GST 行が無い）と矛盾していると記録していたが、2026-09-07 に原文を読んだところ**公式はそもそも +5% を言っていなかった**。矛盾していたのは公式と実請求ではなく、マスタの推論と実請求。唯一の観測（実請求）は GST 無しなので、推論を消して C_unknown に落とす。",
+        "only_observation": "ca-canadapost-forum の実請求に手数料への GST 行が無い（99.44+139.21+9.95=248.60）",
+        "checked_on": "2026-09-07"
+      }
+    },
+    {
+      "country": "SG",
+      "currency": "SGD",
+      "tier": "A_confirmed",
+      "duty": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.0
+        },
+        "tier": "A_confirmed",
+        "note": "大半の物品で関税0",
+        "base": "goods",
+        "threshold_base": "goods"
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.09,
+          "name": "GST"
+        },
+        "tier": "A_confirmed",
+        "note": "2024-01-01 から 9%",
+        "base": "goods_plus_shipping",
+        "threshold_base": "goods"
+      },
+      "collected_at_source": {
+        "tier": "A_confirmed",
+        "rule": "S$400 以下は OVR 制度で海外事業者が決済時に徴収（2023-01-01 から）",
+        "impact": "着地時の GST は原則発生しない"
+      },
+      "clearance": [
+        {
+          "route": "singpost_low_value",
+          "carrier": "SingPost",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 0,
+            "currency": "SGD",
+            "when": {
+              "cif_sgd_max": 400
+            }
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
+          "quote": "the postal parcel contains goods of a total CIF value exceeding S$400",
+          "note": "**取得できた 0。**S$400 以下は OVR で決済時に GST が済んでおり、SingPost が国境で徴収するものが無いので手数料も発生しない"
+        },
+        {
+          "route": "singpost",
+          "carrier": "SingPost",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 10.9,
+            "currency": "SGD",
+            "when": {
+              "cif_sgd_over": 400
+            }
+          },
+          "tier": "B_inferred",
+          "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
+          "inference_basis": "公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画のみ。**S$400 の閾値は公式本文で取れている**が、S$10.90 という額の文そのものは取れていない",
+          "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料"
+        }
+      ],
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "unknown"
+        },
+        "tier": "C_unknown"
+      }
+    },
+    {
+      "country": "TW",
+      "currency": "TWD",
+      "tier": "B_inferred",
+      "why_added": "Buyee の購入手数料が台湾のみ ¥300（BEENOS プレスリリース・一次）。会社×国で手数料が変わる実例なので、対象国に台湾が要る",
+      "duty": {
+        "rule": {
+          "type": "threshold",
+          "free_below": 2000,
+          "currency": "TWD",
+          "base": "CIF（商品価格＋国際送料＋保険）",
+          "rate_above": "unknown"
+        },
+        "tier": "B_inferred",
+        "basis": "台湾の複数の解説サイトが一致。関税庁原文は未取得",
+        "threshold_base": "cif",
+        "base": "cif"
+      },
+      "vat": {
+        "rule": {
+          "type": "rate",
+          "rate": 0.05,
+          "name": "營業稅",
+          "base": "完稅價格 ＋ 進口稅"
+        },
+        "tier": "B_inferred",
+        "basis": "複数の解説サイトが一致。税率5%は台湾で固定",
+        "threshold_base": "cif",
+        "base": "goods_plus_shipping_plus_duty",
+        "base_note": "營業稅 =（完稅價格 ＋ 進口稅）× 5%。完稅價格 = 商品価格＋国際送料＋保険"
+      },
+      "frequency_rule": {
+        "rule": {
+          "type": "import_count_window",
+          "window_months": 6,
+          "free_count": 6,
+          "note": "NT$2,000 以下**かつ**半年6回以内で免税（AND）。7回目以降は NT$1 でも課税。納税義務者単位で、淘宝・メルカリ・日本代購が同一枠を共有"
+        },
+        "tier": "B_inferred",
+        "basis": "複数の解説サイトが一致",
+        "impact": "**国の税ルールが利用者の輸入履歴に依存する。**予測時点では前提を置くしかない（D 寄り）",
+        "combination": "AND"
+      },
+      "clearance": [
+        {
+          "route": "courier_cod",
+          "carrier": "快遞（代引き）",
+          "rule": {
+            "type": "fixed_per_parcel",
+            "amount": 30,
+            "currency": "TWD"
+          },
+          "tier": "B_inferred",
+          "source": "台湾の解説サイト（複数）",
+          "inference_basis": "『税金代収手数料 約30元』で複数一致",
+          "note": "中華郵政の報関費は未取得（C）"
+        }
+      ],
+      "clearance_fee_vat": {
+        "rule": {
+          "type": "unknown"
+        },
+        "tier": "C_unknown"
+      },
+      "company_specific": {
+        "buyee": {
+          "purchase_fee_jpy": 300,
+          "tier": "A_confirmed",
+          "source": "https://beenos.com/news-center/detail/20191220_tcm_pr/",
+          "note": "英語版公式は ¥500。台湾のみ ¥300。BuyeePASS・コンビニ受取も台湾限定"
+        }
+      }
     }
-   }
-  }
- ],
- "schema": {
-  "required_on_duty_and_vat": [
-   "base",
-   "threshold_base"
   ],
-  "base_vocabulary": [
-   "charge1_plus_charge2",
-   "cif",
-   "customs_value",
-   "duty_paid_value",
-   "goods",
-   "goods_plus_shipping",
-   "goods_plus_shipping_plus_duty",
-   "varies_by_collector",
-   null
-  ]
- },
- "cross_country_findings": [
-  {
-   "finding": "通関手数料は輸入税が実際に発生するときだけ課される",
-   "confirmed_in": {
-    "GB": "If there is no duty or tax to pay, you will not be charged a handling fee",
-    "DE": "Die Auslagepauschale wird fällig, wenn der Empfänger Einfuhrabgaben bezahlen muss",
-    "FR": "frais administratifs liés au traitement de votre dédouanement（税が発生する処理に紐づく）",
-    "SG": "S$400 以下は OVR で徴収済みなので SingPost が徴収するものが無い"
-   },
-   "tier": "A_confirmed",
-   "impact": "**手数料は独立した費目ではなく、税の発生に従属する。**免税帯では税も手数料も 0。国ごとに単一の定額を無条件で足すモデルは、免税帯で必ず過大になる"
+  "schema": {
+    "required_on_duty_and_vat": [
+      "base",
+      "threshold_base"
+    ],
+    "base_vocabulary": [
+      "charge1_plus_charge2",
+      "cif",
+      "customs_value",
+      "duty_paid_value",
+      "goods",
+      "goods_plus_shipping",
+      "goods_plus_shipping_plus_duty",
+      "varies_by_collector",
+      null
+    ]
   },
-  {
-   "finding": "利用者が事前に自分で通関・納税すると手数料が下がる国がある",
-   "confirmed_in": {
-    "ES": "€6 → €1.29＋IVA ＝ €1.56",
-    "FR": "€8 → €2・€5"
-   },
-   "tier": "A_confirmed",
-   "impact": "料金表ではなく利用者の操作で決まる。予測はどちらを想定するか明示しなければならない"
-  }
- ]
+  "cross_country_findings": [
+    {
+      "finding": "通関手数料は輸入税が実際に発生するときだけ課される",
+      "confirmed_in": {
+        "GB": "If there is no duty or tax to pay, you will not be charged a handling fee",
+        "DE": "Die Auslagepauschale wird fällig, wenn der Empfänger Einfuhrabgaben bezahlen muss",
+        "FR": "frais administratifs liés au traitement de votre dédouanement（税が発生する処理に紐づく）",
+        "SG": "S$400 以下は OVR で徴収済みなので SingPost が徴収するものが無い",
+        "US": "USPS IMM 712.11「must collect a Postal Service fee from the addressee for each item on which customs duty or Internal Revenue tax **is collected**」／712.2 は「mail items examined and passed free of duty by U.S. Customs」を明示的に除外"
+      },
+      "tier": "A_confirmed",
+      "impact": "**手数料は独立した費目ではなく、税の発生に従属する。**免税帯では税も手数料も 0。国ごとに単一の定額を無条件で足すモデルは、免税帯で必ず過大になる"
+    },
+    {
+      "finding": "利用者が事前に自分で通関・納税すると手数料が下がる国がある",
+      "confirmed_in": {
+        "ES": "€6 → €1.29＋IVA ＝ €1.56",
+        "FR": "€8 → €2・€5"
+      },
+      "tier": "A_confirmed",
+      "impact": "料金表ではなく利用者の操作で決まる。予測はどちらを想定するか明示しなければならない"
+    }
+  ]
 }

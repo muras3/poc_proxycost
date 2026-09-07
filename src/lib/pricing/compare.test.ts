@@ -788,17 +788,29 @@ describe('Buyee splits parcels by order', () => {
     expect(consolidated.tag).toContain('you must request this');
   });
 
-  test('splitting costs more on EMS and on the clearance fee', () => {
+  test('splitting costs more on EMS — but not on the US clearance fee, which is zero here', () => {
     const rows = compare({ items: items(3, 600), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
     expect(line(consolidated, 'ems').amount).toBe(9100);
     expect(line(dflt, 'ems').amount).toBe(17970);
+    // **3点×¥3,000 は $2,500 の事前納付帯の中**。Zonos で関税が事前納付されるので
+    // 配達時に徴収するものが無く、USPS の手数料も立たない（IMM 712.11）。
+    // 個口を増やしても 0 のまま——**個口が効くのは手数料が立つ帯だけ**。
+    expect(line(consolidated, 'clearance').amount).toBe(0);
+    expect(line(dflt, 'clearance').amount).toBe(0);
+    expect(dflt.total).toBeGreaterThan(consolidated.total);
+  });
+
+  test('above the $2,500 prepayment band the clearance fee is per parcel, so splitting triples it', () => {
+    // 1点 ¥500,000 × 3点。個口あたりの申告額が $2,500 を超えるので $9.35 が立つ。
+    const rows = compare({ items: items(3, 600, 500_000), country: 'US' }).rows;
+    const consolidated = byId(rows, 'buyee:consolidated');
+    const dflt = byId(rows, 'buyee:default');
     // USD 9.35 × ¥156.25 × 3個口を最後に一度だけ丸める（¥1,461 の3倍ではない）。
     expect(line(consolidated, 'clearance').amount).toBe(1461);
     expect(line(dflt, 'clearance').amount).toBe(4383);
     expect(line(dflt, 'clearance').note).toContain('USD 9.35 × 3 parcels');
-    expect(dflt.total).toBeGreaterThan(consolidated.total);
   });
 
   test('the purchase fee is per order, so splitting does not change it', () => {
@@ -1047,34 +1059,34 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('5 items x ¥3,000, 200 g each, to the US', () => {
     const rows = compare({ items: items(5, 200), country: 'US' }).rows;
     expect(rows.map((r) => [r.id, r.total])).toEqual([
-      ['neokyo', 31186],
-      ['fromjapan', 32436],
-      ['buyee:consolidated', 33936],
-      ['zenmarket', 34010],
-      ['jauce', 35469],
-      ['buyee:default', 54080],
+      ['neokyo', 29725],
+      ['fromjapan', 30975],
+      ['buyee:consolidated', 32475],
+      ['zenmarket', 32549],
+      ['jauce', 34008],
+      ['buyee:default', 46775],
     ]);
   });
 
   test('the same basket at 600 g, 1,500 g and 3,000 g — the top two swap on the way', () => {
     const board = (w: number) =>
       compare({ items: items(5, w), country: 'US' }).rows.map((r) => [r.id, r.total]);
-    expect(board(600).slice(0, 2)).toEqual([['neokyo', 37586], ['fromjapan', 38536]]);
+    expect(board(600).slice(0, 2)).toEqual([['neokyo', 36125], ['fromjapan', 37075]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
-    expect(board(1500).slice(0, 2)).toEqual([['neokyo', 52886], ['fromjapan', 52936]]);
-    expect(board(3000).slice(0, 2)).toEqual([['fromjapan', 74536], ['neokyo', 75836]]);
-    expect(board(600)[5]).toEqual(['buyee:default', 63130]);
+    expect(board(1500).slice(0, 2)).toEqual([['neokyo', 51425], ['fromjapan', 51475]]);
+    expect(board(3000).slice(0, 2)).toEqual([['fromjapan', 73075], ['neokyo', 74375]]);
+    expect(board(600)[5]).toEqual(['buyee:default', 55825]);
   });
 
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
     const rows = compare({ items: items(1, 500, 5000), country: 'US' }).rows;
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
-      ['FROM JAPAN', 13606],
-      ['Neokyo', 13756],
-      ['Buyee', 13906],
-      ['ZenMarket', 14127],
-      ['Jauce', 14968],
+      ['FROM JAPAN', 12145],
+      ['Neokyo', 12295],
+      ['Buyee', 12445],
+      ['ZenMarket', 12666],
+      ['Jauce', 13507],
     ]);
   });
 
@@ -1083,11 +1095,11 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // FROM JAPAN はヤフオク限定の ¥200 が消える。
     const rows = compare({ items: items(1, 500, 5000, { site: 'rakuten' }), country: 'US' }).rows;
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
-      ['FROM JAPAN', 13406],
-      ['Neokyo', 13756],
-      ['ZenMarket', 13817],
-      ['Buyee', 13906],
-      ['Jauce', 14136],
+      ['FROM JAPAN', 11945],
+      ['Neokyo', 12295],
+      ['ZenMarket', 12356],
+      ['Buyee', 12445],
+      ['Jauce', 12675],
     ]);
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(0);
     expect(line(byId(rows, 'jauce'), 'ad-valorem').amount).toBe(0);
@@ -1114,7 +1126,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **我々が独仏の手数料を1円も入れていなかったから。**
     // **SG はこの帯（5点×¥12,800＝CIF が S$400 超）で S$10.90 が乗る。**
     expect(totals).toEqual({
-      US: [37586, 38536, 40036, 40331, 42066, 63130],
+      US: [36125, 37075, 38575, 38870, 40605, 55825],
       GB: [40121, 41071, 42571, 42801, 44528, 66256],
       DE: [42735, 43685, 45185, 45415, 47142, 67412],
       FR: [43152, 44102, 45602, 45832, 47559, 68333],

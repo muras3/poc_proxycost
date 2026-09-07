@@ -90,6 +90,13 @@ def eval_clearance(rule, ctx):
     if t == "rate_of_value_with_min":      return max(rule["rate"] * ctx["goods_value"], rule["min"])
     if t == "fixed_min":                   return rule["min"]
     if t == "fixed_per_parcel_plus_gst":   return rule["amount"]
+    if t == "banded_by_value":
+        # 帯は「小包1個あたりの申告額」で選ぶ。上限 None ＝ 上限なし。
+        # **帯の 0 は「取得できた 0」**（原文がその帯で 0 と書いている）で、未取得ではない。
+        v = ctx["goods_value_per_parcel"]
+        for up, amt in rule["bands"]:
+            if up is None or v <= up: return amt
+        raise ValueError(f"banded_by_value: 値 {v} を含む帯が無い")
     raise KeyError(f"未対応の clearance rule.type: {t}")
 
 def eval_fee_vat(country, fee):
