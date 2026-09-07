@@ -7,6 +7,8 @@ import { SERVICES_CHECKED_ON } from '@/lib/pricing/services';
 import {
   ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_CHECKED_ON,
 } from '@/lib/pricing/shipping-methods';
+import { LITHIUM_AIRMAIL_LISTED, RESTRICTED_GOODS } from '@/lib/pricing/restricted-goods';
+import { COUNTRIES, COUNTRY_CODES } from '@/lib/pricing/countries';
 import {
   RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
 } from '@/lib/pricing/rates';
@@ -25,6 +27,13 @@ export const metadata: Metadata = {
 };
 
 const ZENMARKET_INVOICE = 'https://nyamo.life/archives/zenmarket.html';
+
+// **国名を書き写さない。**表（LITHIUM_AIRMAIL_LISTED）から作る。書き写せば、表を直した
+// ときにこの文だけが古くなる。
+const LITHIUM_LISTED = COUNTRY_CODES
+  .filter((c) => LITHIUM_AIRMAIL_LISTED[c]).map((c) => COUNTRIES[c].name);
+const LITHIUM_NOT_LISTED = COUNTRY_CODES
+  .filter((c) => !LITHIUM_AIRMAIL_LISTED[c]).map((c) => COUNTRIES[c].name);
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
@@ -180,6 +189,54 @@ export default function SourcesPage() {
         <div className="mt-4">
           <EmsTable />
         </div>
+      </section>
+
+      {/* **送れるかを我々は見ていない。**順位表の常時開示（RestrictedGoodsNote）が
+          ここへ送るので、原文が言っていることをそのまま並べる。英語版に無い記述は
+          日本語版の URL を出典にし、そう名乗る（原文が無い言語の URL を出典と書かない）。 */}
+      <section className="mt-12">
+        <H2 id="restricted">Goods that may not be shippable at all</H2>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Every total on the front page assumes the parcel can be sent. <strong>We never check
+          that.</strong> We have no customs declaration and no item classification, so we cannot
+          tell you whether your particular purchase is allowed — only what Japan Post publishes.
+          Read these before you order.
+        </p>
+        <ul className="mt-4 max-w-3xl space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+          {RESTRICTED_GOODS.map((g) => (
+            <li key={g.id}>
+              <span className="font-semibold">{g.labelEn}</span>
+              {' — '}
+              {g.ruleEn}{' '}
+              <a
+                className="underline"
+                href={g.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Japan Post, nonmailable articles
+              </a>
+              {`, read ${g.checkedOn}`}
+              {/* 英語版に無い記述を英語のページから読んだように見せない。 */}
+              {g.sourceLang === 'ja' ? ' (this passage exists only in the Japanese page).' : '.'}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Japan Post lists the destinations that can receive air mail carrying lithium batteries.
+          Of the seven this calculator covers,{' '}
+          {LITHIUM_LISTED.join(', ')} {LITHIUM_LISTED.length === 1 ? 'is' : 'are'} on that list and{' '}
+          <strong>{LITHIUM_NOT_LISTED.join(' and ')}</strong>{' '}
+          {LITHIUM_NOT_LISTED.length === 1 ? 'is' : 'are'} not. The front page says so next to the
+          ranking when you pick one of those, because that is a fact about the destination and
+          needs no guess about what you bought.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-500">
+          What we could not get: Japan Post publishes a country-by-country prohibited-goods table,
+          but it is a JavaScript form with no addressable page per country, so we could not read
+          the per-destination rules for alcohol. That is why the warning says the destination
+          decides instead of naming which destinations refuse it.
+        </p>
       </section>
 
       <section className="mt-12">

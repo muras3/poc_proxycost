@@ -189,6 +189,19 @@ export function emsOnlyNote(page: Page): Locator {
   return page.locator('p').filter({ hasText: /Compared using Japan Post EMS only/ });
 }
 
+/**
+ * 「送れないかもしれない」の常時開示（`RestrictedGoodsNote`）。
+ * EMS の開示と同じ場所・同じ約束（畳まない・順位が出ている限り消えない）。
+ */
+export function restrictedNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /may not be shippable at all/ });
+}
+
+/** カートに酒が入ったときだけ出る、強いほうの警告（`AlcoholInCartNote`）。 */
+export function alcoholNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /we read as alcohol/ });
+}
+
 /** その要素が「開かないと読めない」場所に居ないか。畳まれた開示は開示ではない。 */
 export async function isCollapsed(target: Locator): Promise<boolean> {
   return target.evaluate(
