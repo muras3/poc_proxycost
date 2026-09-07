@@ -67,8 +67,65 @@ describe('the service table itself', () => {
     expect(checked.getTime()).toBeLessThanOrEqual(Date.now());
   });
 
-  test('nobody marks up the published EMS rate', () => {
-    for (const s of SERVICES) expect(s.emsMarkup).toBe(0);
+  test('nobody marks up the published EMS rate — measured at all five, 2026-09-07', () => {
+    // **5社とも ¥3,400 で公表額と1円まで一致した**（ドイツ宛 600g、公開計算機）。
+    // これが「各社は公表額をそのまま転嫁している」という仮定の裏付けで、
+    // 総額の 8〜24% がこの仮定に乗っている。だから確度は全社 `fixed`。
+    for (const s of SERVICES) {
+      const ems = s.postage.ems;
+      expect(ems, `${s.id} が EMS を売っていない`).toBeDefined();
+      expect(ems!.markup, s.id).toBe(0);
+      expect(ems!.tier, s.id).toBe('fixed');
+      expect(ems!.checkedOn, s.id).toBe('2026-09-07');
+    }
+  });
+
+  test('the markup is per method, not per company — two services prove it', () => {
+    // 以前は社ごとに1つの率だった。**それでは表せない実測が2件出た。**
+    // どちらも EMS は公表額どおりなのに、別の方式だけ上乗せしている。
+    const zen = svc('zenmarket');
+    expect(zen.postage.ems!.markup).toBe(0);
+    expect(zen.postage['small-packet-air']!.markup).toBeCloseTo(0.452, 3);
+    const jauce = svc('jauce');
+    expect(jauce.postage.ems!.markup).toBe(0);
+    expect(jauce.postage['parcel-surface']!.markup).toBeCloseTo(0.10, 3);
+    // **率か定額かは観測1点から決められない**ので、上乗せのある行は estimate。
+    for (const s of SERVICES) {
+      for (const r of Object.values(s.postage)) {
+        if (r.markup !== 0) {
+          expect(r.tier, `${s.id}`).toBe('estimate');
+          expect(r.observed, `${s.id} に観測の中身が無い`).toBeTruthy();
+        }
+      }
+    }
+  });
+
+  test('the method line-up differs by service, and we do not invent methods they do not sell', () => {
+    // 全社が全方式を出すことにしていたのは嘘だった（実測）。
+    const count = (id: string) => Object.keys(svc(id).postage).length;
+    expect(count('fromjapan')).toBe(5);
+    expect(count('buyee')).toBe(4);
+    expect(count('zenmarket')).toBe(4);
+    expect(count('neokyo')).toBe(3);
+    expect(count('jauce')).toBe(2);
+    // Neokyo と Jauce は小形包装物を売っていない。**キーが無いことがその表明。**
+    expect(svc('neokyo').postage['small-packet-air']).toBeUndefined();
+    expect(svc('jauce').postage['small-packet-air']).toBeUndefined();
+    expect(svc('jauce').postage['parcel-air']).toBeUndefined();
+    // どの社も EMS は売っている。
+    for (const s of SERVICES) expect(s.postage.ems, s.id).toBeDefined();
+  });
+
+  test('every rate carries the screen it was read from, and the company own wording', () => {
+    for (const s of SERVICES) {
+      for (const [m, r] of Object.entries(s.postage)) {
+        expect(r.sourceUrl, `${s.id} ${m}`).toMatch(/^https:\/\//);
+        expect(r.checkedOn, `${s.id} ${m}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+        // **原文の呼び方を訳さずに持つ。**「Small Packet」を「小形包装物」に直すと、
+        // その社がどう呼んでいるかが消える。
+        expect(r.labelRaw.length, `${s.id} ${m}`).toBeGreaterThan(2);
+      }
+    }
   });
 
   test('who pays us is recorded, and the cheapest row is still allowed to pay us nothing', () => {
@@ -396,7 +453,7 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
     // items 5,610 + fee 800 + domestic 0 + EMS 4,180 = 10,590
     const row = one('zenmarket', { priceYen: 5610, weightG: 200, domesticShippingYen: 0 });
     expect(amount(row, 'items')).toBe(5610);
-    expect(amount(row, 'ems')).toBe(4180);
+    expect(amount(row, 'intl-shipping')).toBe(4180);
     expect(amount(row, 'deposit')).toBe(384);
     expect(Math.round(10590 * 0.035)).toBe(371); // 素の率で計算したときの値。これではない。
   });
@@ -418,7 +475,7 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
 
   test('the deposit sits after EMS and before the taxes, so it grosses up the shipping too', () => {
     const keys = one('zenmarket').lines.map((l) => l.key);
-    expect(keys.indexOf('deposit')).toBeGreaterThan(keys.indexOf('ems'));
+    expect(keys.indexOf('deposit')).toBeGreaterThan(keys.indexOf('intl-shipping'));
     expect(keys.indexOf('deposit')).toBeLessThan(keys.indexOf('duty'));
   });
 });

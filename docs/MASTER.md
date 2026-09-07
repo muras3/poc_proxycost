@@ -109,6 +109,16 @@
 - **FR**: €8 → €2・€5
 
 → 料金表ではなく利用者の操作で決まる。予測はどちらを想定するか明示しなければならない
+
+**免税限度はすべて「1個口（consignment）あたり」で測る。注文全体では測らない**（A_confirmed）
+
+- **GB**: The £135 limit applies to the value of a total consignment that is imported ... Unless sent individually, the seller must add the individual values of all items in a consignment together
+- **DE/FR (EU)**: in consignments <= EUR 150. This threshold applies per consignment
+- **CA**: The CBSA doesn't assess duty or tax on mail items valued at CAN$20 or less
+- **SG**: the postal parcel contains goods of a total CIF value exceeding S$400
+- **AU**: （B推論・ABF 原文に未到達）代行の運用文言が parcels containing Low-Value Goods (1000 AUD or less)
+
+→ 実装は 2026-09-07 まで**カート全額**で判定していた。注文ごとに別送する Buyee の既定では1個口 €110 ずつ（€150 以下）なのに『€330 超』と判定して 4.1% を掛けており、**個口を分けたほうが税は安くなるのに逆に高く出していた**（DE 3点×¥20,000 で ¥2,876 対 正しくは ¥1,634）。ただし個口を分けると EMS が個口ごとに乗るので総額は上がる（同ケースで ¥91,263 → ¥101,137）。**『分ければ安い』は断言できず、両方計算して初めて言える。**
 <!-- generated:END findings -->
 
 そのほか、手で確かめた構造：
