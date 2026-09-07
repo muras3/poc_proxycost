@@ -77,21 +77,23 @@ describe('what the weight table does with those titles (dev split only)', () => 
   const rep = report(score(dev));
 
   test('coverage does not fall', () => {
-    // 2026-09-07 時点: 121/137。**下がる変更はここで止まる。**
-    expect(rep.resolved).toBeGreaterThanOrEqual(121);
+    // 2026-09-07 時点: 123/137。**下がる変更はここで止まる。**
+    expect(rep.resolved).toBeGreaterThanOrEqual(123);
   });
 
   test('accuracy does not fall', () => {
-    // 2026-09-07 時点: 104/121 が期待どおりの行。
+    // 2026-09-07 時点: 106/123 が期待どおりの行。
     // **網羅を上げて正確を下げる変更は、ここで落ちる。**
-    expect(rep.correct).toBeGreaterThanOrEqual(104);
+    expect(rep.correct).toBeGreaterThanOrEqual(106);
     expect(rep.correct / rep.resolved).toBeGreaterThanOrEqual(0.85);
   });
 
   test('the number of titles that must stay silent but get a weight does not grow', () => {
-    // 2026-09-07 時点: 37（off-target 10 + listing-no-data 27）。**目標は 0。**
+    // 2026-09-07 時点: 1（off-target 0 + listing-no-data 1）。**目標は 0。**
     // 間違った行に当たるのは当たらないより悪い。黙って別物の重量で総額と順位を出す。
-    expect(rep.misfire).toBeLessThanOrEqual(37);
+    expect(rep.misfire).toBeLessThanOrEqual(1);
+    // 店頭・カテゴリページに重量が付くことは、もう1件も許さない。
+    expect(rep.misfireOffTarget).toBe(0);
   });
 
   test('a resolved listing carries the shop the line came from', () => {

@@ -206,6 +206,78 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
     expect(resolveWeight('袴 単品 男性用').lineId).toBe('hakama');
     expect(resolveWeight('剣道 袴 27号').lineId).toBe('hakama');
   });
+
+  // ── 段0: 出品ではない題名。母数の off-target 49 件のうち 10 件に重量が付いていた。
+  test('a shop front and a category page get nothing, whatever words they carry', () => {
+    for (const t of [
+      'スニーカー - ハニーズ Yahoo!店',
+      '駿河屋Yahoo!店 - フィギュア',
+      'ZOZOTOWN Yahoo!店 - スニーカー',
+      '【楽天市場】シューズ・靴 > スニーカー：SHOPLIST',
+      '【楽天市場】 PEライン/釣り糸 : SOZOKI',
+      '三省堂書店 - 【楽天市場】 コミック全巻セット',
+      'アイムロワ お菓子 カップ麺 詰め合わせ - お菓子｜Yahoo!ショッピング',
+      '【2026年最新】Yahoo!オークション -禰豆子 フィギュアの中古品・新品・未使用品一覧',
+      '五番街〜バッグ・財布のお店',
+    ]) expect(resolveWeight(t).grams, t).toBeNull();
+  });
+
+  test('the shop-front gate reads the form, so real items from the same shops still resolve', () => {
+    // 商品ページは ' - 通販 - ' を挟み、楽天は '】' の直後から商品名が始まる。
+    expect(resolveWeight('シマノ 22 ステラ 2500S スピニングリール : つり具のマルニシYahoo!店 - 通販 - Yahoo!ショッピング').lineId)
+      .toBe('spinning-reel');
+    expect(resolveWeight('【楽天市場】初音ミク キョンシー Ver. 1/7 スケール フィギュア：chummys 楽天市場店').lineId)
+      .toBe('scale-1-7');
+  });
+
+  // ── 口数の出品。個数を掛ける処理は持たないので、当てずに黙る。
+  test('a lot of N things does not get the weight of one thing', () => {
+    for (const t of [
+      'ファミコン ソフト まとめ売り 19本セット - メルカリ',
+      'PS4 ゲームソフト まとめ売り（10本） - メルカリ',
+      'ワンピース 一番くじ プライズ フィギュア まとめ売り 9点',
+      '人気 カップ麺 12種類 詰め合わせ セット 12個アソート',
+      'ソフトルアー ワーム 10個セット ソフトベイト 疑似餌',
+      '芋焼酎 1800ml 一升瓶 2本セット - メルカリ',
+      'Amazon.co.jp: 漫画 全巻 まとめ セット 137冊 : Toys & Games',
+    ]) expect(resolveWeight(t).grams, t).toBeNull();
+  });
+
+  test('a set that is one product keeps its own line', () => {
+    // 全巻セット・上下セット・防具セットは口数ではなく、その形で1つの商品。
+    expect(resolveWeight('ワンピース 1〜114巻セット 全巻 尾田栄一郎').lineId).toBe('manga-set');
+    expect(resolveWeight('空手着 上下セット 空手衣 大人用').lineId).toBe('budo-uniform-set');
+    expect(resolveWeight('剣道防具セット 一式').lineId).toBe('kendo-bogu-set');
+  });
+
+  test('packaging, parts, clones and paint codes are not the thing', () => {
+    expect(resolveWeight('【空箱のみ】ぶいすぽっ！ スケールフィギュア GiGO').grams).toBeNull();
+    expect(resolveWeight('1/6 フィギュア ドール 用 ヘッド 植毛タイプ 塗装済').grams).toBeNull();
+    expect(resolveWeight('スーパーファミコン 本体 互換機 SFC互換 ゲーム機').grams).toBeNull();
+    expect(resolveWeight('【楽天市場】タミヤ ラッカー塗料 LP-70 アルミシルバー 塗料').grams).toBeNull();
+    expect(resolveWeight('クロス西洋剣 模造刀 模擬刀 日本刀 居合刀').grams).toBeNull();
+    expect(resolveWeight('【中古】SDガンダムフルカラー ウォドム フィギュア').grams).toBeNull();
+  });
+
+  test('a sealed card box and a photocard binder are not one card', () => {
+    expect(resolveWeight('ポケモンカード151 BOX シュリンク付き 新品 未開封 ポケカ').grams).toBeNull();
+    expect(resolveWeight('Kpop Photo Card Binder with 6 Sticker Sheets & 50 Sleeves, Photo Card Holder').grams).toBeNull();
+    expect(resolveWeight('遊戯王 ブラックマジシャン ユニクロ Tシャツ メンズ').grams).toBeNull();
+  });
+
+  test('a run of a magazine is not a manga set and not one issue', () => {
+    expect(resolveWeight('【付録完備】ONE PIECE ワンピース マガジン 漫画 全巻 セット').grams).toBeNull();
+    // 片方だけなら普通の巻・普通の号。門は2つ揃ったときだけ閉じる。
+    expect(resolveWeight('ONE PIECE 漫画 105巻').lineId).toBe('manga-volume');
+    expect(resolveWeight('SEVENTEEN 雑誌 表紙').lineId).toBe('magazine');
+  });
+
+  test('こどもの日 is a season, not a size', () => {
+    // 端午の節句の飾りとして売られる大人向けの居合刀が、子供サイズの門で黙っていた。
+    expect(resolveWeight('居合刀 模造刀 日本刀 コスプレ 端午の節句 こどもの日 鑑賞用').lineId).toBe('iaito');
+    // 寸法としての子供は今までどおり落ちる。
+    expect(resolveWeight('空手着 上下セット 女児 120cm').grams).toBeNull();
+  });
 });
 
 // ── 誤爆を潰すために当たるべきものまで落としていないか。**両方をここで固定する。**
@@ -276,7 +348,8 @@ describe('titles that must still resolve', () => {
   test('a line names the shop it was read from, not the category first source', () => {
     // games は本体と ソフトで店が違う。sources[0] を常に名乗ると片方が嘘になる。
     expect(resolveWeight('スーパーファミコン 本体').source).toContain('www.retroasia.com');
-    expect(resolveWeight('ゲームソフト まとめ売り').source).toContain('japan-figure.com');
+    // 'まとめ売り' は口数の門で黙るようになったので、1本の題名で見る。
+    expect(resolveWeight('ゲームソフト ドラゴンクエスト').source).toContain('japan-figure.com');
     expect(resolveWeight('ONE PIECE 漫画 105巻').source).toContain('jpbookstore.com');
     expect(resolveWeight('進撃の巨人 全巻セット').source).toContain('shop.bookoffusa.com');
   });

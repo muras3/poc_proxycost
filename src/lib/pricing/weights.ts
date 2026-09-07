@@ -265,12 +265,19 @@ interface Exclusion {
   /** 効かせる行。行 id で名指すか、カテゴリごと（except で穴を開ける）。 */
   lineIds?: string[];
   categoryId?: string;
+  categoryIds?: string[];
   exceptLineIds?: string[];
   /** 全カテゴリに効かせる。exceptCategoryIds のカテゴリだけ免れる。 */
   allCategories?: true;
   exceptCategoryIds?: string[];
   /** タイトルがこの語を持つなら、その行は当てない。 */
   when: string[];
+  /** 語では書けない**形**（数量＋助数詞など）。when と同じ扱いで、どれか一致すれば閉じる。 */
+  pattern?: RegExp[];
+  /** when に加えて、こちらの語も同じタイトルに要る（2つ揃って初めて意味を持つ形）。 */
+  and?: string[];
+  /** ただしこの語があるなら、when の一致は説明が付くので門を開ける。 */
+  unless?: string[];
   why: string;
 }
 
@@ -301,6 +308,9 @@ const EXCLUSIONS: Exclusion[] = [
     categoryId: 'sports-goods',
     exceptLineIds: ['budo-bag', 'budo-small-parts', 'budo-obi'],
     when: ['女児', '男児', '子供', '子ども', 'こども', 'キッズ', 'ジュニア', '幼児', '小学生', 'kids', 'junior', 'youth'],
+    // 'こどもの日' は端午の節句の飾りとしての売り文句で、寸法ではない。
+    // これで大人向けの居合刀 2 件が黙っていた（母数 h-18029f11・h-6b0bb9c3）。
+    unless: ['こどもの日', '子供の日', 'こどもの日', '端午の節句'],
     why: 'Every median in this category was taken from adult sizes',
   },
   {
@@ -350,7 +360,10 @@ const EXCLUSIONS: Exclusion[] = [
     // cd / lp に既に在る同じ門を、フィギュアとカードのラインにも効かせる
     // （スケール行も、'1/7 スケール アクリルケース' で裏付けが揃ってしまうので同じ扱い）。
     // **容れ物そのものの重量は取れていない**ので、当てずに仮置きへ落とす。
-    categoryId: 'figures',
+    // 2026-09-07 追記: 同じ門が K-POP・ゲーム・音楽の行にも要る。
+    // 'Photo Card Binder' に 28 g、'CD・DVDケース … ゲームソフト収納' に 190 g が付いていた。
+    // used-luxury（鞄・財布・カードケース）は容れ物そのものが商品なので入れない。
+    categoryIds: ['figures', 'tcg-singles', 'kpop', 'games'],
     lineIds: ['single-card', 'graded-slab'],
     when: [
       'ケース', 'case', 'ボックス', 'スリーブ', 'sleeve', 'ローダー', 'loader',
@@ -386,6 +399,101 @@ const EXCLUSIONS: Exclusion[] = [
     when: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray', 'cd'],
     why: 'A disc box set is not a manga box set, and the number would carry a bookshop as its source',
   },
+  {
+    // **1点ではなく口数の出品。**'ファミコン ソフト まとめ売り 19本セット' は 190 g × 19、
+    // 'カップ麺 12種類 詰め合わせ' は 122 g × 12。題名から個数を取り出して掛ける処理は
+    // 持っていないし、持つべきでもない（外れたときに 19 倍外れる — DESIGN-WEIGHT-MATCH §9）。
+    // 数量そのものは語ではなく**形**（数字＋助数詞＋まとめ言葉）で見る。
+    // 全巻セット・道着の上下セット・防具セットは「口数」ではなく**その形で1つの商品**なので免れる。
+    allCategories: true,
+    exceptLineIds: ['manga-set', 'budo-uniform-set', 'kendo-bogu-set'],
+    when: ['まとめ売り', 'まとめ買い', '詰め合わせ', '詰合せ', '詰め合せ', '詰合わせ', 'アソート'],
+    pattern: [/[0-9０-９]+\s*(個|本|枚|点|冊|種|種類|袋|缶|パック|足|膳)\s*(セット|組|入|まとめ|アソート)/],
+    why: 'A lot of N items weighs N times the line, and we have no count we trust to multiply by',
+  },
+  {
+    // 中身が無い出品。'【空箱のみ】… スケールフィギュア' は箱だけで、フィギュアではない。
+    allCategories: true,
+    when: ['空箱', '箱のみ', '外箱のみ', 'パッケージのみ', '説明書のみ'],
+    why: 'The listing sells the packaging with nothing in it',
+  },
+  {
+    // 部品だけの出品。'1/6 フィギュア ドール 用 ヘッド 植毛タイプ' は頭部だけ。
+    // '素体' は入れない——素体はドール1体で、部品ではない（母数 h-...: 1/6 素体セット）。
+    categoryId: 'figures',
+    when: ['植毛', 'ヘッドのみ', '頭部のみ', 'パーツのみ', '交換用ヘッド'],
+    why: 'A doll head on its own is a part, and we have no line for parts',
+  },
+  {
+    // 'スーパーファミコン 本体 互換機 … SFC互換' は他社の互換機。
+    // 3,350 g は整備済みの純正本体で測った値で、別の物。
+    lineIds: ['home-console'],
+    when: ['互換機', '互換'],
+    why: 'A third-party clone is not the original console the line was measured on',
+  },
+  {
+    // 'タミヤ ラッカー塗料 LP-70' の 'LP' は塗料の品番。レコードではない。
+    lineIds: ['lp', 'cd'],
+    when: ['塗料', 'ラッカー', 'スプレー缶', 'プラモデル'],
+    why: 'LP-70 is a paint code, not a record',
+  },
+  {
+    // 'クロス西洋剣 模造刀 … 居合刀' は西洋剣。居合刀の 2,500 g は日本の模擬刀で測った値。
+    lineIds: ['iaito'],
+    when: ['西洋剣', 'レイピア', 'サーベル'],
+    why: 'The iaito line was measured on Japanese practice swords',
+  },
+  {
+    // 'Kpop Photo Card Binder … Photo Card Holder' に革のカードケース 235 g が付いていた。
+    // 'card holder' は両方の言葉。トレカの文脈ならバインダーであって財布ではない。
+    lineIds: ['wallet-small-leather'],
+    when: ['photo card', 'photocard', 'フォトカード', 'トレカ', 'kpop', 'k-pop'],
+    why: 'A photocard binder shares the words with a leather card case but is not one',
+  },
+  {
+    // 未開封の BOX・パックは1枚のシングルではない。'ポケモンカード151 BOX シュリンク付き' は
+    // 30 パック入りの箱。**BOX の重量は取れていない**ので当てずに黙る。
+    categoryId: 'tcg-singles',
+    when: ['未開封', 'シュリンク', '拡張パック', '強化拡張パック', 'booster', 'オリパ', '福袋', 'unopened'],
+    why: 'A sealed box or pack is not the single card we measured',
+  },
+  {
+    // '遊戯王 ブラックマジシャン ユニクロ Tシャツ' はTシャツ。作品名はグッズにも付く。
+    categoryIds: ['figures', 'tcg-singles', 'kpop'],
+    when: [
+      'tシャツ', 't-shirt', 'ティーシャツ', 'パーカー', 'マグカップ', 'キーホルダー',
+      'クリアファイル', '缶バッジ', 'タペストリー', 'ぬいぐるみ',
+    ],
+    why: 'The character is on the merchandise as much as on the thing we weighed',
+  },
+  {
+    // '【付録完備】ONE PIECE ワンピース マガジン 漫画 全巻 セット' はムックの揃い。
+    // 大判のムック・雑誌の揃いは記録済みの穴（index.json partialGaps）。
+    // 定期刊行物の語と揃いの語が**両方**あるときだけ閉じる。片方だけなら普通の巻・普通の号。
+    lineIds: ['manga-set', 'manga-volume', 'magazine'],
+    when: ['マガジン', '雑誌', 'ムック', 'magazine'],
+    and: ['全巻', 'セット', 'バックナンバー'],
+    why: 'A run of a magazine or mook is not a manga set and not one issue',
+  },
+  {
+    // '漫画 全巻 まとめ セット 137冊' は複数の作品の口数で、1作品の揃い（2,000 g）ではない。
+    // 揃いの行は数量の門から外してあるので、'まとめ' の形だけここで別に閉じる。
+    lineIds: ['manga-set'],
+    when: ['まとめ売り', 'まとめ セット', 'まとめセット', 'まとめ出品'],
+    why: 'A mixed lot of complete sets is not one complete set',
+  },
+  {
+    // ガシャポン・食玩の小さい人形。総称の 800 g は 1/7 前後の完成品で測った値で、
+    // 20〜50 g のミニフィギュアとは 20 倍ちがう。**小さい人形の重量は取れていない。**
+    // 'SDガンダムフルカラー' は食玩の商品名（母数 h-5be50c17）。一番くじ・プライズは
+    // 大きさがまちまちで、母数では総称に当てて正しかったので入れない。
+    categoryId: 'figures',
+    when: [
+      'ガシャポン', 'ガチャガチャ', 'カプセルトイ', '食玩', 'ミニフィギュア', 'minifigure',
+      'sdガンダムフルカラー',
+    ],
+    why: 'A capsule-toy figure is nothing like the 800 g the generic line was measured on',
+  },
 ];
 
 /** 当たった語に裏付けが要るなら、それがタイトルにあるか。 */
@@ -399,11 +507,20 @@ function corroborated(title: string, raw: string): boolean {
 /** タイトルがこの行とは別の物を名指ししていないか。 */
 function namesSomethingElse(title: string, cat: WeightCategory, line: WeightLine): boolean {
   for (const rule of EXCLUSIONS) {
-    const named = rule.lineIds?.includes(line.id) === true
-      || (rule.categoryId === cat.category && rule.exceptLineIds?.includes(line.id) !== true)
-      || (rule.allCategories === true && rule.exceptCategoryIds?.includes(cat.category) !== true);
+    // exceptLineIds はカテゴリ指定・全カテゴリ指定のどちらにも効く（行を名指しした穴）。
+    const spared = rule.exceptLineIds?.includes(line.id) === true;
+    const byCategory = (rule.categoryId === cat.category || rule.categoryIds?.includes(cat.category) === true)
+      && !spared;
+    const byAll = rule.allCategories === true
+      && rule.exceptCategoryIds?.includes(cat.category) !== true && !spared;
+    const named = rule.lineIds?.includes(line.id) === true || byCategory || byAll;
     if (!named) continue;
-    if (rule.when.some((w) => matches(title, w))) return true;
+    const hit = rule.when.some((w) => matches(title, w))
+      || (rule.pattern?.some((re) => re.test(title)) ?? false);
+    if (!hit) continue;
+    if (rule.and && !rule.and.some((w) => matches(title, w))) continue;
+    if (rule.unless?.some((w) => matches(title, w))) continue;
+    return true;
   }
   return false;
 }
