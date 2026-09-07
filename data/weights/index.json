@@ -1,0 +1,2882 @@
+{
+  "generatedBy": "scripts/weights-build.ts",
+  "generatedOn": "2026-09-06",
+  "checkedOn": "2026-09-06",
+  "measured": false,
+  "totals": {
+    "categories": 9,
+    "lines": 69,
+    "domainsProbed": 152,
+    "domainsWithUsableData": 46,
+    "matchWordsDropped": 16,
+    "notObtained": 4
+  },
+  "categoryIds": [
+    "figures",
+    "music",
+    "tcg-singles",
+    "kpop",
+    "used-luxury",
+    "sneakers",
+    "food-tea-sake",
+    "fishing-tackle",
+    "sports-goods"
+  ],
+  "notObtained": [
+    {
+      "id": "instruments",
+      "labelEn": "Musical instruments",
+      "labelJa": "楽器",
+      "reason": "No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg)."
+    },
+    {
+      "id": "cameras",
+      "labelEn": "Cameras and lenses",
+      "labelJa": "カメラ・レンズ",
+      "reason": "Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight."
+    },
+    {
+      "id": "books-manga",
+      "labelEn": "Books and manga",
+      "labelJa": "書籍・漫画",
+      "reason": "No Shopify catalogue found with per-title grams."
+    },
+    {
+      "id": "games",
+      "labelEn": "Video games",
+      "labelJa": "ゲーム",
+      "reason": "No Shopify catalogue found with per-title grams."
+    }
+  ],
+  "partialGaps": [
+    {
+      "category": "sneakers",
+      "gap": "Mainstream athletic shoes (Nike, adidas, New Balance)",
+      "reason": "Every sneaker store that publishes grams charges a flat band (1,000 / 3,000 / 4,000 g). Only traditional and work footwear survived the check."
+    },
+    {
+      "category": "sports-goods",
+      "gap": "Baseball, soccer and golf",
+      "reason": "Only martial-arts equipment came through. Baseball and golf stores publish pound-rounded constants; no Shopify soccer store was found."
+    },
+    {
+      "category": "food-tea-sake",
+      "gap": "Chilled, frozen and fresh food",
+      "reason": "Stores that ship abroad stock shelf-stable goods only, so fish, wagyu and fresh sweets are absent from the sample."
+    },
+    {
+      "category": "kpop",
+      "gap": "A Japan-based seller",
+      "reason": "The adopted stores are Korean or US based. The one Japan-based store found publishes grams=0 for all 1,432 products."
+    },
+    {
+      "category": "used-luxury",
+      "gap": "Used watches",
+      "reason": "The 839 g line comes from a new-watch store and includes the presentation box; a used watch shipped without its box is far lighter."
+    }
+  ],
+  "matchWordsDropped": [
+    "fishing-tackle/hard-lure: dropped \"ペンシル\" — 文房具のシャープペンシルに当たる",
+    "fishing-tackle/hard-lure: dropped \"スプーン\" — 食器のスプーンに当たる",
+    "fishing-tackle/hard-lure: dropped \"プラグ\" — 電源プラグ・スパークプラグに当たる",
+    "fishing-tackle/hard-lure: dropped \"pencil\" — 同上",
+    "fishing-tackle/hard-lure: dropped \"spoon\" — 同上",
+    "fishing-tackle/terminal-tackle: dropped \"フック\" — 衣類の「フック付き」等に当たる",
+    "fishing-tackle/terminal-tackle: dropped \"スナップ\" — スナップボタン・スナップバックに当たる",
+    "fishing-tackle/terminal-tackle: dropped \"リーダー\" — 普通の日本語（「リーダー」）",
+    "fishing-tackle/terminal-tackle: dropped \"hook\" — 同上",
+    "fishing-tackle/terminal-tackle: dropped \"snap\" — 同上",
+    "kpop/photocard: dropped \"トレカ\" — tcg-singles と衝突する（日本語では TCG のカードもトレカ）",
+    "kpop/magazine: dropped \"dazed\" — 普通の英単語。雑誌名としてしか当たらない保証が無い",
+    "kpop/platform-album: dropped \"nemo\" — Finding Nemo のグッズに当たる",
+    "tcg-singles/graded-slab: dropped \"鑑定\" — 中古ブランド品の「鑑定書付き」に当たる",
+    "tcg-singles/single-card: dropped \"1枚\" — どのカテゴリの出品タイトルにも出る（「Tシャツ 1枚」）",
+    "used-luxury/luxury-watch: dropped \"watch\" — ゲーム・玩具のタイトルに当たる（Watch Dogs, Apple Watch）"
+  ],
+  "categories": [
+    {
+      "category": "figures",
+      "labelEn": "Figures",
+      "labelJa": "フィギュア",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 7,
+      "sampleN": 2199,
+      "fallbackG": 1000,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "www.solarisjapan.com",
+          "url": "https://www.solarisjapan.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 4747,
+          "verdict": "usable",
+          "reason": "Every product carries grams. Lines with a scale in the title have a spread of 1.0x"
+        }
+      ],
+      "lines": [
+        {
+          "id": "scale-1-4",
+          "labelEn": "1/4 scale",
+          "match": [
+            "1/4"
+          ],
+          "medianG": 3000,
+          "p25": 3000,
+          "p75": 3800,
+          "n": 198,
+          "spread": 1.3,
+          "tier": "estimate"
+        },
+        {
+          "id": "scale-1-6",
+          "labelEn": "1/6 scale",
+          "match": [
+            "1/6"
+          ],
+          "medianG": 1800,
+          "p25": 1800,
+          "p75": 1800,
+          "n": 641,
+          "spread": 1,
+          "tier": "estimate"
+        },
+        {
+          "id": "scale-1-7",
+          "labelEn": "1/7 scale",
+          "match": [
+            "1/7"
+          ],
+          "medianG": 1500,
+          "p25": 1500,
+          "p75": 1500,
+          "n": 647,
+          "spread": 1,
+          "tier": "estimate"
+        },
+        {
+          "id": "scale-1-8",
+          "labelEn": "1/8 scale",
+          "match": [
+            "1/8"
+          ],
+          "medianG": 1300,
+          "p25": 1230,
+          "p75": 1500,
+          "n": 105,
+          "spread": 1.2,
+          "tier": "estimate"
+        },
+        {
+          "id": "pop-up-parade",
+          "labelEn": "Pop Up Parade",
+          "match": [
+            "pop up parade",
+            "ポップアップパレード"
+          ],
+          "medianG": 800,
+          "p25": 800,
+          "p75": 1000,
+          "n": 104,
+          "spread": 1.2,
+          "tier": "estimate"
+        },
+        {
+          "id": "figma",
+          "labelEn": "figma",
+          "match": [
+            "figma"
+          ],
+          "medianG": 800,
+          "p25": 550,
+          "p75": 800,
+          "n": 78,
+          "spread": 1.5,
+          "tier": "estimate"
+        },
+        {
+          "id": "nendoroid",
+          "labelEn": "Nendoroid",
+          "match": [
+            "nendoroid",
+            "ねんどろいど"
+          ],
+          "medianG": 439,
+          "p25": 380,
+          "p75": 600,
+          "n": 426,
+          "spread": 1.6,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight."
+    },
+    {
+      "category": "music",
+      "labelEn": "Records and CDs",
+      "labelJa": "レコード・CD",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "published-range",
+      "lineCount": 2,
+      "sampleN": 0,
+      "fallbackG": 200,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "snowrecords.com",
+          "url": "https://snowrecords.com/",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "suspect",
+          "reason": "Recorded as a range only; the sample count was not kept"
+        }
+      ],
+      "lines": [
+        {
+          "id": "cd",
+          "labelEn": "CD",
+          "match": [
+            "cd",
+            "compact disc"
+          ],
+          "medianG": 100,
+          "p25": 80,
+          "p75": 120,
+          "n": 0,
+          "spread": 1.5,
+          "tier": "estimate"
+        },
+        {
+          "id": "lp",
+          "labelEn": "LP / vinyl",
+          "match": [
+            "lp",
+            "vinyl",
+            "レコード"
+          ],
+          "medianG": 270,
+          "p25": 240,
+          "p75": 300,
+          "n": 0,
+          "spread": 1.25,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Ranges published by Snow Records (CD 80-120 g, LP 240-300 g). We did not keep the sample count, so n is 0 here. Needs re-fetching."
+    },
+    {
+      "category": "tcg-singles",
+      "labelEn": "Trading cards (singles)",
+      "labelJa": "トレカ（単カード）",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 2,
+      "sampleN": 4703,
+      "fallbackG": 50,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "www.pokeninjapan.store",
+          "url": "https://www.pokeninjapan.store/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5198,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.7%, multiples of 100: 36%, of 500: 4%. Adopted. product_type=Single has 2,743 rows of which 99.2% are 50 g; product_type=PSA has 1,602 rows on two values, 100 g and 250 g. These are packed shipping weights, not measurements.",
+          "reasonJa": "distinct比 0.7%, 100の倍数 36%, 500の倍数 4%。採用。product_type=Single が 2,743件で 99.2% が 50g、product_type=PSA が 1,602件で 100g/250g の2値。梱包込みの発送重量で、実測ではない"
+        },
+        {
+          "domain": "japanmaster.myshopify.com",
+          "url": "https://japanmaster.myshopify.com/products.json?limit=250&page=1",
+          "products": 500,
+          "variantsWithGrams": 491,
+          "verdict": "usable",
+          "reason": "distinct=10 (2.0%), top value 39%. Adopted. There is no product_type, so singles were isolated by rarity words in the title (sar/sr/ur/hr/ar/csr/promo/parallel/leader), giving n=358 of which 86% are 100 g. Thirteen outliers put a single card at 1,000 g, so the values lean toward shipping bands.",
+          "reasonJa": "distinct=10 (2.0%), 最頻値 39%。採用。product_type が無いのでタイトルのレアリティ語(sar/sr/ur/hr/ar/csr/promo/parallel/leader)で単カードを切り出し n=358、86% が 100g。1枚で 1,000g の外れ値が13件あり、値は送料区分寄り"
+        },
+        {
+          "domain": "onepiece.pokeninjapan.store",
+          "url": "https://onepiece.pokeninjapan.store/products.json?limit=250&page=1",
+          "products": 1114,
+          "variantsWithGrams": 1122,
+          "verdict": "pseudo",
+          "reason": "distinct=8, top value 97% of all rows. Not adopted: all 1,084 Single rows are 50 g, and it is the same operator as pokeninjapan, so it is not independent evidence.",
+          "reasonJa": "distinct=8, 最頻値が全体の 97%。不採用。Single 1,084件が全部 50g。pokeninjapan と同一運営で独立した証拠にならない"
+        },
+        {
+          "domain": "zenpan-japan.com",
+          "url": "https://zenpan-japan.com/products.json?limit=250&page=1",
+          "products": 3249,
+          "variantsWithGrams": 3248,
+          "verdict": "pseudo",
+          "reason": "distinct=77, top value 64% of all rows. Not adopted, but Pokémon TCG (1,959 rows) and One Piece TCG (336 rows) both have a median of 50 g, which independently supports the 50 g packed value.",
+          "reasonJa": "distinct=77, 最頻値が全体の 64%。不採用。ただし Pokémon TCG 1,959件・One Piece TCG 336件がいずれも中央値 50g で、50g という梱包込み値を独立に裏づける"
+        },
+        {
+          "domain": "tcg-corner.com",
+          "url": "https://tcg-corner.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 4726,
+          "verdict": "pseudo",
+          "reason": "distinct=18, top value 77% of all rows. Not adopted: singles sit on three values, 2 g / 3 g / 4 g — the card itself, with no packing.",
+          "reasonJa": "distinct=18, 最頻値が全体の 77%。不採用。単カードが 2g/3g/4g の3値で、梱包を含まないカード単体の重量"
+        },
+        {
+          "domain": "omotenashitcg.com",
+          "url": "https://omotenashitcg.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5380,
+          "verdict": "pseudo",
+          "reason": "distinct=65, top value 86% of all rows. Not adopted: Card Games has 4,872 rows almost all at 2 g, the bare card.",
+          "reasonJa": "distinct=65, 最頻値が全体の 86%。不採用。Card Games 4,872件がほぼ全部 2g（カード単体）"
+        },
+        {
+          "domain": "cardotaku.com",
+          "url": "https://cardotaku.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5005,
+          "verdict": "pseudo",
+          "reason": "distinct=100, top value 94% of all rows. Not adopted: every single is 3 g, the bare card.",
+          "reasonJa": "distinct=100, 最頻値が全体の 94%。不採用。単カードが全部 3g（カード単体）"
+        },
+        {
+          "domain": "yugi-market.com",
+          "url": "https://yugi-market.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5041,
+          "verdict": "pseudo",
+          "reason": "distinct=29, top value 89% of all rows. Not adopted: 4,470 singles at 5 g, the bare card.",
+          "reasonJa": "distinct=29, 最頻値が全体の 89%。不採用。単カードが 5g で 4,470件（カード単体）"
+        },
+        {
+          "domain": "japantradingcardstore.com",
+          "url": "https://japantradingcardstore.com/products.json?limit=250&page=1",
+          "products": 2658,
+          "variantsWithGrams": 538,
+          "verdict": "pseudo",
+          "reason": "distinct=5, top value 82% of all rows. Not adopted: only 538 of 2,658 rows carry grams, and 82% of those are 1 g.",
+          "reasonJa": "distinct=5, 最頻値が全体の 82%。不採用。2,658件中 538件しか grams が入っておらず、その 82% が 1g"
+        },
+        {
+          "domain": "sakurascardshop.com",
+          "url": "https://sakurascardshop.com/products.json?limit=250&page=1",
+          "products": 156,
+          "variantsWithGrams": 185,
+          "verdict": "usable",
+          "reason": "distinct=31 (16.8%), top value 40%. Usable as a shop, but the stock is almost all sealed product (boxes at 312 g and 454 g) and only about ten singles exist, at 1 g / 2 g / 5 g. Not usable for a line.",
+          "reasonJa": "distinct=31 (16.8%), 最頻値 40%。店としては usable だが在庫がほぼ封入品（BOX 312g・454g）で、単カードは 1g/2g/5g が10件程度しかない。lines には使えず不採用"
+        },
+        {
+          "domain": "poketherapy.com",
+          "url": "https://poketherapy.com/products.json?limit=250&page=1",
+          "products": 123,
+          "variantsWithGrams": 115,
+          "verdict": "usable",
+          "reason": "distinct=15 (13.0%), top value 19%. Usable as a shop, but it carries only booster boxes and bundles — not a single card in the catalogue. Not adopted.",
+          "reasonJa": "distinct=15 (13.0%), 最頻値 19%。店としては usable だが Booster Box / Bundle など封入品のみで単カードが1件も無い。不採用"
+        },
+        {
+          "domain": "japan-figure.com",
+          "url": "https://japan-figure.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 9093,
+          "verdict": "usable",
+          "reason": "distinct=438 (4.8%), top value 9%. Usable as a shop, but product_type='Trading Cards Single Card' has n=24, below our threshold of 50, and its contents are actually decks and card sets. Not adopted.",
+          "reasonJa": "distinct=438 (4.8%), 最頻値 9%。店としては usable だが product_type='Trading Cards Single Card' が n=24 で判定閾値 50 に届かず、中身も実際はデッキ・カードセット。不採用"
+        },
+        {
+          "domain": "tcgrepublic.com",
+          "url": "https://tcgrepublic.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404. The largest singles specialist, but no JSON is available.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404。単カード専門の最大手だが JSON が取れない"
+        },
+        {
+          "domain": "ichiba-japan.com",
+          "url": "https://ichiba-japan.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns HTTP 403 (HTML), so nothing could be read.",
+          "reasonJa": "products.json が HTTP 403（HTML を返す）。取得不可"
+        },
+        {
+          "domain": "www.fujicardshop.com",
+          "url": "https://www.fujicardshop.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns HTTP 403, so nothing could be read.",
+          "reasonJa": "products.json が HTTP 403。取得不可"
+        },
+        {
+          "domain": "samuraiswordtokyo.com",
+          "url": "https://samuraiswordtokyo.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but products.json redirects to a blog HTML page and never returns JSON.",
+          "reasonJa": "Shopify だが products.json がブログ HTML にリダイレクトされ JSON を返さない。取得不可"
+        },
+        {
+          "domain": "japan-game-tcg-market.myshopify.com",
+          "url": "https://japan-game-tcg-market.myshopify.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns HTTP 500, so nothing could be read.",
+          "reasonJa": "products.json が HTTP 500。取得不可"
+        }
+      ],
+      "lines": [
+        {
+          "id": "graded-slab",
+          "labelEn": "Graded slab (PSA/BGS)",
+          "match": [
+            "psa",
+            "bgs",
+            "cgc"
+          ],
+          "medianG": 100,
+          "p25": 100,
+          "p75": 250,
+          "n": 1602,
+          "spread": 2.5,
+          "tier": "estimate"
+        },
+        {
+          "id": "single-card",
+          "labelEn": "Single card, packed",
+          "match": [
+            "シングル",
+            "single card",
+            "sar",
+            "csr",
+            "ssr",
+            "パラレル",
+            "parallel"
+          ],
+          "medianG": 50,
+          "p25": 50,
+          "p75": 50,
+          "n": 3101,
+          "spread": 1,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Two shops adopted: www.pokeninjapan.store (suspect) and japanmaster.myshopify.com (usable). grams is an input to a shipping calculator, not a measurement, so measured: false.\n\nThe decisive point here is that shops follow one of two conventions. (A) Shops that record the bare card: tcg-corner 2 g, omotenashitcg 2 g, cardotaku 3 g, yugi-market 5 g, japantradingcardstore 1 g. Four or five shops land independently between 1 and 5 g, so \"a card weighs roughly 1.7 to 5 g\" is corroborated by real data. But every one of them puts the same value on every row, which scores pseudo, so none of them feed a line. (B) Shops that record the packed shipping weight: pokeninjapan's 2,743 Single rows at 50 g, zenpan-japan's Pokémon and One Piece TCG also at a 50 g median, japanmaster's 358 singles at 100 g. Postage needs (B), so the lines are built from (B).\n\nThe 50 g single-card figure matches the expected sleeve, toploader and envelope (the brief's 20-60 g range). But it is the packed weight of one order, not of one card. Treating ten cards as 500 g is wrong: by group (A) each card is 2-5 g, so the increment is essentially paper. The pooled p25 and p75 are both 50, giving a spread of 1.0, only because pokeninjapan's 2,743 rows swamp japanmaster's 358 — real shop-to-shop variation should be read as 50 to 100 g.\n\nThe 100 g and 250 g of graded-slab reflect the PSA slab itself (about 85 g in reality) versus a padded shipping form. japanmaster has thirteen outliers putting one card at 1,000 g, which is a postage class entered verbatim, not a weight.\n\ngraded-slab must be matched first: PSA-graded listings also carry rarity words like 'sar', so testing single-card first would drop graded cards to 50 g. The match words 'psa', 'sar', 'csr' and 'ssr' are short but appear almost nowhere except card titles, so they were kept; 'sr', 'ur' and 'ar' were dropped as too short to be safe.\n\nLimit: pokeninjapan is effectively the only shop with a real body of singles that did not score pseudo. onepiece.pokeninjapan.store is the same operator, so it is not independent verification. tcgrepublic.com, the largest singles specialist, is not Shopify and could not be read."
+    },
+    {
+      "category": "kpop",
+      "labelEn": "K-Pop albums and goods",
+      "labelJa": "K-POP（アルバム・グッズ）",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 7,
+      "sampleN": 14353,
+      "fallbackG": 700,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "kpopmerch.jp",
+          "url": "https://kpopmerch.jp/products.json?limit=250&page=1",
+          "products": 3115,
+          "variantsWithGrams": 5116,
+          "verdict": "suspect",
+          "reason": "distinct ratio 1.2%, multiples of 100: 99%, of 500: 46%. Adopted. product_type=ALBUM has 3,193 rows, median 800 g (p25 600 / p75 1000). Japanese-language shop aimed at Japan, but operated from Korea (KPOPMERCH, Yongin).",
+          "reasonJa": "distinct比 1.2%, 100の倍数 99%, 500の倍数 46%。採用。product_type=ALBUM が 3,193件で中央値 800g（p25 600 / p75 1000）。日本語タイトルの日本向け店だが運営は韓国（KPOPMERCH、龍仁市）"
+        },
+        {
+          "domain": "www.kpopalbums.com",
+          "url": "https://www.kpopalbums.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 13572,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.3%, multiples of 100: 100%, of 500: 28%. Adopted. product_type=CD 4,619 rows median 800 g; CARD (platform albums) 1,082 rows 400 g; BOOK 677 rows 1,500 g.",
+          "reasonJa": "distinct比 0.3%, 100の倍数 100%, 500の倍数 28%。採用。product_type=CD が 4,619件で中央値 800g、CARD（プラットフォームアルバム）1,082件で 400g、BOOK 677件で 1,500g"
+        },
+        {
+          "domain": "shop.delivered.co.kr",
+          "url": "https://shop.delivered.co.kr/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 14778,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.3%, multiples of 100: 100%, of 500: 79%. Adopted, but most of the catalogue is K-fashion and cosmetics; only Kpop Album (1,357) and Kpop Merch (1,518) are in scope. Album median 1,000 g.",
+          "reasonJa": "distinct比 0.3%, 100の倍数 100%, 500の倍数 79%。採用。ただし在庫の大半は K-ファッション/コスメで、K-POP は Kpop Album 1,357件・Kpop Merch 1,518件のみ。アルバム中央値 1,000g"
+        },
+        {
+          "domain": "cokodive.com",
+          "url": "https://cokodive.com/products.json?limit=250&page=1",
+          "products": 499,
+          "variantsWithGrams": 1048,
+          "verdict": "usable",
+          "reason": "distinct=52 (5.0%), top value 25%, multiples of 100: 56%. Adopted. K-POP_CD/DVD_ALBUM n=143, median 700 g. Small sample, but the values move per product.",
+          "reasonJa": "distinct=52 (5.0%), 最頻値 25%, 100の倍数 56%。採用。K-POP_CD/DVD_ALBUM 143件で中央値 700g。母数は小さいが値が商品ごとに動いている"
+        },
+        {
+          "domain": "www.kpop.exchange",
+          "url": "https://www.kpop.exchange/products.json?limit=250&page=1",
+          "products": 2143,
+          "variantsWithGrams": 7057,
+          "verdict": "suspect",
+          "reason": "distinct ratio 1.8%, multiples of 100: 9%. Adopted for the photocard line only. Values are ounce conversions (28 g = 1 oz, 113 g = 4 oz, 454 g = 16 oz). product_type='Photo Card(s)' has 1,074 rows — the only shop that carries a weight for a single photocard.",
+          "reasonJa": "distinct比 1.8%, 100の倍数 9%。採用（photocard 行のみ）。値が oz 換算（28g=1oz, 113g=4oz, 454g=16oz）。product_type='Photo Card(s)' が 1,074件あり、単体フォトカードの重量を持つ唯一の店"
+        },
+        {
+          "domain": "kpopstoreinusa.com",
+          "url": "https://kpopstoreinusa.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 10872,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.3%. Not adopted; used only as corroboration. Values are pound conversions (907 g = 2 lb, 1,814 g = 4 lb), so the steps are coarse. Album n=3,395 with median 907 g independently supports 800-1,000 g for an album.",
+          "reasonJa": "distinct比 0.3%。不採用（裏取りにのみ使用）。値が lb 換算（907g=2lb, 1814g=4lb）で段が粗い。Album 3,395件が中央値 907g で、アルバム 800〜1,000g を独立に裏づける"
+        },
+        {
+          "domain": "kplaceshop.com",
+          "url": "https://kplaceshop.com/products.json?limit=250&page=1",
+          "products": 1750,
+          "variantsWithGrams": 6246,
+          "verdict": "usable",
+          "reason": "distinct=427 (6.8%), top value 6%, multiples of 100: 1%. The best data quality of any K-Pop shop, but not adopted: the values are ounce conversions of the bare product with no packing, and Albums n=3,161 has a median of 172 g, which is far too low for a shipping weight. Photocard titles mix holders and sets, so single cards cannot be isolated.",
+          "reasonJa": "distinct=427 (6.8%), 最頻値 6%, 100の倍数 1%。店としては最も質が良いが不採用（裏取りにのみ使用）。値が商品単体（梱包なし）の oz 換算で、Albums 3,161件の中央値が 172g と発送重量として低すぎる。photocard 系タイトルにはホルダーやセットが混ざり単体カードを切り出せない"
+        },
+        {
+          "domain": "kpopmerch.com",
+          "url": "https://kpopmerch.com/products.json?limit=250&page=1",
+          "products": 3730,
+          "variantsWithGrams": 9536,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.7%, multiples of 100: 99%. Not adopted: same operator as kpopmerch.jp (KPOPMERCH), so it is not independent evidence. ALBUM n=5,680 median 1,000 g, one step heavier than the .jp shop's 800 g.",
+          "reasonJa": "distinct比 0.7%, 100の倍数 99%。不採用。kpopmerch.jp と同一運営（KPOPMERCH）なので独立した証拠にならない。ALBUM 5,680件で中央値 1,000g と .jp の 800g より一段重い"
+        },
+        {
+          "domain": "kpopfromjapan.com",
+          "url": "https://kpopfromjapan.com/products.json?limit=250&page=1",
+          "products": 1432,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not adopted. One of the few Shopify stores based in Japan that ships abroad, but all 1,432 rows have grams of 0 — no weights entered at all.",
+          "reasonJa": "不採用。日本拠点で海外発送する数少ない Shopify 店だが、1,432件すべて grams が 0。重量を一切入れていない"
+        },
+        {
+          "domain": "hallyusuperstore.com",
+          "url": "https://hallyusuperstore.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "robots.txt is Disallow: / for everyone, so we did not fetch it.",
+          "reasonJa": "robots.txt が Disallow: / で全面禁止。取得しなかった"
+        },
+        {
+          "domain": "www.ktown4u.com",
+          "url": "https://www.ktown4u.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 303. The largest K-Pop retailer, but no JSON is available.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 303。K-POP 通販最大手だが JSON が取れない"
+        },
+        {
+          "domain": "www.catchopcd.net",
+          "url": "https://www.catchopcd.net/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "pocamarket.com",
+          "url": "https://pocamarket.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404. The largest photocard specialist, but unreachable this way.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404。フォトカード専門の最大手だが取れない"
+        },
+        {
+          "domain": "kpopcd.com",
+          "url": "https://kpopcd.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404. A Japanese retailer (Kaukau Asia) of Korean pressings.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404。日本（かうかうアジア）の韓国盤取扱店"
+        },
+        {
+          "domain": "s-record.jp",
+          "url": "https://s-record.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404. Seoul Records in Shin-Okubo, Tokyo.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404。新大久保のソウルレコード"
+        },
+        {
+          "domain": "www.musickorea.com",
+          "url": "https://www.musickorea.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        }
+      ],
+      "lines": [
+        {
+          "id": "photocard",
+          "labelEn": "Photocard (single)",
+          "match": [
+            "フォトカード",
+            "photocard",
+            "photo card"
+          ],
+          "medianG": 28,
+          "p25": 28,
+          "p75": 57,
+          "n": 1074,
+          "spread": 2.04,
+          "tier": "estimate"
+        },
+        {
+          "id": "photobook",
+          "labelEn": "Photobook / photo essay",
+          "match": [
+            "写真集",
+            "フォトブック",
+            "photobook",
+            "photo book",
+            "dicon"
+          ],
+          "medianG": 1000,
+          "p25": 800,
+          "p75": 1600,
+          "n": 1182,
+          "spread": 2,
+          "tier": "estimate"
+        },
+        {
+          "id": "lightstick",
+          "labelEn": "Official lightstick",
+          "match": [
+            "ペンライト",
+            "lightstick",
+            "light stick",
+            "応援棒"
+          ],
+          "medianG": 900,
+          "p25": 500,
+          "p75": 1500,
+          "n": 586,
+          "spread": 3,
+          "tier": "estimate"
+        },
+        {
+          "id": "dvd-bluray",
+          "labelEn": "DVD / Blu-ray",
+          "match": [
+            "ブルーレイ",
+            "blu-ray",
+            "bluray",
+            "dvd"
+          ],
+          "medianG": 1750,
+          "p25": 1200,
+          "p75": 2000,
+          "n": 150,
+          "spread": 1.67,
+          "tier": "estimate"
+        },
+        {
+          "id": "magazine",
+          "labelEn": "Magazine",
+          "match": [
+            "雑誌",
+            "マガジン",
+            "magazine"
+          ],
+          "medianG": 1500,
+          "p25": 1200,
+          "p75": 2500,
+          "n": 542,
+          "spread": 2.08,
+          "tier": "estimate"
+        },
+        {
+          "id": "platform-album",
+          "labelEn": "Platform album (POCA / Weverse / Nemo / Kihno)",
+          "match": [
+            "poca",
+            "weverse album",
+            "ウィバースアルバム",
+            "kihno",
+            "キノアルバム",
+            "plve",
+            "objekt",
+            "smini",
+            "プラットフォーム",
+            "platform album"
+          ],
+          "medianG": 400,
+          "p25": 300,
+          "p75": 600,
+          "n": 1140,
+          "spread": 2,
+          "tier": "estimate"
+        },
+        {
+          "id": "album",
+          "labelEn": "Physical album (CD + photobook)",
+          "match": [
+            "アルバム",
+            "album"
+          ],
+          "medianG": 800,
+          "p25": 500,
+          "p75": 1000,
+          "n": 9679,
+          "spread": 2,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Four shops adopted (kpopmerch.jp, www.kpopalbums.com, shop.delivered.co.kr, cokodive.com), plus www.kpop.exchange for the photocard line only. grams is an input to a shipping calculator, not a measurement, so measured: false.\n\nA correction to the method first. This survey targets Japanese retailers that ship abroad, and for K-Pop that essentially does not exist. kpopfromjapan.com is one of the few Shopify shops based in Japan that ships worldwide, and all 1,432 of its rows have grams of 0. kpopmerch.jp is in Japanese and aimed at Japan, but it is run from Korea (KPOPMERCH, Yongin, Gyeonggi). Ktown4u, catchopcd, pocamarket, kpopcd.com and s-record.jp (Seoul Records in Shin-Okubo) are not Shopify and return 404 or 303. So the figures come from Korean and US shops. The goods are the same Korean pressings a Japanese shop would sell, so they are usable for estimating weight, but they are not \"figures from a Japanese retailer\".\n\nThe decisive split here is that shops follow one of two conventions. (A) Shops that record the packed shipping weight: kpopmerch.jp (album 800 g), kpopalbums (800 g), dkshop (1,000 g), cokodive (700 g), kpopstoreinusa (907 g = 2 lb). Five shops land independently between 700 and 1,000 g. (B) Shops that record the bare product: kplaceshop (album 172 g), kpop.exchange (454 g = 16 oz). A proxy shipment needs (A), so the lines pool the four (A) shops. The 400-600 g gap between the two groups is the box and the padding.\n\nThe brief guessed an album at 300-600 g including the photobook; the data says 800 g (p25 500, p75 1000). The difference is exactly the bare-versus-packed distinction, and group (B)'s 454 g matches the brief closely. The order of magnitude was right.\n\nPhotocards cannot use group (A). Their photocard medians of 300-500 g are the Korean shops' smallest-box postage step, not the weight of a card. Only www.kpop.exchange carries single cards under their own product_type ('Photo Card(s)', 1,074 rows), which is where 28 g comes from. Note that 28 g is exactly 1 oz and covers 67% of those rows, so it is a rounded floor; the same shop's true minimum is 3 g, and 28 g should be read as card plus sleeve plus envelope. It agrees in magnitude with the 50 g packed single card that the tcg-singles category derived independently.\n\nPlatform albums (POCA, Weverse, NEMO, Kihno, PLVE, Objekt, SMini) are card-format releases with no CD, at half a normal album (400 g). Without that split they would be matched at 800 g and be 2x wrong. platform-album must be tested before album, because \"POCA ALBUM\" contains \"album\".\n\nMatch words include both Japanese (as seen in auction titles) and English. 'cd' was dropped from album as too short to be safe, leaving only 'album' and its Japanese equivalent; 'ost' was dropped because it matches 'post'. 'dvd' is only three characters but rarely hides inside other words, so it was kept.\n\nLimits. (1) Only three of the four adopted shops are independent — kpopmerch.jp and kpopmerch.com are the same operator, so the latter is excluded. (2) Most of dkshop's catalogue is K-fashion and cosmetics; only the K-Pop product_types were used. (3) A few kpopmerch.jp albums carry 181,437 g, 272,155 g and 408,233 g, apparently pounds entered as grams, so everything above 20,000 g was excluded. (4) Lightsticks have a spread of 3.0 because official lightstick boxes differ per group; the 500-1,500 g range is shown as it is. (5) fallbackG 700 is the median of all 19,709 rows across the three K-Pop specialists (kpopmerch.jp, kpopalbums, cokodive)."
+    },
+    {
+      "category": "used-luxury",
+      "labelEn": "Used luxury goods",
+      "labelJa": "中古ブランド品",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 7,
+      "sampleN": 952,
+      "fallbackG": 584,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "www.tokyourluxury.com",
+          "url": "https://www.tokyourluxury.com/products.json?limit=250&page=1",
+          "products": 1673,
+          "variantsWithGrams": 129,
+          "verdict": "usable",
+          "reason": "distinct=126 (97.7%), top value 2%, multiples of 100: 2%. Adopted as the core of the lines. Values run 47 g to 1,876 g with 1 g precision (866 g, 675 g, 89 g, 615 g), which reads as each item actually being put on a scale. Second-hand designer bags only. Note that only 129 of 1,673 products carry grams — the weighing appears to have started partway through.",
+          "reasonJa": "distinct=126 (97.7%), 最頻値 2%, 100の倍数 2%。採用（lines の中核）。47g〜1,876g で 1g 刻みの端数（866g / 675g / 89g / 615g）が並び、一点ごとに秤で量った値とみてよい。中古ブランドバッグ専業。ただし grams があるのは 1,673件中 129件だけで、重量入力は途中から始めた運用らしい"
+        },
+        {
+          "domain": "www.rookjapan.com",
+          "url": "https://www.rookjapan.com/products.json?limit=250&page=1",
+          "products": 4313,
+          "variantsWithGrams": 3813,
+          "verdict": "usable",
+          "reason": "distinct=262 (6.9%), top value 5%, multiples of 100: 8%. Adopted for the watch line only. product_type=Luxury Watch has n=834, median 839 g, spread 1.47x, with values that move per model (762 g, 1,120 g). It is a watch shop selling mostly new stock, not a second-hand designer shop, and the values look like packed weight including the presentation box.",
+          "reasonJa": "distinct=262 (6.9%), 最頻値 5%, 100の倍数 8%。腕時計ラインにのみ採用。product_type=Luxury Watch が n=834・中央値 839g・ばらつき 1.47x で、機種ごとに端数（762g / 1,120g）が動く。ただし新品中心の時計店で中古ブランド品店ではない。値は化粧箱込みの梱包重量とみられる"
+        },
+        {
+          "domain": "luxlux.jp",
+          "url": "https://luxlux.jp/products.json?limit=250&page=1",
+          "products": 1860,
+          "variantsWithGrams": 1854,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.3%, multiples of 100: 100%, of 500: 100%. Numbers not adopted: only five values exist (1,000 / 3,000 / 6,000 / 9,000 / 18,000 g), which is a shipping band table — a 6 kg handbag is not a physical weight. The ordering of the bands (wallets and accessories 1 kg < shoulder 3 kg < handbag and tote 6 kg < boston 9 kg) does match tokyourluxury's measured ordering, so it was used to corroborate how the lines are split.",
+          "reasonJa": "distinct比 0.3%, 100の倍数 100%, 500の倍数 100%。数値は不採用。1,000/3,000/6,000/9,000/18,000g の5値しかなく送料区分そのもの（ハンドバッグ 6kg は物理重量としてあり得ない）。ただし区分の並び（財布・アクセ 1kg < ショルダー 3kg < ハンドバッグ・トート 6kg < ボストン 9kg）は tokyourluxury の実測順と一致し、ライン分けの裏づけに使った"
+        },
+        {
+          "domain": "gracejapanluxuybrand.myshopify.com",
+          "url": "https://gracejapanluxuybrand.myshopify.com/products.json?limit=250&page=1",
+          "products": 3221,
+          "variantsWithGrams": 1032,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.8%, multiples of 100: 100%, of 500: 100%. Numbers not adopted: steps of 1,000 / 2,000 / 3,000 / 4,000 g. product_type is in Japanese (shoulder bag 3 kg / handbag 3 kg / wallet 2 kg / watch 2 kg / necklace 1 kg), and it too was used only to corroborate the ordering.",
+          "reasonJa": "distinct比 0.8%, 100の倍数 100%, 500の倍数 100%。数値は不採用。1,000/2,000/3,000/4,000g の段。product_type が日本語（ショルダーバッグ 3kg / ハンドバッグ 3kg / 財布 2kg / 時計 2kg / ネックレス 1kg）で、これも順序の裏づけにのみ使った"
+        },
+        {
+          "domain": "luxuness.com",
+          "url": "https://luxuness.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5000,
+          "verdict": "pseudo",
+          "reason": "distinct=1, top value 100% of all rows. Not adopted: all 5,000 rows are a constant 500 g.",
+          "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。5,000件すべて 500g の定数"
+        },
+        {
+          "domain": "world.reclo.jp",
+          "url": "https://world.reclo.jp/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5000,
+          "verdict": "pseudo",
+          "reason": "distinct=1, top value 100% of all rows. Not adopted: bags, wallets, wrist watches and shoes are all 3,000 g.",
+          "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。bag / Wallet / Wrist Watch / shoes まで全部 3,000g"
+        },
+        {
+          "domain": "brandoffbuyingclub.com",
+          "url": "https://brandoffbuyingclub.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5000,
+          "verdict": "pseudo",
+          "reason": "distinct=1, top value 100% of all rows. Not adopted: everything is 3,000 g. Row counts and the per-product_type breakdown match world.reclo.jp exactly, so it is the same catalogue on another domain and must not be counted as a second shop.",
+          "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。全件 3,000g。件数も product_type 別内訳も world.reclo.jp と完全一致で、同一カタログの別ドメイン。独立した2店として数えてはいけない"
+        },
+        {
+          "domain": "hannari-shop.net",
+          "url": "https://hannari-shop.net/products.json?limit=250&page=1",
+          "products": 244,
+          "variantsWithGrams": 86,
+          "verdict": "pseudo",
+          "reason": "distinct=1, top value 100% of all rows. Not adopted: mens watches and shoulder bags alike are 1,000 g.",
+          "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。Mens Watches も Shoulder Bag も全部 1,000g"
+        },
+        {
+          "domain": "www.ippojapanwatch.com",
+          "url": "https://www.ippojapanwatch.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 4477,
+          "verdict": "pseudo",
+          "reason": "distinct=1, top value 100% of all rows. Not adopted: watches and spare bracelet links are all 300 g.",
+          "reasonJa": "distinct=1, 最頻値が全体の 100%。不採用。時計もバンドの駒も全部 300g"
+        },
+        {
+          "domain": "cjluxury.com",
+          "url": "https://cjluxury.com/products.json?limit=250&page=1",
+          "products": 477,
+          "variantsWithGrams": 7,
+          "verdict": "insufficient",
+          "reason": "Only n=7 weighted rows, below our threshold of 50.",
+          "reasonJa": "n=7 < 50。不採用。grams があるのはネックレス7件だけで全部 20g"
+        },
+        {
+          "domain": "vintagelacharme.com",
+          "url": "https://vintagelacharme.com/products.json?limit=250&page=1",
+          "products": 2570,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+          "reasonJa": "n=0。Shopify だが grams が全件 0（重量未入力）"
+        },
+        {
+          "domain": "dct-ep-vintageluxurystore.com",
+          "url": "https://dct-ep-vintageluxurystore.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+          "reasonJa": "n=0。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "amorevintagejapan.com",
+          "url": "https://amorevintagejapan.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+          "reasonJa": "n=0。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "myluxury-store.com",
+          "url": "https://myluxury-store.com/products.json?limit=250&page=1",
+          "products": 4419,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "A second-hand luxury watch shop. Shopify, but grams is 0 on every row.",
+          "reasonJa": "n=0。中古高級時計店。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "weeklyluxdrop.com",
+          "url": "https://weeklyluxdrop.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+          "reasonJa": "n=0。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "brandstreettokyo.com",
+          "url": "https://brandstreettokyo.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row — no weights entered.",
+          "reasonJa": "n=0。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "jash.co.jp",
+          "url": "https://jash.co.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns {\"products\":[]} — the public JSON is switched off. tomodachi.fun and arigatousharejapan.biz behave identically and belong to the same wholesale group.",
+          "reasonJa": "products.json が {\"products\":[]} を返す（公開JSONを止めている）。tomodachi.fun / arigatousharejapan.biz も同じ挙動で、いずれも同系列の卸サイト"
+        },
+        {
+          "domain": "brandbagworld.com",
+          "url": "https://brandbagworld.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store. j-ports.com, vintagequeenjapan.com, brandluxjp.com, sekinevintage.com, timepeaks.com, luxjpn.com, www.thewatchcompany.com, watchnian.com and brashel.jp also return 404; atlantisvintagetokyo.com and www.daikokuya78.com return 403; shop.zenplus.jp, zenluxe.jp, allu-official.com, gc-yukizaki.com and store.komehyo.jp are not Shopify.",
+          "reasonJa": "products.json が 404（Shopify ではない）。j-ports.com / vintagequeenjapan.com / brandluxjp.com / sekinevintage.com / timepeaks.com / luxjpn.com / www.thewatchcompany.com / watchnian.com / brashel.jp も同様に 404、atlantisvintagetokyo.com と www.daikokuya78.com は 403、shop.zenplus.jp / zenluxe.jp / allu-official.com / gc-yukizaki.com / store.komehyo.jp は Shopify でない"
+        }
+      ],
+      "lines": [
+        {
+          "id": "boston-duffle",
+          "labelEn": "Boston / duffle / travel bag",
+          "match": [
+            "boston bag",
+            "keepall",
+            "duffle",
+            "duffel",
+            "ボストンバッグ",
+            "キーポル",
+            "旅行バッグ"
+          ],
+          "medianG": 1025,
+          "p25": 874,
+          "p75": 1085,
+          "n": 8,
+          "spread": 1.24,
+          "tier": "estimate"
+        },
+        {
+          "id": "tote",
+          "labelEn": "Tote bag",
+          "match": [
+            "tote",
+            "トートバッグ",
+            "トートバック"
+          ],
+          "medianG": 805,
+          "p25": 690,
+          "p75": 897,
+          "n": 25,
+          "spread": 1.3,
+          "tier": "estimate"
+        },
+        {
+          "id": "shoulder-crossbody",
+          "labelEn": "Shoulder / crossbody bag",
+          "match": [
+            "shoulder bag",
+            "crossbody",
+            "cross body",
+            "messenger bag",
+            "body bag",
+            "ショルダーバッグ",
+            "ショルダーバック",
+            "斜めがけ",
+            "ボディバッグ",
+            "メッセンジャーバッグ"
+          ],
+          "medianG": 657,
+          "p25": 475,
+          "p75": 860,
+          "n": 34,
+          "spread": 1.81,
+          "tier": "estimate"
+        },
+        {
+          "id": "handbag",
+          "labelEn": "Handbag / top-handle bag",
+          "match": [
+            "handbag",
+            "hand bag",
+            "top handle",
+            "ハンドバッグ",
+            "ハンドバック",
+            "トップハンドル",
+            "手提げバッグ"
+          ],
+          "medianG": 576,
+          "p25": 439,
+          "p75": 690,
+          "n": 15,
+          "spread": 1.57,
+          "tier": "estimate"
+        },
+        {
+          "id": "pouch-clutch",
+          "labelEn": "Pouch / clutch / vanity",
+          "match": [
+            "clutch",
+            "pochette",
+            "pouch",
+            "vanity case",
+            "クラッチバッグ",
+            "ポシェット",
+            "ポーチ",
+            "バニティ"
+          ],
+          "medianG": 329,
+          "p25": 155,
+          "p75": 425,
+          "n": 13,
+          "spread": 2.74,
+          "tier": "estimate"
+        },
+        {
+          "id": "wallet-small-leather",
+          "labelEn": "Wallet / small leather goods",
+          "match": [
+            "wallet",
+            "card case",
+            "card holder",
+            "key case",
+            "coin case",
+            "財布",
+            "カードケース",
+            "キーケース",
+            "コインケース",
+            "名刺入れ"
+          ],
+          "medianG": 235,
+          "p25": 182,
+          "p75": 353,
+          "n": 23,
+          "spread": 1.94,
+          "tier": "estimate"
+        },
+        {
+          "id": "luxury-watch",
+          "labelEn": "Luxury wristwatch (boxed)",
+          "match": [
+            "腕時計",
+            "wristwatch",
+            "wrist watch",
+            "ウォッチ"
+          ],
+          "medianG": 839,
+          "p25": 762,
+          "p75": 1120,
+          "n": 834,
+          "spread": 1.47,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Two shops adopted. The numbers rest on www.tokyourluxury.com — second-hand designer bags only, n=129, distinct ratio 97.7% — where values run from 47 g to 1,876 g with odd figures throughout, which reads as each item having been weighed. No second-hand shop carried real watch weights, so watches are stood in for by www.rookjapan.com's product_type Luxury Watch (n=834).\n\nThree limits. (1) tokyourluxury's values are most likely the item alone, without padding or a box — an LV Mini Papillon at 89 g. Used as a shipping weight they need packing added, which is what measured: false means here. (2) The per-line n is thin, between 8 and 34; boston at n=8 and pouch at n=13 are especially uncertain. (3) The 839 g watch figure comes from a shop selling mostly new watches with the presentation box, which is a different object from a used watch shipped without one (a Rolex head alone is around 150 g). None of these three could be filled in from another shop.\n\nMost second-hand luxury shops are useless here: luxuness is a flat 500 g, world.reclo and brandoffbuyingclub a flat 3,000 g, hannari a flat 1,000 g, and many Shopify shops simply leave grams at 0 (vintagelacharme, dct-ep, amorevintagejapan, myluxury-store, weeklyluxdrop, brandstreettokyo). On the other hand, the shipping bands at luxlux.jp and gracejapanluxuybrand order themselves as wallet < shoulder < handbag and tote < boston, which matches tokyourluxury's measured ordering — so the way the lines are cut is corroborated by two independent sources even though their numbers are not.\n\nfallbackG 584 is the median of all 129 tokyourluxury rows."
+    },
+    {
+      "category": "sneakers",
+      "labelEn": "Sneakers",
+      "labelJa": "スニーカー",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 5,
+      "sampleN": 1686,
+      "fallbackG": 750,
+      "fallbackTier": "unverified",
+      "sources": [
+        {
+          "domain": "store.japan-zone.com",
+          "url": "https://store.japan-zone.com/products.json?limit=250&page=1",
+          "products": 553,
+          "variantsWithGrams": 3462,
+          "verdict": "usable",
+          "reason": "distinct=119 (3.4%), top value 9%, multiples of 100: 8%. Traditional and work footwear (jika-tabi, tabi sneakers, setta) shipped worldwide. Values move per model (Marugo Air Jog V 6 = 830 g / V 12 = 1,010 g / III 6 = 730 g; Matsuri Jog 6 = 560 g / 12 = 760 g) and some move per size as well (Soukaido VO-80F 24 cm = 1,360 g up to 29 cm = 1,760 g, about +50 g per 0.5 cm). Packed weights, but they track the product, so adopted.",
+          "reasonJa": "distinct=119 (3.4%), 最頻値 9%, 100の倍数 8%。日本の伝統・作業靴（地下足袋・足袋スニーカー・雪駄）専門で海外発送。値が型番ごとに動く（Marugo Air Jog V 6=830g / V 12=1,010g / III 6=730g、Matsuri Jog 6=560g / 12=760g）。さらに一部はサイズごとにも動く（Soukaido VO-80F 24cm=1,360g → 29cm=1,760g、0.5cm ごとに +50g）。梱包込みの値だが商品差を反映しているので採用"
+        },
+        {
+          "domain": "japan-clothing.com",
+          "url": "https://japan-clothing.com/products.json?limit=250&page=1",
+          "products": 1018,
+          "variantsWithGrams": 1979,
+          "verdict": "usable",
+          "reason": "distinct=58 (2.9%), top value 10%, multiples of 100: 44%. Nine casual sneaker models at 600 / 650 / 700 / 750 / 800 g, one value per model (n=197 variants). Values never move across sizes 36-43, so we read them as per-model weights without a shoebox, and adopted them.",
+          "reasonJa": "distinct=58 (2.9%), 最頻値 10%, 100の倍数 44%。カジュアルスニーカー 9型があり 600/650/700/750/800g と型ごとに値が違う（n=197 variants）。ただしサイズ variant では一切動かない（36〜43 まで全部同じ）ので、靴箱なし・型ごとの実重量に近い値とみて採用"
+        },
+        {
+          "domain": "tabiji.co.jp",
+          "url": "https://tabiji.co.jp/products.json?limit=250&page=1",
+          "products": 94,
+          "variantsWithGrams": 912,
+          "verdict": "suspect",
+          "reason": "distinct ratio 1.2%, multiples of 100: 63%, of 500: 28%. product_type 'tabi sneakers' n=570, but the values are only two — 400 g (46%) and 500 g (45%) — and never move by size (all 30 products flat). Strong smell of a shipping band. It is 2x away from japan-zone's comparable 830 g, so it is recorded for reference only and not used in any line.",
+          "reasonJa": "distinct比 1.2%, 100の倍数 63%, 500の倍数 28%。product_type『足袋スニーカー』n=570 だが値は 400g 46% / 500g 45% の二段しかなく、サイズでも動かない（30商品すべて flat）。帯別送料の匂いが強い。japan-zone の同種（地下足袋スニーカー 830g）と2倍ずれるため line の数値には使わず、参考としてのみ記録"
+        },
+        {
+          "domain": "nubiantokyo.com",
+          "url": "https://nubiantokyo.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 13986,
+          "verdict": "suspect",
+          "reason": "Suspect for the shop as a whole (distinct ratio 0.7%, multiples of 100: 99%), but within product_type 'Footwear' n=2,360 the value 4,000 g covers 2,302 rows — 97.5%, flat across sizes, 390 of 393 products identical. For shoes it is pseudo, so not adopted. Recorded because it documents a major Japanese select shop billing all footwear in a flat 4 kg band.",
+          "reasonJa": "店全体では suspect（distinct比 0.7%, 100の倍数 99%）だが、product_type『Footwear』n=2,360 に限ると 4,000g が 2,302件＝97.5% の事実上の定数（サイズ変化なし、393商品中 390商品が flat）。靴だけ見ると pseudo なので不採用。日本の大手セレクトショップが靴を一律 4kg 帯で課金しているという事実の記録"
+        },
+        {
+          "domain": "kickslab.com",
+          "url": "https://kickslab.com/products.json?limit=250&page=1",
+          "products": 1519,
+          "variantsWithGrams": 20686,
+          "verdict": "pseudo",
+          "reason": "distinct=2, top value 99% of all rows. All 18,915 SNEAKER variants are 3,000 g, as are BOOTS, SANDALS and CAPS & HATS, and nothing moves by size. A flat shipping input, so not adopted.",
+          "reasonJa": "distinct=2, 最頻値が全体の 99%。SNEAKER 18,915 variants が全部 3,000g。BOOTS も SANDALS も CAPS & HATS も 3,000g。サイズでも一切動かない。一律送料の入力値なので不採用"
+        },
+        {
+          "domain": "wormtokyo.com",
+          "url": "https://wormtokyo.com/products.json?limit=250&page=1",
+          "products": 4588,
+          "variantsWithGrams": 4475,
+          "verdict": "pseudo",
+          "reason": "distinct=2, top value 100% of all rows. 4,474 of 4,475 variants are 1,000 g. A second-hand sneaker shop that does ship abroad, but grams is a pure constant, so not adopted.",
+          "reasonJa": "distinct=2, 最頻値が全体の 100%。4,475 variants 中 4,474件が 1,000g。中古スニーカー専門で海外発送もするが grams は完全な定数なので不採用"
+        },
+        {
+          "domain": "kinetics-tokyo.com",
+          "url": "https://kinetics-tokyo.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 31199,
+          "verdict": "pseudo",
+          "reason": "distinct=1, top value 100% of all rows. All 31,199 variants are 100 g, including 14,344 SHOES (MEN). A 100 g shoe is impossible, which is proof the field is not used for shipping. Not adopted.",
+          "reasonJa": "distinct=1, 最頻値が全体の 100%。31,199 variants すべて 100g。SHOES（MEN）14,344件も 100g。靴が 100g はありえず、送料計算を使っていない証拠なので不採用"
+        },
+        {
+          "domain": "sousou.co.jp",
+          "url": "https://sousou.co.jp/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 15245,
+          "verdict": "pseudo",
+          "reason": "distinct=2, top value 100% of all rows. 15,238 rows are 600 g — jika-tabi (n=275), floor cushions and clothing alike. Not adopted.",
+          "reasonJa": "distinct=2, 最頻値が全体の 100%。15,238件が 600g。地下足袋（n=275）も座布団も服も全部 600g なので不採用"
+        },
+        {
+          "domain": "tabifootwear.com",
+          "url": "https://tabifootwear.com/products.json?limit=250&page=1",
+          "products": 70,
+          "variantsWithGrams": 434,
+          "verdict": "pseudo",
+          "reason": "distinct=3, top value 94% of all rows. Hightops, Shoes, Sandals and Mules are all 400 g; only socks differ at 100/200 g. Not adopted.",
+          "reasonJa": "distinct=3, 最頻値が全体の 94%。Hightops も Shoes も Sandals も Mules も全部 400g。靴下だけ 100/200g。不採用"
+        },
+        {
+          "domain": "taiko-shop.com",
+          "url": "https://taiko-shop.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 6245,
+          "verdict": "pseudo",
+          "reason": "distinct=77, but the top value of 490 g covers 69% of all rows. A taiko drum shop that also sells tabi and ninja tabi; the values are packing-class constants. Not adopted.",
+          "reasonJa": "distinct=77 だが最頻値 490g が全体の 69%。和太鼓店で足袋・忍者足袋も扱うが、値は梱包区分の定数。不採用"
+        },
+        {
+          "domain": "komarijp.com",
+          "url": "https://komarijp.com/products.json?limit=250&page=1",
+          "products": 171,
+          "variantsWithGrams": 273,
+          "verdict": "usable",
+          "reason": "Usable for the shop as a whole (knives run 120-298 g and move like real measurements), but product_type 'Tabi shoes' n=104 is a flat 500 g, so for footwear it is a constant. Not used for any line; kept as support for tabiji's 400/500 g band.",
+          "reasonJa": "店全体は usable（包丁が 120〜298g で実測らしく動く）が、product_type『Tabi shoes』n=104 は全件 500g で靴だけ見ると定数。line の数値には使わない。tabiji の 400/500g 帯を裏付ける参考値"
+        },
+        {
+          "domain": "japanesetaste.com",
+          "url": "https://japanesetaste.com/products.json?limit=250&page=1",
+          "products": 5084,
+          "variantsWithGrams": 5156,
+          "verdict": "usable",
+          "reason": "distinct=1,010 (19.6%), so the grams are real, but there is no shoe or footwear product_type at all. Unusable for this category.",
+          "reasonJa": "distinct=1,010 (19.6%) で grams は本物だが、product_type に靴・履物が1つもない。このカテゴリには使えない"
+        },
+        {
+          "domain": "kokorojapanstore.com",
+          "url": "https://kokorojapanstore.com/products.json?limit=250&page=1",
+          "products": 2000,
+          "variantsWithGrams": 2138,
+          "verdict": "usable",
+          "reason": "distinct=343 (16.0%), so the grams are real, but there is no footwear product_type (Foot Patch is a foot-care sheet). Unusable for this category.",
+          "reasonJa": "distinct=343 (16.0%) で grams は本物だが、履物の product_type がない（Foot Patch は足裏シート）。このカテゴリには使えない"
+        },
+        {
+          "domain": "mita-sneakers.co.jp",
+          "url": "https://mita-sneakers.co.jp/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row (n=0, below our threshold of 50). Flat domestic shipping, so no weights are entered.",
+          "reasonJa": "Shopify だが grams が全件 0（n=0 < 50）。国内一律送料で重量を入れていない"
+        },
+        {
+          "domain": "uniontokyo.jp",
+          "url": "https://uniontokyo.jp/products.json?limit=250&page=1",
+          "products": 500,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row (n=0, below our threshold of 50).",
+          "reasonJa": "Shopify だが grams が全件 0（n=0 < 50）"
+        },
+        {
+          "domain": "undefeated.jp",
+          "url": "https://undefeated.jp/products.json?limit=250&page=1",
+          "products": 499,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on every row (n=0, below our threshold of 50).",
+          "reasonJa": "Shopify だが grams が全件 0（n=0 < 50）"
+        },
+        {
+          "domain": "snobasia.com",
+          "url": "https://snobasia.com/products.json?limit=250&page=1",
+          "products": 250,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify and ships abroad, but grams is 0 on every row (n=0, below our threshold of 50).",
+          "reasonJa": "Shopify・海外発送ありだが grams が全件 0（n=0 < 50）"
+        },
+        {
+          "domain": "spingle.jp",
+          "url": "https://spingle.jp/products.json?limit=250&page=1",
+          "products": 841,
+          "variantsWithGrams": 31,
+          "verdict": "insufficient",
+          "reason": "A domestic sneaker maker in Hiroshima. Shopify, but only 31 variants carry grams (n=31, below our threshold of 50).",
+          "reasonJa": "広島の国産スニーカーメーカー。Shopify だが grams が入っているのは 31 variants のみ（n=31 < 50）"
+        },
+        {
+          "domain": "blueover.jp",
+          "url": "https://blueover.jp/products.json?limit=250&page=1",
+          "products": 86,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "A domestic sneaker brand. Shopify, but grams is 0 on every row.",
+          "reasonJa": "国産スニーカーブランド。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "corlection.com",
+          "url": "https://corlection.com/products.json?limit=250&page=1",
+          "products": 1552,
+          "variantsWithGrams": 2,
+          "verdict": "insufficient",
+          "reason": "Shopify, but grams is 0 on almost every row (n=2, below our threshold of 50).",
+          "reasonJa": "Shopify だが grams がほぼ 0（n=2 < 50）"
+        },
+        {
+          "domain": "shop.moonstar-usa.com",
+          "url": "https://shop.moonstar-usa.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Moonstar's North American arm. All 147 variants on page one have grams of 0, and it ships within the US rather than from Japan.",
+          "reasonJa": "ムーンスターの北米法人。1ページ目 147 variants がすべて grams 0。かつ米国内発送のみで日本発ではない"
+        },
+        {
+          "domain": "www.atmos-tokyo.com",
+          "url": "https://www.atmos-tokyo.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — the shop blocks automated requests, so products.json could not be read.",
+          "reasonJa": "403（bot 遮断）。products.json を取得できず"
+        },
+        {
+          "domain": "abc-mart.net",
+          "url": "https://abc-mart.net/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない）"
+        },
+        {
+          "domain": "fascinate-online.com",
+          "url": "https://fascinate-online.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "billys-tokyo.net",
+          "url": "https://billys-tokyo.net/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Returns a 404 HTML page — not a Shopify store.",
+          "reasonJa": "404 の HTML（Shopify ではない）"
+        },
+        {
+          "domain": "www.lowtex.jp",
+          "url": "https://www.lowtex.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない。自社 EC は 2022年に閉鎖しモール出店のみ）"
+        },
+        {
+          "domain": "1ldkshop.com",
+          "url": "https://1ldkshop.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "en.spingle.jp",
+          "url": "https://en.spingle.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "The same catalogue as spingle.jp, with grams almost all 0. Not counted separately to avoid double-counting.",
+          "reasonJa": "spingle.jp と同一カタログ。grams はほぼ 0 で重複のため個別集計せず"
+        },
+        {
+          "domain": "japantrendshop.com",
+          "url": "https://japantrendshop.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない）"
+        },
+        {
+          "domain": "zenplus.jp",
+          "url": "https://zenplus.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない。買い付け代行）"
+        }
+      ],
+      "lines": [
+        {
+          "id": "safety-jikatabi",
+          "labelEn": "Safety jika-tabi boots (steel toe / spike sole)",
+          "match": [
+            "安全地下足袋",
+            "スパイク足袋",
+            "スパイク地下足袋",
+            "鋼製先芯",
+            "先芯入り地下足袋",
+            "安全靴 足袋",
+            "spike tabi",
+            "steel-toe tabi"
+          ],
+          "medianG": 1760,
+          "p25": 1660,
+          "p75": 1960,
+          "n": 190,
+          "spread": 1.18,
+          "tier": "estimate"
+        },
+        {
+          "id": "tabi-sneaker-kids",
+          "labelEn": "Kids tabi sneaker / kids jika-tabi",
+          "match": [
+            "キッズ地下足袋",
+            "子供用地下足袋",
+            "こども地下足袋",
+            "キッズ祭り足袋",
+            "kids jikatabi",
+            "kids tabi"
+          ],
+          "medianG": 360,
+          "p25": 360,
+          "p75": 360,
+          "n": 195,
+          "spread": 1,
+          "tier": "estimate"
+        },
+        {
+          "id": "tabi-sneaker",
+          "labelEn": "Tabi sneaker / jika-tabi sneaker (adult)",
+          "match": [
+            "足袋スニーカー",
+            "地下足袋",
+            "エアジョグ",
+            "エアージョグ",
+            "スポーツジョグ",
+            "丸五",
+            "マルゴ",
+            "ラフィート",
+            "jikatabi",
+            "jika-tabi",
+            "tabi sneaker",
+            "air jog",
+            "sports jog"
+          ],
+          "medianG": 830,
+          "p25": 760,
+          "p75": 910,
+          "n": 361,
+          "spread": 1.2,
+          "tier": "estimate"
+        },
+        {
+          "id": "work-tabi",
+          "labelEn": "Work / festival jika-tabi (soft sole)",
+          "match": [
+            "祭り足袋",
+            "祭足袋",
+            "作業足袋",
+            "力王",
+            "荘快堂",
+            "たびぐつ",
+            "rikio",
+            "soukaido"
+          ],
+          "medianG": 560,
+          "p25": 460,
+          "p75": 660,
+          "n": 743,
+          "spread": 1.43,
+          "tier": "estimate"
+        },
+        {
+          "id": "sneaker-casual",
+          "labelEn": "Sneaker, casual / low-cut (shoes only, no box)",
+          "match": [
+            "スニーカー",
+            "ローカット",
+            "ハイカット",
+            "キャンバススニーカー",
+            "sneaker",
+            "sneakers",
+            "trainers"
+          ],
+          "medianG": 750,
+          "p25": 700,
+          "p75": 750,
+          "n": 197,
+          "spread": 1.07,
+          "tier": "unverified"
+        }
+      ],
+      "notes": "Two shops adopted (store.japan-zone.com, japan-clothing.com) plus one for reference (tabiji.co.jp). The lines are evaluated top to bottom — jika-tabi must be tested before the generic sneaker line, or it is swallowed by it.\n\nThe biggest limitation: we could not obtain real weights for ordinary athletic shoes — Nike, Adidas, New Balance and the like. More than ten specialists were probed, and every one that fills in grams bills footwear in a flat band: kickslab 3,000 g on all rows, nubiantokyo 4,000 g on 97.5% of Footwear, wormtokyo 1,000 g on all rows, kinetics-tokyo 100 g on all rows, sousou 600 g on all rows. All score pseudo, so none of their numbers were used. mita-sneakers, undefeated.jp, uniontokyo, spingle and blueover are Shopify but leave grams at 0, because flat domestic postage means the field is never needed. atmos and ABC-MART return 403, so products.json cannot be read at all.\n\nDoes grams move across size variants? That was the question for this category.\n(1) Overwhelmingly, no. japan-clothing's sneakers are identical from size 36 to 43 across all nine models; tabiji's tabi sneakers are flat across all 30 products; kickslab, nubian, wormtokyo and kinetics do not even move between products.\n(2) The exception is part of store.japan-zone.com's work footwear. Soukaido VO-80F runs 1,360 g at 24 cm to 1,760 g at 29 cm — about +50 g per half size, 1.29x end to end — and Toraichi Magic Long Safety Boots run 1,980 g at 24.5 cm to 2,280 g at 27 cm. Only 4 of 105 footwear products move with size.\n(3) In practice one weight per product is a fair model, but whether that weight includes the shoebox differs from shop to shop.\n\nBoxed or unboxed:\n(4) japan-clothing's 600-800 g is the true weight of one canvas sneaker with no shoebox (a box adds roughly 250-500 g). kickslab's 3,000 g and nubiantokyo's 4,000 g are bands that assume box, outer carton and headroom. The same word \"sneaker\" spans 750 g to 4,000 g — a factor of 5.3. Auction listings usually ship with the box, so fallbackG 750 will understate a boxed listing, which is why fallbackTier is unverified.\n(5) sneaker-casual's n=197 counts variants; there are really only nine models and five distinct weights behind it. Statistically thin.\n\nOther notes:\n(6) tabi-sneaker takes japan-zone's 830 g. tabiji.co.jp puts the same kind of shoe at 400/500 g, a 2x disagreement, but tabiji has only two bands and scores suspect, so japan-zone wins. komarijp.com's Tabi shoes are a flat 500 g, which supports tabiji's side, but both are constants and neither was used numerically.\n(7) japan-zone is a specialist in traditional and work footwear and does not stock ordinary athletic shoes. The safety-jikatabi, work-tabi and tabi-sneaker lines rest on this one shop with no independent corroboration.\n(8) None of these grams are measurements; they are inputs to a shipping calculator. Hence measured: false."
+    },
+    {
+      "category": "food-tea-sake",
+      "labelEn": "Food, tea and sake",
+      "labelJa": "食品・茶・酒",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 7,
+      "sampleN": 6675,
+      "fallbackG": 190,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "www.saketora.com",
+          "url": "https://www.saketora.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 4955,
+          "verdict": "usable",
+          "reason": "distinct=929 (18.7%), top value 2%, multiples of 100: 17%. Adopted. Sake specialist; product_type splits into sake / shochu / beer / wine / whisky / umeshu, and bottle size appears in the title, so 720 ml, 1800 ml and 300 ml could be separated.",
+          "reasonJa": "distinct=929 (18.7%), 最頻値 2%, 100の倍数 17%。採用。日本酒専門で product_type が 日本酒/焼酎/ビール/ワイン/ウイスキー/梅酒 に分かれる。容量表記が商品タイトルに入るので 720ml / 1800ml / 300ml を切り出せた"
+        },
+        {
+          "domain": "japanesetaste.com",
+          "url": "https://japanesetaste.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 5070,
+          "verdict": "usable",
+          "reason": "distinct=1010 (19.9%), top value 1%, multiples of 100: 2%. Adopted. A 20% distinct ratio is the best of everything we probed. product_type is hierarchical ('grocery / food / sauces & condiments'), so food can be isolated.",
+          "reasonJa": "distinct=1010 (19.9%), 最頻値 1%, 100の倍数 2%。採用。distinct比 20% は今回叩いた中で最良。product_type が 'grocery / food / sauces & condiments' のように階層化されていて食品だけ抜ける"
+        },
+        {
+          "domain": "www.sugoimart.com",
+          "url": "https://www.sugoimart.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 4988,
+          "verdict": "usable",
+          "reason": "distinct=408 (8.2%), top value 4%, multiples of 100: 6%. Adopted. Mostly small single items (convenience-store snacks, cup noodles); it supplied the bulk of the snack line.",
+          "reasonJa": "distinct=408 (8.2%), 最頻値 4%, 100の倍数 6%。採用。コンビニ菓子・カップ麺など小型単品が中心で、菓子ラインの母数を作った"
+        },
+        {
+          "domain": "bokksumarket.com",
+          "url": "https://bokksumarket.com/products.json?limit=250&page=1",
+          "products": 638,
+          "variantsWithGrams": 595,
+          "verdict": "usable",
+          "reason": "distinct=146 (24.5%), top value 6%, multiples of 100: 3%. Adopted. Snacks n=425, median 91 g — independently consistent with sugoimart's 70 g.",
+          "reasonJa": "distinct=146 (24.5%), 最頻値 6%, 100の倍数 3%。採用。菓子 n=425 で中央値 91g、sugoimart の 70g と独立に整合した"
+        },
+        {
+          "domain": "www.japanesegreenteashops.com",
+          "url": "https://www.japanesegreenteashops.com/products.json?limit=250&page=1",
+          "products": 507,
+          "variantsWithGrams": 507,
+          "verdict": "usable",
+          "reason": "distinct=109 (21.5%), top value 7%, multiples of 100: 6%. Adopted. Tea n=125, median 125 g, spread 1.7x.",
+          "reasonJa": "distinct=109 (21.5%), 最頻値 7%, 100の倍数 6%。採用。茶 n=125 で中央値 125g、ばらつき 1.7x"
+        },
+        {
+          "domain": "www.akazuki.com",
+          "url": "https://www.akazuki.com/products.json?limit=250&page=1",
+          "products": 1000,
+          "variantsWithGrams": 1802,
+          "verdict": "usable",
+          "reason": "distinct=60 (3.3%), top value 15%, multiples of 100: 69%. Adopted but weighted lightly: values cluster on 100 / 300 / 500, so it reads closer to suspect than the verdict suggests. Only product_type='food' (n=119) is food; the rest is tableware and homeware.",
+          "reasonJa": "distinct=60 (3.3%), 最頻値 15%, 100の倍数 69%。採用したが重みは軽い。100/300/500 の丸め値が多く、判定は usable でも実質 suspect 寄り。食品は product_type='food' n=119 のみで、大半は食器・雑貨"
+        },
+        {
+          "domain": "global.fukujuen.com",
+          "url": "https://global.fukujuen.com/products.json?limit=250&page=1",
+          "products": 82,
+          "variantsWithGrams": 88,
+          "verdict": "usable",
+          "reason": "distinct=20 (22.7%), top value 16%, multiples of 100: 10%. Adopted. Fukujuen of Kyoto, tea only. Tea n=79, median 120 g.",
+          "reasonJa": "distinct=20 (22.7%), 最頻値 16%, 100の倍数 10%。採用。京都・福寿園の茶専門。茶 n=79 で中央値 120g"
+        },
+        {
+          "domain": "ippodotea.com",
+          "url": "https://ippodotea.com/products.json?limit=250&page=1",
+          "products": 82,
+          "variantsWithGrams": 81,
+          "verdict": "usable",
+          "reason": "distinct=46 (56.8%), top value 9%, multiples of 100: 0%. Adopted. A 57% distinct ratio is the highest of any shop. Tea n=65, median 88 g.",
+          "reasonJa": "distinct=46 (56.8%), 最頻値 9%, 100の倍数 0%。採用。distinct比 57% は全店で最高。茶 n=65 で中央値 88g"
+        },
+        {
+          "domain": "www.chadoteahouse.com",
+          "url": "https://www.chadoteahouse.com/products.json?limit=250&page=1",
+          "products": 76,
+          "variantsWithGrams": 75,
+          "verdict": "usable",
+          "reason": "distinct=25 (33.3%), top value 23%, multiples of 100: 13%. Adopted. Tea n=70, median 110 g, spread 1.4x.",
+          "reasonJa": "distinct=25 (33.3%), 最頻値 23%, 100の倍数 13%。採用。茶 n=70 で中央値 110g、ばらつき 1.4x"
+        },
+        {
+          "domain": "www.japanesegreenteain.com",
+          "url": "https://www.japanesegreenteain.com/products.json?limit=250&page=1",
+          "products": 38,
+          "variantsWithGrams": 54,
+          "verdict": "usable",
+          "reason": "distinct=36 (66.7%), top value 9%, multiples of 100: 0%. Adopted. Small sample, but tea n=43 with median 109 g agrees with the other tea specialists.",
+          "reasonJa": "distinct=36 (66.7%), 最頻値 9%, 100の倍数 0%。採用。件数は少ないが茶 n=43 で中央値 109g、他の茶専門店と一致"
+        },
+        {
+          "domain": "www.kurashu.jp",
+          "url": "https://www.kurashu.jp/products.json?limit=250&page=1",
+          "products": 44,
+          "variantsWithGrams": 66,
+          "verdict": "usable",
+          "reason": "distinct=24 (36.4%), top value 21%, multiples of 100: 62%. Adopted. Unlike saketora the bottle size sits in the variant title. 720 ml n=37 has median 1,890 g — heavier than saketora, which marks the upper end of shop-to-shop variation.",
+          "reasonJa": "distinct=24 (36.4%), 最頻値 21%, 100の倍数 62%。採用。容量が variant title 側にあるのが saketora と違う点。720ml の n=37 で中央値 1,890g と saketora より重く、店間差の上限を示す"
+        },
+        {
+          "domain": "wabisabi-store.jp",
+          "url": "https://wabisabi-store.jp/products.json?limit=250&page=1",
+          "products": 212,
+          "variantsWithGrams": 440,
+          "verdict": "usable",
+          "reason": "distinct=74 (16.8%), top value 10%, multiples of 100: 31%. The shop itself is usable, but despite surfacing as a seasoning shop its stock is mostly cosmetics, parasols and school bags, with almost no food rows. Not used for any line.",
+          "reasonJa": "distinct=74 (16.8%), 最頻値 10%, 100の倍数 31%。店としては usable だが、調味料の店として検索に出た割に在庫は化粧品・日傘・ランドセルが中心で、食品の行がほとんど無い。lines には使えず不採用"
+        },
+        {
+          "domain": "www.tippsysake.com",
+          "url": "https://www.tippsysake.com/products.json?limit=250&page=1",
+          "products": 914,
+          "variantsWithGrams": 913,
+          "verdict": "pseudo",
+          "reason": "distinct=92, top value 73% of all rows. Not adopted: 662 of 913 are exactly 1,361 g, which is 3 lb — a constant. It does corroborate the total weight of one 720 ml bottle, since 1,361 g is close to saketora's 1,400 g median.",
+          "reasonJa": "distinct=92, 最頻値が全体の 73%。不採用。913件中 662件が 1,361g ちょうど＝3ポンドの定数。ただしこの 1,361g は saketora の 720ml 中央値 1,400g とほぼ一致するので、720ml 1本の総重量の裏づけにはなる"
+        },
+        {
+          "domain": "jsake.com",
+          "url": "https://jsake.com/products.json?limit=250&page=1",
+          "products": 142,
+          "variantsWithGrams": 140,
+          "verdict": "pseudo",
+          "reason": "distinct=8, top value 66% of all rows. Not adopted: only eight distinct values, which is a shipping band table.",
+          "reasonJa": "distinct=8, 最頻値が全体の 66%。不採用。実質8値しかなく帯別送料の値"
+        },
+        {
+          "domain": "japanesegreenteaonline.com",
+          "url": "https://japanesegreenteaonline.com/products.json?limit=250&page=1",
+          "products": 8,
+          "variantsWithGrams": 8,
+          "verdict": "insufficient",
+          "reason": "Only n=8 weighted rows, below our threshold of 50.",
+          "reasonJa": "n=8 < 50。Shopify で JSON は返るが公開商品が8件しかない"
+        },
+        {
+          "domain": "ujimatchatea.com",
+          "url": "https://ujimatchatea.com/products.json?limit=250&page=1",
+          "products": 23,
+          "variantsWithGrams": 24,
+          "verdict": "insufficient",
+          "reason": "n=24 < 50"
+        },
+        {
+          "domain": "www.o-cha.com",
+          "url": "https://www.o-cha.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "www.hibiki-an.com",
+          "url": "https://www.hibiki-an.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "ikkyu-tea.com",
+          "url": "https://ikkyu-tea.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "www.plazajapan.com",
+          "url": "https://www.plazajapan.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "japan-snack.com",
+          "url": "https://japan-snack.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "the-nihonshu.com",
+          "url": "https://the-nihonshu.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Not a Shopify store; products.json returns HTTP 404.",
+          "reasonJa": "Shopify ではない。products.json が HTTP 404"
+        },
+        {
+          "domain": "sakeyoi.com",
+          "url": "https://sakeyoi.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns HTML (content-type: text/html), so nothing could be read.",
+          "reasonJa": "products.json が HTML を返す（content-type: text/html）。取得不可"
+        },
+        {
+          "domain": "nipponsake.com",
+          "url": "https://nipponsake.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns HTML (content-type: text/html), so nothing could be read.",
+          "reasonJa": "products.json が HTML を返す（content-type: text/html）。取得不可"
+        },
+        {
+          "domain": "sakeinn.com",
+          "url": "https://sakeinn.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "fetch failed on two attempts — could not connect.",
+          "reasonJa": "fetch failed（2回試行、いずれも接続できず）。取得不可"
+        }
+      ],
+      "lines": [
+        {
+          "id": "sake-1800ml",
+          "labelEn": "Sake / shochu, 1.8L bottle (isshobin)",
+          "match": [
+            "1800ml",
+            "1,800ml",
+            "1.8l",
+            "1800ｍｌ",
+            "一升瓶",
+            "一升"
+          ],
+          "medianG": 3300,
+          "p25": 2200,
+          "p75": 3355,
+          "n": 583,
+          "spread": 1.52,
+          "tier": "estimate"
+        },
+        {
+          "id": "sake-720ml",
+          "labelEn": "Sake / spirits, 700-750ml bottle",
+          "match": [
+            "720ml",
+            "750ml",
+            "700ml",
+            "720ｍｌ",
+            "四合瓶",
+            "四合"
+          ],
+          "medianG": 1420,
+          "p25": 1320,
+          "p75": 1540,
+          "n": 1754,
+          "spread": 1.17,
+          "tier": "estimate"
+        },
+        {
+          "id": "sake-300ml",
+          "labelEn": "Sake, 300ml bottle",
+          "match": [
+            "300ml",
+            "300ｍｌ",
+            "カップ酒"
+          ],
+          "medianG": 607,
+          "p25": 459,
+          "p75": 688,
+          "n": 335,
+          "spread": 1.5,
+          "tier": "estimate"
+        },
+        {
+          "id": "noodle",
+          "labelEn": "Instant and dried noodles",
+          "match": [
+            "ラーメン",
+            "ramen",
+            "うどん",
+            "udon",
+            "焼きそば",
+            "yakisoba",
+            "カップ麺",
+            "instant noodle",
+            "そうめん",
+            "somen",
+            "そば",
+            "soba"
+          ],
+          "medianG": 122,
+          "p25": 89,
+          "p75": 208,
+          "n": 349,
+          "spread": 2.34,
+          "tier": "estimate"
+        },
+        {
+          "id": "snack-sweets",
+          "labelEn": "Snacks, sweets and candy",
+          "match": [
+            "せんべい",
+            "senbei",
+            "rice cracker",
+            "クッキー",
+            "cookie",
+            "チョコレート",
+            "chocolate",
+            "キャンディ",
+            "candy",
+            "グミ",
+            "gummy",
+            "餅",
+            "mochi",
+            "ポッキー",
+            "pocky",
+            "kit kat",
+            "kitkat",
+            "ポテトチップス",
+            "chips",
+            "スナック",
+            "snack",
+            "キャラメル",
+            "caramel",
+            "どら焼き",
+            "dorayaki",
+            "最中",
+            "monaka",
+            "羊羹",
+            "yokan",
+            "饅頭",
+            "manju",
+            "大福",
+            "daifuku",
+            "駄菓子"
+          ],
+          "medianG": 90,
+          "p25": 58,
+          "p75": 180,
+          "n": 2837,
+          "spread": 3.1,
+          "tier": "estimate"
+        },
+        {
+          "id": "seasoning-bottle",
+          "labelEn": "Bottled seasoning (soy sauce, ponzu, mirin)",
+          "match": [
+            "醤油",
+            "soy sauce",
+            "shoyu",
+            "ポン酢",
+            "ponzu",
+            "みりん",
+            "mirin",
+            "めんつゆ",
+            "tsuyu",
+            "ドレッシング",
+            "dressing",
+            "ごま油",
+            "sesame oil",
+            "米酢",
+            "rice vinegar"
+          ],
+          "medianG": 484,
+          "p25": 299,
+          "p75": 777,
+          "n": 186,
+          "spread": 2.6,
+          "tier": "estimate"
+        },
+        {
+          "id": "tea-leaf",
+          "labelEn": "Japanese tea (leaf, matcha, tea bags)",
+          "match": [
+            "抹茶",
+            "matcha",
+            "煎茶",
+            "sencha",
+            "玉露",
+            "gyokuro",
+            "ほうじ茶",
+            "hojicha",
+            "houjicha",
+            "玄米茶",
+            "genmaicha",
+            "番茶",
+            "bancha",
+            "茎茶",
+            "kukicha",
+            "green tea",
+            "茶葉",
+            "ティーバッグ",
+            "tea bag",
+            "teabag"
+          ],
+          "medianG": 113,
+          "p25": 75,
+          "p75": 198,
+          "n": 631,
+          "spread": 2.64,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Eleven shops adopted (saketora, japanesetaste, sugoimart, bokksumarket, japanesegreenteashops, akazuki, fukujuen, ippodotea, chadoteahouse, japanesegreenteain, kurashu), all with verdict usable. grams is an input to a shipping calculator, not a measurement, so measured: false. Every shop we could reach allowed /products.json for User-agent: * in robots.txt.\n\nSake came out cleanest. Bottle size is in the product title, so cutting on it gives one 720 ml bottle a median of 1,420 g with a spread of 1.17x — the tightest line after 1/7 scale figures (1.0x), tight enough to treat as effectively settled. It corroborates independently: the rejected tippsysake.com has 662 of 913 rows at exactly 1,361 g, which is 3 lb and almost the same figure. It also decomposes sensibly — 720 g of liquid plus roughly 700 g of bottle, label and presentation box. A 1.8 L isshobin is 3,300 g.\n\nTwo traps in the sake data. First, some saketora rows have grams equal to the volume in ml (62 rows, 3.5% of 720 ml) — the bottle's own weight was left out. That does not move the median, but treat any 720 ml under 1,000 g as suspect. Second, most of saketora's stock is case packs ([1CS] 6 bottles, [2CS] 12 bottles); we read the bottle count from the title and divided back to one bottle. Without that the median would be 4,620 g. kurashu.jp's 720 ml median is 1,890 g, 33% heavier than saketora — that is the ceiling of shop-to-shop variation, and it is what a shop that packs heavily for export looks like.\n\nAlcohol cannot be posted to some countries. Japan Post accepts alcoholic drinks but treats them as prohibited depending on the destination: anything over 24% ABV is barred outright as dangerous goods by air, and many destinations bar it below that too (the United States effectively bars alcohol sent to an individual; Australia, New Zealand and several Middle Eastern countries also bar it). For sake-1800ml, sake-720ml and sake-300ml the weight can be produced but the shipment may not be possible at all, so an estimate screen has to answer \"can this go?\" before it answers \"what does it weigh?\".\n\nOn the food side, snacks split by what each shop stocks: sugoimart 70 g, bokksumarket 91 g, japanesegreenteashops 115 g, japanesetaste 240 g, akazuki 300 g. The first two sell single convenience-store bags; the last two sell boxed gift confectionery. The pooled 90 g is pulled toward the first group, and the 3.1x spread reflects exactly that — this line is less dependable than the others.\n\nTea did the opposite: seven shops agreed independently (ippodotea 88 g, japanesegreenteain 109 g, chadoteahouse 110 g, japanesetaste 111 g, fukujuen 120 g, japanesegreenteashops 125 g, sugoimart 141 g). That is the standard Japanese 100 g tin or pouch showing through. The 113 g median can be trusted.\n\nBottled seasoning is thin at n=186 and spans 1 L soy sauce down to 100 ml yuzu kosho, hence the 2.6x spread.\n\nMatch order is sake-1800ml, sake-720ml, sake-300ml, noodle, snack-sweets, seasoning-bottle, tea-leaf. Two reasons: a volume in the title is stronger evidence than any other word, so sake is tested first; and \"soy sauce senbei\" is a snack rather than a seasoning while \"matcha chocolate\" is a snack rather than tea, so snack-sweets must come before seasoning-bottle and tea-leaf.\n\nLimits. The Japanese match words are unverified by this survey: every adopted shop titles its products in English, and the Japanese terms were mapped by hand onto lines that were matched in English. Their hit rate against Japanese auction titles still needs checking. Short words that misfire were left out; 'cd' is an example of one we refused. Chilled, frozen and fresh goods are absent entirely, because Shopify shops that export from Japan stock only ambient goods — fresh fish, wagyu and namagashi cannot be reached by this method at all. fallbackG 190 is the rounded 188 g median of the 2,061 food rows in adopted shops that matched no line."
+    },
+    {
+      "category": "fishing-tackle",
+      "labelEn": "Fishing tackle",
+      "labelJa": "釣具",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 15,
+      "sampleN": 16141,
+      "fallbackG": 100,
+      "fallbackTier": "estimate",
+      "sources": [
+        {
+          "domain": "asianportal-fishing.com",
+          "url": "https://asianportal-fishing.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 4999,
+          "verdict": "usable",
+          "reason": "distinct=198 (4.0%), top value 15%, multiples of 100: 19%. product_type is sorted into lures / rods / reels / line. Rod values fall as the number of sections rises (1-piece 9,780 g > 2-piece 6,660 g > 5-piece 2,560 g), so we read them as volumetric weight from packed length rather than mass, and adopted them on that basis.",
+          "reasonJa": "distinct=198 (4.0%), 最頻値 15%, 100の倍数 19%。product_type がルアー/ロッド/リール/ラインに整理されている。ただしロッドの値は継数が増えるほど小さくなる（1本継 9,780g > 2本継 6,660g > 5本継 2,560g）ので、質量ではなく梱包長から来る容積重量とみて採用した"
+        },
+        {
+          "domain": "jdmreelhub.com",
+          "url": "https://jdmreelhub.com/products.json?limit=250&page=1",
+          "products": 1298,
+          "variantsWithGrams": 1091,
+          "verdict": "usable",
+          "reason": "distinct=29 (2.7%), top value 34%, multiples of 100: 98%. Reels only. Values sit on 100 g packing bands but move per model, and the bands separate: electric reels 1,400 g, spinning and baitcasting 600 g.",
+          "reasonJa": "distinct=29 (2.7%), 最頻値 34%, 100の倍数 98%。リール専業。100g刻みの梱包区分だが機種ごとに動いており、電動リール 1,400g / スピニング・ベイト 600g と段が分かれている"
+        },
+        {
+          "domain": "jdmtackleheaven.com",
+          "url": "https://jdmtackleheaven.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 9669,
+          "verdict": "usable",
+          "reason": "distinct=244 (2.5%), top value 7%, multiples of 100: 6%. Lures adopted. 760 rod entries carried 1,000,970 g and 3,199,970 g (1 t and 3.2 t) — a size limit stuffed into the weight field — so everything above 30,000 g was dropped.",
+          "reasonJa": "distinct=244 (2.5%), 最頻値 7%, 100の倍数 6%。ルアー系は採用。ただしロッドに 1,000,970g / 3,199,970g（1t・3.2t）という値が 760件あり、寸法制限を重量欄に押し込んだ擬似値なので 30,000g 超は全部落とした"
+        },
+        {
+          "domain": "jpnfishingtackle.com",
+          "url": "https://jpnfishingtackle.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 6535,
+          "verdict": "suspect",
+          "reason": "distinct ratio 1.1%, multiples of 100: 0%. Median 13 g, most common 14 g / 7 g / 21 g — these are lure masses (1/2 oz, 1/4 oz), not shipping weights. Not adopted: the same crankbait is 67-100 g packed at other shops.",
+          "reasonJa": "distinct比 1.1%, 100の倍数 0%。中央値 13g・最頻値 14g/7g/21g で、これは 1/2oz・1/4oz といったルアー自重そのもの。発送重量ではないので不採用（同じクランクベイトが他店では梱包込み 67〜100g）"
+        },
+        {
+          "domain": "japamart.com",
+          "url": "https://japamart.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない。買い付け代行サイト）"
+        },
+        {
+          "domain": "www.ichibantackle.com",
+          "url": "https://www.ichibantackle.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない）"
+        },
+        {
+          "domain": "japantackle.com",
+          "url": "https://japantackle.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "www.kkjapanlure.com",
+          "url": "https://www.kkjapanlure.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "www.plat.co.jp",
+          "url": "https://www.plat.co.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Could not connect.",
+          "reasonJa": "接続不可（osCommerce 系の自社カート）"
+        },
+        {
+          "domain": "www.fishing-otsuka.co.jp",
+          "url": "https://www.fishing-otsuka.co.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない）"
+        },
+        {
+          "domain": "japanlureshop.com",
+          "url": "https://japanlureshop.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "www.digitaka.com",
+          "url": "https://www.digitaka.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Redirects (302) and never returns JSON.",
+          "reasonJa": "302 リダイレクト、JSON を返さない"
+        },
+        {
+          "domain": "www.itacklesjapan.com",
+          "url": "https://www.itacklesjapan.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "jdmbasstackle.com",
+          "url": "https://jdmbasstackle.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store.",
+          "reasonJa": "products.json が 404（Shopify ではない）"
+        },
+        {
+          "domain": "northonetackle.com",
+          "url": "https://northonetackle.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Could not connect.",
+          "reasonJa": "接続不可（名前解決できず）"
+        }
+      ],
+      "lines": [
+        {
+          "id": "electric-reel",
+          "labelEn": "Electric reel",
+          "match": [
+            "電動リール",
+            "electric reel",
+            "シーボーグ",
+            "フォースマスター",
+            "ビーストマスター",
+            "seaborg",
+            "forcemaster",
+            "beastmaster"
+          ],
+          "medianG": 1400,
+          "p25": 1200,
+          "p75": 1800,
+          "n": 75,
+          "spread": 1.5,
+          "tier": "estimate"
+        },
+        {
+          "id": "rod-1piece",
+          "labelEn": "Rod, 1-piece",
+          "match": [
+            "1ピース",
+            "1 piece",
+            "ワンピースロッド"
+          ],
+          "medianG": 9780,
+          "p25": 9630,
+          "p75": 10520,
+          "n": 55,
+          "spread": 1.09,
+          "tier": "estimate"
+        },
+        {
+          "id": "rod-2piece",
+          "labelEn": "Rod, 2-piece",
+          "match": [
+            "2ピース",
+            "2本継",
+            "2 piece"
+          ],
+          "medianG": 6660,
+          "p25": 5480,
+          "p75": 7680,
+          "n": 498,
+          "spread": 1.4,
+          "tier": "estimate"
+        },
+        {
+          "id": "rod-multipiece",
+          "labelEn": "Rod, 3-piece or more / telescopic",
+          "match": [
+            "3ピース",
+            "4ピース",
+            "5ピース",
+            "3本継",
+            "4本継",
+            "振出",
+            "パックロッド",
+            "モバイルロッド",
+            "3 piece",
+            "4 piece",
+            "5 piece",
+            "telescopic"
+          ],
+          "medianG": 5890,
+          "p25": 3790,
+          "p75": 6250,
+          "n": 104,
+          "spread": 1.65,
+          "tier": "estimate"
+        },
+        {
+          "id": "rod",
+          "labelEn": "Rod (piece count unknown)",
+          "match": [
+            "ロッド",
+            "釣竿",
+            "つりざお",
+            "fishing rod"
+          ],
+          "medianG": 6660,
+          "p25": 5480,
+          "p75": 8040,
+          "n": 657,
+          "spread": 1.47,
+          "tier": "estimate"
+        },
+        {
+          "id": "spinning-reel",
+          "labelEn": "Spinning reel",
+          "match": [
+            "スピニングリール",
+            "spinning reel",
+            "ステラ",
+            "ヴァンキッシュ",
+            "イグジスト",
+            "stella",
+            "vanquish",
+            "exist"
+          ],
+          "medianG": 770,
+          "p25": 600,
+          "p75": 800,
+          "n": 821,
+          "spread": 1.33,
+          "tier": "estimate"
+        },
+        {
+          "id": "baitcasting-reel",
+          "labelEn": "Baitcasting / conventional reel",
+          "match": [
+            "ベイトリール",
+            "両軸リール",
+            "両軸受リール",
+            "baitcasting reel",
+            "baitcast reel",
+            "アンタレス",
+            "メタニウム",
+            "antares",
+            "metanium"
+          ],
+          "medianG": 600,
+          "p25": 600,
+          "p75": 770,
+          "n": 792,
+          "spread": 1.28,
+          "tier": "estimate"
+        },
+        {
+          "id": "reel",
+          "labelEn": "Reel (type unknown)",
+          "match": [
+            "リール",
+            "reel"
+          ],
+          "medianG": 700,
+          "p25": 600,
+          "p75": 800,
+          "n": 1613,
+          "spread": 1.33,
+          "tier": "estimate"
+        },
+        {
+          "id": "squid-jig",
+          "labelEn": "Squid jig / tai rubber",
+          "match": [
+            "エギング",
+            "エギ",
+            "餌木",
+            "タイラバ",
+            "鯛ラバ",
+            "スッテ",
+            "squid jig",
+            "tai rubber"
+          ],
+          "medianG": 140,
+          "p25": 100,
+          "p75": 144,
+          "n": 154,
+          "spread": 1.44,
+          "tier": "estimate"
+        },
+        {
+          "id": "metal-jig",
+          "labelEn": "Metal jig",
+          "match": [
+            "メタルジグ",
+            "metal jig",
+            "ジギング",
+            "jigging"
+          ],
+          "medianG": 73,
+          "p25": 50,
+          "p75": 120,
+          "n": 342,
+          "spread": 2.4,
+          "tier": "estimate"
+        },
+        {
+          "id": "jig-head",
+          "labelEn": "Jig head / rubber jig",
+          "match": [
+            "ジグヘッド",
+            "ラバージグ",
+            "jig head",
+            "jighead",
+            "rubber jig"
+          ],
+          "medianG": 100,
+          "p25": 20,
+          "p75": 140,
+          "n": 617,
+          "spread": 7,
+          "tier": "unverified"
+        },
+        {
+          "id": "soft-bait",
+          "labelEn": "Soft bait / worm",
+          "match": [
+            "ワーム",
+            "ソフトベイト",
+            "ソフトルアー",
+            "soft bait",
+            "softbait",
+            "worm"
+          ],
+          "medianG": 166,
+          "p25": 58,
+          "p75": 250,
+          "n": 1180,
+          "spread": 4.31,
+          "tier": "estimate"
+        },
+        {
+          "id": "hard-lure",
+          "labelEn": "Hard lure (minnow, crank, spoon, topwater)",
+          "match": [
+            "ミノー",
+            "クランクベイト",
+            "バイブレーション",
+            "ポッパー",
+            "スピナー",
+            "トップウォーター",
+            "ルアー",
+            "minnow",
+            "crankbait",
+            "popper",
+            "swimbait",
+            "topwater",
+            "hard lure"
+          ],
+          "medianG": 80,
+          "p25": 50,
+          "p75": 125,
+          "n": 8111,
+          "spread": 2.5,
+          "tier": "estimate"
+        },
+        {
+          "id": "fishing-line",
+          "labelEn": "Fishing line",
+          "match": [
+            "peライン",
+            "フロロカーボン",
+            "ナイロンライン",
+            "エステルライン",
+            "釣り糸",
+            "道糸",
+            "pe line",
+            "fishing line"
+          ],
+          "medianG": 87,
+          "p25": 30,
+          "p75": 168,
+          "n": 390,
+          "spread": 5.6,
+          "tier": "unverified"
+        },
+        {
+          "id": "terminal-tackle",
+          "labelEn": "Terminal tackle and small accessories",
+          "match": [
+            "釣り針",
+            "シンカー",
+            "オモリ",
+            "スイベル",
+            "sinker",
+            "swivel",
+            "terminal tackle"
+          ],
+          "medianG": 30,
+          "p25": 30,
+          "p75": 40,
+          "n": 732,
+          "spread": 1.33,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Three shops adopted, 14,999 variants (after dropping 760 pseudo rows above 30,000 g). The lines are evaluated top to bottom — rods must be tested before squid jigs, or an \"eging rod\" is caught by squid-jig. Classification uses each shop's own product_type: the shop's own category misfires far less often than words in the title.\n\nLimits that matter:\n\n(1) None of these grams are measurements. They are packing classes — jdmreelhub is on 100 g steps for 98% of rows, and every line item at asianportal is 30 g. Hence measured: false.\n\n(2) Rods come from asianportal only. Its values fall as the number of sections rises (1-piece 9,780 g, 2-piece 6,660 g, 3-piece and up 5,890 g, 5-piece 2,560 g), so this is volumetric weight from packed length, not mass — a 4'8\" ultralight trout rod carries 3,790 g. Since a rod's international shipping cost is driven by length rather than mass, that figure actually suits a cost estimate better. jdmtackleheaven puts 1,220 g on the same rod, close to true mass; the two shops disagree by 5.5x, and which one you take changes the postage a lot.\n\n(3) A rod hits a size limit before it hits a weight step. EMS caps length at 1.5 m and length plus girth at 3 m, so a one-piece rod (usually over 2 m) cannot go by EMS at all, and even a two-piece packs to 1.3-1.6 m, into courier long-parcel surcharge territory. Estimating a rod by weight alone will always be wrong, so the screen should say a rod is not decided by a weight step.\n\n(4) Hard lures disagree between shops (asianportal 120 g, jdmtackleheaven 56 g), most likely blister pack versus carded packaging. The pooled median of 80 g is only the midpoint.\n\n(5) jpnfishingtackle.com puts the lure's own mass in grams (14 g and so on), not a shipping weight, so it was rejected. Adopting its 13 g median would understate postage badly.\n\n(6) fallbackG 100 is the median across all three adopted shops, but their catalogues are lure-heavy, so it skews small. If a rod or reel fails to match a line, it will understate badly.\n\n(7) Landing nets (median 10,970 g, n=7) had too few rows to make a line."
+    },
+    {
+      "category": "sports-goods",
+      "labelEn": "Sports equipment",
+      "labelJa": "スポーツ用品",
+      "checkedOn": "2026-09-06",
+      "measured": false,
+      "method": "shopify-products-json",
+      "lineCount": 17,
+      "sampleN": 6503,
+      "fallbackG": 2000,
+      "fallbackTier": "unverified",
+      "sources": [
+        {
+          "domain": "tozandoshop.com",
+          "url": "https://tozandoshop.com/products.json?limit=250&page=1",
+          "products": 1160,
+          "variantsWithGrams": 4917,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.9%, multiples of 100: 98%, of 500: 78%. Tozando of Kyoto, export storefront. product_type separates men / kote / do / tare / bogu set / hakama / shinai / bokuto / iaito / yumi, which makes the product lines easy to cut. Values sit on 500 g packing steps, but the steps differ per item (yumi 7,000 g, bogu set 5,000 g, men 2,500 g, tare 1,500 g, tenugui 100 g), so adopted.",
+          "reasonJa": "distinct比 0.9%, 100の倍数 98%, 500の倍数 78%。京都・東山堂の海外向け店。product_type が 面/小手/胴/垂/防具セット/袴/竹刀/木刀/居合刀/弓 に分かれていて商品ラインを切りやすい。値は 500g 刻みの梱包区分だが、品目ごとに段が分かれている（弓 7,000g / 防具セット 5,000g / 面 2,500g / 垂 1,500g / 手拭い 100g）ので採用"
+        },
+        {
+          "domain": "www.seidoshop.com",
+          "url": "https://www.seidoshop.com/products.json?limit=250&page=1",
+          "products": 675,
+          "variantsWithGrams": 4199,
+          "verdict": "suspect",
+          "reason": "distinct ratio 0.7%, multiples of 100: 52%, of 500: 26%. Aikido and koryu budo, shipped from Japan. 1,800 rows are embroidery, crest and alteration services — all 10 g, not products — and were excluded. The rest is uniforms, hakama, obi and bokuto, and its steps agree with Tozando's.",
+          "reasonJa": "distinct比 0.7%, 100の倍数 52%, 500の倍数 26%。合気道・古武道の日本発の店。刺繍/家紋/寸法直しなどの加工サービスが 1,800件あり全部 10g なので除外した（商品ではない）。残りは道着・袴・帯・木刀で、東山堂と品目の段が一致する"
+        },
+        {
+          "domain": "kendostar.com",
+          "url": "https://kendostar.com/products.json?limit=250&page=1",
+          "products": 486,
+          "variantsWithGrams": 131,
+          "verdict": "suspect",
+          "reason": "distinct ratio 6.1%, multiples of 100: 100%, of 500: 87%. Only 131 of 486 products carry grams. Small, but bogu 4,000 g and shinai 3,000 g are close to Tozando's steps, so it was adopted to add sample size for shinai and bogu sets.",
+          "reasonJa": "distinct比 6.1%, 100の倍数 100%, 500の倍数 87%。486商品のうち grams が入っているのは 131 variants だけ。少ないが防具 4,000g・竹刀 3,000g と東山堂の段に近く、竹刀と防具セットの n を補うために採用"
+        },
+        {
+          "domain": "www.kendo.co.jp",
+          "url": "https://www.kendo.co.jp/products.json?limit=250&page=1",
+          "products": 461,
+          "variantsWithGrams": 2528,
+          "verdict": "suspect",
+          "reason": "The script scores this suspect, but it is not adopted. Shinai carry 200,000 g (200 kg) and bogu sets 600,000 g — a factor of 1,000 out, as if a price or another unit were typed into the weight field. The maximum is 5,000,000 g. The ratios between items look right, but the absolute values are unusable.",
+          "reasonJa": "スクリプトの判定は suspect だが不採用。竹刀に 200,000g（200kg）、防具セットに 600,000g が入っていて桁が 1,000倍ずれている（重量欄に価格か別単位を入れたとみられる）。最大 5,000,000g。段の比率は正しそうでも絶対値が使えない"
+        },
+        {
+          "domain": "japangolfclubs.com",
+          "url": "https://japangolfclubs.com/products.json?limit=250&page=1",
+          "products": 5000,
+          "variantsWithGrams": 2592,
+          "verdict": "pseudo",
+          "reason": "distinct=9, top value 78% of all rows. Drivers and iron sets alike are fixed at 2,268 g (5 lb). A flat packing class in pounds, with no difference between club types.",
+          "reasonJa": "distinct=9, 最頻値が全体の 78%。ドライバーもアイアンセットも 2,268g（=5 lb）固定。ポンド単位の一律梱包区分で、クラブ種別の差が出ていない"
+        },
+        {
+          "domain": "golfpartnerusa.com",
+          "url": "https://golfpartnerusa.com/products.json?limit=250&page=1",
+          "products": 4944,
+          "variantsWithGrams": 45,
+          "verdict": "insufficient",
+          "reason": "Only 45 of 4,944 products carry grams, and all of them are 1,361 g (3 lb). Below n=50 to judge, and pseudo anyway.",
+          "reasonJa": "4,944商品中 grams があるのは 45 variants のみ、しかも全部 1,361g（=3 lb）固定。n<50 で判定不能かつ擬似値"
+        },
+        {
+          "domain": "japangolfimport.com",
+          "url": "https://japangolfimport.com/products.json?limit=250&page=1",
+          "products": 2,
+          "variantsWithGrams": 72,
+          "verdict": "pseudo",
+          "reason": "distinct=1, all rows 4,000 g. Effectively two products (variations of one custom iron).",
+          "reasonJa": "distinct=1, 全件 4,000g。商品が実質2件（カスタムアイアンのバリエーション）"
+        },
+        {
+          "domain": "taiwanbaseball.com.tw",
+          "url": "https://taiwanbaseball.com.tw/products.json?limit=250&page=1",
+          "products": 156,
+          "variantsWithGrams": 168,
+          "verdict": "pseudo",
+          "reason": "distinct=4, top value 91%. A Taiwanese shop that ships Japanese brands (ZETT, SSK, Hi-Gold) worldwide. Gloves, mitts and protective gear are all fixed at 1,000 g, and it is not a Japanese shop, so not adopted.",
+          "reasonJa": "distinct=4, 最頻値 91%。ZETT/SSK/ハイゴールド等の日本ブランドを世界発送する台湾の店。グラブもミットも防具も全部 1,000g 固定で、日本の店ではないこともあり不採用"
+        },
+        {
+          "domain": "ballgloveblueprint.com",
+          "url": "https://ballgloveblueprint.com/products.json?limit=250&page=1",
+          "products": 114,
+          "variantsWithGrams": 133,
+          "verdict": "pseudo",
+          "reason": "distinct=2, top value 99%. Sells Japanese gloves (ATOMS, Wagyu-JB) but is a US shop. Every row is 907 g (2 lb).",
+          "reasonJa": "distinct=2, 最頻値 99%。日本製グラブ（ATOMS/Wagyu-JB）を扱うが米国の店。全件 907g（=2 lb）固定"
+        },
+        {
+          "domain": "japan-ballpark.com",
+          "url": "https://japan-ballpark.com/products.json?limit=250&page=1",
+          "products": 250,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Shopify returns JSON, but grams is 0 on every row — no weights entered.",
+          "reasonJa": "Shopify で JSON は返るが、grams が全件 0（重量を入力していない）"
+        },
+        {
+          "domain": "katanajp.co",
+          "url": "https://katanajp.co/products.json?limit=250&page=1",
+          "products": 72,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "A hard-ball glove maker in Osaka. Shopify, but grams is 0 on every row.",
+          "reasonJa": "大阪の硬式グラブメーカー。Shopify だが grams が全件 0"
+        },
+        {
+          "domain": "en.kyujisensei.com",
+          "url": "https://en.kyujisensei.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "products.json returns 404 — not a Shopify store. A second-hand baseball shop in Osaka.",
+          "reasonJa": "products.json が 404（Shopify ではない）。大阪の野球用品中古店"
+        },
+        {
+          "domain": "www.yabaibaseball.com",
+          "url": "https://www.yabaibaseball.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 400 — not a Shopify store.",
+          "reasonJa": "400（Shopify ではない）"
+        },
+        {
+          "domain": "www.hatakeyama-jp.com",
+          "url": "https://www.hatakeyama-jp.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "sskbaseballshop.com",
+          "url": "https://sskbaseballshop.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "www.kozuji.com",
+          "url": "https://www.kozuji.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — the shop blocks automated requests.",
+          "reasonJa": "403（ボット遮断。Winning のボクシング用品を世界発送する日本の店だが取得できず）"
+        },
+        {
+          "domain": "www.nishohi.com",
+          "url": "https://www.nishohi.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — the shop blocks automated requests.",
+          "reasonJa": "403（新体操・卓球・柔道・空手の日本メーカー直販だが取得できず）"
+        },
+        {
+          "domain": "www.tourspecgolf.com",
+          "url": "https://www.tourspecgolf.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Magento。Shopify ではない）"
+        },
+        {
+          "domain": "shop.golfdigest.co.jp",
+          "url": "https://shop.golfdigest.co.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない）"
+        },
+        {
+          "domain": "japansoccer-jersey.com",
+          "url": "https://japansoccer-jersey.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store. Ships J.League kit worldwide.",
+          "reasonJa": "404（Shopify ではない）。Jリーグのユニフォームを世界発送する日本の店"
+        },
+        {
+          "domain": "footballshop-fcfa.com",
+          "url": "https://footballshop-fcfa.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "Could not connect — not a Shopify store.",
+          "reasonJa": "接続できず（Shopify ではない）"
+        },
+        {
+          "domain": "www.sports-ws.com",
+          "url": "https://www.sports-ws.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "zennihonbudougu.com",
+          "url": "https://zennihonbudougu.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（EC-CUBE。Shopify ではない）"
+        },
+        {
+          "domain": "www.e-bogu.jp",
+          "url": "https://www.e-bogu.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "www.f-budogu.jp",
+          "url": "https://www.f-budogu.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "kendoshop.com",
+          "url": "https://kendoshop.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "tanabesports.net",
+          "url": "https://tanabesports.net/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — the shop blocks automated requests.",
+          "reasonJa": "403（スキー用品。取得できず）"
+        },
+        {
+          "domain": "jpn.mizuno.com",
+          "url": "https://jpn.mizuno.com/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 404 — not a Shopify store.",
+          "reasonJa": "404（Shopify ではない）"
+        },
+        {
+          "domain": "www.himaraya.co.jp",
+          "url": "https://www.himaraya.co.jp/products.json?limit=250&page=1",
+          "products": 0,
+          "variantsWithGrams": 0,
+          "verdict": "insufficient",
+          "reason": "HTTP 403 — not a Shopify store.",
+          "reasonJa": "403（Shopify ではない）"
+        }
+      ],
+      "lines": [
+        {
+          "id": "budo-bag",
+          "labelEn": "Bogu bag / shinai bag / weapon case",
+          "match": [
+            "防具袋",
+            "防具バッグ",
+            "竹刀袋",
+            "木刀袋",
+            "刀袋",
+            "bogu bag",
+            "shinai bag"
+          ],
+          "medianG": 800,
+          "p25": 500,
+          "p75": 1500,
+          "n": 156,
+          "spread": 3,
+          "tier": "unverified"
+        },
+        {
+          "id": "budo-small-parts",
+          "labelEn": "Small parts and accessories (tenugui, tsuba, sageo, himo)",
+          "match": [
+            "手ぬぐい",
+            "手拭い",
+            "面手ぬぐい",
+            "面紐",
+            "胴紐",
+            "乳革",
+            "下緒",
+            "鍔",
+            "柄糸",
+            "目貫",
+            "tenugui",
+            "tsuba",
+            "sageo"
+          ],
+          "medianG": 200,
+          "p25": 100,
+          "p75": 200,
+          "n": 1073,
+          "spread": 2,
+          "tier": "estimate"
+        },
+        {
+          "id": "kendo-bogu-set",
+          "labelEn": "Kendo bogu, full set",
+          "match": [
+            "防具セット",
+            "剣道防具セット",
+            "bogu set",
+            "kendo bogu set"
+          ],
+          "medianG": 5000,
+          "p25": 4250,
+          "p75": 5000,
+          "n": 54,
+          "spread": 1.18,
+          "tier": "estimate"
+        },
+        {
+          "id": "kendo-men",
+          "labelEn": "Kendo men (helmet), single piece",
+          "match": [
+            "面単品",
+            "剣道面",
+            "面 単品",
+            "kendo men"
+          ],
+          "medianG": 2500,
+          "p25": 2500,
+          "p75": 2500,
+          "n": 198,
+          "spread": 1,
+          "tier": "estimate"
+        },
+        {
+          "id": "kendo-kote",
+          "labelEn": "Kendo kote (gauntlets)",
+          "match": [
+            "小手",
+            "甲手",
+            "kote"
+          ],
+          "medianG": 2000,
+          "p25": 1500,
+          "p75": 2500,
+          "n": 187,
+          "spread": 1.67,
+          "tier": "estimate"
+        },
+        {
+          "id": "kendo-do",
+          "labelEn": "Kendo do (torso armour)",
+          "match": [
+            "胴単品",
+            "剣道胴",
+            "胴台",
+            "胴 単品"
+          ],
+          "medianG": 2000,
+          "p25": 1500,
+          "p75": 7500,
+          "n": 97,
+          "spread": 5,
+          "tier": "unverified"
+        },
+        {
+          "id": "kendo-tare",
+          "labelEn": "Kendo tare (waist protector)",
+          "match": [
+            "垂単品",
+            "剣道垂",
+            "垂 単品",
+            "tare"
+          ],
+          "medianG": 1500,
+          "p25": 1500,
+          "p75": 1500,
+          "n": 67,
+          "spread": 1,
+          "tier": "estimate"
+        },
+        {
+          "id": "budo-uniform-set",
+          "labelEn": "Budo uniform, jacket and hakama/pants set",
+          "match": [
+            "上下セット",
+            "道着セット",
+            "剣道着セット",
+            "空手着セット",
+            "柔道着セット",
+            "上下組",
+            "uniform set"
+          ],
+          "medianG": 2500,
+          "p25": 2000,
+          "p75": 2500,
+          "n": 792,
+          "spread": 1.25,
+          "tier": "estimate"
+        },
+        {
+          "id": "budo-pants",
+          "labelEn": "Budo uniform pants (karate/judo bottoms)",
+          "match": [
+            "道着ズボン",
+            "空手ズボン",
+            "柔道ズボン",
+            "空手着ズボン",
+            "下衣",
+            "karate pants",
+            "judo pants"
+          ],
+          "medianG": 2100,
+          "p25": 800,
+          "p75": 2200,
+          "n": 185,
+          "spread": 2.75,
+          "tier": "unverified"
+        },
+        {
+          "id": "budo-jacket",
+          "labelEn": "Budo uniform jacket (keikogi, karategi, judogi, kendogi)",
+          "match": [
+            "剣道着",
+            "空手着",
+            "柔道着",
+            "合気道着",
+            "稽古着",
+            "道着",
+            "上衣",
+            "keikogi",
+            "karategi",
+            "judogi",
+            "kendogi",
+            "dogi"
+          ],
+          "medianG": 2200,
+          "p25": 1500,
+          "p75": 2500,
+          "n": 691,
+          "spread": 1.67,
+          "tier": "estimate"
+        },
+        {
+          "id": "hakama",
+          "labelEn": "Hakama",
+          "match": [
+            "袴",
+            "hakama"
+          ],
+          "medianG": 1500,
+          "p25": 1500,
+          "p75": 2500,
+          "n": 1696,
+          "spread": 1.67,
+          "tier": "estimate"
+        },
+        {
+          "id": "budo-obi",
+          "labelEn": "Obi / belt",
+          "match": [
+            "黒帯",
+            "色帯",
+            "角帯",
+            "武道帯",
+            "空手帯",
+            "柔道帯",
+            "obi"
+          ],
+          "medianG": 400,
+          "p25": 400,
+          "p75": 500,
+          "n": 291,
+          "spread": 1.25,
+          "tier": "estimate"
+        },
+        {
+          "id": "budo-tabi",
+          "labelEn": "Tabi / setta (footwear)",
+          "match": [
+            "足袋",
+            "雪駄",
+            "tabi",
+            "setta"
+          ],
+          "medianG": 500,
+          "p25": 300,
+          "p75": 500,
+          "n": 151,
+          "spread": 1.67,
+          "tier": "estimate"
+        },
+        {
+          "id": "shinai",
+          "labelEn": "Shinai (bamboo sword)",
+          "match": [
+            "竹刀",
+            "shinai"
+          ],
+          "medianG": 3000,
+          "p25": 1500,
+          "p75": 3000,
+          "n": 202,
+          "spread": 2,
+          "tier": "estimate"
+        },
+        {
+          "id": "bokuto",
+          "labelEn": "Bokuto / bokken / jo (wooden weapon)",
+          "match": [
+            "木刀",
+            "木剣",
+            "杖",
+            "bokuto",
+            "bokken",
+            "jo staff"
+          ],
+          "medianG": 2000,
+          "p25": 2000,
+          "p75": 2000,
+          "n": 250,
+          "spread": 1,
+          "tier": "estimate"
+        },
+        {
+          "id": "iaito",
+          "labelEn": "Iaito (practice sword)",
+          "match": [
+            "居合刀",
+            "模擬刀",
+            "iaito",
+            "mogito"
+          ],
+          "medianG": 2500,
+          "p25": 2000,
+          "p75": 3500,
+          "n": 143,
+          "spread": 1.75,
+          "tier": "estimate"
+        },
+        {
+          "id": "kyudo-yumi",
+          "labelEn": "Kyudo yumi (bow)",
+          "match": [
+            "和弓",
+            "弓道 弓",
+            "グラス弓",
+            "カーボン弓",
+            "yumi",
+            "kyudo bow"
+          ],
+          "medianG": 7000,
+          "p25": 7000,
+          "p75": 7000,
+          "n": 270,
+          "spread": 1,
+          "tier": "estimate"
+        }
+      ],
+      "notes": "Three shops adopted, 6,503 variants (after removing the 10 g rows that are alteration services rather than products). The lines are evaluated top to bottom — a shinai bag must be tested before shinai, and karate trousers before budo-jacket. Classification uses each shop's own product_type: the shop's own category misfires far less often than words in the title.\n\nLimits that matter:\n\n(1) What we obtained is budo equipment, not the category as named. Not one baseball, football or golf shop yielded data. In baseball, japan-ballpark.com and katanajp.co are Shopify but leave grams at 0, while taiwanbaseball (Taiwan) and ballgloveblueprint (US) are fixed at 1,000 g and 907 g. In golf, japangolfclubs is fixed at 2,268 g (5 lb), golfpartnerusa at 1,361 g (3 lb) and japangolfimport at 4,000 g — all flat pound-denominated classes. For football we could not find a Japanese Shopify shop at all (fcFA, SWS and japansoccer-jersey are on other platforms). So the weight difference between a glove, a bat and a jersey is not covered by this data.\n\n(2) These grams are packing classes, not measurements. All three shops put 78-90% of rows on 500 g steps; all 198 of Tozando's men are 2,500 g and all 270 of its yumi are 7,000 g. Hence measured: false. Good enough to pick an EMS step, never to be presented as a measured weight.\n\n(3) The same item sits on different steps at different shops. Hakama is 2,500 g at Tozando and 1,500 g at Seido; shinai is 2,500 g at Tozando and 3,000 g at KendoStar. The pooled median is only somewhere in between.\n\n(4) kendo-do has a spread of 5.0 (p25 1,500 g, p75 7,500 g) because a bare do and a full do-with-dodai set share one product_type. It is not dependable, so its tier is unverified.\n\n(5) Shinai (3,000 g), bokuto (2,000 g) and yumi (7,000 g) look like long-parcel packing values rather than mass — a shinai actually weighs about 500 g. International shipping hits the 1.5 m length limit first, so a weight-only estimate will be wrong, and a yumi is over 2 m and cannot go by EMS at all.\n\n(6) Shinai and bokuto listings include ten-packs (26,000 g, 25,000 g), which lift the upper tail.\n\n(7) www.kendo.co.jp scores suspect but was rejected: its figures are out by a factor of 1,000 (shinai at 200,000 g). Dividing by 1,000 was considered and refused — that would be a correction with nothing behind it.\n\n(8) fallbackG 2,000 is the overall median of the three adopted shops. Their catalogues are uniform- and armour-heavy, so applying it to non-budo sports goods (balls, apparel, small accessories) will overstate badly."
+    }
+  ]
+}

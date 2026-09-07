@@ -1,0 +1,278 @@
+{
+  "category": "kpop",
+  "labelJa": "K-POP（アルバム・グッズ）",
+  "labelEn": "K-Pop albums and goods",
+  "checkedOn": "2026-09-06",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "kpopmerch.jp",
+      "url": "https://kpopmerch.jp/products.json?limit=250&page=1",
+      "products": 3115,
+      "variantsWithGrams": 5116,
+      "verdict": "suspect",
+      "reason": "distinct ratio 1.2%, multiples of 100: 99%, of 500: 46%. Adopted. product_type=ALBUM has 3,193 rows, median 800 g (p25 600 / p75 1000). Japanese-language shop aimed at Japan, but operated from Korea (KPOPMERCH, Yongin).",
+      "reasonJa": "distinct比 1.2%, 100の倍数 99%, 500の倍数 46%。採用。product_type=ALBUM が 3,193件で中央値 800g（p25 600 / p75 1000）。日本語タイトルの日本向け店だが運営は韓国（KPOPMERCH、龍仁市）"
+    },
+    {
+      "domain": "www.kpopalbums.com",
+      "url": "https://www.kpopalbums.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 13572,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.3%, multiples of 100: 100%, of 500: 28%. Adopted. product_type=CD 4,619 rows median 800 g; CARD (platform albums) 1,082 rows 400 g; BOOK 677 rows 1,500 g.",
+      "reasonJa": "distinct比 0.3%, 100の倍数 100%, 500の倍数 28%。採用。product_type=CD が 4,619件で中央値 800g、CARD（プラットフォームアルバム）1,082件で 400g、BOOK 677件で 1,500g"
+    },
+    {
+      "domain": "shop.delivered.co.kr",
+      "url": "https://shop.delivered.co.kr/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 14778,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.3%, multiples of 100: 100%, of 500: 79%. Adopted, but most of the catalogue is K-fashion and cosmetics; only Kpop Album (1,357) and Kpop Merch (1,518) are in scope. Album median 1,000 g.",
+      "reasonJa": "distinct比 0.3%, 100の倍数 100%, 500の倍数 79%。採用。ただし在庫の大半は K-ファッション/コスメで、K-POP は Kpop Album 1,357件・Kpop Merch 1,518件のみ。アルバム中央値 1,000g"
+    },
+    {
+      "domain": "cokodive.com",
+      "url": "https://cokodive.com/products.json?limit=250&page=1",
+      "products": 499,
+      "variantsWithGrams": 1048,
+      "verdict": "usable",
+      "reason": "distinct=52 (5.0%), top value 25%, multiples of 100: 56%. Adopted. K-POP_CD/DVD_ALBUM n=143, median 700 g. Small sample, but the values move per product.",
+      "reasonJa": "distinct=52 (5.0%), 最頻値 25%, 100の倍数 56%。採用。K-POP_CD/DVD_ALBUM 143件で中央値 700g。母数は小さいが値が商品ごとに動いている"
+    },
+    {
+      "domain": "www.kpop.exchange",
+      "url": "https://www.kpop.exchange/products.json?limit=250&page=1",
+      "products": 2143,
+      "variantsWithGrams": 7057,
+      "verdict": "suspect",
+      "reason": "distinct ratio 1.8%, multiples of 100: 9%. Adopted for the photocard line only. Values are ounce conversions (28 g = 1 oz, 113 g = 4 oz, 454 g = 16 oz). product_type='Photo Card(s)' has 1,074 rows — the only shop that carries a weight for a single photocard.",
+      "reasonJa": "distinct比 1.8%, 100の倍数 9%。採用（photocard 行のみ）。値が oz 換算（28g=1oz, 113g=4oz, 454g=16oz）。product_type='Photo Card(s)' が 1,074件あり、単体フォトカードの重量を持つ唯一の店"
+    },
+    {
+      "domain": "kpopstoreinusa.com",
+      "url": "https://kpopstoreinusa.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 10872,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.3%. Not adopted; used only as corroboration. Values are pound conversions (907 g = 2 lb, 1,814 g = 4 lb), so the steps are coarse. Album n=3,395 with median 907 g independently supports 800-1,000 g for an album.",
+      "reasonJa": "distinct比 0.3%。不採用（裏取りにのみ使用）。値が lb 換算（907g=2lb, 1814g=4lb）で段が粗い。Album 3,395件が中央値 907g で、アルバム 800〜1,000g を独立に裏づける"
+    },
+    {
+      "domain": "kplaceshop.com",
+      "url": "https://kplaceshop.com/products.json?limit=250&page=1",
+      "products": 1750,
+      "variantsWithGrams": 6246,
+      "verdict": "usable",
+      "reason": "distinct=427 (6.8%), top value 6%, multiples of 100: 1%. The best data quality of any K-Pop shop, but not adopted: the values are ounce conversions of the bare product with no packing, and Albums n=3,161 has a median of 172 g, which is far too low for a shipping weight. Photocard titles mix holders and sets, so single cards cannot be isolated.",
+      "reasonJa": "distinct=427 (6.8%), 最頻値 6%, 100の倍数 1%。店としては最も質が良いが不採用（裏取りにのみ使用）。値が商品単体（梱包なし）の oz 換算で、Albums 3,161件の中央値が 172g と発送重量として低すぎる。photocard 系タイトルにはホルダーやセットが混ざり単体カードを切り出せない"
+    },
+    {
+      "domain": "kpopmerch.com",
+      "url": "https://kpopmerch.com/products.json?limit=250&page=1",
+      "products": 3730,
+      "variantsWithGrams": 9536,
+      "verdict": "suspect",
+      "reason": "distinct ratio 0.7%, multiples of 100: 99%. Not adopted: same operator as kpopmerch.jp (KPOPMERCH), so it is not independent evidence. ALBUM n=5,680 median 1,000 g, one step heavier than the .jp shop's 800 g.",
+      "reasonJa": "distinct比 0.7%, 100の倍数 99%。不採用。kpopmerch.jp と同一運営（KPOPMERCH）なので独立した証拠にならない。ALBUM 5,680件で中央値 1,000g と .jp の 800g より一段重い"
+    },
+    {
+      "domain": "kpopfromjapan.com",
+      "url": "https://kpopfromjapan.com/products.json?limit=250&page=1",
+      "products": 1432,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not adopted. One of the few Shopify stores based in Japan that ships abroad, but all 1,432 rows have grams of 0 — no weights entered at all.",
+      "reasonJa": "不採用。日本拠点で海外発送する数少ない Shopify 店だが、1,432件すべて grams が 0。重量を一切入れていない"
+    },
+    {
+      "domain": "hallyusuperstore.com",
+      "url": "https://hallyusuperstore.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "robots.txt is Disallow: / for everyone, so we did not fetch it.",
+      "reasonJa": "robots.txt が Disallow: / で全面禁止。取得しなかった"
+    },
+    {
+      "domain": "www.ktown4u.com",
+      "url": "https://www.ktown4u.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 303. The largest K-Pop retailer, but no JSON is available.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 303。K-POP 通販最大手だが JSON が取れない"
+    },
+    {
+      "domain": "www.catchopcd.net",
+      "url": "https://www.catchopcd.net/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    },
+    {
+      "domain": "pocamarket.com",
+      "url": "https://pocamarket.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404. The largest photocard specialist, but unreachable this way.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404。フォトカード専門の最大手だが取れない"
+    },
+    {
+      "domain": "kpopcd.com",
+      "url": "https://kpopcd.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404. A Japanese retailer (Kaukau Asia) of Korean pressings.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404。日本（かうかうアジア）の韓国盤取扱店"
+    },
+    {
+      "domain": "s-record.jp",
+      "url": "https://s-record.jp/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404. Seoul Records in Shin-Okubo, Tokyo.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404。新大久保のソウルレコード"
+    },
+    {
+      "domain": "www.musickorea.com",
+      "url": "https://www.musickorea.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "Not a Shopify store; products.json returns HTTP 404.",
+      "reasonJa": "Shopify ではない。products.json が HTTP 404"
+    }
+  ],
+  "lines": [
+    {
+      "id": "photocard",
+      "labelEn": "Photocard (single)",
+      "match": [
+        "フォトカード",
+        "トレカ",
+        "photocard",
+        "photo card"
+      ],
+      "medianG": 28,
+      "p25": 28,
+      "p75": 57,
+      "n": 1074,
+      "spread": 2.04,
+      "tier": "estimate"
+    },
+    {
+      "id": "photobook",
+      "labelEn": "Photobook / photo essay",
+      "match": [
+        "写真集",
+        "フォトブック",
+        "photobook",
+        "photo book",
+        "dicon"
+      ],
+      "medianG": 1000,
+      "p25": 800,
+      "p75": 1600,
+      "n": 1182,
+      "spread": 2.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "lightstick",
+      "labelEn": "Official lightstick",
+      "match": [
+        "ペンライト",
+        "lightstick",
+        "light stick",
+        "応援棒"
+      ],
+      "medianG": 900,
+      "p25": 500,
+      "p75": 1500,
+      "n": 586,
+      "spread": 3.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "dvd-bluray",
+      "labelEn": "DVD / Blu-ray",
+      "match": [
+        "ブルーレイ",
+        "blu-ray",
+        "bluray",
+        "dvd"
+      ],
+      "medianG": 1750,
+      "p25": 1200,
+      "p75": 2000,
+      "n": 150,
+      "spread": 1.67,
+      "tier": "estimate"
+    },
+    {
+      "id": "magazine",
+      "labelEn": "Magazine",
+      "match": [
+        "雑誌",
+        "マガジン",
+        "magazine",
+        "dazed"
+      ],
+      "medianG": 1500,
+      "p25": 1200,
+      "p75": 2500,
+      "n": 542,
+      "spread": 2.08,
+      "tier": "estimate"
+    },
+    {
+      "id": "platform-album",
+      "labelEn": "Platform album (POCA / Weverse / Nemo / Kihno)",
+      "match": [
+        "poca",
+        "weverse album",
+        "ウィバースアルバム",
+        "nemo",
+        "kihno",
+        "キノアルバム",
+        "plve",
+        "objekt",
+        "smini",
+        "プラットフォーム",
+        "platform album"
+      ],
+      "medianG": 400,
+      "p25": 300,
+      "p75": 600,
+      "n": 1140,
+      "spread": 2.0,
+      "tier": "estimate"
+    },
+    {
+      "id": "album",
+      "labelEn": "Physical album (CD + photobook)",
+      "match": [
+        "アルバム",
+        "album"
+      ],
+      "medianG": 800,
+      "p25": 500,
+      "p75": 1000,
+      "n": 9679,
+      "spread": 2.0,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": 700,
+  "fallbackTier": "estimate",
+  "notes": "Four shops adopted (kpopmerch.jp, www.kpopalbums.com, shop.delivered.co.kr, cokodive.com), plus www.kpop.exchange for the photocard line only. grams is an input to a shipping calculator, not a measurement, so measured: false.\n\nA correction to the method first. This survey targets Japanese retailers that ship abroad, and for K-Pop that essentially does not exist. kpopfromjapan.com is one of the few Shopify shops based in Japan that ships worldwide, and all 1,432 of its rows have grams of 0. kpopmerch.jp is in Japanese and aimed at Japan, but it is run from Korea (KPOPMERCH, Yongin, Gyeonggi). Ktown4u, catchopcd, pocamarket, kpopcd.com and s-record.jp (Seoul Records in Shin-Okubo) are not Shopify and return 404 or 303. So the figures come from Korean and US shops. The goods are the same Korean pressings a Japanese shop would sell, so they are usable for estimating weight, but they are not \"figures from a Japanese retailer\".\n\nThe decisive split here is that shops follow one of two conventions. (A) Shops that record the packed shipping weight: kpopmerch.jp (album 800 g), kpopalbums (800 g), dkshop (1,000 g), cokodive (700 g), kpopstoreinusa (907 g = 2 lb). Five shops land independently between 700 and 1,000 g. (B) Shops that record the bare product: kplaceshop (album 172 g), kpop.exchange (454 g = 16 oz). A proxy shipment needs (A), so the lines pool the four (A) shops. The 400-600 g gap between the two groups is the box and the padding.\n\nThe brief guessed an album at 300-600 g including the photobook; the data says 800 g (p25 500, p75 1000). The difference is exactly the bare-versus-packed distinction, and group (B)'s 454 g matches the brief closely. The order of magnitude was right.\n\nPhotocards cannot use group (A). Their photocard medians of 300-500 g are the Korean shops' smallest-box postage step, not the weight of a card. Only www.kpop.exchange carries single cards under their own product_type ('Photo Card(s)', 1,074 rows), which is where 28 g comes from. Note that 28 g is exactly 1 oz and covers 67% of those rows, so it is a rounded floor; the same shop's true minimum is 3 g, and 28 g should be read as card plus sleeve plus envelope. It agrees in magnitude with the 50 g packed single card that the tcg-singles category derived independently.\n\nPlatform albums (POCA, Weverse, NEMO, Kihno, PLVE, Objekt, SMini) are card-format releases with no CD, at half a normal album (400 g). Without that split they would be matched at 800 g and be 2x wrong. platform-album must be tested before album, because \"POCA ALBUM\" contains \"album\".\n\nMatch words include both Japanese (as seen in auction titles) and English. 'cd' was dropped from album as too short to be safe, leaving only 'album' and its Japanese equivalent; 'ost' was dropped because it matches 'post'. 'dvd' is only three characters but rarely hides inside other words, so it was kept.\n\nLimits. (1) Only three of the four adopted shops are independent — kpopmerch.jp and kpopmerch.com are the same operator, so the latter is excluded. (2) Most of dkshop's catalogue is K-fashion and cosmetics; only the K-Pop product_types were used. (3) A few kpopmerch.jp albums carry 181,437 g, 272,155 g and 408,233 g, apparently pounds entered as grams, so everything above 20,000 g was excluded. (4) Lightsticks have a spread of 3.0 because official lightstick boxes differ per group; the 500-1,500 g range is shown as it is. (5) fallbackG 700 is the median of all 19,709 rows across the three K-Pop specialists (kpopmerch.jp, kpopalbums, cokodive).",
+  "notesJa": "採用は kpopmerch.jp / www.kpopalbums.com / shop.delivered.co.kr / cokodive.com の4店（lines の photocard のみ www.kpop.exchange）。grams は送料計算用の入力値であって実測ではないので measured:false。\n\nまず前提の訂正を書いておく。手法は「海外発送する日本の小売」を想定しているが、K-POP ではそれが事実上存在しない。日本拠点で海外発送する Shopify 店として kpopfromjapan.com を見つけたが 1,432件すべて grams=0 だった。kpopmerch.jp は日本語・日本向けだが運営は韓国（KPOPMERCH、京畿道龍仁市）。ktown4u・catchopcd・pocamarket・kpopcd.com・s-record.jp（新大久保のソウルレコード）はいずれも Shopify ではなく products.json が 404/303 を返す。そこで韓国・米国拠点の店を使った。商品自体は韓国製で日本の店が売るものと同一なので重量の推定には使えるが、「日本の小売の値」ではない。\n\nこのカテゴリでは店が2つの流儀にはっきり割れていて、それが最大の論点。(A) 梱包込みの発送重量を入れる店：kpopmerch.jp（アルバム 800g）、kpopalbums（800g）、dkshop（1,000g）、cokodive（700g）、kpopstoreinusa（907g=2lb）。5店が独立に 700〜1,000g に集まる。(B) 商品単体の重量を入れる店：kplaceshop（アルバム 172g）、kpop.exchange（454g=16oz）。代行発送のコストに要るのは (A) なので lines は原則 (A) の4店をプールして作った。(B) との差 400〜600g が箱と緩衝材の分にあたる。\n\n依頼のヒントでは「アルバムはフォトブック込みで 300〜600g」とあったが、実データは 800g（p25 500 / p75 1000）。差はヒントが商品単体、実データが梱包込みの発送重量だからで、(B) 群の 454g がヒントとよく一致する。桁は違っていない。\n\nphotocard だけは (A) 群を使えない。(A) 群のフォトカード中央値は 300〜500g で、これは韓国の店の「最小箱」の送料段であって商品の重さではない。単体カードの重量を product_type で持っているのは www.kpop.exchange（'Photo Card(s)' 1,074件）だけなので、そこから 28g を採った。ただし 28g はちょうど 1 oz で全体の 67% を占める最小単位であり、これも下限の丸め値。実物のカードは同店の最小値 3g で、28g はスリーブ＋封筒込みとみるべき。tcg-singles カテゴリが独立に出した「梱包込み単カード 50g」と桁が合う。\n\nplatform-album（POCA / Weverse / NEMO / Kihno / PLVE / Objekt / SMini）は CD を含まないカード型の販売形態で、通常のアルバムの半分（400g）。ここを分けないと中央値 800g を当ててしまい 2倍ずれる。lines のマッチ順は platform-album を album より先に見ること（'POCA ALBUM' は 'album' を含むため）。\n\nmatch の語は日本語（ヤフオクのタイトル）と英語を両方入れた。'cd' は短すぎて誤爆するので album の match から外し、'アルバム'/'album' だけにした。'ost' も 'post' に当たるため外した。'dvd' は3文字だが他の語に埋もれにくいので採用。\n\n限界: (1) 採用4店のうち独立なのは3系統（kpopmerch.jp と kpopmerch.com は同一運営なので後者は不採用）。(2) dkshop は在庫の大半が K-ファッション/コスメで、K-POP 部分だけを product_type で切り出している。(3) kpopmerch.jp のアルバムに 181,437g・272,155g・408,233g という桁違いの値が数件あり（lb と g の取り違えとみられる）、集計では 20,000g 超を除外した。(4) lightstick は spread 3.0 と広い。公式ペンライトは箱のサイズが商品ごとに違うためで、500〜1,500g の幅をそのまま出している。(5) fallbackG 700 は K-POP 専門3店（kpopmerch.jp / kpopalbums / cokodive）の全 19,709件の中央値。"
+}
