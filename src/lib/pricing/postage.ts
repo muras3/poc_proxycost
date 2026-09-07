@@ -1,4 +1,4 @@
-import type { CountryCode, Tier } from './types';
+import type { CountryCode, PostalMethod, Tier } from './types';
 import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
 
 /**
@@ -19,12 +19,7 @@ import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
  * 日本郵便の料金表に行が残っていることは、いま引き受けていることを意味しない。
  * （`shipping-methods.ts` の Buyee の行が同じ理由で SAL を外している）
  */
-export type PostalMethod =
-  | 'ems'
-  | 'small-packet-air'
-  | 'small-packet-surface'
-  | 'parcel-air'
-  | 'parcel-surface';
+export type { PostalMethod };
 
 export const POSTAGE_SOURCE_URL =
   'https://www.post.japanpost.jp/send/oversea/charge/';
@@ -178,19 +173,4 @@ export function postageFor(method: PostalMethod, cc: CountryCode, grams: number)
   if (!steps) return null;
   const hit = steps.find(([g]) => grams <= g);
   return hit ? { yen: hit[1], stepGrams: hit[0] } : null;
-}
-
-/**
- * その荷物を**実際に運べる**方式だけを、安い順に返す。
- * **上限を超える方式は候補から落とす**（`postageFor` が null を返す）。
- */
-export function eligibleMethods(cc: CountryCode, grams: number)
-: { spec: PostalMethodSpec; yen: number; stepGrams: number }[] {
-  return POSTAL_METHODS
-    .map((spec) => {
-      const p = postageFor(spec.id, cc, grams);
-      return p ? { spec, yen: p.yen, stepGrams: p.stepGrams } : null;
-    })
-    .filter((x): x is { spec: PostalMethodSpec; yen: number; stepGrams: number } => x != null)
-    .sort((a, b) => a.yen - b.yen || a.spec.id.localeCompare(b.spec.id));
 }

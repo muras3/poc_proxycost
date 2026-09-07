@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import {
-  POSTAL_METHODS, POSTAL_ZONE, eligibleMethods, maxGramsFor, postageFor,
-} from './postage';
+import { POSTAL_METHODS, POSTAL_ZONE, maxGramsFor, postageFor } from './postage';
 import { EMS_ZONE } from './ems';
 import { COUNTRY_CODES } from './countries';
 import type { CountryCode } from './types';
@@ -114,45 +112,41 @@ describe('over the limit is "cannot be sent", not "the top row"', () => {
   });
 });
 
-describe('eligibleMethods only offers what can actually carry the parcel', () => {
-  test('at 600 g every method is available and the cheapest is surface small packet', () => {
-    const got = eligibleMethods('DE', 600);
-    expect(got.map((g) => g.spec.id).sort()).toEqual([...METHODS].sort());
-    expect(got[0]!.spec.id).toBe('small-packet-surface');
-    // 600g は「1.0kgまで ¥1,300」の段。**¥800 は「500gまで」の段**で、
-    // 600g には当たらない。段の粗さがそのまま額に出る。
+describe('which method is cheapest, at the weights that matter', () => {
+  /** その重量を運べる方式を、安い順に。**運べない方式は候補に入れない。** */
+  const cheapestFirst = (cc: CountryCode, g: number) => POSTAL_METHODS
+    .map((spec) => ({ id: spec.id, yen: postageFor(spec.id, cc, g)?.yen }))
+    .filter((x): x is { id: PostalMethod; yen: number } => x.yen != null)
+    .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id));
+
+  test('at 600 g every method can carry it, and surface small packet is cheapest', () => {
+    const got = cheapestFirst('DE', 600);
+    expect(got.map((g) => g.id).sort()).toEqual([...METHODS].sort());
+    expect(got[0]!.id).toBe('small-packet-surface');
+    // 600g は「1.0kgまで ¥1,300」の段。¥800 は「500gまで」の段で 600g には当たらない。
     expect(got[0]!.yen).toBe(1300);
   });
 
   test('at 3 kg the small packet options are gone, not merely expensive', () => {
-    const got = eligibleMethods('DE', 3000);
-    expect(got.map((g) => g.spec.id).sort()).toEqual(['ems', 'parcel-air', 'parcel-surface']);
-    expect(got[0]!.spec.id).toBe('parcel-surface');
+    const got = cheapestFirst('DE', 3000);
+    expect(got.map((g) => g.id).sort()).toEqual(['ems', 'parcel-air', 'parcel-surface']);
+    expect(got[0]!.id).toBe('parcel-surface');
     expect(got[0]!.yen).toBe(3700);
   });
 
-  test('EMS is not the cheapest at any weight in any country we ship to', () => {
-    // **既定を EMS にしていたことの評価。**EMS は速い代わりに、
-    // 日本郵便の中では常に最安ではない。どこで負けているかを実測で押さえる。
+  test('EMS is never the cheapest, in any country we ship to, at any weight', () => {
+    // **既定を EMS にしていたことの評価。**EMS は速い代わりに、日本郵便の中で常に最安ではない。
     for (const cc of COUNTRY_CODES) {
       for (const g of [200, 600, 1000, 2000, 3000, 10_000]) {
-        const got = eligibleMethods(cc, g);
+        const got = cheapestFirst(cc, g);
         if (got.length < 2) continue;
-        expect(got[0]!.spec.id, `${cc} ${g}g`).not.toBe('ems');
+        expect(got[0]!.id, `${cc} ${g}g`).not.toBe('ems');
       }
     }
   });
 
   test('above 30 kg nothing is left — the parcel cannot go by post at all', () => {
-    expect(eligibleMethods('DE', 30_001)).toEqual([]);
-  });
-
-  test('the list is sorted by price and is deterministic on ties', () => {
-    for (const cc of COUNTRY_CODES) {
-      const got = eligibleMethods(cc, 600);
-      const yens = got.map((g) => g.yen);
-      expect([...yens].sort((a, b) => a - b), cc).toEqual(yens);
-    }
+    expect(cheapestFirst('DE', 30_001)).toEqual([]);
   });
 });
 
