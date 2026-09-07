@@ -82,6 +82,12 @@ export interface OptionalFee {
   /** 円。**null = 額が公表されていない。** 画面では「—」。0 とは書かない。 */
   amountYen: number | null;
   /**
+   * 額の出どころが、その社の料金ページとは別のとき指す。省略すると社の sourceUrl。
+   * **輸出申告代行手数料は日本郵便の額**で、代行各社は「郵便局が取る」と書いているだけ。
+   * 社のページを出典に立てると、額を社が決めているように読める。
+   */
+  sourceUrl?: string;
+  /**
    * 個口・重量・点数で額が決まる費目。あれば amountYen より優先する。
    * null を返せば「この入力では額を出せない」。
    */
@@ -212,6 +218,7 @@ export const SERVICES: Service[] = [
       // 額は一次情報なので fixed。誰が書いていないかは note に出す。
       {
         key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
         note: 'only over ¥200,000 — Neokyo says it handles the export declaration but does'
           + ' not print the amount; ¥2,800 is the fee Japan Post itself publishes',
         tier: 'fixed',
@@ -223,6 +230,7 @@ export const SERVICES: Service[] = [
       // **寸法は入力に無い**ので一番小さい段を出し、幅を note に書く（実勢はこれより高い）。
       {
         key: 'storage', label: 'Storage, per week after 45 free days', amountYen: 350,
+        sourceUrl: 'https://neokyo.com/en/storage',
         note: 'per order: ¥350 small / ¥700 average / ¥1,400 large — parcels ¥210 / ¥490 / ¥980.'
           + ' We do not know your parcel size, so this is the smallest step',
         tier: 'fixed',
@@ -290,6 +298,7 @@ export const SERVICES: Service[] = [
       // にだけ出さなければ、料金差ではなく我々の調査量の差を安さとして見せることになる。
       {
         key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
         note: 'only over ¥200,000 — ZenMarket does not print this fee anywhere we can read;'
           + ' ¥2,800 is the export declaration fee Japan Post itself publishes',
         tier: 'fixed',
@@ -358,6 +367,7 @@ export const SERVICES: Service[] = [
       // 任意欄にも並べると同じ費目を二度見せることになる（docs/audit/fees.md §3）。
       {
         key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
         note: 'only over ¥200,000', tier: 'fixed',
       },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
@@ -448,6 +458,7 @@ export const SERVICES: Service[] = [
       // commission fee (2,800 yen) will be charged.」
       {
         key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
         note: 'only over ¥200,000', tier: 'fixed',
       },
       // /helpcenter/guide/photo-shoot（2026-09-07 取得）:「Photo Service Fee is 300 yen /
@@ -554,6 +565,7 @@ export const SERVICES: Service[] = [
       //  will apply an additional fee of JPY 2,800 for the customs clearance.」
       {
         key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
+        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
         note: 'only over ¥200,000', tier: 'fixed',
       },
       // 「it costs 300 yen per auction. … If the auction closing price is 20,000 yen or

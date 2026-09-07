@@ -31,6 +31,13 @@ export interface Country {
   clearanceCcy: string;
   clearanceTier: Tier;
   clearanceSourceUrl?: string;
+  /** `clearanceBands` を読んだ日。**帯ごとの額は他の数字と同じで、日付が無ければ
+   *  いつの値か言えない。**画面に「read <日付>」として出す。 */
+  clearanceCheckedOn?: string;
+  /** 額が複数の出典に分かれるとき、`clearanceSourceUrl` 以外の出典。
+   *  AU の生物検疫費用は DAFF の額で、ABF が代わりに徴収しているだけ。
+   *  徴収者のページだけを出典に立てると、額の出どころを取り違える。 */
+  clearanceSourceUrl2?: string;
   notes: string[];
   sourceUrl: string | null;
   /**
@@ -69,6 +76,11 @@ export const COUNTRIES: Record<CountryCode, Country> = {
       note: 'USPS customs clearance and delivery fee, per dutiable item',
     }],
     clearanceCcy: 'USD', clearanceTier: 'unverified',
+    // **原典（USPS Notice 123）に当たれていない。**額は二次情報で、tier が
+    // unverified なのはそのため。日付は「その二次情報を読んだ日」であって
+    // 「原典を確認した日」ではない。取れたら tier ごと差し替える。
+    clearanceSourceUrl: 'https://pe.usps.com/text/imm/immc1_022.htm',
+    clearanceCheckedOn: '2026-09-06',
     notes: ['de_minimis_suspended'],
     sourceUrl: 'https://hts.usitc.gov/',
     sellerCollectsBelow: null,
@@ -99,6 +111,9 @@ export const COUNTRIES: Record<CountryCode, Country> = {
       note: 'Royal Mail handling fee — we have not read the original',
     }],
     clearanceCcy: 'GBP', clearanceTier: 'unverified',
+    // **原典に当たれていない。**note にもそう書いてある。二次情報として出す。
+    clearanceSourceUrl: 'https://personal.help.royalmail.com/app/answers/detail/a_id/106',
+    clearanceCheckedOn: '2026-09-06',
     notes: [],
     sourceUrl: 'https://www.gov.uk/goods-sent-from-abroad',
     sellerCollectsBelow: null,
@@ -154,6 +169,11 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     clearanceSourceUrl:
       'https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/'
       + 'cost-of-importing-goods/charges/import-processing-charge',
+    // A$48 は DAFF（農漁林業省）の費用回収額で、ABF が代わりに徴収している。
+    // **徴収者のページだけを出典に立てると、額の出どころを取り違える。**
+    clearanceSourceUrl2:
+      'https://www.agriculture.gov.au/biosecurity-trade/export/from/charges',
+    clearanceCheckedOn: '2026-09-07',
     notes: ['seller_collects_gst'],
     sourceUrl: 'https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/cost-of-importing-goods',
     // A$1,000 以下の輸入は、売り手・プラットフォーム・「redeliverer（転送・代行業者）」が
@@ -184,6 +204,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     clearanceSourceUrl:
       'https://www.canadapost-postescanada.ca/cpc/en/support/articles/customs-requirements/'
       + 'customs-duty-taxes-and-exemptions.page',
+    clearanceCheckedOn: '2026-09-07',
     // 州税は `CA_PROVINCES` が持つ。**この行はもう「未取得」ではない。**
     notes: [],
     // 旧 URL（travel-voyage/postal-postale-eng.html）は 2026-09-07 に 404 だった。
