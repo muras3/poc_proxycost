@@ -63,32 +63,41 @@ test('Australia shows the checkout GST every service publishes', async ({ page }
   expect((await rowCells(border))[0]).toContain('collected at checkout by the service');
 });
 
-test('Singapore shows a number only where we could confirm it, and a dash elsewhere', async ({ page }) => {
+test('Singapore: every service carries a number — confirmed as published, the rest as an estimate', async ({ page }) => {
   await gotoCompare(page);
   await shipTo(page, 'SG');
 
-  // Buyee と FROM JAPAN だけが自社ページで徴収を明記している。
+  // **以前ここは「確認できない社は —」だった。それは誤りだった。**
+  // 確認できていないのは「**誰が**集めるか」であって「いくら払うか」ではない。
+  // 集める社は決済時に、集めない社は国境で SingPost が集める——買い手が出す額は同じ 9%。
+  // `—` にすると、調べていないことがその社の安さに化ける（`docs/TODO-NEXT.md` 課題1）。
   const confirmed = ['Buyee', 'FROM JAPAN'];
   const rows = await readRanking(page);
-  let dashed = 0;
+  let estimated = 0;
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]!;
     const li = await openRankRow(page, i);
-    const cells = await rowCells(costRow(li, new RegExp(`^${CHECKOUT_GST}`)));
+    // **見出しが2通りある。**徴収を明記している社は `GST collected at checkout`、
+    // 明記していない社は `GST — estimated: we could not confirm who collects it`。
+    // 片方だけで探すと、もう片方が「行が無い」＝undefined になって
+    // 「— だった」と誤診する（このテストが実際にそう壊れていた）。
+    const cells = await rowCells(costRow(li, /^GST (collected at checkout|— estimated)/));
+    expect(cells[1], `${row.name}: 額が「—」になっている`).not.toBe('—');
     if (confirmed.includes(row.name)) {
-      expect(cells[1], row.name).not.toBe('—');
+      // 自社ページで徴収を明記している社。公表値なので `~` は付かない。
+      expect(cells[1], row.name).not.toMatch(/^~/);
       expect(parseYen(cells[1]!), row.name).toBeGreaterThan(0);
       expect(row.text, row.name).not.toContain('could not confirm');
     } else {
-      // **0 ではなく —。**「その社では GST が要らない」とは書かない。
-      expect(cells[1], row.name).toBe('—');
+      // 額は出すが、**推定と分かる形で**出す（`~` と琥珀）。
+      expect(cells[1], row.name).toMatch(/^~¥/);
+      expect(parseYen(cells[1]!.replace('~', '')), row.name).toBeGreaterThan(0);
+      // **何が確定していないのかを、行そのものが名乗る。**
       expect(cells[0], row.name).toContain('could not confirm');
-      // 総額から抜けていることが、開かなくても順位の行に出ている。
-      expect(row.text.toLowerCase(), row.name).toContain('could not confirm');
-      dashed++;
+      estimated++;
     }
   }
-  expect(dashed, 'nobody was left unconfirmed — the fixture no longer tests the asymmetry')
+  expect(estimated, '推定の社が居ない — この籠ではもう非対称を試せていない')
     .toBeGreaterThan(0);
 });
 
