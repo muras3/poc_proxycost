@@ -255,20 +255,22 @@ const EXCLUSIONS: Exclusion[] = [
     why: 'A graded slab carries the raw-card words too; the grading service decides which it is',
   },
   {
-    // 「腕時計の図鑑」「フィギュアの達人 |本 | 通販 | Amazon」。**X についての本は X ではない。**
-    // 実測37件のうち4件がこれで、うち1件（図鑑）は本に腕時計の 839 g が付いていた。
-    // 図鑑・教科書・ムックは大判で、books-manga が持っている小説の 408 g とも別物
-    // （index.json partialGaps 参照）。当てられないことと、別の物の重量を当てることは違う。
+    // 大判の本と手引き書。**図鑑・教科書・ムックの重量は取れていない**
+    // （books-manga が持っているのは小説 408 g と漫画の単巻 210 g で、別の物。
+    // index.json partialGaps 参照）。書籍カテゴリにも当てさせない。
+    // これで「腕時計の図鑑」に腕時計の 839 g が付くのも止まる。
     allCategories: true,
-    when: [
-      '図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック', '単行本',
-      // Amazon 日本のパンくず。'本' 単独は「日本」「本体」「3本」に当たるので使えない。
-      '本 | 通販', '|本 |', '｜本｜',
-    ],
-    // 書籍のラインはこの門を通す。「Xについての本」を落とすための門であって、
-    // 本そのものを落とすためではない。
+    when: ['図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック'],
+    why: 'A large-format or how-to book is not the thing it is about, and not the novel we measured',
+  },
+  {
+    // 出品が「これは本だ」と名乗っているとき。**X についての本は X ではない。**
+    // 実測37件のうち4件がこれ。ここは書籍のラインだけ通す（そこには実データがある）。
+    allCategories: true,
     exceptCategoryIds: ['books-manga'],
-    why: 'A book about a thing is not the thing',
+    // Amazon 日本のパンくず。'本' 単独は「日本」「本体」「3本」に当たるので使えない。
+    when: ['本 | 通販', '|本 |', '｜本｜', '単行本'],
+    why: 'The listing says it is a book, so only the book lines may claim it',
   },
   {
     // 'フィギュアスケート' は競技であって完成品フィギュアではない。
@@ -283,6 +285,14 @@ const EXCLUSIONS: Exclusion[] = [
     lineIds: ['manga-volume'],
     when: ['全巻', 'complete set', 'コミックセット'],
     why: 'A complete set is not one volume, and the set has its own line',
+  },
+  {
+    // 'アニメ DVD 全巻セット' は円盤の箱。2,000 g は BOOKOFF USA の**漫画**の全巻セットで
+    // 測った値なので、当てると画面が「漫画の店で読んだ」と名乗る。数字が近くても出所が嘘になる。
+    // 映像ディスクの箱の重量は取れていない。
+    lineIds: ['manga-set'],
+    when: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray', 'cd'],
+    why: 'A disc box set is not a manga box set, and the number would carry a bookshop as its source',
   },
 ];
 

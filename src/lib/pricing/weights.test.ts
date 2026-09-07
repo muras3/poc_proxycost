@@ -116,13 +116,40 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
 
   test('a book about a thing is not the thing', () => {
     // 「腕時計の図鑑」に腕時計の 839 g が付いていた（本番検索の実タイトル）。
-    // 図鑑・教科書・ムックは大判で、books-manga が持つ小説の 408 g とも別物なので、
-    // 書籍カテゴリにも当てさせない（index.json partialGaps 参照）。
     expect(resolveWeight('腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ...').grams).toBeNull();
     expect(resolveWeight('フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
     expect(resolveWeight('フィギュアの教科書 原型入門編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
     expect(resolveWeight('ポケモンカード 攻略本').grams).toBeNull();
     expect(resolveWeight('剣道 入門編 ムック').grams).toBeNull();
+  });
+
+  test('a large-format book is not the novel we measured either', () => {
+    // 図鑑・教科書・ムックは大判で、books-manga が持つ小説 408 g / 漫画の単巻 210 g とも
+    // 別の物（index.json partialGaps）。**書籍カテゴリにも当てさせない。**
+    expect(resolveWeight('マンガ図鑑').grams).toBeNull();
+    expect(resolveWeight('コミック 教科書 入門編').grams).toBeNull();
+  });
+
+  test('a disc box set does not borrow the manga box set', () => {
+    // 2,000 g は BOOKOFF USA の**漫画**の全巻セットで測った値。数字が近くても、
+    // アニメの円盤に当てると画面が「漫画の店で読んだ」と名乗る。
+    expect(resolveWeight('アニメ DVD 全巻セット').grams).toBeNull();
+    expect(resolveWeight('攻殻機動隊 Blu-ray BOX').grams).toBeNull();
+    // 本の全巻セットは今までどおり当たる。
+    expect(resolveWeight('進撃の巨人 全巻セット 1-34巻').lineId).toBe('manga-set');
+  });
+
+  test('a system name without the machine is the game, not the machine', () => {
+    // 3,350 g は整備済みの箱入りセット。ソフトに当てると33倍ちがう。
+    expect(resolveWeight('ファミコン ソフト スーパーマリオ').grams).toBeNull();
+    expect(resolveWeight('プレイステーション2 ソフト ドラクエ').grams).toBeNull();
+    // 本体だと名乗っていれば当たる。
+    expect(resolveWeight('スーパーファミコン 本体 ジャンク').lineId).toBe('home-console');
+    expect(resolveWeight('NEC PCFX PC-FX 日本電気ホームエレクトロニクス ゲーム機').grams).toBe(3350);
+  });
+
+  test('figure skating is not a figure', () => {
+    expect(resolveWeight('フィギュアスケート 衣装').grams).toBeNull();
   });
 
   test('a graded slab is never read as a raw single, whatever word is longest', () => {
@@ -199,6 +226,28 @@ describe('titles that must still resolve', () => {
       expect(r.lineId).toBe('single-card');
       expect(r.grams).toBe(50);
     }
+  });
+
+  test('the generic figure line catches the plain listings and loses to every specific one', () => {
+    // logic.md 第5節の取りこぼし。日本語の総称トークンが1つも無かった。
+    for (const t of ['フィギュア 初音ミク 未開封', 'ドラゴンボール 一番くじ フィギュア A賞']) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('figure-generic');
+      expect(r.grams).toBe(800);
+    }
+    // **総称は個別ラインに勝たない。**語の長さでは 'フィギュア' が '1/7' に勝つので、
+    // ここが崩れるとスケール行が全部 800 g になる。
+    expect(resolveWeight('1/7 スケール フィギュア レム').lineId).toBe('scale-1-7');
+    expect(resolveWeight('ねんどろいど フィギュア 初音ミク').lineId).toBe('nendoroid');
+    expect(resolveWeight('figma フィギュア').lineId).toBe('figma');
+  });
+
+  test('a line names the shop it was read from, not the category first source', () => {
+    // games は本体と ソフトで店が違う。sources[0] を常に名乗ると片方が嘘になる。
+    expect(resolveWeight('スーパーファミコン 本体').source).toContain('www.retroasia.com');
+    expect(resolveWeight('ゲームソフト まとめ売り').source).toContain('japan-figure.com');
+    expect(resolveWeight('ONE PIECE 漫画 105巻').source).toContain('jpbookstore.com');
+    expect(resolveWeight('進撃の巨人 全巻セット').source).toContain('shop.bookoffusa.com');
   });
 
   test('a jo and an obi with their martial-arts word still resolve', () => {
