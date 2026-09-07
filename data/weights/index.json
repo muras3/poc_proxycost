@@ -35,7 +35,7 @@
       "id": "cameras",
       "labelEn": "Cameras and lenses",
       "labelJa": "カメラ・レンズ",
-      "reason": "Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight."
+      "reason": "Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately."
     },
     {
       "id": "apparel",
@@ -59,6 +59,11 @@
       "category": "food-tea-sake",
       "gap": "Chilled, frozen and fresh food",
       "reason": "Stores that ship abroad stock shelf-stable goods only, so fish, wagyu and fresh sweets are absent from the sample."
+    },
+    {
+      "category": "kpop",
+      "gap": "Video discs outside K-pop",
+      "reason": "The 1,750 g DVD / Blu-ray line was read in K-pop shops, where a release is a concert box with a photobook. A film on one disc is roughly a tenth of that, and no catalogue publishing per-title grams for video was found, so src/lib/pricing/weights.ts refuses a bare DVD or Blu-ray rather than lending it the K-pop number."
     },
     {
       "category": "kpop",

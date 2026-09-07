@@ -1725,7 +1725,7 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     id: 'cameras',
     labelEn: 'Cameras and lenses',
     labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight.',
+    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
   },
   {
     id: 'apparel',
