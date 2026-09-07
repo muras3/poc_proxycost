@@ -13,8 +13,12 @@ export const CONSENT_KEY = 'proxycost.consent.v1';
 const SERVICE_NAMES = ['FROM JAPAN', 'ZenMarket', 'Neokyo', 'Buyee', 'Jauce'] as const;
 
 export interface RankRow {
-  /** 1 始まり。画面上の並び順。 */
+  /** 1 始まり。画面上の**並び順**。順位そのものではない（同額は同順位になる）。 */
   rank: number;
+  /** 行が実際に表示している順位の数字。同額なら前の行と同じ数字になる。 */
+  shownRank: number;
+  /** 「tied with …」を名乗っているか。同額の行だけが名乗る。 */
+  tied: boolean;
   /** 'Neokyo' / 'Buyee' など。 */
   name: string;
   /** 'consolidated' / 'default' / null。 */
@@ -112,12 +116,20 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     if (!totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
     const cheapest = /(^|\s)CHEAPEST(\s|$)/.test(text);
     const diffMatch = text.match(/\+¥([\d,]+)/);
-    const name = SERVICE_NAMES.find((s) => text.includes(s));
+    // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
+    const shown = text.match(/^(\d+)\s/);
+    if (!shown) throw new Error(`row ${i} shows no rank number: ${text}`);
+    // **社名は行頭からだけ読む。** 行の中には他社の名前も出る（同額の「tied with ZenMarket」）
+    // ので、行全体を includes で探すと隣の社の名前を自分の名前として拾う。
+    const head = text.replace(/^\d+\s+/, '');
+    const name = SERVICE_NAMES.find((s) => head.startsWith(s));
     if (!name) throw new Error(`row ${i} has no known service name: ${text}`);
     const variant = text.includes('consolidated') ? 'consolidated'
       : text.includes('default') ? 'default' : null;
     out.push({
       rank: i + 1,
+      shownRank: Number(shown[1]),
+      tied: /tied with /.test(text),
       name,
       variant,
       total: parseYen(totalMatch[1]!),
@@ -175,6 +187,41 @@ export function isNonDecreasing(xs: number[]): boolean {
  */
 export function emsOnlyNote(page: Page): Locator {
   return page.locator('p').filter({ hasText: /Compared using Japan Post EMS only/ });
+}
+
+/**
+ * 「送れないかもしれない」の常時開示（`RestrictedGoodsNote`）。
+ * EMS の開示と同じ場所・同じ約束（畳まない・順位が出ている限り消えない）。
+ */
+export function restrictedNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /may not be shippable at all/ });
+}
+
+/** カートに酒が入ったときだけ出る、強いほうの警告（`AlcoholInCartNote`）。 */
+export function alcoholNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /we read as alcohol/ });
+}
+
+/**
+ * 手入力で1点足す。**検索も URL 取得も要らない唯一の経路**なので、
+ * 入力を組み立てるテストはここを通る。`site` を渡すと出品サイトも選ぶ。
+ */
+export async function addByHand(
+  page: Page, title: string, priceYen: number, site?: string,
+): Promise<void> {
+  const form = page.getByRole('button', { name: 'Or add an item by hand' });
+  if (await form.count()) await form.click();
+  await page.getByLabel('Item name').fill(title);
+  await page.getByLabel('Price ¥').fill(String(priceYen));
+  if (site) await page.getByLabel('Site').selectOption(site);
+  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+}
+
+/** カートを空にする。 */
+export async function emptyCart(page: Page): Promise<void> {
+  await openCart(page);
+  const removes = cart(page).getByRole('button', { name: /^Remove / });
+  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
 }
 
 /** その要素が「開かないと読めない」場所に居ないか。畳まれた開示は開示ではない。 */

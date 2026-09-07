@@ -14,13 +14,20 @@ export function OptionalExtras({ rows }: { rows: Row[] }) {
         {shown.map((r) => (
           <div key={r.id} className="rounded border border-neutral-200 p-3 dark:border-neutral-800">
             <p className="text-xs font-medium">{r.serviceName}</p>
-            <ul className="mt-1 space-y-0.5">
+            <ul className="mt-1 space-y-1">
               {r.optionalLines.map((l) => (
-                <li key={l.key} className="flex justify-between gap-2 text-xs text-neutral-600 dark:text-neutral-400">
-                  <span>{l.label}</span>
-                  <span className="shrink-0">
-                    +<Amount amount={l.amount} tier={l.tier} />
+                <li key={l.key} className="text-xs text-neutral-600 dark:text-neutral-400">
+                  <span className="flex justify-between gap-2">
+                    <span>{l.label}</span>
+                    <span className="shrink-0">
+                      {/* 額を持っていない費目に「+」は付けない。「+—」は足し算に読める。 */}
+                      {l.amount == null ? null : '+'}
+                      <Amount amount={l.amount} tier={l.tier} />
+                    </span>
                   </span>
+                  {/* 単位と条件は note にしか無い（「per day」「max 90 days」など）。
+                      畳むと、額だけが一人歩きする。 */}
+                  <span className="block text-[11px] text-neutral-500">{l.note}</span>
                 </li>
               ))}
             </ul>

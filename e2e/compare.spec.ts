@@ -1,10 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import {
+  addByHand,
+  alcoholNote,
   breakdownTable,
   cart,
   cartItem,
   costRow,
   DECIDES,
+  emptyCart,
   emsOnlyNote,
   gotoCompare,
   headerCells,
@@ -16,14 +19,19 @@ import {
   rankButtons,
   ranking,
   readRanking,
+  restrictedNote,
   rowCells,
   weightBox,
   type RankRow,
 } from './helpers';
 import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
 import {
-  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_SECOND_HAND, nameList,
+  ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_SECOND_HAND, ALTERNATIVE_SHIPPING_VERIFIED, nameList,
 } from '../src/lib/pricing/shipping-methods';
+import {
+  LITHIUM_AIRMAIL_LISTED, RESTRICTED_GOODS, restrictedList,
+} from '../src/lib/pricing/restricted-goods';
+import { COUNTRIES, COUNTRY_CODES } from '../src/lib/pricing/countries';
 
 /**
  * 比較画面の E2E。**実際に押して、選んで、打ち込む。**
@@ -158,6 +166,40 @@ test('3. what we do not have shows as — , never as ¥0', async ({ page }) => {
   }
 });
 
+test('3b. two figures we did not read from the source are drawn as such (T17)', async ({ page }) => {
+  // (1) EU の €3 定額関税: 制度の原文は取れているが、代行経由の購入がその対象
+  //     （distance sale of imported goods）に当たるかを断定できない。
+  // (2) ZenMarket の入金手数料 3.5%: 公表値は「from 1%」で、3.5% は実請求からの逆算。
+  // どちらも「確定」の顔で描いてはいけない。
+  await gotoCompare(page);
+  await page.getByLabel('Ship to').selectOption('DE');
+  await expect.poll(async () => (await readRanking(page)).length).toBeGreaterThan(0);
+
+  const rows = await readRanking(page);
+  const zen = rows.findIndex((r) => r.name === 'ZenMarket');
+  expect(zen, 'ZenMarket が順位に居ない').toBeGreaterThanOrEqual(0);
+  const li = await openRankRow(page, zen);
+
+  const duty = costRow(li, /^Duty/);
+  await expect(duty).toHaveCount(1);
+  const dutyAmount = duty.getByTitle(TITLE.unverified).first();
+  await expect(dutyAmount).toBeVisible();
+  const deco = await dutyAmount.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return { line: s.textDecorationLine, style: s.textDecorationStyle };
+  });
+  expect(deco.style).toBe('dotted');
+  expect(deco.line).toContain('underline');
+
+  const depositRow = costRow(li, /^Deposit fee/);
+  await expect(depositRow).toHaveCount(1);
+  const deposit = depositRow.getByTitle(TITLE.estimate).first();
+  await expect(deposit).toBeVisible();
+  expect((await deposit.innerText()).trim()).toMatch(/^~¥/);
+  // 内訳の説明が、公表されている文言を隠していないこと。
+  await expect(depositRow).toContainText('from 1%');
+});
+
 test('4. changing the destination changes the numbers', async ({ page }) => {
   await gotoCompare(page);
   const before = await readRanking(page);
@@ -178,21 +220,6 @@ test('4. changing the destination changes the numbers', async ({ page }) => {
 });
 
 /** 重量表に載らない名前で1点、手で足す。 */
-async function addByHand(page: Page, title: string, priceYen: number): Promise<void> {
-  const form = page.getByRole('button', { name: 'Or add an item by hand' });
-  if (await form.count()) await form.click();
-  await page.getByLabel('Item name').fill(title);
-  await page.getByLabel('Price ¥').fill(String(priceYen));
-  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
-}
-
-/** カートを空にする。 */
-async function emptyCart(page: Page): Promise<void> {
-  await openCart(page);
-  const removes = cart(page).getByRole('button', { name: /^Remove / });
-  for (let n = await removes.count(); n > 0; n = await removes.count()) await removes.first().click();
-}
-
 const PLUSH = 'plush toy, no weight data';
 
 test('5. an item with no weight data gets an assumed weight, says so, and is corrected in place', async ({ page }) => {
@@ -246,6 +273,93 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   await expect(weightBox(page, PLUSH)).toHaveValue('1000');
   await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(0);
   await expect.poll(async () => (await readRanking(page))[0]!.total).toBe(assumed[0]!.total);
+});
+
+/**
+ * 同額（T26）。**手で作れる実在の入力**で、同順位になることを画面で見る。
+ * 1点 ¥4,200・450 g・楽天・オーストラリア宛で Neokyo と ZenMarket がちょうど ¥10,420。
+ * 走査では同額を含む組み合わせが 3,938 あり、うち 15 組が1位の同額
+ * （docs/audit/ties-2026-09-07.md）。稀な事故ではないので画面で扱う。
+ */
+const TIE = 'tie probe, no weight data';
+
+test('22. two rows with the same total share the rank, and both are CHEAPEST', async ({ page }) => {
+  await gotoCompare(page);
+  await page.getByLabel('Ship to').selectOption('AU');
+  await emptyCart(page);
+  await addByHand(page, TIE, 4200, 'rakuten');
+  await openCart(page);
+  await weightBox(page, TIE).fill('450');
+
+  await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
+  const rows = await readRanking(page);
+
+  const tied = rows.filter((r) => r.tied);
+  expect(tied.map((r) => r.name).sort()).toEqual(['Neokyo', 'ZenMarket']);
+
+  // 総額が同じで、**順位の数字も同じ**。並び順（1本目・2本目）ではなく行が出す数字を見る。
+  expect(new Set(tied.map((r) => r.total)).size, 'the two rows are not actually equal').toBe(1);
+  expect(tied[0]!.shownRank).toBe(tied[1]!.shownRank);
+  expect(tied[0]!.shownRank).toBe(1);
+
+  // **CHEAPEST は両方に付く。**片方だけに付けたら、同額なのに1社を推したことになる。
+  expect(tied.every((r) => r.cheapest)).toBe(true);
+  expect(rows.filter((r) => r.cheapest)).toHaveLength(2);
+
+  // 同順位が2つ在るので、次の行は 2 ではなく 3 に飛ぶ（競技順位）。
+  const rest = rows.filter((r) => !r.tied);
+  expect(rest[0]!.shownRank).toBe(3);
+  expect(rest.map((r) => r.shownRank)).toEqual([3, 4, 5]);
+
+  // **縦の並びが順位に読まれないよう、その場で打ち消す。**
+  for (const r of tied) {
+    const other = tied.find((x) => x.name !== r.name)!.name;
+    expect(r.text, `${r.name} does not name who it is tied with`).toContain(`tied with ${other}`);
+    expect(r.text).toContain('the order between them means nothing');
+  }
+  // 同額でない行は名乗らない。全行に付いたら印として機能しない。
+  for (const r of rest) expect(r.text, r.name).not.toContain('tied with');
+
+  // 一番大きい文が1社を名指ししていないこと。同額なら両方を挙げる。
+  await expect(page.getByText(/Neokyo and ZenMarket are tied cheapest/)).toBeVisible();
+  await expect(page.getByText(/^Neokyo is cheapest/)).toHaveCount(0);
+  await expect(page.getByText(/^ZenMarket is cheapest/)).toHaveCount(0);
+});
+
+test('23. a tie below the top shares its rank too, and does not move the winner', async ({ page }) => {
+  // 1点 ¥12,800・1,450 g・ヤフオク・米国で Buyee と Neokyo が ¥26,761 の2位タイ。
+  // **旧実装はここで社名の辞書順に割っていて、報酬を払う Buyee が、報酬ゼロの Neokyo を
+  // 常に上に置いていた**（同額 3,938 組のうち 3,716 組が同じ向き）。
+  await gotoCompare(page);
+  await emptyCart(page);
+  await addByHand(page, TIE, 12800);
+  await openCart(page);
+  await weightBox(page, TIE).fill('1450');
+
+  await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
+  const rows = await readRanking(page);
+
+  const tied = rows.filter((r) => r.tied);
+  expect(tied.map((r) => r.name).sort()).toEqual(['Buyee', 'Neokyo']);
+  expect(tied[0]!.shownRank).toBe(tied[1]!.shownRank);
+  expect(tied[0]!.shownRank).toBe(2);
+  // 2位タイなので CHEAPEST は付かず、差額も同じ。
+  expect(tied.some((r) => r.cheapest)).toBe(false);
+  expect(tied[0]!.diff).toBe(tied[1]!.diff);
+
+  // 報酬を払う社が、払わない社より上の順位を取れていないこと。
+  const buyee = tied.find((r) => r.name === 'Buyee')!;
+  const neokyo = tied.find((r) => r.name === 'Neokyo')!;
+  expect(buyee.text).toMatch(/pays us/);
+  expect(neokyo.text).toContain('pays us nothing');
+  expect(buyee.shownRank).toBe(neokyo.shownRank);
+
+  // 1位は同額ではないので、これまでどおり1社が CHEAPEST。
+  expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
+  expect(rows[0]!.shownRank).toBe(1);
+  expect(rows[0]!.tied).toBe(false);
+  // 同順位が2つ在るぶん、そのあとは 4 に飛ぶ。
+  expect(rows.map((r) => r.shownRank)).toEqual([1, 2, 2, 4, 5]);
 });
 
 test('6. one more of an item raises the total', async ({ page }) => {
@@ -566,15 +680,23 @@ test('19. the ranking says out loud that only EMS was priced, and that cheaper m
   for (const s of ALTERNATIVE_SHIPPING) expect(text).toContain(s.serviceName);
 
   // 原文を読めていない社は点線で描く（docs/UI-DESIGN.md §6。線種は数字以外にも適用する）。
+  // **点線の有無は表が決める。**いま全社の原文に届いているなら点線は1つも無いのが正しく、
+  // 逆に届いていない社が居るのに実線で描かれていたら、確度の差を黙って消したことになる。
   const secondHand = note.getByTitle(TITLE.unverified);
-  await expect(secondHand).toHaveCount(1);
-  expect((await secondHand.innerText()).trim()).toBe(nameList(ALTERNATIVE_SHIPPING_SECOND_HAND));
-  const deco = await secondHand.evaluate((el) => {
-    const st = getComputedStyle(el);
-    return { line: st.textDecorationLine, style: st.textDecorationStyle };
-  });
-  expect(deco.style).toBe('dotted');
-  expect(deco.line).toContain('underline');
+  const expectedDotted = ALTERNATIVE_SHIPPING_SECOND_HAND.length ? 1 : 0;
+  await expect(secondHand).toHaveCount(expectedDotted);
+  if (expectedDotted) {
+    expect((await secondHand.innerText()).trim()).toBe(nameList(ALTERNATIVE_SHIPPING_SECOND_HAND));
+    const deco = await secondHand.evaluate((el) => {
+      const st = getComputedStyle(el);
+      return { line: st.textDecorationLine, style: st.textDecorationStyle };
+    });
+    expect(deco.style).toBe('dotted');
+    expect(deco.line).toContain('underline');
+  } else {
+    // 点線が無いときは「一次情報で読めた社」として全社が名指しされていること。
+    expect(text).toContain(nameList(ALTERNATIVE_SHIPPING_VERIFIED));
+  }
 
   // 総額を読む前に目に入る位置（順位表の上）に居ること。
   const noteBox = (await note.boundingBox())!;
@@ -612,6 +734,136 @@ test('20. the disclosure stays through real use, and it comes and goes with the 
   await expect(note).toBeVisible();
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// T27: 「送れないかもしれない」の常時開示。
+// この計算機は総額を出すが、**その小包が送れるかは一度も見ていない。**黙っていれば
+// 「¥26,000 で届く」と読まれる表を、届かない品にも出していることになる。
+// EMS の開示（T10）と同じ場所・同じ約束で、押して確かめる。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 酒として当たるタイトル。重量表の corroboration 規則が要求する語（sake）を含む。 */
+const SAKE = 'Dassai junmai daiginjo sake 720ml';
+
+test('24. the ranking says out loud that some goods may not be shippable, and that we never checked', async ({ page }) => {
+  await gotoCompare(page);
+  const note = restrictedNote(page);
+
+  // 何も押していない状態で、もう読める。
+  await expect(note).toHaveCount(1);
+  await expect(note).toBeVisible();
+  expect(await isCollapsed(note), '開示が「開かないと読めない」場所に居る').toBe(false);
+
+  const text = (await note.innerText()).replace(/\s+/g, ' ');
+  // (1) 何が制限されているか。**表（RESTRICTED_GOODS）と同じ語**が出ていること。
+  expect(text).toContain(restrictedList());
+  for (const g of RESTRICTED_GOODS) {
+    expect(text.toLowerCase(), `${g.id} が開示に無い`).toContain(g.labelEn.toLowerCase());
+  }
+  // (2) 我々が見ていないこと、そして総額が「送れる」の保証ではないこと。
+  expect(text).toMatch(/We do not check/);
+  expect(text).toMatch(/not a promise that the parcel can be sent/);
+
+  // 総額を読む前に目に入る位置（順位表の上）に居ること。
+  const noteBox = (await note.boundingBox())!;
+  const rankBox = (await ranking(page).boundingBox())!;
+  expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(rankBox.y + 1);
+});
+
+test('25. the shippability disclosure stays through real use, and comes and goes with the ranking', async ({ page }) => {
+  await gotoCompare(page);
+  const note = restrictedNote(page);
+  await expect(note).toBeVisible();
+
+  // 全ての行き先で消えない。ついでに、日本郵便がリチウム電池の航空郵便の宛先に
+  // 挙げていない国では**その事実がその場に足される**ことを見る。
+  // これは品目の判定ではなく宛先の事実なので、カートを見ずに言える。
+  for (const cc of COUNTRY_CODES) {
+    await page.getByLabel('Ship to').selectOption(cc);
+    await expect(note, `${cc} で開示が消えた`).toHaveCount(1);
+    await expect(note).toBeVisible();
+    const t = (await note.innerText()).replace(/\s+/g, ' ');
+    const named = t.includes(`does not list ${COUNTRIES[cc].name}`);
+    expect(named, `${cc}: リチウム電池の宛先の事実が表と食い違う`)
+      .toBe(!LITHIUM_AIRMAIL_LISTED[cc]);
+  }
+
+  // 品を足す。行を開く。開いた内訳の中に複製されない。
+  await addByHand(page, 'mystery lot Z', 4000);
+  await expect(note).toBeVisible();
+  await openRankRow(page, 1);
+  await expect(note).toHaveCount(1);
+  await expect(note).toBeVisible();
+
+  // カートを空にすれば順位と一緒に消える。開示だけ宙に浮かない。
+  await emptyCart(page);
+  await expect(ranking(page)).toHaveCount(0);
+  await expect(note).toHaveCount(0);
+
+  // 戻せば両方戻る。
+  await addByHand(page, 'mystery lot Z', 4000);
+  await expect(ranking(page)).toHaveCount(1);
+  await expect(note).toBeVisible();
+});
+
+test('26. a bottle of sake in the cart raises a stronger warning, and removing it takes the warning away', async ({ page }) => {
+  await gotoCompare(page);
+  // 酒が無いあいだは強い警告は出ない。常時の1行だけ。
+  await expect(alcoholNote(page)).toHaveCount(0);
+  await expect(restrictedNote(page)).toBeVisible();
+
+  await addByHand(page, SAKE, 5200);
+  const strong = alcoholNote(page);
+  await expect(strong).toHaveCount(1);
+  await expect(strong).toBeVisible();
+  expect(await isCollapsed(strong), '強い警告が畳まれている').toBe(false);
+
+  const text = (await strong.innerText()).replace(/\s+/g, ' ');
+  // 重量表が当てたラインの見出しで名指しする（品名ではなく、当たった根拠のほうを出す）。
+  expect(text).toContain('Sake / spirits, 700-750ml bottle');
+  // 原文が言っていること。24% と「宛先が決める」の両方。
+  expect(text).toMatch(/no drink over 24% ABV/);
+  expect(text).toMatch(/the destination country\s+decides/);
+  // そして我々が見ていないこと。ここを落とすと「送れない」と断定したことになる。
+  expect(text).toMatch(/without checking/);
+  expect(text).toMatch(/may belong to a\s+parcel that cannot be sent/);
+  // 常時の1行は消えない。強いほうが置き換えるのではなく、足される。
+  await expect(restrictedNote(page)).toBeVisible();
+
+  // 酒を外せば強い警告は消え、常時の1行は残る。
+  await cartItem(page, SAKE).getByRole('button', { name: `Remove ${SAKE}` }).click();
+  await expect(strong).toHaveCount(0);
+  await expect(restrictedNote(page)).toBeVisible();
+});
+
+test('27. both disclosures link to the rules, quoted with their source and date', async ({ page }) => {
+  await gotoCompare(page);
+  await restrictedNote(page).getByRole('link', { name: 'What the rules say' }).click();
+  await expect(page).toHaveURL(/\/sources#restricted$/);
+  await expect(page.getByRole('heading', { name: 'Goods that may not be shippable at all' }))
+    .toBeVisible();
+
+  for (const g of RESTRICTED_GOODS) {
+    const li = page.getByRole('listitem').filter({ hasText: `${g.labelEn} —` }).first();
+    await expect(li, `${g.id} の原文が /sources に無い`).toHaveCount(1);
+    await expect(li).toContainText(g.checkedOn);
+    await expect(li.getByRole('link', { name: 'Japan Post, nonmailable articles' }))
+      .toHaveAttribute('href', g.sourceUrl);
+    // 英語版に無い記述は、その旨をその行に書く。書かないと英語で読めると読まれる。
+    if (g.sourceLang === 'ja') {
+      await expect(li).toContainText('only in the Japanese page');
+    }
+  }
+
+  // 宛先ごとのリチウム電池の可否を、表と同じ中身で出していること。
+  const notListed = COUNTRY_CODES
+    .filter((c) => !LITHIUM_AIRMAIL_LISTED[c]).map((c) => COUNTRIES[c].name);
+  for (const name of notListed) {
+    await expect(page.getByText(new RegExp(`${name}[^.]*(is|are) not`))).toBeVisible();
+  }
+  // 取れなかったものは「取れなかった」と書く。黙って落とさない。
+  await expect(page.getByText(/What we could not get:/)).toBeVisible();
+});
+
 test('21. the disclosure links to the methods we did not price, named company by company', async ({ page }) => {
   await gotoCompare(page);
   await emsOnlyNote(page).getByRole('link', { name: /small packet/ }).click();
@@ -626,6 +878,13 @@ test('21. the disclosure links to the methods we did not price, named company by
     await expect(li.getByRole('link', { name: `${s.serviceName} shipping page` }))
       .toHaveAttribute('href', s.sourceUrl);
     await expect(li).toContainText(s.checkedOn);
+    // 保存版から読んだ社は、その写しがいつ採られたかまで出す。読んだ日だけだと
+    // 9か月前の内容を今日の実測に見せてしまう。
+    if (s.capturedOn) {
+      await expect(li, `${s.serviceName} の写しの採取日が /sources に無い`)
+        .toContainText(s.capturedOn);
+      await expect(li).toContainText('archived copy');
+    }
   }
 });
 

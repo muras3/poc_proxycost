@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
-import { SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service } from './services';
+import {
+  EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_YEN,
+  SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
+} from './services';
 import type { Item, Line, Row, SiteId } from './types';
 
 // 出品サイトは Jauce と ZenMarket で料金が変わる。全サイトを一度に回すために並べておく。
@@ -120,6 +123,206 @@ describe('the service table itself', () => {
             }
           }
         }
+      }
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T21: 任意欄が、各社の原文一覧（docs/audit/fees.md）と一致すること。
+// 任意欄は総額に入らないので静かに腐る。**費目の在り／無しを社ごとに固定する。**
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the optional extras match what each company publishes', () => {
+  const keysOf = (serviceId: string) => one(serviceId).optionalLines.map((l) => l.key).sort();
+  const optional = (serviceId: string, key: string, over: Partial<Item> = {}): Line =>
+    one(serviceId, over).optionalLines.find((l) => l.key === key)
+    ?? (() => { throw new Error(`no optional ${key} for ${serviceId}`); })();
+
+  test('each service offers exactly the extras its own page lists', () => {
+    expect(keysOf('neokyo')).toEqual(['export-clearance', 'konbini', 'storage', 'unpacking']);
+    expect(keysOf('zenmarket')).toEqual(['export-clearance', 'photos', 'repack', 'storage']);
+    expect(keysOf('fromjapan')).toEqual([
+      'export-clearance', 'konbini', 'outsourced-packing', 'photos', 'repack', 'storage',
+    ]);
+    expect(keysOf('buyee')).toEqual([
+      'export-clearance', 'photos', 'protective-packing', 'special-packing', 'storage',
+    ]);
+    expect(keysOf('jauce')).toEqual([
+      'customized-processing', 'expedited', 'export-clearance', 'fragile-packing',
+      'photos', 'premium-insurance', 'storage',
+    ]);
+  });
+
+  test('the ¥200,000 export clearance fee is on every service that ships by Japan Post', () => {
+    // 以前は FROM JAPAN と Buyee にしか無かった。同じ EMS を使う5社で費目の在り無しが
+    // 分かれていたら、それは料金差ではなく我々の調査量の差である。
+    // 額は日本郵便の「輸出申告代行手数料 2,800円／件」＝一次情報なので5社とも fixed。
+    expect(EXPORT_DECLARATION_FEE_YEN).toBe(2800);
+    for (const s of SERVICES) {
+      const l = optional(s.id, 'export-clearance');
+      expect(l.amount, s.id).toBe(EXPORT_DECLARATION_FEE_YEN);
+      expect(l.note, s.id).toContain('200,000');
+      expect(l.tier, s.id).toBe('fixed');
+    }
+    // 申告1件あたりで、個口あたりではない（原文「全ての梱包を合わせて1件となります」）。
+    // Buyee は注文ごとに別個口なので、ここを取り違えると3点で ¥8,400 になる。
+    const threeParcels = rowsFor([item({ id: 'a' }), item({ id: 'b' }), item({ id: 'c' })])
+      .find((r) => r.id === 'buyee:default')!;
+    expect(threeParcels.parcels).toBe(3);
+    expect(threeParcels.optionalLines.find((l) => l.key === 'export-clearance')!.amount)
+      .toBe(2800);
+    // 額を書いていない2社は、書いていないことを画面の note で明かす。
+    for (const id of ['neokyo', 'zenmarket']) {
+      expect(optional(id, 'export-clearance').note, id).toMatch(/does not? (print|.*print)/);
+      expect(optional(id, 'export-clearance').note, id).toContain('Japan Post');
+    }
+  });
+
+  test('Neokyo unpacking is ¥1,000 plus that parcel packing fee, not a flat ¥1,000', () => {
+    // 原文の例:「500¥ Packing Fee, 1500¥ Unpacking Fee」。
+    expect(optional('neokyo', 'unpacking', { weightG: 200 }).amount).toBe(1500);  // packing 500
+    expect(optional('neokyo', 'unpacking', { weightG: 3000 }).amount).toBe(1800); // packing 800
+    expect(optional('neokyo', 'unpacking').note).toContain('plus the packing fee');
+  });
+
+  test('Jauce fragile packing is ¥600 per package + ¥240/kg, and says what it replaces', () => {
+    // 梱包後 1,020 g → 2 kg 開始 → 600 + 480。必須の Smart Packing は 300 + 240 = ¥540。
+    const l = optional('jauce', 'fragile-packing', { weightG: 600 });
+    expect(l.amount).toBe(1080);
+    expect(amount(one('jauce', { weightG: 600 }), 'packing')).toBe(540);
+    expect(l.note).toContain('instead of the Smart Packing already in the total');
+  });
+
+  test('Jauce premium insurance is offered without a number, because the base is not published', () => {
+    const l = optional('jauce', 'premium-insurance');
+    expect(l.amount).toBeNull();
+    expect(l.tier).toBe('none');
+    expect(l.note).toContain('1.9%');
+  });
+
+  test('Jauce expedited shipping follows the parcel weight', () => {
+    expect(optional('jauce', 'expedited', { weightG: 600 }).amount).toBe(360); // 200 + 80×2kg
+  });
+
+  test('Buyee photo service is per package, so a split order pays it twice', () => {
+    const split = rowsFor([item({ id: 'a' }), item({ id: 'b' })])
+      .find((r) => r.id === 'buyee:default')!;
+    expect(split.optionalLines.find((l) => l.key === 'photos')!.amount).toBe(600);
+    expect(optional('buyee', 'photos').amount).toBe(300);
+  });
+
+  test('an optional fee we do not have an amount for is — and never ¥0', () => {
+    // 総額の行と同じ規律を任意欄にも掛ける。「実費」「率の基数が不明」を 0 で埋めると、
+    // 掛かる社を掛からない社として見せることになる。
+    for (const s of SERVICES) {
+      for (const l of one(s.id).optionalLines) {
+        if (l.tier === 'none') expect(l.amount, `${s.id} ${l.key}`).toBeNull();
+        if (l.amount === null) expect(l.tier, `${s.id} ${l.key}`).toBe('none');
+        // 額が無い行は、なぜ無いかを note で言う。ラベルだけの「—」は読めない。
+        if (l.amount === null) expect(l.note.length, `${s.id} ${l.key}`).toBeGreaterThan(0);
+      }
+    }
+    expect(optional('fromjapan', 'outsourced-packing').amount).toBeNull();
+    expect(optional('fromjapan', 'outsourced-packing').note).toContain('actual cost');
+  });
+
+  test('no optional line repeats a fee that is already in the total', () => {
+    for (const s of SERVICES) {
+      const row = one(s.id);
+      const lineKeys = new Set(row.lines.map((l) => l.key));
+      for (const l of row.optionalLines) {
+        expect(lineKeys.has(l.key), `${s.id} ${l.key}`).toBe(false);
+      }
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// T19: 保管料。**時間は入力に無い**ので総額には入れない。だが5社で無料期間も単価も
+// 違い、同梱前提の使い方では必ず効く。任意欄に単位つきで並べる。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('storage is offered as an optional line for every service', () => {
+  const storageOf = (serviceId: string, over: Partial<Item> = {}): Line => {
+    const row = one(serviceId, over);
+    return row.optionalLines.find((l) => l.key === 'storage')
+      ?? (() => { throw new Error(`no storage line for ${serviceId}`); })();
+  };
+
+  test('all five carry a storage line, and none of it enters the total', () => {
+    for (const s of SERVICES) {
+      const row = one(s.id);
+      const storage = storageOf(s.id);
+      expect(storage.label, s.id).toMatch(/^Storage/);
+      // 出典は**その額が書いてあるページ**。社の料金ページとは限らない
+      // （Neokyo の保管料は neokyo.com/en/storage が原文）。ここで社の
+      // 料金ページに固定すると、額の出どころを取り違えたまま固まる。
+      expect(storage.sourceUrl, s.id).toMatch(/^https:\/\//);
+      expect(new URL(storage.sourceUrl!).host, `${s.id}: storage cited off-site`)
+        .toBe(new URL(s.sourceUrl!).host);
+      expect(row.lines.some((l) => l.key === 'storage'), s.id).toBe(false);
+      expect(row.total, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
+    }
+  });
+
+  test('each label names the free period and the unit it is charged in', () => {
+    expect(storageOf('neokyo').label).toBe('Storage, per week after 45 free days');
+    expect(storageOf('zenmarket').label).toBe('Storage, per day after 60 free days');
+    expect(storageOf('fromjapan').label).toBe('Storage after 60 free days');
+    expect(storageOf('buyee').label).toBe('Storage, per day after 30 free days');
+    expect(storageOf('jauce').label).toBe('Storage, per month after 60 free days');
+  });
+
+  test('Buyee charges by parcel weight, so the band follows the parcel we built', () => {
+    // 原文の表: ～10,000g ¥100/日、10,001〜20,000g ¥200/日、20,001g〜 ¥300/日。
+    // 梱包後重量 = net × 1.2 + 300 g。
+    expect(storageOf('buyee', { weightG: 600 }).amount).toBe(100);    // gross 1,020 g
+    expect(storageOf('buyee', { weightG: 8083 }).amount).toBe(100);   // gross 10,000 g ちょうど
+    expect(storageOf('buyee', { weightG: 8084 }).amount).toBe(200);   // gross 10,001 g
+    expect(storageOf('buyee', { weightG: 20000 }).amount).toBe(300);  // gross 24,300 g
+  });
+
+  test('Buyee counts every parcel: two orders in the split row are two daily fees', () => {
+    const split = rowsFor([item({ id: 'a' }), item({ id: 'b' })])
+      .find((r) => r.id === 'buyee:default')!;
+    expect(split.parcels).toBe(2);
+    expect(split.optionalLines.find((l) => l.key === 'storage')!.amount).toBe(200);
+  });
+
+  test('ZenMarket charges per item, so three items is ¥150 a day', () => {
+    expect(storageOf('zenmarket').amount).toBe(50);
+    expect(storageOf('zenmarket', { qty: 3 }).amount).toBe(150);
+  });
+
+  test('Neokyo prints the smallest size step and says the rest of the range', () => {
+    // 寸法は入力に無い。一番小さい段を出し、幅と「あなたの寸法は分からない」を note に書く。
+    const storage = storageOf('neokyo');
+    expect(storage.amount).toBe(350);
+    expect(storage.tier).toBe('fixed');
+    expect(storage.note).toContain('¥1,400 large');
+    expect(storage.note).toContain('We do not know your parcel size');
+  });
+
+  test('FROM JAPAN has no paid extension at all — a sourced ¥0, not an unknown', () => {
+    // help_logistics_110「it will be discarded. The storage period cannot be extended.」
+    const storage = storageOf('fromjapan');
+    expect(storage.amount).toBe(0);
+    expect(storage.tier).toBe('fixed');
+    expect(storage.note).toContain('discarded');
+  });
+
+  test('Jauce publishes no amount, so the line is — and never 0', () => {
+    const storage = storageOf('jauce');
+    expect(storage.amount).toBeNull();
+    expect(storage.tier).toBe('none');
+    expect(storage.note).toContain('does not publish the amount');
+  });
+
+  test('an optional line with tier none is null, and one with an amount is never none', () => {
+    // 本体の行と同じ不変条件を任意欄にも掛ける。任意欄は総額に入らないぶん見落としやすい。
+    for (const s of SERVICES) {
+      for (const l of one(s.id).optionalLines) {
+        if (l.tier === 'none') expect(l.amount, `${s.id} ${l.key}`).toBeNull();
+        if (l.amount === null) expect(l.tier, `${s.id} ${l.key}`).toBe('none');
       }
     }
   });
@@ -260,10 +463,14 @@ describe('FROM JAPAN — ¥500 per item, and ¥200 only on a Yahoo! Auctions win
     }
   });
 
-  test('the product protection plan is optional and stays out of the total', () => {
+  test('the product protection plan is mandatory, so it is charged once and never offered twice', () => {
+    // 原文 title_serviceRule_670:「Use of the Product Protection Plan is mandatory for all
+    // items.」その ¥500/点 は service-fee として総額に入っている。任意欄にも同じ費目を
+    // 並べていたので、同じ ¥500 を二度見せていた（docs/audit/fees.md §3 の「幻」）。
     const row = one('fromjapan');
-    expect(row.optionalLines.map((l) => l.key)).toContain('protection');
-    expect(row.lines.some((l) => l.key === 'protection')).toBe(false);
+    expect(amount(row, 'service-fee')).toBe(500);
+    expect(row.optionalLines.map((l) => l.key)).not.toContain('protection');
+    expect(row.optionalLines.some((l) => /protection/i.test(l.label))).toBe(false);
     expect(row.total).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
   });
 });
@@ -303,6 +510,68 @@ describe('Buyee — per order, and the domestic handling fee that never existed'
       expect(amount(one('buyee', { site }), 'purchase-fee'), site).toBe(500);
       expect(amount(one('buyee', { site }), 'protection-plan'), site).toBe(500);
     }
+  });
+
+  // 原文:「Shopping: Order / flat rate ¥500 * Even if multiple purchases are from the
+  // same store, it is a flat rate of ¥500.」店舗は出品URLから引く（shops.ts）。
+  describe('shopping from the same store is one order', () => {
+    const rakuten = (id: string, shop: string) =>
+      item({ id, site: 'rakuten', url: `https://item.rakuten.co.jp/${shop}/${id}/` });
+
+    test('two listings from one Rakuten shop are one ¥500, not two', () => {
+      const row = byService(rowsFor([rakuten('a', 'book'), rakuten('b', 'book')]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(500);
+      expect(amount(row, 'protection-plan')).toBe(500);
+      expect(line(row, 'purchase-fee').note).toContain('1 order');
+      expect(line(row, 'purchase-fee').note).toContain('same-shop items count as one order');
+    });
+
+    test('two shops are still two orders', () => {
+      const row = byService(rowsFor([rakuten('a', 'book'), rakuten('b', 'other')]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(1000);
+      expect(amount(row, 'protection-plan')).toBe(1000);
+    });
+
+    test('a whole-domain shop needs no URL: two Suruga-ya items are one order', () => {
+      const row = byService(rowsFor([
+        item({ id: 'a', site: 'suruga-ya' }), item({ id: 'b', site: 'suruga-ya' }),
+      ]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(500);
+    });
+
+    test('one order also means one parcel in the default (split) row', () => {
+      // 個口が減れば EMS の段も変わる。まとめたのに個口だけ2つ残ったら内訳が矛盾する。
+      const rows = rowsFor([rakuten('a', 'book'), rakuten('b', 'book')]);
+      const split = rows.find((r) => r.id === 'buyee:default')!;
+      expect(split.parcels).toBe(1);
+      expect(split.tag).toBe('1 order · 1 parcel');
+    });
+
+    test('when we cannot read the shop we keep charging per listing — and say so', () => {
+      // 店舗が読めない出品はまとめない。**この向きの誤りは Buyee を高く見せる**
+      // （＝我々に報酬を払う社に不利）。黙って安くせず、まとめ損ねたことを内訳に書く。
+      const row = byService(rowsFor([
+        item({ id: 'a', site: 'other', url: 'https://example.com/1' }),
+        item({ id: 'b', site: 'other', url: 'https://example.com/2' }),
+      ]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(1000);
+      expect(line(row, 'purchase-fee').note).toContain('could not read the shop from 2 listings');
+    });
+
+    test('an auction basket says nothing about shops — per bid is the published rule', () => {
+      // ヤフオク・メルカリは原文が「落札・購入1件ごとに ¥500」。ここに「店舗が読めなかった」
+      // と書くと、欠落でないものを欠落として見せることになる。
+      const row = byService(rowsFor([item({ id: 'a' }), item({ id: 'b' })]), 'buyee');
+      expect(amount(row, 'purchase-fee')).toBe(1000);
+      expect(line(row, 'purchase-fee').note).toBe('¥500 × 2 orders');
+    });
+
+    test('nobody else changes: the per-item services still charge per listing', () => {
+      const items = [rakuten('a', 'book'), rakuten('b', 'book')];
+      expect(amount(byService(rowsFor(items), 'neokyo'), 'service-fee')).toBe(700);
+      expect(amount(byService(rowsFor(items), 'zenmarket'), 'service-fee')).toBe(1000);
+      expect(amount(byService(rowsFor(items), 'fromjapan'), 'service-fee')).toBe(1000);
+    });
   });
 });
 
@@ -381,5 +650,42 @@ describe('Jauce — ¥400 + 8% on the auction site, ¥1,000 + 8% off it', () => 
     expect(amount(row, 'deposit')).toBe(Math.round(40 + (base / (1 - 0.039) - base)));
     // 原文未確認の解釈。fixed に格上げするなら先に原文を取ること。
     expect(row.lines[idx]!.tier).toBe('unverified');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **額の出どころが社のページでない費目は、そちらを指す。**
+// 輸出申告代行手数料 ¥2,800 は日本郵便の額で、代行各社は取次いでいるだけ。
+// 社のページを出典に立てると、額を社が決めているように読める。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('an optional fee points at whoever sets the amount', () => {
+  test('the export declaration fee cites Japan Post at every service that lists it', () => {
+    let seen = 0;
+    for (const svc of SERVICES) {
+      const fee = svc.optional.find((o) => o.key === 'export-clearance');
+      if (!fee) continue;
+      seen += 1;
+      expect(fee.amountYen, svc.id).toBe(EXPORT_DECLARATION_FEE_YEN);
+      expect(fee.sourceUrl, `${svc.id}: the amount is Japan Post's, not the service's`)
+        .toBe(EXPORT_DECLARATION_FEE_SOURCE);
+      expect(fee.sourceUrl, svc.id).not.toBe(svc.sourceUrl);
+    }
+    expect(seen, 'no service lists the export declaration fee').toBeGreaterThan(0);
+  });
+
+  test("Neokyo's storage fee cites the storage page it was read from", () => {
+    const fee = SERVICES.find((s) => s.id === 'neokyo')!.optional
+      .find((o) => o.key === 'storage')!;
+    expect(fee.sourceUrl).toBe('https://neokyo.com/en/storage');
+  });
+
+  test('an optional fee that names no source of its own falls back to the service page', () => {
+    // 大半の任意費目は社の料金ページが原文。**そこは上書きしない。**
+    for (const svc of SERVICES) {
+      for (const o of svc.optional) {
+        if (o.sourceUrl == null) continue;
+        expect(o.sourceUrl, `${svc.id}/${o.key}`).toMatch(/^https:\/\//);
+      }
+    }
   });
 });

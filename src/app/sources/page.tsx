@@ -7,6 +7,14 @@ import { SERVICES_CHECKED_ON } from '@/lib/pricing/services';
 import {
   ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_CHECKED_ON,
 } from '@/lib/pricing/shipping-methods';
+import { LITHIUM_AIRMAIL_LISTED, RESTRICTED_GOODS } from '@/lib/pricing/restricted-goods';
+import {
+  US_DUTY_BY_CATEGORY, US_DUTY_CHECKED_ON, US_HTS_SOURCE_URL,
+} from '@/lib/pricing/us-duty';
+import {
+  CA_POPULATION_AS_OF, CA_POPULATION_SOURCE_URL, CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE,
+  CA_PROVINCE_CHECKED_ON, CA_PROVINCE_SOURCE_URL, COUNTRIES, COUNTRY_CODES, PROVINCE_CODES,
+} from '@/lib/pricing/countries';
 import {
   RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
 } from '@/lib/pricing/rates';
@@ -20,11 +28,18 @@ export const metadata: Metadata = {
   title: 'Sources and method — proxycost',
   description:
     'Every fee, EMS price and import tax the calculator uses, with the page it was read from and '
-    + 'the date. Plus what we measured: about half of a total is inferred, and the ranking itself '
-    + 'changes with the weight.',
+    + 'the date. Plus what we measured: the largest line is a published EMS rate looked up with a '
+    + 'weight we guessed, and the ranking itself changes with that weight.',
 };
 
 const ZENMARKET_INVOICE = 'https://nyamo.life/archives/zenmarket.html';
+
+// **国名を書き写さない。**表（LITHIUM_AIRMAIL_LISTED）から作る。書き写せば、表を直した
+// ときにこの文だけが古くなる。
+const LITHIUM_LISTED = COUNTRY_CODES
+  .filter((c) => LITHIUM_AIRMAIL_LISTED[c]).map((c) => COUNTRIES[c].name);
+const LITHIUM_NOT_LISTED = COUNTRY_CODES
+  .filter((c) => !LITHIUM_AIRMAIL_LISTED[c]).map((c) => COUNTRIES[c].name);
 
 function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
@@ -54,9 +69,10 @@ export default function SourcesPage() {
           <div className="rounded-lg border border-dashed border-neutral-300 p-4 dark:border-neutral-700">
             <h2 className="text-sm font-semibold">What we do not stand behind</h2>
             <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-              The total. About half of it is inferred — the weight of your parcel, the domestic
-              postage inside Japan, and what your customs will do. That is why totals are rounded and
-              carry a <span className={tierClass.estimate}>~</span>. And because the weight is a
+              The total. The EMS rate in it is published by Japan Post, but the weight we look it
+              up with is a guess — and so is the domestic postage inside Japan, and what your
+              customs will do. That is why totals are rounded and carry a{' '}
+              <span className={tierClass.estimate}>~</span>. And because the weight is a
               guess, <strong>we do not promise the order holds if that guess is wrong</strong> —
               see below. Confirm the total on the proxy site before you pay.
             </p>
@@ -167,6 +183,11 @@ export default function SourcesPage() {
                 {s.serviceName} shipping page
               </a>
               {`, read ${s.checkedOn}`}
+              {/* 保存版から読んだ社は、いつ採られた写しかまで書く。「read 2026-09-06」だけだと
+                  9か月前の内容を今日の実測に見せてしまう（shipping-methods.ts の capturedOn）。 */}
+              {s.capturedOn
+                ? ` on an archived copy captured ${s.capturedOn}, because the live page blocks us`
+                : ''}
               {s.note ? ` — ${s.note}` : '.'}
             </li>
           ))}
@@ -174,6 +195,54 @@ export default function SourcesPage() {
         <div className="mt-4">
           <EmsTable />
         </div>
+      </section>
+
+      {/* **送れるかを我々は見ていない。**順位表の常時開示（RestrictedGoodsNote）が
+          ここへ送るので、原文が言っていることをそのまま並べる。英語版に無い記述は
+          日本語版の URL を出典にし、そう名乗る（原文が無い言語の URL を出典と書かない）。 */}
+      <section className="mt-12">
+        <H2 id="restricted">Goods that may not be shippable at all</H2>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Every total on the front page assumes the parcel can be sent. <strong>We never check
+          that.</strong> We have no customs declaration and no item classification, so we cannot
+          tell you whether your particular purchase is allowed — only what Japan Post publishes.
+          Read these before you order.
+        </p>
+        <ul className="mt-4 max-w-3xl space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+          {RESTRICTED_GOODS.map((g) => (
+            <li key={g.id}>
+              <span className="font-semibold">{g.labelEn}</span>
+              {' — '}
+              {g.ruleEn}{' '}
+              <a
+                className="underline"
+                href={g.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Japan Post, nonmailable articles
+              </a>
+              {`, read ${g.checkedOn}`}
+              {/* 英語版に無い記述を英語のページから読んだように見せない。 */}
+              {g.sourceLang === 'ja' ? ' (this passage exists only in the Japanese page).' : '.'}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Japan Post lists the destinations that can receive air mail carrying lithium batteries.
+          Of the seven this calculator covers,{' '}
+          {LITHIUM_LISTED.join(', ')} {LITHIUM_LISTED.length === 1 ? 'is' : 'are'} on that list and{' '}
+          <strong>{LITHIUM_NOT_LISTED.join(' and ')}</strong>{' '}
+          {LITHIUM_NOT_LISTED.length === 1 ? 'is' : 'are'} not. The front page says so next to the
+          ranking when you pick one of those, because that is a fact about the destination and
+          needs no guess about what you bought.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-500">
+          What we could not get: Japan Post publishes a country-by-country prohibited-goods table,
+          but it is a JavaScript form with no addressable page per country, so we could not read
+          the per-destination rules for alcohol. That is why the warning says the destination
+          decides instead of naming which destinations refuse it.
+        </p>
       </section>
 
       <section className="mt-12">
@@ -185,6 +254,133 @@ export default function SourcesPage() {
         <div className="mt-4">
           <TaxTable />
         </div>
+
+        <h3 id="us-hts" className="mt-8 scroll-mt-20 text-sm font-semibold">
+          United States: what the 12.5% is, and where it is only a floor
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          The 12.5% on the US board is the rate Section 301 puts on goods of Japan, and it is
+          applied <em>net of MFN</em> — the duty you actually pay is the greater of the two. So the
+          12.5% is exactly right wherever the ordinary tariff rate is lower, and it is only a floor
+          wherever the ordinary rate is higher. We looked up the headings each of our weight
+          categories can fall under, on {US_DUTY_CHECKED_ON}, and left the amount alone: naming one
+          heading per item would need the material, the construction and the price per pair, and we
+          have none of those.
+        </p>
+        <div className="mt-3 max-w-3xl overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">US tariff headings checked for each category</caption>
+            <thead>
+              <tr className="border-b border-neutral-300 text-left text-[11px] uppercase tracking-wide text-neutral-500 dark:border-neutral-700">
+                <th scope="col" className="px-2 py-2 font-medium">Category</th>
+                <th scope="col" className="px-2 py-2 font-medium">Headings we read</th>
+                <th scope="col" className="px-2 py-2 font-medium">Is 12.5% the rate?</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.values(US_DUTY_BY_CATEGORY).map((d) => (
+                <tr key={d.categoryId} className="border-b border-neutral-200 dark:border-neutral-800">
+                  <td className="px-2 py-2">{d.categoryId}</td>
+                  <td className="px-2 py-2">
+                    {d.headings.map((h) => (
+                      <span key={h.htsNo} className="block">
+                        <span className="tabular-nums">{h.htsNo}</span> {h.general} — {h.what}
+                      </span>
+                    ))}
+                  </td>
+                  <td className="px-2 py-2">
+                    {d.verdict === 'at-or-below' ? (
+                      'yes — nothing above it here'
+                    ) : (
+                      <span className={tierClass.estimate} title={tierTitle.estimate}>
+                        {d.verdict === 'can-exceed' ? 'no — a floor only' : 'no — charged per litre'}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 max-w-3xl text-xs text-neutral-600 dark:text-neutral-400">
+          MFN general rates read from the{' '}
+          <a className="underline" href={US_HTS_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            USITC Harmonized Tariff Schedule
+          </a>{' '}
+          on {US_DUTY_CHECKED_ON}. Where a basket mixes categories we take the weaker reading — one
+          pair of sneakers is enough to make the whole duty line a floor. And where we cannot place
+          an item at all, the line says it is our assumption and keeps the confidence it had.
+        </p>
+
+        <h3 id="ca-province" className="mt-8 scroll-mt-20 text-sm font-semibold">
+          Canada: the province changes the bill
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Canada is the one destination where the country code is not enough. The CBSA collects the
+          provincial tax at the border according to your province of residence, so the same parcel
+          costs nothing extra in Alberta and 9.975% more in Quebec. The rates below are the ones the
+          CBSA publishes for <em>imports</em>, not the ones a province charges its own shops — they
+          are not always the same, and where the CBSA has no collection agreement nothing is
+          charged at the border at all.{' '}
+          <strong>Leaving the picker alone does not blank this line.</strong> We apply{' '}
+          {(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%, the average across all provinces weighted
+          by population, drawn as an estimate — because a provincial tax certainly happens, and
+          dropping a line that certainly happens is a bigger error than estimating it.
+        </p>
+        <div className="mt-3 max-w-3xl overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">Provincial tax collected by the CBSA on imports</caption>
+            <thead>
+              <tr className="border-b border-neutral-300 text-left text-[11px] uppercase tracking-wide text-neutral-500 dark:border-neutral-700">
+                <th scope="col" className="px-2 py-2 font-medium">Province or territory</th>
+                <th scope="col" className="px-2 py-2 font-medium">Provincial part</th>
+                <th scope="col" className="px-2 py-2 font-medium">With the 5% GST</th>
+                <th scope="col" className="px-2 py-2 font-medium">Population {CA_POPULATION_AS_OF}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROVINCE_CODES.map((code) => {
+                const p = CA_PROVINCES[code];
+                return (
+                  <tr key={code} className="border-b border-neutral-200 dark:border-neutral-800">
+                    <td className="px-2 py-2">{p.name}</td>
+                    <td className="px-2 py-2 tabular-nums">
+                      {p.taxName
+                        ? `${p.taxName} ${+(p.rate * 100).toFixed(3)}%`
+                        : 'none collected at the border'}
+                    </td>
+                    <td className="px-2 py-2 tabular-nums">{+(p.totalWithGst * 100).toFixed(3)}%</td>
+                    <td className="px-2 py-2 tabular-nums">
+                      {p.populationOn20260401.toLocaleString('en-US')}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 max-w-3xl text-xs text-neutral-600 dark:text-neutral-400">
+          Rates from{' '}
+          <a className="underline" href={CA_PROVINCE_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            CBSA Memorandum D2-3-6, Appendix A
+          </a>
+          , read {CA_PROVINCE_CHECKED_ON}. Population from{' '}
+          <a className="underline" href={CA_POPULATION_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            Statistics Canada quarterly estimates
+          </a>{' '}
+          for {CA_POPULATION_AS_OF}, used only as the weight behind the average. The CAN$9.95 in the
+          clearance column is Canada Post&rsquo;s own figure —{' '}
+          <a
+            className="underline"
+            href={COUNTRIES.CA.clearanceSourceUrl ?? ''}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            &ldquo;a handling fee of CAN$9.95 per dutiable or taxable mail item&rdquo;
+          </a>{' '}
+          — so it is charged per parcel, and not at all below CAN$20, where the CBSA assesses
+          nothing to collect.
+        </p>
       </section>
 
       <section className="mt-12">
@@ -212,9 +408,10 @@ export default function SourcesPage() {
           </tbody>
         </table>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          About half of a total is inference. For the United Kingdom the split is{' '}
-          {GB_SPLIT.publishedShare} published against {GB_SPLIT.inferredShare} inferred — a
-          published VAT rate moves weight onto the known side. A tool that printed{' '}
+          Most of a total is printed somewhere — but the biggest printed line, EMS, is picked by a
+          weight we estimated, so the share above is not a promise about the total. For the United
+          Kingdom the split is {GB_SPLIT.publishedShare} published against{' '}
+          {GB_SPLIT.inferredShare} inferred — a published VAT rate moves more onto the known side. A tool that printed{' '}
           {yen(WEIGHT_SHIFT.find((r) => r.perItemG === MEASURED_BASKET.weightG)!.totalYen)} in
           large type would be claiming a precision it does not have, so the calculator rounds
           totals to ¥100 and prints the gap between companies to the yen instead.
@@ -285,11 +482,13 @@ export default function SourcesPage() {
       <section className="mt-12">
         <H2 id="verified">A number we checked against a real invoice</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          ZenMarket takes 3.5% of the whole payment, which means the fee has to be grossed up: to end
-          up with ¥10,000 of balance you must send 10,000 / (1 − 0.035) = ¥10,362.7. A user in Taiwan
-          published the invoice they actually received: <span className="tabular-nums">¥10,363</span>.
-          One yen apart. Our deposit-fee model reproduces that, so we use gross-up rather than a flat
-          3.5% of the goods.{' '}
+          ZenMarket&apos;s own page gives its funds deposit fee only as &ldquo;from 1%&rdquo;. The
+          3.5% we charge is our figure, worked back from one invoice: to end up with ¥10,000 of
+          balance you must send 10,000 / (1 − 0.035) = ¥10,362.7, and a user in Taiwan published the
+          invoice they actually received: <span className="tabular-nums">¥10,363</span>. One yen
+          apart. That fixes the shape of the fee — it is grossed up on the whole payment, not a flat
+          3.5% of the goods — but the rate itself stays{' '}
+          <span className={tierClass.estimate}>our estimate</span> until the company publishes it.{' '}
           <a className="underline" href={ZENMARKET_INVOICE} target="_blank" rel="noopener noreferrer">
             The published invoice
           </a>

@@ -10,8 +10,6 @@ const HEAD = [
 const NOTE_TEXT: Record<string, string> = {
   de_minimis_suspended:
     'The US de minimis exemption is suspended, so duty applies from the first item.',
-  province_tax_not_included:
-    'Canadian provincial sales tax is not included — we only apply the 5% federal GST.',
   seller_collects_gst:
     'Below the threshold this GST is charged by the proxy service at checkout, not by customs.'
     + ' The calculator shows it per service, because it is not the same amount at each one —'
@@ -68,6 +66,49 @@ function dutyCell(c: Country): ReactNode {
   );
 }
 
+/**
+ * 通関手数料。**帯を持つ国は帯ごとに出す**（AU は A$1,000 以下が A$0.00、
+ * カナダは C$20 以下が 0）。0 を黙って出さず、どの帯の 0 なのかを書く。
+ * 帯そのものが無い国だけが「—」＝未取得。
+ */
+function clearanceCell(c: Country): ReactNode {
+  if (!c.clearanceBands?.length) {
+    return <Dash title="We have not found a published figure. It is not zero — your carrier may still bill you." />;
+  }
+  return (
+    <span className={tierClass[c.clearanceTier]} title={tierTitle[c.clearanceTier]}>
+      {c.clearanceBands.map((b, i) => (
+        <span key={b.upTo} className="block">
+          {Number.isFinite(b.upTo)
+            ? `up to ${money(b.upTo, c.clearanceCcy)}: `
+            : c.clearanceBands!.length > 1 ? 'above that: ' : ''}
+          {b.amount === 0 ? 'none' : money(b.amount, c.clearanceCcy)}
+          {i === 0 && c.clearanceBands!.length === 1 ? '' : ''}
+        </span>
+      ))}
+      {/* **確認日を出す。**額だけ出して日付を伏せたら、いつの値か言えない数字を
+          公表していることになる。出典が2本に分かれる国（AU の生物検疫費用は DAFF の
+          額で、ABF が代わりに徴収している）は両方出す。 */}
+      {c.clearanceCheckedOn && (
+        <span className="mt-0.5 block text-xs font-normal text-neutral-600 dark:text-neutral-400">
+          {c.clearanceSourceUrl && (
+            <a className="underline" href={c.clearanceSourceUrl} target="_blank" rel="noopener noreferrer">source</a>
+          )}
+          {c.clearanceSourceUrl2 && (
+            <>
+              {' · '}
+              <a className="underline" href={c.clearanceSourceUrl2} target="_blank" rel="noopener noreferrer">
+                biosecurity source
+              </a>
+            </>
+          )}
+          {` · read ${c.clearanceCheckedOn}`}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function limitCell(v: number, ccy: string): ReactNode {
   if (!Number.isFinite(v)) return <span title="No duty on ordinary goods">no limit</span>;
   if (v <= 0) return <span className="tabular-nums">none — taxed from the first item</span>;
@@ -117,15 +158,7 @@ export function TaxTable() {
                 <Cell label="Tax-free limit">
                   {c.vatFreeLimit == null ? <Dash /> : limitCell(c.vatFreeLimit, c.ccy)}
                 </Cell>
-                <Cell label="Clearance fee">
-                  {c.clearanceFeePerParcel == null ? (
-                    <Dash title="We have not found a published figure. It is not zero — your carrier may still bill you." />
-                  ) : (
-                    <span className={tierClass[c.clearanceTier]} title={tierTitle[c.clearanceTier]}>
-                      {money(c.clearanceFeePerParcel, c.clearanceCcy)}
-                    </span>
-                  )}
-                </Cell>
+                <Cell label="Clearance fee">{clearanceCell(c)}</Cell>
                 <Cell label="Source">
                   {c.sourceUrl ? (
                     <a className="underline" href={c.sourceUrl} target="_blank" rel="noopener noreferrer">
