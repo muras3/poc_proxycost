@@ -1380,7 +1380,9 @@ describe('edges', () => {
         items: [certain()], country: 'GB', method: 'small-packet-air',
       }).rows, 'zenmarket');
       expect(line(marked, 'intl-shipping').tier).toBe('estimate');
-      expect(line(marked, 'intl-shipping').note).toContain('45.2% over the published rate');
+      // **率ではなく円で書く。**実測で分かった形は「1kg 段ごとの定額」で、
+      // 率にすると重量で動いてしまう（Jauce の船便は 10.0%→16.1%→25.5%）。
+      expect(line(marked, 'intl-shipping').note).toMatch(/\+¥[\d,]+ per parcel over the published rate/);
       expect(marked.approximate).toBe(true);
     });
 

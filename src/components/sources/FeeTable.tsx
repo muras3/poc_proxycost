@@ -157,11 +157,28 @@ function parcels(svc: Service): ReactNode {
  * **上乗せは方式ごと**（ZenMarket は EMS どおりで小形包装物だけ +45.2%）なので、
  * 「全部公表額どおり」か「どの方式に上乗せがあるか」を書き分ける。
  */
+/** 上乗せがあるか。国限定のものも含める。 */
+function hasMarkup(rate: PostageRate): boolean {
+  const all = [rate.markup, ...Object.values(rate.byCountry ?? {})];
+  return all.some((m) => m.kind !== 'none');
+}
+
+/** 上乗せの形を1語で。**率で書かない**——実測で分かった形は「1kg 段ごとの定額」。 */
+function describeMarkup(rate: PostageRate): string {
+  const step = [rate.markup, ...Object.values(rate.byCountry ?? {})]
+    .find((m) => m.kind === 'per-kg-step');
+  if (step && step.kind === 'per-kg-step') {
+    const onlySome = rate.markup.kind === 'none';
+    return `+¥${step.yen}/kg${onlySome ? ' (US only)' : ''}`;
+  }
+  return 'over the published price, amount varies by country and weight';
+}
+
 function international(svc: Service): ReactNode {
   const rows = POSTAL_METHODS
     .map((m) => ({ spec: m, rate: svc.postage[m.id] }))
     .filter((x): x is { spec: typeof x.spec; rate: PostageRate } => x.rate != null);
-  const marked = rows.filter((r) => r.rate.markup !== 0);
+  const marked = rows.filter((r) => hasMarkup(r.rate));
   return (
     <span>
       {`${rows.length} Japan Post ${rows.length === 1 ? 'method' : 'methods'}: `}
@@ -174,7 +191,7 @@ function international(svc: Service): ReactNode {
           <span key={r.spec.id}>
             {i > 0 ? ', ' : ''}
             <span className={tierClass[r.rate.tier]} title={tierTitle[r.rate.tier]}>
-              {`${r.spec.label} +${(r.rate.markup * 100).toFixed(1)}%`}
+              {`${r.spec.label} ${describeMarkup(r.rate)}`}
             </span>
           </span>
         ))
