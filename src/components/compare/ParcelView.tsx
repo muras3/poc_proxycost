@@ -178,6 +178,12 @@ export function ParcelView({
   }, [anim.sig, target]);
 
   const { shown, phase, delta } = anim;
+  // カートが空。**箱そのものは出しておく。**箱は入力のすぐ隣に置いてあり、
+  // 足した品がここに落ちる。空のあいだ箱ごと消すと、落ちる先が画面に無い状態から
+  // 始まって「どこに落ちたのか」が見えなくなる。数字は1つも出さない（持っていない）。
+  if (items.length === 0) return <EmptyParcel className={className} />;
+  // 重量の無い品が混ざっている（段が決まらない）。空の箱は「何も入っていない」と
+  // 言う絵なので、ここでそれを出すのは嘘になる。何も描かない。
   if (!shown || !target) return null;
 
   const entering = new Set(anim.entering);
@@ -192,9 +198,7 @@ export function ParcelView({
       data-step={shown.overMax ? 'over' : String(shown.stepIndex)}
       className={className}
     >
-      <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
-        Parcel — if everything ships together
-      </h2>
+      <ParcelHeading />
 
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
@@ -268,22 +272,65 @@ export function ParcelView({
             </p>
           )}
 
-          <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
-            EMS is priced by weight alone — volume never enters the price, so this box is not a
-            packing simulation. Faded items are weights we estimated, not measured.{' '}
-            <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
-              Japan Post EMS rates ↗
-            </a>
-          </p>
         </div>
 
+        {/* lg では箱と目盛りは入力の隣の列に入る（Calculator）。そこで目盛りを広く取ると
+            **箱が縮んで中身が読めなくなる。**箱は段が上がるほど大きく描かれ、収まらなければ
+            場面の幅に合わせて縮む。縮むと線画の線が1画素を割ってにじみ、中身と段ボールの
+            コントラストが 3:1（WCAG 1.4.11）を切る（8kg・6点で 2.6:1 まで落ちた）。
+            目盛りは「27 kg ¥30,350」が収まれば足りるので、幅は目盛りより箱に回す。 */}
         <WeightLadder
           stepIndex={shown.stepIndex}
           overMax={shown.overMax}
           zone={zone}
           grams={shown.grams}
-          className="w-full shrink-0 sm:w-56"
+          className="w-full shrink-0 sm:w-56 lg:w-36"
         />
+      </div>
+
+      {/* 但し書きは箱と目盛りの両方に掛かるので、2つの下に幅いっぱいで置く。
+          箱の側の列に入れておくと、縦積み（モバイル）で数字と目盛りのあいだに
+          3行の散文が挟まり、**段が最初の視界から押し出される。** */}
+      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+        EMS is priced by weight alone — volume never enters the price, so this box is not a packing
+        simulation. Faded items are weights we estimated, not measured.{' '}
+        <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
+          Japan Post EMS rates ↗
+        </a>
+      </p>
+    </section>
+  );
+}
+
+/** 区画の見出し。空でも中身が入っていても同じ場所に同じ文言で立つ。 */
+function ParcelHeading() {
+  return (
+    <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
+      Parcel — if everything ships together
+    </h2>
+  );
+}
+
+/**
+ * 空のカートの箱。**段も重量も送料も出さない。**
+ * 空の箱に段（大きさ）の意味は無いので、目盛りも出さず、いちばん小さい箱を
+ * 「落ちてくる先」として置くだけ。ここに数字を出すと、無い数字を出すことになる。
+ */
+function EmptyParcel({ className = '' }: { className?: string }) {
+  return (
+    <section
+      aria-label="Parcel"
+      data-testid="parcel"
+      data-phase="idle"
+      data-step="empty"
+      className={className}
+    >
+      <ParcelHeading />
+      <div className="mt-3">
+        <PackingBox stepIndex={0} items={[]} label="Empty parcel box" />
+        <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+          Nothing to ship yet — add a listing above and it lands in this box.
+        </p>
       </div>
     </section>
   );

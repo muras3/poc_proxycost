@@ -51,11 +51,13 @@ export interface ItemListProps {
   sensitivity: Record<string, WeightSensitivity>;
   onPatch: (id: string, patch: Partial<Item>) => void;
   onRemove: (id: string) => void;
+  /** 置き場所は親（Calculator）が決める。カートは箱と横に並ぶ列にもなる。 */
+  className?: string;
   ref?: Ref<ItemListHandle>;
 }
 
 export function ItemList({
-  items, readOn, unpriced, sensitivity, onPatch, onRemove, ref,
+  items, readOn, unpriced, sensitivity, onPatch, onRemove, className = '', ref,
 }: ItemListProps) {
   // モバイルではカートを畳む（docs/UI-DESIGN.md §7.2）。lg 以上では常に開く。
   const [open, setOpen] = useState(false);
@@ -86,7 +88,7 @@ export function ItemList({
   if (!count) return null;
 
   return (
-    <section className="mt-4" aria-label="Cart">
+    <section className={className} aria-label="Cart">
       {/* lg 以上ではカートは常に開いている。押せないボタンを残すと
           キーボード利用者には反応しない操作子に見えるので、見出しに変える。 */}
       <h2 className="hidden text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:block">
