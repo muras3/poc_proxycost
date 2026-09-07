@@ -13,6 +13,7 @@ import { EmsOnlyNote } from './EmsOnlyNote';
 import { ItemList, type ItemListHandle } from './ItemList';
 import { OptionalExtras } from './OptionalExtras';
 import { MethodPicker } from './MethodPicker';
+import { ParcelView } from './ParcelView';
 import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
 import { AlcoholInCartNote, RestrictedGoodsNote } from './RestrictedGoodsNote';
@@ -49,6 +50,9 @@ export function Calculator() {
   }
 
   const empty = items.length === 0;
+  // 価格が未取得の項目は compare() に渡っていない。箱にも入れない
+  // （総額に効いていない品を箱に立てたら、箱と総額が別のカートを指す）。
+  const priced = items.filter((i) => !unpriced.includes(i.id));
   // 価格を貰えていない項目は総額に入っていない（useCompare が compare() から外す）。
   const pricedCount = items.length - unpriced.length;
 
@@ -126,6 +130,11 @@ export function Calculator() {
             <RankBoard result={result} />
             <TierLegend className="mt-3" />
           </div>
+
+          {/* **順位の下、内訳の上。** 答え（順位）より上に置くと、答えが押し下がる。
+              内訳より下に置くと、EMS 行の数字を読んだ後に「なぜその段なのか」を出す
+              ことになって順番が逆になる。ここが「答え → その根拠 → 全費目」の境目。 */}
+          <ParcelView items={priced} country={country} className="mt-8" />
 
           <div className="mt-4 empty:mt-0">
             <ConsolidationCallout result={result} />

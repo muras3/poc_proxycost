@@ -1,0 +1,785 @@
+<title>Packing Box Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  /* 段ボールの世界。中性色は kraft 側に寄せる。純グレーは使わない。 */
+  :root {
+    --ground: #faf7f2;
+    --panel: #fffdfa;
+    --ink: #241f1a;
+    --muted: #857a6d;
+    --hair: #e3dbcf;
+    --kraft-face: #d8ae7c;   /* 前面（光が当たる） */
+    --kraft-side: #c1935f;   /* 右側面の外側 */
+    --kraft-in: #b0845a;     /* 内側の壁（影） */
+    --kraft-floor: #9d7247;  /* 床 */
+    --kraft-edge: #8f6537;
+    --accent: #cf4526;      /* 段を跨いだ瞬間だけに使う */
+    --accent-soft: #fbe9e3;
+    --good: #2c6a4f;
+    --good-soft: #e4f0ea;
+    --shadow: 0 1px 2px rgba(60,40,20,.06), 0 8px 24px rgba(60,40,20,.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #17140f;
+      --panel: #201c16;
+      --ink: #f2ece3;
+      --muted: #a2988a;
+      --hair: #342e25;
+      --kraft-face: #a5773f;
+      --kraft-side: #8a6132;
+      --kraft-in: #6e4d28;
+      --kraft-floor: #5c3f1f;
+      --kraft-edge: #543918;
+      --accent: #f4744f;
+      --accent-soft: #3a231a;
+      --good: #6ec49b;
+      --good-soft: #1c3128;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #17140f;
+    --panel: #201c16;
+    --ink: #f2ece3;
+    --muted: #a2988a;
+    --hair: #342e25;
+    --kraft-face: #a5773f;
+    --kraft-side: #8a6132;
+    --kraft-in: #6e4d28;
+    --kraft-floor: #5c3f1f;
+    --kraft-edge: #543918;
+    --accent: #f4744f;
+    --accent-soft: #3a231a;
+    --good: #6ec49b;
+    --good-soft: #1c3128;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "Zen Kaku Gothic New", system-ui, -apple-system, "Hiragino Sans", sans-serif;
+    font-size: 15px; line-height: 1.6;
+  }
+  .num { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace; font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 20px 72px; overflow-x: clip; }
+
+  header { border-bottom: 1px solid var(--hair); padding-bottom: 18px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); margin: 0;
+  }
+  h1 { font-size: 27px; font-weight: 700; margin: 6px 0 0; letter-spacing: -.01em; text-wrap: balance; }
+  header p.lede { margin: 8px 0 0; max-width: 62ch; color: var(--muted); font-size: 14px; }
+
+  .cols { display: grid; gap: 26px; margin-top: 26px; grid-template-columns: 1fr; }
+  .cols > *, .stage > * { min-width: 0; } /* 目盛りの横スクロール帯に列幅を押し広げさせない */
+  @media (min-width: 900px) { .cols { grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); align-items: start; } }
+
+  /* ── 箱と重量目盛り ─────────────────────────────── */
+  .stage { display: grid; grid-template-columns: minmax(0,1fr) 136px; gap: 18px; align-items: stretch; }
+  .scene {
+    perspective: 1100px; perspective-origin: 50% 40%;
+    min-height: 360px; display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 22px; position: relative;
+  }
+
+  /*
+    箱の幾何。--w/--h/--d は段（notch）でだけ変わる。
+    カメラは上・前・右から（rotateX 負 = 上から覗く、rotateY 負 = 右側面が見える）。
+    前面だけ低い「開口ディスプレイ箱」なので、中身が縁から覗く。
+  */
+  .box {
+    --w: 250px; --h: 118px; --d: 112px; --fh: 40px; --s: 1;
+    position: relative; width: var(--w); height: var(--h);
+    transform-style: preserve-3d;
+    /* 回転の原点は右手前・底の角。他の全点は上・奥へ回るので、箱が場面の下端より下に出ない。 */
+    transform-origin: 100% 100% calc(var(--d) / 2);
+    /* 右角を軸に回すと形が右へ寄る。投影幅（x' = .899x − .438z）から中央へ戻す量を出す。 */
+    transform: translateX(calc(var(--w) * -0.585 * (1 - 0.899 * var(--s)) - 0.256 * var(--d) * var(--s)))
+               scale(var(--s)) rotateX(-30deg) rotateY(-26deg);
+    transition: width .42s cubic-bezier(.2,.9,.3,1.15), height .42s cubic-bezier(.2,.9,.3,1.15);
+  }
+  .face {
+    position: absolute; border: 1px solid var(--kraft-edge);
+    transition: transform .42s cubic-bezier(.2,.9,.3,1.15), height .42s cubic-bezier(.2,.9,.3,1.15),
+                width .42s cubic-bezier(.2,.9,.3,1.15), clip-path .42s cubic-bezier(.2,.9,.3,1.15);
+  }
+  .f-back  { inset: 0; background: var(--kraft-in); transform: translateZ(calc(var(--d) / -2)); }
+  .f-floor { left: 0; right: 0; bottom: 0; height: var(--d); background: var(--kraft-floor);
+             transform-origin: 50% 100%; transform: translateZ(calc(var(--d) / 2)) rotateX(90deg); }
+  /* 左の壁は内側が見える。手前が低く、奥が高い台形。 */
+  .f-left  { left: 0; top: 0; bottom: 0; width: var(--d); background: var(--kraft-in);
+             transform-origin: 0 50%; transform: translateZ(calc(var(--d) / 2)) rotateY(90deg);
+             clip-path: polygon(0 calc(100% - var(--fh)), 100% 0, 100% 100%, 0 100%); }
+  /* 右の壁は外側が見える。 */
+  .f-right { right: 0; top: 0; bottom: 0; width: var(--d); background: var(--kraft-side);
+             transform-origin: 100% 50%; transform: translateZ(calc(var(--d) / 2)) rotateY(-90deg);
+             clip-path: polygon(0 0, 100% calc(100% - var(--fh)), 100% 100%, 0 100%); }
+  .f-front { left: 0; right: 0; bottom: 0; height: var(--fh); background: var(--kraft-face);
+             transform: translateZ(calc(var(--d) / 2)); }
+  .f-front::after {
+    content: "FRAGILE / 割れ物注意"; position: absolute; left: 10px; bottom: 6px;
+    font-family: "IBM Plex Mono", monospace; font-size: 8px; letter-spacing: .1em;
+    color: var(--kraft-edge); white-space: nowrap;
+  }
+  /* 荷札 */
+  .f-front::before {
+    content: ""; position: absolute; right: 10px; top: 7px; width: 46px; height: 22px;
+    background: var(--panel); opacity: .82; border: 1px solid var(--kraft-edge);
+  }
+
+  /* 中身。**詰め込みの再現ではない。**床の上に緩く並べるだけ。奥寄りの一枚の面に立つ。 */
+  .contents {
+    position: absolute; left: 7%; right: 7%; top: 0; bottom: 0;
+    display: flex; align-items: flex-end; justify-content: center; gap: 7px;
+    transform: translateZ(calc(var(--d) / -6)); transform-style: preserve-3d; pointer-events: none;
+  }
+  /*
+    原型。色は --c、厚みは --t。**推定重量は半透明**（--pct）。opacity は 3D を潰すので使わず、
+    色そのものに透明度を混ぜる。同じ原型は必ず同じ形。
+  */
+  .thing {
+    --c: #888; --t: 12px; --pct: 55%;
+    position: relative; flex: 0 0 auto; transform-style: preserve-3d; transform-origin: 50% 100%;
+    background: color-mix(in srgb, var(--c) var(--pct), transparent);
+    border: 1px solid color-mix(in srgb, #2a1d10 40%, transparent);
+    border-radius: 2px;
+  }
+  .thing.exact { --pct: 100%; }
+  .thing::before, .thing::after { content: ""; position: absolute; border: inherit; border-radius: inherit; }
+  /* 天面（明るい）: 上辺から奥へ */
+  .thing::before {
+    left: -1px; right: -1px; top: -1px; height: var(--t);
+    background: color-mix(in srgb, color-mix(in srgb, var(--c), #fff 28%) var(--pct), transparent);
+    transform-origin: 50% 0; transform: rotateX(-90deg);
+  }
+  /* 右側面（暗い）: 右辺から奥へ */
+  .thing::after {
+    top: -1px; bottom: -1px; right: -1px; width: var(--t);
+    background: color-mix(in srgb, color-mix(in srgb, var(--c), #000 22%) var(--pct), transparent);
+    transform-origin: 100% 50%; transform: rotateY(-90deg);
+  }
+  .a-tall   { width: 24px; height: 66px; --c: #6f8fb0; --t: 18px; }
+  .a-slab   { width: 42px; height: 42px; --c: #ad82bd; --t: 10px; }
+  .a-card   { width: 22px; height: 30px; --c: #d7bc4e; --t: 3px; }
+  .a-bottle { width: 18px; height: 74px; --c: #5f8a63; border-radius: 3px;
+              clip-path: polygon(32% 0, 68% 0, 68% 16%, 100% 30%, 100% 100%, 0 100%, 0 30%, 32% 16%); }
+  .a-bottle::before, .a-bottle::after { display: none; }
+  .a-shoe   { width: 58px; height: 34px; --c: #c78a5f; --t: 26px; }
+  .a-cloth  { width: 46px; height: 32px; --c: #8b869c; border-radius: 10px 10px 6px 6px; }
+  .a-cloth::before, .a-cloth::after { display: none; }
+  .a-rod    { width: 8px; height: 300px; --c: #9a7b52; --t: 8px; border-radius: 4px; }
+  .a-rod::before { display: none; }
+  /* 送れない物。長さ上限を越える部分に赤。 */
+  .thing.over { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  /* EMS の長さ上限 150 cm。弓（2.2 m）が入ったときだけ、弓と同じ尺度で引く。 */
+  .limit {
+    position: absolute; left: -36px; right: -36px; height: 0;
+    bottom: calc(300px * 150 / 220);
+    border-top: 2px dashed var(--accent);
+    transform: translateZ(calc(var(--d) / -6));
+  }
+  /* 線のラベルは 3D の外に置く。線の左端（箱の外に出る側）の投影位置に JS で重ねる。 */
+  .limit-tag {
+    position: absolute; left: 0; top: 0; white-space: nowrap; pointer-events: none;
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .08em;
+    color: var(--accent); background: var(--ground); padding: 0 4px; border-radius: 2px;
+  }
+  .limit-tag[hidden] { display: none; }
+
+  .cap { margin: 10px 0 0; font-size: 11.5px; color: var(--muted); text-align: center; }
+
+  /* 重量目盛り。現在段の塗りは「その段の中でどこまで来たか」——体積ではなく重量が満ちる。 */
+  .ladder { border-left: 1px solid var(--hair); padding-left: 14px; position: relative; }
+  .ladder h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+               font-family: "IBM Plex Mono", monospace; margin: 0 0 8px; font-weight: 500; }
+  .rungs { display: flex; flex-direction: column; }
+  .rung { --fill: 0%; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+          padding: 3px 6px; margin: 0 -6px; font-size: 12px; color: var(--muted);
+          border-bottom: 1px dotted var(--hair); border-radius: 3px; position: relative; }
+  .rung.past { opacity: .45; }
+  .rung.now { color: var(--ink); font-weight: 700;
+              background-image: linear-gradient(var(--accent-soft), var(--accent-soft));
+              background-repeat: no-repeat; background-size: var(--fill) 100%;
+              transition: background-size .5s cubic-bezier(.2,.8,.3,1); }
+  .rung.now::before { content: ""; position: absolute; left: -14px; top: 0; bottom: 0; width: 3px;
+                      background: var(--accent); border-radius: 0 2px 2px 0; }
+  .rung.next { color: var(--ink); }
+  .rung.more { justify-content: center; letter-spacing: .3em; padding: 0 6px; }
+  .rung[hidden] { display: none; }
+
+  /* ── 右側 ──────────────────────────────────────── */
+  .panel { background: var(--panel); border: 1px solid var(--hair); border-radius: 6px; box-shadow: var(--shadow); }
+  .pad { padding: 16px 18px; }
+  .panel + .panel { margin-top: 18px; }
+
+  .readout { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; }
+  .ro { position: relative; }
+  .ro-k { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+  .ro-v { font-size: 21px; font-weight: 600; }
+  .ro-v small { font-size: 12px; font-weight: 400; color: var(--muted); }
+  /* 送料の差分チップ。跨いだ回は赤い額、跨がなかった回は「+¥0」——動かなかったことを動きで言う。 */
+  .chip { position: absolute; right: 0; top: -3px; font-family: "IBM Plex Mono", monospace; font-size: 12px;
+          font-weight: 600; padding: 1px 7px; border-radius: 99px; pointer-events: none; white-space: nowrap; }
+  .chip.up { background: var(--accent); color: var(--ground); }
+  .chip.down { background: var(--good); color: var(--ground); }
+  .chip.flat { background: var(--hair); color: var(--muted); }
+
+  .verdict { margin: 14px 0 0; padding: 11px 12px; border-radius: 4px; font-size: 13.5px; line-height: 1.5; }
+  .v-step { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .v-flat { background: transparent; border-left: 3px solid var(--hair); color: var(--muted); }
+  .v-over { background: var(--accent-soft); border-left: 3px solid var(--accent); }
+  .verdict b { font-weight: 700; }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  button {
+    font: inherit; font-size: 13px; padding: 7px 13px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--kraft-edge); background: var(--kraft-face); color: #241f1a;
+    transition: filter .15s;
+  }
+  button:hover:not(:disabled) { filter: brightness(1.06); }
+  button.ghost { background: transparent; border-color: var(--hair); color: var(--ink); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* 順位 */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
+       color: var(--muted); font-weight: 500; font-family: "IBM Plex Mono", monospace;
+       padding: 0 0 7px; border-bottom: 1px solid var(--hair); }
+  th.r, td.r { text-align: right; }
+  td { padding: 7px 0; border-bottom: 1px solid var(--hair); }
+  tr.win td { color: var(--ink); font-weight: 600; }
+  tr.moving td { background: var(--good-soft); }
+  tr.win td:first-child::before { content: "●"; color: var(--good); font-size: 9px; margin-right: 6px; vertical-align: 1px; }
+  .tie { display: inline-block; margin-left: 7px; font-size: 10px; padding: 1px 5px; border-radius: 99px;
+         background: var(--good-soft); color: var(--good); font-weight: 600; letter-spacing: .03em; }
+  .rank { color: var(--muted); width: 18px; display: inline-block; }
+
+  .note { font-size: 11.5px; color: var(--muted); margin: 12px 0 0; }
+  .note code { font-family: "IBM Plex Mono", monospace; font-size: 11px; }
+
+  footer { margin-top: 30px; border-top: 1px solid var(--hair); padding-top: 16px;
+           font-size: 12px; color: var(--muted); max-width: 74ch; }
+  footer b { color: var(--ink); font-weight: 600; }
+
+  /* モバイル: 目盛りは箱の下に横一列。自分の枠の中だけで横スクロールする。 */
+  @media (max-width: 640px) {
+    .stage { grid-template-columns: 1fr; gap: 10px; }
+    .scene { min-height: 330px; padding-bottom: 16px; }
+    .ladder { border-left: 0; border-top: 1px solid var(--hair); padding: 10px 0 0; }
+    .rungs { flex-direction: row; overflow-x: auto; scrollbar-width: thin; padding-bottom: 6px; }
+    .rung { flex: 0 0 auto; flex-direction: column; align-items: flex-start; gap: 0; margin: 0;
+            min-width: 66px; padding: 4px 8px; border-bottom: 0; border-right: 1px dotted var(--hair); }
+    .rung.now { background-size: 100% var(--fill); background-position: 0 100%; }
+    .rung.now::before { left: 0; right: 0; top: -10px; bottom: auto; width: auto; height: 3px; border-radius: 0 0 2px 2px; }
+    .rung.more { min-width: 34px; justify-content: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">proxycost — visual prototype</p>
+    <h1>The box is the price</h1>
+    <p class="lede">
+      Japan Post EMS charges by weight in 42 discrete steps. Nothing else about the parcel moves the
+      postage — not how full the box looks. This prototype makes the step you are standing on, and the
+      distance to the next one, the thing you watch.
+    </p>
+  </header>
+
+  <div class="cols">
+    <div>
+      <div class="stage">
+        <div class="scene" id="scene">
+          <div class="box" id="box">
+            <div class="face f-back"></div>
+            <div class="face f-floor"></div>
+            <div class="face f-left"></div>
+            <div class="contents" id="contents"></div>
+            <div class="limit" id="limit" hidden></div>
+            <div class="face f-right"></div>
+            <div class="face f-front"></div>
+          </div>
+          <div class="limit-tag" id="limit-tag" hidden>EMS length limit · 150 cm</div>
+        </div>
+        <div class="ladder">
+          <h2>EMS steps</h2>
+          <div class="rungs" id="ladder"></div>
+        </div>
+      </div>
+      <p class="cap">
+        Shapes stand for what kind of thing it is, not its real size; every weight here is an estimate,
+        so every item is drawn see-through. The box grows only when the weight step changes. The shading
+        on the current step shows how far into that step the parcel is.
+      </p>
+    </div>
+
+    <div>
+      <div class="panel pad">
+        <div class="readout">
+          <div class="ro">
+            <div class="ro-k">Packed weight</div>
+            <div class="ro-v num" id="rw">—</div>
+          </div>
+          <div class="ro" id="ro-post">
+            <div class="ro-k">International postage</div>
+            <div class="ro-v num" id="re">—</div>
+          </div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+        <div class="controls">
+          <button id="add">Add the next item</button>
+          <button id="back" class="ghost">Remove the last</button>
+          <button id="reset" class="ghost">Start over</button>
+        </div>
+        <p class="note" id="whatsnext"></p>
+      </div>
+
+      <div class="panel pad">
+        <table>
+          <thead>
+            <tr><th>Proxy service</th><th class="r">Total to your door</th><th class="r">vs cheapest</th></tr>
+          </thead>
+          <tbody id="rank"></tbody>
+        </table>
+        <p class="note">
+          Every figure here came from running the real engine on this basket
+          (5 items at ¥5,000 each, Yahoo! Auctions, shipped to the United States).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <b>What this prototype refuses to do.</b> It never shows the box filling up, because volume does not
+    enter the EMS price at all — a box that looks full would teach you a cost model that is not real.
+    It never invents a shape from a photo: each item is drawn from a fixed set of archetypes looked up
+    from the weight table, so the same item always looks the same. Items whose weight is an estimate are
+    drawn semi-transparent, so you can see which ones make the total uncertain just by looking in the box.
+  </footer>
+</div>
+
+<script>
+// ── 実測データ。**すべて compare() を実際に走らせて得た値。** 2026-09-07
+// 5点 × ¥5,000 / ヤフオク / 米国宛。手で書いた数字は1つも無い。
+const SEQ = [
+  { name: "Nendoroid figure",  arch: "a-tall",   g: 439,  net: 439,   ems: 5020,  step: "900 g" },
+  { name: "K-pop album",       arch: "a-slab",   g: 800,  net: 1239,  ems: 7900,  step: "2 kg" },
+  { name: "Photocard",         arch: "a-card",   g: 28,   net: 1267,  ems: 7900,  step: "2 kg" },
+  { name: "Sake, 720 ml",      arch: "a-bottle", g: 1420, net: 2687,  ems: 12700, step: "4 kg" },
+  { name: "Sneakers",          arch: "a-shoe",   g: 750,  net: 3437,  ems: 13900, step: "4.5 kg" },
+  { name: "Hakama",            arch: "a-cloth",  g: 1500, net: 4937,  ems: 19900, step: "7 kg" },
+  { name: "Kyudo bow",         arch: "a-rod",    g: 7000, net: 11937, ems: 39100, step: "15 kg", tooLong: true },
+];
+
+const RANKS = [
+  [["FROM JAPAN",13606],["Neokyo",13756],["Buyee",13906],["ZenMarket",14127],["Jauce",14968]],
+  [["Neokyo",23411],["FROM JAPAN",23611],["Buyee, consolidated",24211],["ZenMarket",24576],["Jauce",25895],["Buyee, default",29392]],
+  [["Neokyo",30186],["FROM JAPAN",30736],["Buyee, consolidated",31636],["ZenMarket",32041],["Jauce",33700],["Buyee, default",42178]],
+  [["Neokyo",42061],["FROM JAPAN",42661],["Buyee, consolidated",43861],["ZenMarket",44479],["Jauce",46750],["Buyee, default",60164]],
+  [["Neokyo",50186],["FROM JAPAN",50986],["Buyee, consolidated",52486],["ZenMarket",53187],["Jauce",55928],["Buyee, default",75040]],
+  [["Neokyo",63261],["FROM JAPAN",64111],["Buyee, consolidated",65911],["ZenMarket",66869],["Jauce",70227],["Buyee, default",93026]],
+  [["Neokyo",90436],["FROM JAPAN",90436],["Buyee, consolidated",92536],["ZenMarket",94230],["Jauce",99010],["Buyee, default",126612]],
+];
+
+// 日本郵便の公表表、第4地帯（米国）。転記であって計算ではない。
+const STEPS = [[500,3900],[600,4180],[700,4460],[800,4740],[900,5020],[1000,5300],[1250,5990],
+  [1500,6600],[1750,7290],[2000,7900],[2500,9100],[3000,10300],[3500,11500],[4000,12700],
+  [4500,13900],[5000,15100],[6000,17500],[7000,19900],[8000,22300],[9000,24700],[10000,27100]];
+
+const EMS_MAX_LENGTH_CM = 150; // 日本郵便の長さ上限
+
+const gross = (net) => Math.round(net * 1.2 + 300);
+const yen = (n) => "¥" + n.toLocaleString("en-US");
+const kg = (g) => g >= 1000 ? (g / 1000).toFixed(g % 1000 === 0 ? 0 : 2) + " kg" : g + " g";
+// "15 kg" → 15000。表の外に出たときだけ、SEQ が持つ段の名前から上限を読む。
+const parseStep = (s) => { const v = parseFloat(s); return /kg/.test(s) ? Math.round(v * 1000) : v; };
+
+const $ = (id) => document.getElementById(id);
+const still = matchMedia("(prefers-reduced-motion: reduce)");
+const anim = () => !still.matches;
+const tok = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+// ── 状態。n 点入れたときに画面が言うべきこと全部。 ──────────────
+function stateFor(n) {
+  const cur = SEQ[n - 1];
+  const prev = n > 1 ? SEQ[n - 2] : null;
+  const g = gross(cur.net);
+  const idx = STEPS.findIndex(([up]) => g <= up);
+  const beyond = idx < 0;                         // 公表表（この転記）の外
+  const notch = beyond ? STEPS.length : idx;      // 箱の段。表の外は「一段上の余白」
+  const up = beyond ? parseStep(cur.step) : STEPS[idx][0];
+  const lower = notch === 0 ? 0 : STEPS[notch - 1][0];
+  const fill = Math.max(0, Math.min(1, (g - lower) / (up - lower)));
+  const rows = RANKS[n - 1];
+  const low = Math.min(...rows.map((r) => r[1]));
+  const leaders = rows.filter((r) => r[1] === low).map((r) => r[0]);
+  const next = beyond ? null : (STEPS[idx + 1] || null);
+  return { n, cur, prev, g, notch, beyond, up, fill, rows, low, leaders, next };
+}
+
+// ── タイマー。連打されたら残りを捨てて最終状態を描き、次の連鎖を始める。 ──
+let timers = [];
+let raf = 0;
+function later(ms, fn) {
+  const id = setTimeout(() => { timers = timers.filter((x) => x !== id); fn(); }, ms);
+  timers.push(id);
+}
+function cancelPending() {
+  timers.forEach(clearTimeout); timers = [];
+  cancelAnimationFrame(raf);
+  document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) { a.cancel(); } });
+  document.querySelectorAll(".chip").forEach((c) => c.remove());
+}
+
+// ── 箱の中身 ────────────────────────────────────────────
+const contentsEl = $("contents");
+let itemEls = [];
+function makeThing(it) {
+  const d = document.createElement("div");
+  d.className = "thing " + it.arch + (it.tooLong ? " over" : "");
+  d.title = it.name + " — " + kg(it.g) + " (estimated weight)";
+  return d;
+}
+// 返り値: 着地までのミリ秒。連鎖はここから数える。
+function paintContents(s, mode, animate) {
+  const limit = $("limit");
+  if (!animate) {
+    contentsEl.innerHTML = "";
+    itemEls = SEQ.slice(0, s.n).map((it) => { const d = makeThing(it); contentsEl.appendChild(d); return d; });
+    limit.hidden = !s.cur.tooLong;
+    requestAnimationFrame(placeLimitTag);
+    return 0;
+  }
+  if (mode === "add") {
+    const d = makeThing(s.cur);
+    contentsEl.appendChild(d); itemEls.push(d);
+    const from = -(430 + (s.cur.tooLong ? 220 : 0));
+    // 加速して落ち、底で潰れ、わずかに跳ねる。着地は 60% の位置。
+    d.animate([
+      { transform: "translateY(" + from + "px) rotate(-5deg)", offset: 0, easing: "cubic-bezier(.5,0,.9,.55)" },
+      { transform: "translateY(0) rotate(0)", offset: .6, easing: "ease-out" },
+      { transform: "translateY(0) scaleY(.86) scaleX(1.07)", offset: .7, easing: "ease-in-out" },
+      { transform: "translateY(-5px) scaleY(1.02)", offset: .84, easing: "ease-in" },
+      { transform: "none", offset: 1 },
+    ], { duration: 680, fill: "backwards" });
+    return 408;
+  }
+  // remove / reset: 取り出す物は上へ抜ける。残る物は揺れない（何も入ってきていない）。
+  const going = itemEls.splice(s.n);
+  going.forEach((el, i) => {
+    el.animate([
+      { transform: "none" },
+      { transform: "translateY(-380px) rotate(4deg)" },
+    ], { duration: 360, delay: i * 30, easing: "cubic-bezier(.3,0,.8,.6)", fill: "forwards" })
+      .finished.then(() => el.remove()).catch(() => el.remove());
+  });
+  limit.hidden = !s.cur.tooLong;
+  placeLimitTag();
+  return 300;
+}
+function jostle() {
+  itemEls.slice(0, -1).forEach((el, i) => {
+    const sgn = i % 2 ? 1 : -1;
+    el.animate([
+      { transform: "none" },
+      { transform: "translateY(-3px) rotate(" + (1.4 * sgn) + "deg)", offset: .35 },
+      { transform: "rotate(" + (-.6 * sgn) + "deg)", offset: .7 },
+      { transform: "none" },
+    ], { duration: 440, easing: "ease-out" });
+  });
+}
+function thud() {
+  $("box").animate([
+    { transform: "translateY(0)" }, { transform: "translateY(3px)", offset: .3 }, { transform: "translateY(0)" },
+  ], { duration: 220, easing: "ease-out", composite: "add" });
+}
+function showLimit() {
+  const limit = $("limit");
+  limit.hidden = false;
+  limit.animate([{ clipPath: "inset(-20px 100% -20px 0)" }, { clipPath: "inset(-20px 0 -20px 0)" }],
+    { duration: 500, easing: "cubic-bezier(.2,.8,.3,1)" });
+  setTimeout(placeLimitTag, 520);   // 箱の成長（.42s）が終わってから測る
+}
+// 上限線の左端は箱の外に出る。その投影位置にラベルを重ねる。
+function placeLimitTag() {
+  const limit = $("limit"), tag = $("limit-tag");
+  tag.hidden = limit.hidden;
+  if (limit.hidden) return;
+  const r = limit.getBoundingClientRect(), sc = sceneEl.getBoundingClientRect();
+  tag.style.left = Math.max(0, r.left - sc.left) + "px";
+  tag.style.top = Math.max(0, r.top - sc.top - 18) + "px";
+}
+
+// 箱の大きさは**段でだけ**変わる。連続的に膨らませない。
+function paintBoxSize(s, animate, moved) {
+  const b = $("box");
+  const h = 118 + s.notch * 4;
+  b.style.setProperty("--w", (250 + s.notch * 7) + "px");
+  b.style.setProperty("--h", h + "px");
+  b.style.setProperty("--d", (112 + s.notch * 3) + "px");
+  b.style.setProperty("--fh", Math.round(h * .34) + "px");
+  fitBox(s.notch);
+  if (animate && moved) {
+    b.animate([{ transform: "scale(1)" }, { transform: "scale(1.03)", offset: .45 }, { transform: "scale(1)" }],
+      { duration: 460, easing: "ease-out", composite: "add" });
+  }
+}
+
+// ── 重量。数字が実際に増えていく。 ─────────────────────────
+function paintWeight(s, prev, animate) {
+  const el = $("rw");
+  const set = (g) => { el.innerHTML = kg(g) + " <small>packed</small>"; };
+  if (!animate || !prev) { set(s.g); return; }
+  const from = prev.g, to = s.g, t0 = performance.now(), dur = 520;
+  const tick = (t) => {
+    const p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+    set(Math.round(from + (to - from) * e));
+    if (p < 1) raf = requestAnimationFrame(tick);
+  };
+  raf = requestAnimationFrame(tick);
+}
+
+// ── 目盛り。段が動いた回だけ、現在段が旧段から新段まで歩く。 ─────────
+const ladderEl = $("ladder");
+const rungEls = STEPS.map(([up, price]) => {
+  const d = document.createElement("div");
+  d.className = "rung";
+  d.innerHTML = '<span class="num w">' + kg(up) + '</span><span class="num p">' + yen(price) + "</span>";
+  ladderEl.appendChild(d);
+  return d;
+});
+const moreEl = document.createElement("div");
+moreEl.className = "rung more"; moreEl.textContent = "···"; moreEl.hidden = true; ladderEl.appendChild(moreEl);
+const extraEl = document.createElement("div");
+extraEl.className = "rung"; extraEl.hidden = true; ladderEl.appendChild(extraEl);
+const allRungs = rungEls.concat([extraEl]);
+
+function setNow(i) {
+  allRungs.forEach((el, j) => {
+    el.classList.toggle("past", j < i);
+    el.classList.toggle("now", j === i);
+    el.classList.toggle("next", j > i);
+  });
+}
+function scrollLadderTo(el, smooth) {
+  if (ladderEl.scrollWidth <= ladderEl.clientWidth + 2) return;
+  ladderEl.scrollTo({ left: el.offsetLeft - ladderEl.clientWidth / 2 + el.offsetWidth / 2, behavior: smooth ? "smooth" : "auto" });
+}
+function hitRung(el) {
+  el.animate([
+    { backgroundColor: tok("--accent"), color: tok("--ground"), transform: "translateX(-6px)" },
+    { transform: "none", offset: .35 },
+    { backgroundColor: "rgba(0,0,0,0)", color: tok("--ink") },
+  ], { duration: 800, easing: "ease-out" });
+}
+// 返り値: 新しい段に着くまでのミリ秒。
+function paintLadder(s, fromNotch, animate) {
+  moreEl.hidden = extraEl.hidden = !s.beyond;
+  if (s.beyond) extraEl.innerHTML = '<span class="num w">' + s.cur.step + '</span><span class="num p">' + yen(s.cur.ems) + "</span>";
+  const nowEl = allRungs[s.notch];
+  const pct = Math.round(s.fill * 100) + "%";
+  if (!animate || fromNotch == null || fromNotch === s.notch) {
+    setNow(s.notch);
+    allRungs.forEach((el) => { if (el !== nowEl) el.style.setProperty("--fill", "0%"); });
+    nowEl.style.setProperty("--fill", pct);   // 跨がなかった回は、この塗りが伸びるだけ
+    scrollLadderTo(nowEl, animate);
+    return 0;
+  }
+  const dir = s.notch > fromNotch ? 1 : -1;
+  const path = [];
+  for (let i = fromNotch + dir; i !== s.notch + dir; i += dir) path.push(i);
+  if (dir > 0) allRungs[fromNotch].style.setProperty("--fill", "100%");  // まず旧段を満たし切る
+  const lead = 200, stepMs = 85;
+  path.forEach((i, k) => later(lead + k * stepMs, () => {
+    setNow(i);
+    if (i !== s.notch) allRungs[i].style.setProperty("--fill", dir > 0 ? "100%" : "0%");
+  }));
+  const land = lead + (path.length - 1) * stepMs;
+  later(land, () => {
+    allRungs.forEach((el) => { if (el !== nowEl) el.style.setProperty("--fill", "0%"); });
+    nowEl.style.setProperty("--fill", pct);
+    hitRung(nowEl);
+    scrollLadderTo(nowEl, true);
+  });
+  return land;
+}
+
+// ── 送料。跨いだ回だけ数字が跳ねる。差分チップは毎回出る——「+¥0」がいちばん雄弁。 ──
+function paintPostage(s, prev, animate) {
+  const el = $("re");
+  el.innerHTML = yen(s.cur.ems) + " <small>" + s.cur.step + " step</small>";
+  if (!animate || !prev) return;
+  const delta = s.cur.ems - prev.cur.ems;
+  if (delta !== 0) {
+    el.animate([
+      { color: delta > 0 ? tok("--accent") : tok("--good"), transform: "translateY(-6px)" },
+      { color: delta > 0 ? tok("--accent") : tok("--good"), transform: "none", offset: .4 },
+      { color: tok("--ink"), transform: "none" },
+    ], { duration: 1000, easing: "ease-out" });
+  }
+  const chip = document.createElement("span");
+  chip.className = "chip " + (delta > 0 ? "up" : delta < 0 ? "down" : "flat");
+  chip.textContent = (delta > 0 ? "+" : delta < 0 ? "−" : "+") + yen(Math.abs(delta));
+  $("ro-post").appendChild(chip);
+  chip.animate([
+    { transform: "translateY(8px)", opacity: 0 },
+    { transform: "translateY(-4px)", opacity: 1, offset: .25 },
+    { transform: "translateY(-10px)", opacity: 1, offset: .75 },
+    { transform: "translateY(-18px)", opacity: 0 },
+  ], { duration: 1300, easing: "ease-out", fill: "forwards" }).finished.then(() => chip.remove()).catch(() => chip.remove());
+}
+
+// ── 何が起きたか ─────────────────────────────────────
+function paintVerdict(s, animate) {
+  const { cur, prev, g } = s;
+  const v = $("verdict");
+  if (cur.tooLong) {
+    v.className = "verdict v-over";
+    v.innerHTML = "<b>This one does not fit in any box.</b> A kyudo bow is about 2.2 m. EMS accepts " +
+      EMS_MAX_LENGTH_CM + " cm at most, so no proxy can send it this way — whatever the totals below say. " +
+      "The calculator does not check length today, which is exactly the gap this drawing exposes.";
+  } else if (prev && cur.ems === prev.ems) {
+    v.className = "verdict v-flat";
+    v.innerHTML = "<b>Postage did not move.</b> " + cur.name + " weighs " + kg(cur.g) +
+      " and the parcel stayed inside the " + cur.step + " step, so you paid " + yen(0) +
+      " more to ship it. Everything the total gained came from the item and the proxy's own fee.";
+  } else if (prev) {
+    v.className = "verdict v-step";
+    v.innerHTML = "<b>This item pushed the parcel into the " + cur.step + " step.</b> Postage went " +
+      yen(prev.ems) + " → " + yen(cur.ems) + ", <b>" + yen(cur.ems - prev.ems) + " more</b>, " +
+      "and it would have cost the same whether you added " + kg(cur.g) + " or one gram.";
+  } else {
+    v.className = "verdict v-flat";
+    v.innerHTML = "One item, " + kg(g) + " once packed, sitting on the " + cur.step + " step.";
+  }
+  $("whatsnext").innerHTML = s.next
+    ? "You can add <b>" + kg(s.next[0] - g) + "</b> more before postage rises to " + yen(s.next[1]) + "."
+    : "Beyond this the published table runs out at 30 kg.";
+  if (animate) {
+    v.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }],
+      { duration: 320, easing: "ease-out" });
+  }
+}
+
+// ── 順位。動いた行だけが滑る。首位を奪った社の名前が光る。 ─────────
+function paintRanks(s, prev, animate) {
+  const before = new Map();
+  $("rank").querySelectorAll("tr[data-id]").forEach((tr) => before.set(tr.dataset.id, tr.getBoundingClientRect().top));
+  const { rows, low, leaders } = s;
+  const tookLead = prev ? leaders.filter((l) => !prev.leaders.includes(l)) : [];
+  $("rank").innerHTML = rows.map(([label, total]) => {
+    const tied = rows.filter((r) => r[1] === total).length > 1;
+    const win = total === low;
+    return "<tr data-id='" + label + "' class='" + (win ? "win" : "") + "'>" +
+      "<td><span class='rank num'>" + (rows.filter((r) => r[1] < total).length + 1) + "</span>" +
+      label + (tied ? "<span class='tie'>tied</span>" : "") + "</td>" +
+      "<td class='r num'>" + yen(total) + "</td>" +
+      "<td class='r num' style='color:var(--muted)'>" + (win ? "—" : "+" + yen(total - low)) + "</td></tr>";
+  }).join("");
+  if (!animate) return;
+  $("rank").querySelectorAll("tr[data-id]").forEach((tr) => {
+    const was = before.get(tr.dataset.id);
+    const dy = was == null ? 0 : was - tr.getBoundingClientRect().top;
+    if (dy) {
+      tr.classList.add("moving");
+      tr.animate([{ transform: "translateY(" + dy + "px)" }, { transform: "none" }],
+        { duration: 560, easing: "cubic-bezier(.2,.8,.25,1)" })
+        .finished.then(() => tr.classList.remove("moving")).catch(() => tr.classList.remove("moving"));
+    }
+    if (tookLead.includes(tr.dataset.id)) {
+      tr.firstElementChild.animate([
+        { color: tok("--good"), textShadow: "0 0 10px " + tok("--good") },
+        { color: tok("--good"), textShadow: "0 0 0 transparent", offset: .5 },
+        { color: tok("--ink") },
+      ], { duration: 1200, delay: 300, easing: "ease-out" });
+    }
+  });
+}
+
+function paintButtons(s) {
+  $("add").disabled = s.n >= SEQ.length;
+  $("back").disabled = s.n <= 1;
+  $("add").textContent = s.n >= SEQ.length ? "Nothing left to add" : "Add " + SEQ[s.n].name;
+}
+
+// ── 全部をいま描く（初期表示・reduced motion・割り込み時） ──────────
+let shown = null;    // 画面が言い切っている状態
+let pending = null;  // 連鎖の途中で向かっている状態
+function paintAll(s) {
+  paintContents(s, "init", false);
+  paintBoxSize(s, false, false);
+  paintWeight(s, null, false);
+  paintLadder(s, null, false);
+  paintPostage(s, null, false);
+  paintVerdict(s, false);
+  paintRanks(s, null, false);
+  paintButtons(s);
+  shown = s; pending = null;
+}
+
+/*
+  追加の連鎖。1本の因果で読めるように直列にする:
+    0        物が落ち始める
+    ~410     着地: 箱がわずかに沈む・隣が揺れる・重量の数字が回り始める
+    ~970     段の判定: 目盛りの現在段が旧段から新段へ歩く（跨いだとき）／その段の塗りが伸びる（跨がなかったとき）
+    着地時    送料が跳ねる（跨いだとき）＋差分チップ＋箱が一段大きくなる＋判定文
+    +260     順位が滑って入れ替わる・首位交代なら名前が光る
+*/
+function go(mode) {
+  if (pending) { cancelPending(); paintAll(pending); }
+  const prev = shown;
+  const s = stateFor(n);
+  pending = s;
+  paintButtons(s);
+  if (!anim() || !prev) { paintAll(s); return; }
+
+  const impact = paintContents(s, mode, true);
+  const moved = prev.notch !== s.notch;
+  later(impact, () => {
+    thud();
+    if (mode === "add") jostle();
+    paintWeight(s, prev, true);
+    if (mode === "add" && s.cur.tooLong) showLimit();
+  });
+  later(impact + 560, () => {
+    const land = paintLadder(s, prev.notch, true);
+    later(land, () => {
+      paintPostage(s, prev, true);
+      paintBoxSize(s, true, moved);
+      paintVerdict(s, true);
+    });
+    later(land + 260, () => {
+      paintRanks(s, prev, true);
+      shown = s; pending = null;
+    });
+  });
+}
+
+let n = 3; // 開いた瞬間から意味のある状態を見せる（フォトカードを足した直後）
+$("add").onclick = () => { if (n < SEQ.length) { n++; go("add"); } };
+$("back").onclick = () => { if (n > 1) { n--; go("remove"); } };
+$("reset").onclick = () => { if (n > 1) { n = 1; go("reset"); } };
+
+// 箱は場面の幅に収める。モバイルで横スクロールを出さない。
+const sceneEl = $("scene");
+let shownNotch = 0;
+function fitBox(notch) {
+  if (notch != null) shownNotch = notch;
+  const s = Math.min(1, (sceneEl.clientWidth - 24) / (480 + shownNotch * 4));
+  $("box").style.setProperty("--s", s.toFixed(3));
+}
+new ResizeObserver(() => { fitBox(); placeLimitTag(); }).observe(sceneEl);
+
+paintAll(stateFor(n));
+</script>

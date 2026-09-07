@@ -1,0 +1,1268 @@
+[
+ {
+  "category": "figures",
+  "id": "scale-1-4",
+  "labelEn": "1/4 scale",
+  "medianG": 3000,
+  "p25": 3000,
+  "p75": 3800,
+  "n": 198,
+  "spread": 1.3,
+  "match": [
+   "1/4"
+  ]
+ },
+ {
+  "category": "figures",
+  "id": "scale-1-6",
+  "labelEn": "1/6 scale",
+  "medianG": 1800,
+  "p25": 1800,
+  "p75": 1800,
+  "n": 641,
+  "spread": 1,
+  "match": [
+   "1/6"
+  ]
+ },
+ {
+  "category": "figures",
+  "id": "scale-1-7",
+  "labelEn": "1/7 scale",
+  "medianG": 1500,
+  "p25": 1500,
+  "p75": 1500,
+  "n": 647,
+  "spread": 1,
+  "match": [
+   "1/7"
+  ]
+ },
+ {
+  "category": "figures",
+  "id": "scale-1-8",
+  "labelEn": "1/8 scale",
+  "medianG": 1300,
+  "p25": 1230,
+  "p75": 1500,
+  "n": 105,
+  "spread": 1.2,
+  "match": [
+   "1/8"
+  ]
+ },
+ {
+  "category": "figures",
+  "id": "pop-up-parade",
+  "labelEn": "Pop Up Parade",
+  "medianG": 800,
+  "p25": 800,
+  "p75": 1000,
+  "n": 104,
+  "spread": 1.2,
+  "match": [
+   "pop up parade",
+   "ポップアップパレード"
+  ]
+ },
+ {
+  "category": "figures",
+  "id": "figma",
+  "labelEn": "figma",
+  "medianG": 800,
+  "p25": 550,
+  "p75": 800,
+  "n": 78,
+  "spread": 1.5,
+  "match": [
+   "figma"
+  ]
+ },
+ {
+  "category": "figures",
+  "id": "nendoroid",
+  "labelEn": "Nendoroid",
+  "medianG": 439,
+  "p25": 380,
+  "p75": 600,
+  "n": 426,
+  "spread": 1.6,
+  "match": [
+   "nendoroid",
+   "ねんどろいど"
+  ]
+ },
+ {
+  "category": "music",
+  "id": "cd",
+  "labelEn": "CD",
+  "medianG": 100,
+  "p25": 80,
+  "p75": 120,
+  "n": 0,
+  "spread": 1.5,
+  "match": [
+   "cd",
+   "compact disc"
+  ]
+ },
+ {
+  "category": "music",
+  "id": "lp",
+  "labelEn": "LP / vinyl",
+  "medianG": 270,
+  "p25": 240,
+  "p75": 300,
+  "n": 0,
+  "spread": 1.25,
+  "match": [
+   "lp",
+   "vinyl",
+   "レコード"
+  ]
+ },
+ {
+  "category": "tcg-singles",
+  "id": "graded-slab",
+  "labelEn": "Graded slab (PSA/BGS)",
+  "medianG": 100,
+  "p25": 100,
+  "p75": 250,
+  "n": 1602,
+  "spread": 2.5,
+  "match": [
+   "psa",
+   "bgs",
+   "cgc"
+  ]
+ },
+ {
+  "category": "tcg-singles",
+  "id": "single-card",
+  "labelEn": "Single card, packed",
+  "medianG": 50,
+  "p25": 50,
+  "p75": 50,
+  "n": 3101,
+  "spread": 1,
+  "match": [
+   "シングル",
+   "single card",
+   "sar",
+   "csr",
+   "ssr",
+   "パラレル",
+   "parallel"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "photocard",
+  "labelEn": "Photocard (single)",
+  "medianG": 28,
+  "p25": 28,
+  "p75": 57,
+  "n": 1074,
+  "spread": 2.04,
+  "match": [
+   "フォトカード",
+   "photocard",
+   "photo card"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "photobook",
+  "labelEn": "Photobook / photo essay",
+  "medianG": 1000,
+  "p25": 800,
+  "p75": 1600,
+  "n": 1182,
+  "spread": 2,
+  "match": [
+   "写真集",
+   "フォトブック",
+   "photobook",
+   "photo book",
+   "dicon"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "lightstick",
+  "labelEn": "Official lightstick",
+  "medianG": 900,
+  "p25": 500,
+  "p75": 1500,
+  "n": 586,
+  "spread": 3,
+  "match": [
+   "ペンライト",
+   "lightstick",
+   "light stick",
+   "応援棒"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "dvd-bluray",
+  "labelEn": "DVD / Blu-ray",
+  "medianG": 1750,
+  "p25": 1200,
+  "p75": 2000,
+  "n": 150,
+  "spread": 1.67,
+  "match": [
+   "ブルーレイ",
+   "blu-ray",
+   "bluray",
+   "dvd"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "magazine",
+  "labelEn": "Magazine",
+  "medianG": 1500,
+  "p25": 1200,
+  "p75": 2500,
+  "n": 542,
+  "spread": 2.08,
+  "match": [
+   "雑誌",
+   "マガジン",
+   "magazine"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "platform-album",
+  "labelEn": "Platform album (POCA / Weverse / Nemo / Kihno)",
+  "medianG": 400,
+  "p25": 300,
+  "p75": 600,
+  "n": 1140,
+  "spread": 2,
+  "match": [
+   "poca",
+   "weverse album",
+   "ウィバースアルバム",
+   "kihno",
+   "キノアルバム",
+   "plve",
+   "objekt",
+   "smini",
+   "プラットフォーム",
+   "platform album"
+  ]
+ },
+ {
+  "category": "kpop",
+  "id": "album",
+  "labelEn": "Physical album (CD + photobook)",
+  "medianG": 800,
+  "p25": 500,
+  "p75": 1000,
+  "n": 9679,
+  "spread": 2,
+  "match": [
+   "アルバム",
+   "album"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "boston-duffle",
+  "labelEn": "Boston / duffle / travel bag",
+  "medianG": 1025,
+  "p25": 874,
+  "p75": 1085,
+  "n": 8,
+  "spread": 1.24,
+  "match": [
+   "boston bag",
+   "keepall",
+   "duffle",
+   "duffel",
+   "ボストンバッグ",
+   "キーポル",
+   "旅行バッグ"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "tote",
+  "labelEn": "Tote bag",
+  "medianG": 805,
+  "p25": 690,
+  "p75": 897,
+  "n": 25,
+  "spread": 1.3,
+  "match": [
+   "tote",
+   "トートバッグ",
+   "トートバック"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "shoulder-crossbody",
+  "labelEn": "Shoulder / crossbody bag",
+  "medianG": 657,
+  "p25": 475,
+  "p75": 860,
+  "n": 34,
+  "spread": 1.81,
+  "match": [
+   "shoulder bag",
+   "crossbody",
+   "cross body",
+   "messenger bag",
+   "body bag",
+   "ショルダーバッグ",
+   "ショルダーバック",
+   "斜めがけ",
+   "ボディバッグ",
+   "メッセンジャーバッグ"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "handbag",
+  "labelEn": "Handbag / top-handle bag",
+  "medianG": 576,
+  "p25": 439,
+  "p75": 690,
+  "n": 15,
+  "spread": 1.57,
+  "match": [
+   "handbag",
+   "hand bag",
+   "top handle",
+   "ハンドバッグ",
+   "ハンドバック",
+   "トップハンドル",
+   "手提げバッグ"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "pouch-clutch",
+  "labelEn": "Pouch / clutch / vanity",
+  "medianG": 329,
+  "p25": 155,
+  "p75": 425,
+  "n": 13,
+  "spread": 2.74,
+  "match": [
+   "clutch",
+   "pochette",
+   "pouch",
+   "vanity case",
+   "クラッチバッグ",
+   "ポシェット",
+   "ポーチ",
+   "バニティ"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "wallet-small-leather",
+  "labelEn": "Wallet / small leather goods",
+  "medianG": 235,
+  "p25": 182,
+  "p75": 353,
+  "n": 23,
+  "spread": 1.94,
+  "match": [
+   "wallet",
+   "card case",
+   "card holder",
+   "key case",
+   "coin case",
+   "財布",
+   "カードケース",
+   "キーケース",
+   "コインケース",
+   "名刺入れ"
+  ]
+ },
+ {
+  "category": "used-luxury",
+  "id": "luxury-watch",
+  "labelEn": "Luxury wristwatch (boxed)",
+  "medianG": 839,
+  "p25": 762,
+  "p75": 1120,
+  "n": 834,
+  "spread": 1.47,
+  "match": [
+   "腕時計",
+   "wristwatch",
+   "wrist watch",
+   "ウォッチ"
+  ]
+ },
+ {
+  "category": "sneakers",
+  "id": "safety-jikatabi",
+  "labelEn": "Safety jika-tabi boots (steel toe / spike sole)",
+  "medianG": 1760,
+  "p25": 1660,
+  "p75": 1960,
+  "n": 190,
+  "spread": 1.18,
+  "match": [
+   "安全地下足袋",
+   "スパイク足袋",
+   "スパイク地下足袋",
+   "鋼製先芯",
+   "先芯入り地下足袋",
+   "安全靴 足袋",
+   "spike tabi",
+   "steel-toe tabi"
+  ]
+ },
+ {
+  "category": "sneakers",
+  "id": "tabi-sneaker-kids",
+  "labelEn": "Kids tabi sneaker / kids jika-tabi",
+  "medianG": 360,
+  "p25": 360,
+  "p75": 360,
+  "n": 195,
+  "spread": 1,
+  "match": [
+   "キッズ地下足袋",
+   "子供用地下足袋",
+   "こども地下足袋",
+   "キッズ祭り足袋",
+   "kids jikatabi",
+   "kids tabi"
+  ]
+ },
+ {
+  "category": "sneakers",
+  "id": "tabi-sneaker",
+  "labelEn": "Tabi sneaker / jika-tabi sneaker (adult)",
+  "medianG": 830,
+  "p25": 760,
+  "p75": 910,
+  "n": 361,
+  "spread": 1.2,
+  "match": [
+   "足袋スニーカー",
+   "地下足袋",
+   "エアジョグ",
+   "エアージョグ",
+   "スポーツジョグ",
+   "丸五",
+   "マルゴ",
+   "ラフィート",
+   "jikatabi",
+   "jika-tabi",
+   "tabi sneaker",
+   "air jog",
+   "sports jog"
+  ]
+ },
+ {
+  "category": "sneakers",
+  "id": "work-tabi",
+  "labelEn": "Work / festival jika-tabi (soft sole)",
+  "medianG": 560,
+  "p25": 460,
+  "p75": 660,
+  "n": 743,
+  "spread": 1.43,
+  "match": [
+   "祭り足袋",
+   "祭足袋",
+   "作業足袋",
+   "力王",
+   "荘快堂",
+   "たびぐつ",
+   "rikio",
+   "soukaido"
+  ]
+ },
+ {
+  "category": "sneakers",
+  "id": "sneaker-casual",
+  "labelEn": "Sneaker, casual / low-cut (shoes only, no box)",
+  "medianG": 750,
+  "p25": 700,
+  "p75": 750,
+  "n": 197,
+  "spread": 1.07,
+  "match": [
+   "スニーカー",
+   "ローカット",
+   "ハイカット",
+   "キャンバススニーカー",
+   "sneaker",
+   "sneakers",
+   "trainers"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "sake-1800ml",
+  "labelEn": "Sake / shochu, 1.8L bottle (isshobin)",
+  "medianG": 3300,
+  "p25": 2200,
+  "p75": 3355,
+  "n": 583,
+  "spread": 1.52,
+  "match": [
+   "1800ml",
+   "1,800ml",
+   "1.8l",
+   "1800ｍｌ",
+   "一升瓶",
+   "一升"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "sake-720ml",
+  "labelEn": "Sake / spirits, 700-750ml bottle",
+  "medianG": 1420,
+  "p25": 1320,
+  "p75": 1540,
+  "n": 1754,
+  "spread": 1.17,
+  "match": [
+   "720ml",
+   "750ml",
+   "700ml",
+   "720ｍｌ",
+   "四合瓶",
+   "四合"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "sake-300ml",
+  "labelEn": "Sake, 300ml bottle",
+  "medianG": 607,
+  "p25": 459,
+  "p75": 688,
+  "n": 335,
+  "spread": 1.5,
+  "match": [
+   "300ml",
+   "300ｍｌ",
+   "カップ酒"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "noodle",
+  "labelEn": "Instant and dried noodles",
+  "medianG": 122,
+  "p25": 89,
+  "p75": 208,
+  "n": 349,
+  "spread": 2.34,
+  "match": [
+   "ラーメン",
+   "ramen",
+   "うどん",
+   "udon",
+   "焼きそば",
+   "yakisoba",
+   "カップ麺",
+   "instant noodle",
+   "そうめん",
+   "somen",
+   "そば",
+   "soba"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "snack-sweets",
+  "labelEn": "Snacks, sweets and candy",
+  "medianG": 90,
+  "p25": 58,
+  "p75": 180,
+  "n": 2837,
+  "spread": 3.1,
+  "match": [
+   "せんべい",
+   "senbei",
+   "rice cracker",
+   "クッキー",
+   "cookie",
+   "チョコレート",
+   "chocolate",
+   "キャンディ",
+   "candy",
+   "グミ",
+   "gummy",
+   "餅",
+   "mochi",
+   "ポッキー",
+   "pocky",
+   "kit kat",
+   "kitkat",
+   "ポテトチップス",
+   "chips",
+   "スナック",
+   "snack",
+   "キャラメル",
+   "caramel",
+   "どら焼き",
+   "dorayaki",
+   "最中",
+   "monaka",
+   "羊羹",
+   "yokan",
+   "饅頭",
+   "manju",
+   "大福",
+   "daifuku",
+   "駄菓子"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "seasoning-bottle",
+  "labelEn": "Bottled seasoning (soy sauce, ponzu, mirin)",
+  "medianG": 484,
+  "p25": 299,
+  "p75": 777,
+  "n": 186,
+  "spread": 2.6,
+  "match": [
+   "醤油",
+   "soy sauce",
+   "shoyu",
+   "ポン酢",
+   "ponzu",
+   "みりん",
+   "mirin",
+   "めんつゆ",
+   "tsuyu",
+   "ドレッシング",
+   "dressing",
+   "ごま油",
+   "sesame oil",
+   "米酢",
+   "rice vinegar"
+  ]
+ },
+ {
+  "category": "food-tea-sake",
+  "id": "tea-leaf",
+  "labelEn": "Japanese tea (leaf, matcha, tea bags)",
+  "medianG": 113,
+  "p25": 75,
+  "p75": 198,
+  "n": 631,
+  "spread": 2.64,
+  "match": [
+   "抹茶",
+   "matcha",
+   "煎茶",
+   "sencha",
+   "玉露",
+   "gyokuro",
+   "ほうじ茶",
+   "hojicha",
+   "houjicha",
+   "玄米茶",
+   "genmaicha",
+   "番茶",
+   "bancha",
+   "茎茶",
+   "kukicha",
+   "green tea",
+   "茶葉",
+   "ティーバッグ",
+   "tea bag",
+   "teabag"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "electric-reel",
+  "labelEn": "Electric reel",
+  "medianG": 1400,
+  "p25": 1200,
+  "p75": 1800,
+  "n": 75,
+  "spread": 1.5,
+  "match": [
+   "電動リール",
+   "electric reel",
+   "シーボーグ",
+   "フォースマスター",
+   "ビーストマスター",
+   "seaborg",
+   "forcemaster",
+   "beastmaster"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "rod-1piece",
+  "labelEn": "Rod, 1-piece",
+  "medianG": 9780,
+  "p25": 9630,
+  "p75": 10520,
+  "n": 55,
+  "spread": 1.09,
+  "match": [
+   "1ピース",
+   "1 piece",
+   "ワンピースロッド"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "rod-2piece",
+  "labelEn": "Rod, 2-piece",
+  "medianG": 6660,
+  "p25": 5480,
+  "p75": 7680,
+  "n": 498,
+  "spread": 1.4,
+  "match": [
+   "2ピース",
+   "2本継",
+   "2 piece"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "rod-multipiece",
+  "labelEn": "Rod, 3-piece or more / telescopic",
+  "medianG": 5890,
+  "p25": 3790,
+  "p75": 6250,
+  "n": 104,
+  "spread": 1.65,
+  "match": [
+   "3ピース",
+   "4ピース",
+   "5ピース",
+   "3本継",
+   "4本継",
+   "振出",
+   "パックロッド",
+   "モバイルロッド",
+   "3 piece",
+   "4 piece",
+   "5 piece",
+   "telescopic"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "rod",
+  "labelEn": "Rod (piece count unknown)",
+  "medianG": 6660,
+  "p25": 5480,
+  "p75": 8040,
+  "n": 657,
+  "spread": 1.47,
+  "match": [
+   "ロッド",
+   "釣竿",
+   "つりざお",
+   "fishing rod"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "spinning-reel",
+  "labelEn": "Spinning reel",
+  "medianG": 770,
+  "p25": 600,
+  "p75": 800,
+  "n": 821,
+  "spread": 1.33,
+  "match": [
+   "スピニングリール",
+   "spinning reel",
+   "ステラ",
+   "ヴァンキッシュ",
+   "イグジスト",
+   "stella",
+   "vanquish",
+   "exist"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "baitcasting-reel",
+  "labelEn": "Baitcasting / conventional reel",
+  "medianG": 600,
+  "p25": 600,
+  "p75": 770,
+  "n": 792,
+  "spread": 1.28,
+  "match": [
+   "ベイトリール",
+   "両軸リール",
+   "両軸受リール",
+   "baitcasting reel",
+   "baitcast reel",
+   "アンタレス",
+   "メタニウム",
+   "antares",
+   "metanium"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "reel",
+  "labelEn": "Reel (type unknown)",
+  "medianG": 700,
+  "p25": 600,
+  "p75": 800,
+  "n": 1613,
+  "spread": 1.33,
+  "match": [
+   "リール",
+   "reel"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "squid-jig",
+  "labelEn": "Squid jig / tai rubber",
+  "medianG": 140,
+  "p25": 100,
+  "p75": 144,
+  "n": 154,
+  "spread": 1.44,
+  "match": [
+   "エギング",
+   "エギ",
+   "餌木",
+   "タイラバ",
+   "鯛ラバ",
+   "スッテ",
+   "squid jig",
+   "tai rubber"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "metal-jig",
+  "labelEn": "Metal jig",
+  "medianG": 73,
+  "p25": 50,
+  "p75": 120,
+  "n": 342,
+  "spread": 2.4,
+  "match": [
+   "メタルジグ",
+   "metal jig",
+   "ジギング",
+   "jigging"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "jig-head",
+  "labelEn": "Jig head / rubber jig",
+  "medianG": 100,
+  "p25": 20,
+  "p75": 140,
+  "n": 617,
+  "spread": 7,
+  "match": [
+   "ジグヘッド",
+   "ラバージグ",
+   "jig head",
+   "jighead",
+   "rubber jig"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "soft-bait",
+  "labelEn": "Soft bait / worm",
+  "medianG": 166,
+  "p25": 58,
+  "p75": 250,
+  "n": 1180,
+  "spread": 4.31,
+  "match": [
+   "ワーム",
+   "ソフトベイト",
+   "ソフトルアー",
+   "soft bait",
+   "softbait",
+   "worm"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "hard-lure",
+  "labelEn": "Hard lure (minnow, crank, spoon, topwater)",
+  "medianG": 80,
+  "p25": 50,
+  "p75": 125,
+  "n": 8111,
+  "spread": 2.5,
+  "match": [
+   "ミノー",
+   "クランクベイト",
+   "バイブレーション",
+   "ポッパー",
+   "スピナー",
+   "トップウォーター",
+   "ルアー",
+   "minnow",
+   "crankbait",
+   "popper",
+   "swimbait",
+   "topwater",
+   "hard lure"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "fishing-line",
+  "labelEn": "Fishing line",
+  "medianG": 87,
+  "p25": 30,
+  "p75": 168,
+  "n": 390,
+  "spread": 5.6,
+  "match": [
+   "peライン",
+   "フロロカーボン",
+   "ナイロンライン",
+   "エステルライン",
+   "釣り糸",
+   "道糸",
+   "pe line",
+   "fishing line"
+  ]
+ },
+ {
+  "category": "fishing-tackle",
+  "id": "terminal-tackle",
+  "labelEn": "Terminal tackle and small accessories",
+  "medianG": 30,
+  "p25": 30,
+  "p75": 40,
+  "n": 732,
+  "spread": 1.33,
+  "match": [
+   "釣り針",
+   "シンカー",
+   "オモリ",
+   "スイベル",
+   "sinker",
+   "swivel",
+   "terminal tackle"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-bag",
+  "labelEn": "Bogu bag / shinai bag / weapon case",
+  "medianG": 800,
+  "p25": 500,
+  "p75": 1500,
+  "n": 156,
+  "spread": 3,
+  "match": [
+   "防具袋",
+   "防具バッグ",
+   "竹刀袋",
+   "木刀袋",
+   "刀袋",
+   "bogu bag",
+   "shinai bag"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-small-parts",
+  "labelEn": "Small parts and accessories (tenugui, tsuba, sageo, himo)",
+  "medianG": 200,
+  "p25": 100,
+  "p75": 200,
+  "n": 1073,
+  "spread": 2,
+  "match": [
+   "手ぬぐい",
+   "手拭い",
+   "面手ぬぐい",
+   "面紐",
+   "胴紐",
+   "乳革",
+   "下緒",
+   "鍔",
+   "柄糸",
+   "目貫",
+   "tenugui",
+   "tsuba",
+   "sageo"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "kendo-bogu-set",
+  "labelEn": "Kendo bogu, full set",
+  "medianG": 5000,
+  "p25": 4250,
+  "p75": 5000,
+  "n": 54,
+  "spread": 1.18,
+  "match": [
+   "防具セット",
+   "剣道防具セット",
+   "bogu set",
+   "kendo bogu set"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "kendo-men",
+  "labelEn": "Kendo men (helmet), single piece",
+  "medianG": 2500,
+  "p25": 2500,
+  "p75": 2500,
+  "n": 198,
+  "spread": 1,
+  "match": [
+   "面単品",
+   "剣道面",
+   "面 単品",
+   "kendo men"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "kendo-kote",
+  "labelEn": "Kendo kote (gauntlets)",
+  "medianG": 2000,
+  "p25": 1500,
+  "p75": 2500,
+  "n": 187,
+  "spread": 1.67,
+  "match": [
+   "小手",
+   "甲手",
+   "kote"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "kendo-do",
+  "labelEn": "Kendo do (torso armour)",
+  "medianG": 2000,
+  "p25": 1500,
+  "p75": 7500,
+  "n": 97,
+  "spread": 5,
+  "match": [
+   "胴単品",
+   "剣道胴",
+   "胴台",
+   "胴 単品"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "kendo-tare",
+  "labelEn": "Kendo tare (waist protector)",
+  "medianG": 1500,
+  "p25": 1500,
+  "p75": 1500,
+  "n": 67,
+  "spread": 1,
+  "match": [
+   "垂単品",
+   "剣道垂",
+   "垂 単品",
+   "tare"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-uniform-set",
+  "labelEn": "Budo uniform, jacket and hakama/pants set",
+  "medianG": 2500,
+  "p25": 2000,
+  "p75": 2500,
+  "n": 792,
+  "spread": 1.25,
+  "match": [
+   "上下セット",
+   "道着セット",
+   "剣道着セット",
+   "空手着セット",
+   "柔道着セット",
+   "上下組",
+   "uniform set"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-pants",
+  "labelEn": "Budo uniform pants (karate/judo bottoms)",
+  "medianG": 2100,
+  "p25": 800,
+  "p75": 2200,
+  "n": 185,
+  "spread": 2.75,
+  "match": [
+   "道着ズボン",
+   "空手ズボン",
+   "柔道ズボン",
+   "空手着ズボン",
+   "下衣",
+   "karate pants",
+   "judo pants"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-jacket",
+  "labelEn": "Budo uniform jacket (keikogi, karategi, judogi, kendogi)",
+  "medianG": 2200,
+  "p25": 1500,
+  "p75": 2500,
+  "n": 691,
+  "spread": 1.67,
+  "match": [
+   "剣道着",
+   "空手着",
+   "柔道着",
+   "合気道着",
+   "稽古着",
+   "道着",
+   "上衣",
+   "keikogi",
+   "karategi",
+   "judogi",
+   "kendogi",
+   "dogi"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "hakama",
+  "labelEn": "Hakama",
+  "medianG": 1500,
+  "p25": 1500,
+  "p75": 2500,
+  "n": 1696,
+  "spread": 1.67,
+  "match": [
+   "袴",
+   "hakama"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-obi",
+  "labelEn": "Obi / belt",
+  "medianG": 400,
+  "p25": 400,
+  "p75": 500,
+  "n": 291,
+  "spread": 1.25,
+  "match": [
+   "黒帯",
+   "色帯",
+   "角帯",
+   "武道帯",
+   "空手帯",
+   "柔道帯",
+   "obi"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "budo-tabi",
+  "labelEn": "Tabi / setta (footwear)",
+  "medianG": 500,
+  "p25": 300,
+  "p75": 500,
+  "n": 151,
+  "spread": 1.67,
+  "match": [
+   "足袋",
+   "雪駄",
+   "tabi",
+   "setta"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "shinai",
+  "labelEn": "Shinai (bamboo sword)",
+  "medianG": 3000,
+  "p25": 1500,
+  "p75": 3000,
+  "n": 202,
+  "spread": 2,
+  "match": [
+   "竹刀",
+   "shinai"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "bokuto",
+  "labelEn": "Bokuto / bokken / jo (wooden weapon)",
+  "medianG": 2000,
+  "p25": 2000,
+  "p75": 2000,
+  "n": 250,
+  "spread": 1,
+  "match": [
+   "木刀",
+   "木剣",
+   "杖",
+   "bokuto",
+   "bokken",
+   "jo staff"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "iaito",
+  "labelEn": "Iaito (practice sword)",
+  "medianG": 2500,
+  "p25": 2000,
+  "p75": 3500,
+  "n": 143,
+  "spread": 1.75,
+  "match": [
+   "居合刀",
+   "模擬刀",
+   "iaito",
+   "mogito"
+  ]
+ },
+ {
+  "category": "sports-goods",
+  "id": "kyudo-yumi",
+  "labelEn": "Kyudo yumi (bow)",
+  "medianG": 7000,
+  "p25": 7000,
+  "p75": 7000,
+  "n": 270,
+  "spread": 1,
+  "match": [
+   "和弓",
+   "弓道 弓",
+   "グラス弓",
+   "カーボン弓",
+   "yumi",
+   "kyudo bow"
+  ]
+ }
+]

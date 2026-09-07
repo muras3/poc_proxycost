@@ -61,6 +61,23 @@ const grossG = (netG: number) => Math.round(netG * PACKING_MULTIPLIER + PACKING_
  */
 const DEFAULT_METHOD: PostalMethod | 'cheapest' = 'ems';
 
+/**
+ * カート全体を1個口にまとめたときの梱包後重量（g）。
+ * **画面の箱はこの重量に立つ。**箱の中身は「1個口にまとめたら」の姿であって、
+ * 注文ごとに分ける社（Buyee の既定）の姿ではない。画面はそう書く。
+ * 個口を分けない行（`parcelGross` の else 側）と**同じ組み立て**を使う。
+ * 重量が1点でも無ければ null。**0 で埋めない。**
+ */
+export function singleParcelGrossG(items: readonly Item[]): number | null {
+  if (items.length === 0) return null;
+  let net = 0;
+  for (const item of items) {
+    if (item.weightG == null) return null;
+    net += Math.max(1, Math.round(item.weightG)) * item.qty;
+  }
+  return grossG(net);
+}
+
 interface Ctx {
   items: Item[];
   cc: CompareInput['country'];

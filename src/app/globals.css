@@ -26,3 +26,12 @@ body {
 
 /* 総額の桁を縦に揃える。比較表で桁がずれると読めない。 */
 .num { font-variant-numeric: tabular-nums; }
+
+/* 箱に品が落ちる（ParcelView）。**落ちるのは新しく入った品だけ。**
+   prefers-reduced-motion は `motion-safe:` 側で外している（クラスが付かない）。 */
+@keyframes parcel-drop {
+  from { transform: translateY(-64px); opacity: 0; }
+  60%  { transform: translateY(0); opacity: 1; }
+  80%  { transform: translateY(-4px); }
+  to   { transform: translateY(0); opacity: 1; }
+}
