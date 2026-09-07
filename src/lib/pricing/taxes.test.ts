@@ -43,7 +43,7 @@ describe('the duty note says something a buyer can read', () => {
     expect(noteOf('DE')).toBe('EUR 3 flat × 1 item');
     expect(noteOf('FR')).toBe('EUR 3 flat × 1 item');
     expect(noteOf('AU')).toBe('under the AUD 1000 threshold');
-    expect(noteOf('CA')).toBe('over the CAD 20 threshold — rate not included');
+    expect(noteOf('CA')).toBe('2.0% of the item price');
   });
 
   test('no country prints a non-number where a number belongs', () => {
@@ -299,11 +299,43 @@ describe('the GST the service collects at checkout is shown per service', () => 
   });
 
   test('no other destination grows a checkout tax we never confirmed', () => {
+    // 豪・星は**制度が全社に課す**ので国の表（`sellerCollectsBelow`）で持つ。
+    // 独・仏・英の IOSS / UK VAT 前徴収は**任意なので社で割れる**——ZenMarket だけが
+    // 「2026-03-02 から強制」と自分で告知しており、他4社は自社ページに記載が無い。
+    // だからここは「AU/SG 以外は全社ゼロ」ではなく「確認できた社だけ」を見る。
+    const CONFIRMED_EU_UK = new Set(['zenmarket']);
     for (const cc of COUNTRY_CODES) {
       if (cc === 'AU' || cc === 'SG') continue;
       for (const row of rowsFor(cc, 3000, 5)) {
-        expect(row.lines.some((l) => l.key === PREPAID), `${cc} ${row.id}`).toBe(false);
+        const has = row.lines.some((l) => l.key === PREPAID);
+        const expected = (cc === 'DE' || cc === 'FR' || cc === 'GB')
+          && CONFIRMED_EU_UK.has(row.serviceId);
+        expect(has, `${cc} ${row.id}`).toBe(expected);
       }
+    }
+  });
+
+  test('only ZenMarket prepays EU / UK VAT, and only under the threshold', () => {
+    // 4社は自社ページに記載が無いことを対照実験つきで確認している
+    // （FROM JAPAN の英語ヘルプ辞書1,474キーに GST は17件・VAT/IOSS は0件、など）。
+    // Neokyo に至っては「If you ship with Japan Post ... Delivered Duty Unpaid」と
+    // 郵便を明示的に外している。この計算機の既定は EMS＝Japan Post。
+    for (const cc of ['DE', 'FR', 'GB'] as CountryCode[]) {
+      const under = rowsFor(cc, 3000, 5);   // 5点 ¥15,000 → 閾値の中
+      const zen = under.find((r) => r.serviceId === 'zenmarket')!;
+      expect(line(zen, PREPAID).amount, `${cc} 閾値の中`).toBeGreaterThan(0);
+      expect(line(zen, 'vat').amount, `${cc} 国境 VAT は二重に積まない`).toBe(0);
+      // **手数料は税の徴収に従属する。**決済時に払い済みなら国境で徴収するものが無い。
+      expect(line(zen, 'clearance').amount, `${cc} 通関手数料`).toBe(0);
+      for (const row of under.filter((r) => r.serviceId !== 'zenmarket')) {
+        expect(row.lines.some((l) => l.key === PREPAID), `${cc} ${row.id}`).toBe(false);
+        expect(line(row, 'vat').amount, `${cc} ${row.id}`).toBeGreaterThan(0);
+      }
+      // 閾値の外（5点 ¥40,000 = 約 €220 / £186）では ZenMarket も国境払いに戻る。
+      const over = rowsFor(cc, 40_000, 5).find((r) => r.serviceId === 'zenmarket')!;
+      expect(over.lines.some((l) => l.key === PREPAID), `${cc} 閾値の外`).toBe(false);
+      expect(line(over, 'vat').amount, `${cc} 閾値の外の国境 VAT`).toBeGreaterThan(0);
+      expect(line(over, 'clearance').amount, `${cc} 閾値の外の手数料`).toBeGreaterThan(0);
     }
   });
 

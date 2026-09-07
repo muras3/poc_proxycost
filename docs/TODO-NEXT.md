@@ -205,7 +205,58 @@ WTO World Tariff Profiles 2025 の EU プロファイル Part A.1 原文：
 **総額の絶対値には効くが、根拠のある1つの数字が存在しない。**推測で 3% を置けば
 DE を €6 のまま置いていたのと同じ誤りになる。
 
+#### EU / UK の VAT 前徴収 ── **5社で割れていた。ZenMarket だけが取る**
+
+豪 A$1,000・星 S$400 は**制度が全社に課す**ので国の表で持てる。**EU の IOSS と UK の低額 VAT は
+任意なので社で割れる。**実装は国の表（`sellerCollectsBelow`）しか持っておらず、
+EU/UK は1社も入っていなかった——コード自身が「同ページに欧州の VAT 任意前払いの記載はある」
+と書いて実装していなかった。
+
+| 社 | 取るか | tier | 根拠 |
+|---|---|---|---|
+| **ZenMarket** | **取る**（EU ≤€150 / UK ≤£135、**2026-03-02 から強制**） | A確定 | 自社ブログ原文。**輸送業者の限定が無い** |
+| **Neokyo** | **取らない** | A確定 | 「If you ship with **Japan Post** ... Delivered Duty Unpaid」。IOSS は FedEx/DHL 限定で閾値も €147 |
+| **FROM JAPAN** | 取らない | A確定 | 英語ヘルプ辞書1,474キーに VAT/IOSS **0件**。**対照実験**: 同辞書に GST は17件 |
+| **Buyee** | 取らない | B推論 | 料金・配送・AU GST の3ページに VAT/IOSS 0件。対照: AU GST 13件・Singapore 2件 |
+| **Jauce** | 取らない | B推論 | サービスページに VAT/IOSS 0件。対照: GST 1件・Australia 2件 |
+
+**総額に効くのは税額より通関手数料。**決済時に払い済みなら国境で徴収するものが無く、
+手数料も立たない（5カ国の原文で確認済みの共通構造）。DE €7.50 / FR €8 / GB £8 が消える。
+
+##### 課税ベースで一度間違えた
+
+最初 `declared`（商品代のみ）で置いた。**それは €150 / £135 の閾値の測り方で、課税ベースではない。**
+EU VAT 指令の一般規則は「the invoiced price, including taxes, duties, levies and charges
+(excluding VAT itself), and **incidental expenses such as commission, packing, transport and
+insurance costs charged by the supplier**」。IOSS では代行が supplier なので代行の請求分は全部入る。
+
+その結果 ZenMarket の税額が他社の約半分（DE で ¥2,850 対 ¥6,199）に出て、**1位に浮上していた。**
+`total` に直して3位。**優位を ¥3,825 過大に出していた。**
+
+#### カナダの関税 ── 埋めた。ただし EU より不確か
+
+WTO World Tariff Profiles 2025 カナダプロファイル Part A.1 原文：
+
+> Simple average 2025 — Total **3.7** / Ag **14.5** / Non-Ag **2.0**
+> Non-agricultural products MFN applied 2025: **Duty-free 79.2** / 0<=5 3.2 / 5<=10 10.6
+
+非農産品の単純平均 **2.0%** を `estimate` で入れた。**反証を明記する: カナダは非農産品の
+税表の行の 79.2% が無税**（EU は 29.1%）。**最頻値は 0%** で、2.0% は分布の平均でしかない。
+個別品目では 0% か、2% よりずっと高いかに割れやすい。
+
+#### `—` の残りは 12本。**埋めるべきものは全部埋まった**
+
+| 内容 | 本数 | 判定 |
+|---|---:|---|
+| 米国の連邦売上税 | 6 | **`—` が正しい。**存在しない |
+| US Zonos 手数料 | 6 | **取れない。**Zonos の一次3ページ（`/japan-post`、`/docs/.../zonos-prepay`、`/docs/supply-chain/landed-cost/fees`）で「clearance and processing fee がかかる」とだけ書き、**額をどこにも出していない**ことを確認 |
+
+検索エンジンは `$1.50` を出してきたが**一次ページのどこにも無い**ので採用していない。
+
+行の確度: 確定 237 / 推定 90 / 二次 45 / 未取得 12（計 384）。
+
 ### 残っている差分
+
 
 
 | 項目 | 状態 |
