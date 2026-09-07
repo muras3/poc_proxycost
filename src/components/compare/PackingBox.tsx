@@ -106,7 +106,10 @@ export function PackingBox({
 }) {
   const dims = boxDims(stepIndex, overMax);
   const sceneRef = useRef<HTMLDivElement | null>(null);
+  const rowRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
+  /** 中身の列が箱の内寸に収まる縮尺。**箱から漏れさせないためだけの値。** */
+  const [rowScale, setRowScale] = useState(1);
 
   useLayoutEffect(() => {
     const el = sceneRef.current;
@@ -118,6 +121,35 @@ export function PackingBox({
     ro.observe(el);
     return () => ro.disconnect();
   }, [dims.w, dims.h, dims.d, dims.frontH]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /**
+   * **中身は箱の中に収める。**
+   * 列は横一列で折り返さない（折り返すと「詰めている」絵になる）ので、
+   * 品数が増えると自然幅が内寸を超え、両端の品が箱の外の壁の上に載る。
+   * 品の大きさは実寸を主張していない（形は種類だけを言う）ので、
+   * 列ごと縮めて収める方が、箱から漏れさせるより嘘が少ない。
+   *
+   * 箱のローカル座標で測る。offsetWidth はレイアウト幅なので、
+   * この要素自身にかけた scale には影響されない（測って掛けても振動しない）。
+   */
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const holder = row?.parentElement;
+    if (!row || !holder) return;
+    const fit = () => {
+      const pad = getComputedStyle(holder);
+      const avail =
+        holder.clientWidth - parseFloat(pad.paddingLeft || '0') - parseFloat(pad.paddingRight || '0');
+      const natural = row.offsetWidth;
+      setRowScale(natural > 0 && avail > 0 ? Math.min(1, avail / natural) : 1);
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(row);
+    ro.observe(holder);
+    return () => ro.disconnect();
+  }, [dims.w, items.length]);
 
   const proj = projectedSize(dims);
   // 段ボールの4面。前面だけ低い。z は全部 ±d/2 に揃える（揃えないと箱が平板に見える）。
@@ -147,15 +179,17 @@ export function PackingBox({
           transform: `translate(-50%, -50%) scale(${scale}) rotateX(${CAMERA_X_DEG}deg) rotateY(${CAMERA_Y_DEG}deg)`,
         }}
       >
-        {/* 奥の壁 */}
+        {/* 奥の壁。**内側は紙の内側の色。**中身の語彙は明るい地を前提に
+            currentColor を 0.14〜0.42 の塗り不透明度で置くので、
+            ここを茶色にすると中身のコントラストが 1.1:1 まで落ちて消える。 */}
         <div
-          className={`${face} inset-0 bg-[#b0845a] dark:bg-[#6e4d28]`}
+          className={`${face} inset-0 bg-[#f0e3d1] dark:bg-[#2b2119]`}
           style={{ transform: `translateZ(${-dims.d / 2}px)` }}
           aria-hidden="true"
         />
         {/* 床 */}
         <div
-          className={`${face} bottom-0 left-0 right-0 bg-[#9d7247] dark:bg-[#5c3f1f]`}
+          className={`${face} bottom-0 left-0 right-0 bg-[#e4d3ba] dark:bg-[#221a13]`}
           style={{
             height: dims.d,
             transformOrigin: '50% 100%',
@@ -165,7 +199,7 @@ export function PackingBox({
         />
         {/* 左の壁。前へ行くほど低く落ちる（開口） */}
         <div
-          className={`${face} bottom-0 left-0 top-0 bg-[#b0845a] dark:bg-[#6e4d28]`}
+          className={`${face} bottom-0 left-0 top-0 bg-[#e9dcc8] dark:bg-[#261d15]`}
           style={{
             width: dims.d,
             transformOrigin: '0 50%',
@@ -180,17 +214,32 @@ export function PackingBox({
           className="pointer-events-none absolute bottom-0 left-0 right-0 flex items-end justify-center gap-2 px-3 pb-1"
           style={{ transform: `translateZ(${-dims.d / 6}px)`, transformStyle: 'preserve-3d' }}
         >
+          {/* 収めるための縮尺。原点は床の中央なので、縮めても接地したまま。 */}
+          <div
+            ref={rowRef}
+            data-testid="packing-box-row"
+            className="flex items-end gap-2"
+            style={{
+              transform: `scale(${rowScale})`,
+              transformOrigin: '50% 100%',
+              transformStyle: 'preserve-3d',
+            }}
+          >
           {items.map((item) => (
             <div
               key={item.key}
               data-testid="packed-item"
               data-estimated={item.estimated ? 'true' : 'false'}
-              /* **推定重量は半透明。**確定重量は不透明。 */
-              className={item.estimated ? 'opacity-50' : 'opacity-100'}
+              /* **推定重量は半透明。**確定重量は不透明。
+                 ただし薄めるのは一度だけ。renderGlyph を渡す呼び出し側（ParcelView →
+                 Glyph）は自分で群 opacity を掛けるので、ここで重ねると 0.5 x 0.62 = 0.31
+                 になり、推定の品が「薄い」ではなく「見えない」になる。 */
+              className={!renderGlyph && item.estimated ? 'opacity-50' : 'opacity-100'}
             >
               {renderGlyph ? renderGlyph(item) : <PlaceholderGlyph />}
             </div>
           ))}
+          </div>
         </div>
         {/* 右の側面 */}
         <div

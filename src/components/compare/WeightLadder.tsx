@@ -103,6 +103,7 @@ export function WeightLadder({
   // **目盛りの中だけを動かす。** scrollIntoView() は祖先も動かすので、ページ全体が
   // 勝手にスクロールし、順位表の上に置いたはずの開示が画面から押し出される
   // （e2e/compare.spec.ts の 19・24 がそれを掴んだ）。ここは自分の中だけを送る。
+  const settled = useRef(false);
   useEffect(() => {
     const list = listRef.current;
     const now = nowRef.current;
@@ -110,7 +111,11 @@ export function WeightLadder({
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const behavior: ScrollBehavior = reduce ? 'auto' : 'smooth';
+    // **初回は即座に合わせる。** 読み込むたびに 500g から 30kg まで目盛りが流れるのは
+    // 動きとして意味が無いし、滑っている間は現在段が画面の外にいる。
+    // 滑らせるのは「段が動いた」ことを見せたいとき、つまり2回目以降だけ。
+    const behavior: ScrollBehavior = reduce || !settled.current ? 'auto' : 'smooth';
+    settled.current = true;
     // 縦積み（sm 以上）と横並び（モバイル）の両方があるので、両軸を送る。
     const top = now.offsetTop - list.clientHeight / 2 + now.clientHeight / 2;
     const left = now.offsetLeft - list.clientWidth / 2 + now.clientWidth / 2;
@@ -130,7 +135,11 @@ export function WeightLadder({
         data-testid="weight-ladder"
         tabIndex={0}
         aria-label="EMS weight steps"
-        className="flex max-h-64 flex-row overflow-auto rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neutral-700 sm:max-h-72 sm:flex-col dark:focus-visible:outline-neutral-300"
+        /* **relative が要る。** offsetTop/offsetLeft は「位置指定された祖先」からの
+           距離なので、この ol が static のままだと段の位置が別の祖先基準になり、
+           現在段ではなく最下段（30kg）まで送ってしまう。2.6kg の荷物で 19〜30kg の
+           帯を出していたのがこれ。 */
+        className="relative flex max-h-64 flex-row overflow-auto rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neutral-700 sm:max-h-72 sm:flex-col dark:focus-visible:outline-neutral-300"
       >
         {rungs.map((rung) => {
           if (rung.kind === 'gap') {

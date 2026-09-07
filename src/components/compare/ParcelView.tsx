@@ -215,7 +215,7 @@ export function ParcelView({
                     : undefined
                 }
               >
-                <Glyph lineId={p.id} label={p.label} estimated={p.estimated} size={40} />
+                <Glyph lineId={p.id} label={p.label} estimated={p.estimated} size={56} />
               </div>
             )}
           />
