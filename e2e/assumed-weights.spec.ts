@@ -33,6 +33,11 @@ function marks(scope: Locator): Locator {
   return scope.getByTestId('assumed-mark');
 }
 
+/** 行に立った印だけ。**注記自身も同じ印を持つ**ので、カート全体で数えると1つ多く数える。 */
+function rowMarks(page: Page): Locator {
+  return cart(page).getByRole('listitem').getByTestId('assumed-mark');
+}
+
 /** カートを空にしてから、重量表に当たらない品を n 点足す。 */
 async function cartOfUnknowns(page: Page, n: number): Promise<void> {
   await emptyCart(page);
@@ -46,7 +51,7 @@ test('a cart the weight table covers stays silent about placeholders', async ({ 
   await openCart(page);
   await expect(cart(page).getByRole('listitem')).toHaveCount(2);
   await expect(note(page)).toHaveCount(0);
-  await expect(marks(cart(page))).toHaveCount(0);
+  await expect(rowMarks(page)).toHaveCount(0);
 });
 
 test('three items with no weight data are counted in one place, not one row at a time', async ({ page }) => {
@@ -69,7 +74,7 @@ test('three items with no weight data are counted in one place, not one row at a
   await expect(n).toContainText(/~1 kg/);
 
   // 行の側にも印が立つ。**色以外の記号**を1つ持たせる約束（docs/UI-DESIGN.md §6）。
-  await expect(marks(cart(page))).toHaveCount(3);
+  await expect(rowMarks(page)).toHaveCount(3);
 });
 
 test('a placeholder among looked-up items says which fraction of the parcel it is', async ({ page }) => {
@@ -86,7 +91,7 @@ test('a placeholder among looked-up items says which fraction of the parcel it i
   await expect(n).toContainText(/%/);
 
   // 印が立つのは当たらなかった行だけ。
-  await expect(marks(cart(page))).toHaveCount(1);
+  await expect(rowMarks(page)).toHaveCount(1);
   await expect(marks(cartItem(page, OFF_TABLE[0]))).toHaveCount(1);
 });
 
@@ -99,12 +104,12 @@ test('the count follows the cart, and goes silent once every weight is filled in
   await weightBox(page, OFF_TABLE[0]).fill('600');
   await expect(note(page)).toHaveAttribute('data-count', '1');
   await expect(note(page)).toContainText('1 of the 2 items in your cart has no weight data');
-  await expect(marks(cart(page))).toHaveCount(1);
+  await expect(rowMarks(page)).toHaveCount(1);
 
   // 全部入れる → 注記も印も消える。直したのに警告が残るのは嘘。
   await weightBox(page, OFF_TABLE[1]).fill('700');
   await expect(note(page)).toHaveCount(0);
-  await expect(marks(cart(page))).toHaveCount(0);
+  await expect(rowMarks(page)).toHaveCount(0);
 });
 
 test('the note takes you to the weight box of the first item that has none', async ({ page }) => {
