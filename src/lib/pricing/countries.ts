@@ -69,18 +69,47 @@ export const COUNTRIES: Record<CountryCode, Country> = {
     name: 'United States', ccy: 'USD', base: 'FOB',
     dutyFreeLimit: 0, dutyRate: 0.125, dutyTier: 'unverified',
     vatRate: null, vatFreeLimit: null,
-    // USPS Notice 123 の「Customs Clearance and Delivery Fee」$9.35／課税対象郵便物1個。
-    // 免税帯が無い（de minimis 停止中）ので帯は1つ。
-    clearanceBands: [{
-      upTo: Number.POSITIVE_INFINITY, amount: 9.35,
-      note: 'USPS customs clearance and delivery fee, per dutiable item',
-    }],
-    clearanceCcy: 'USD', clearanceTier: 'unverified',
-    // **原典（USPS Notice 123）に当たれていない。**額は二次情報で、tier が
-    // unverified なのはそのため。日付は「その二次情報を読んだ日」であって
-    // 「原典を確認した日」ではない。取れたら tier ごと差し替える。
-    clearanceSourceUrl: 'https://pe.usps.com/text/imm/immc1_022.htm',
-    clearanceCheckedOn: '2026-09-06',
+    // USPS Notice 123 の「Customs Clearance and Delivery ... Per dutiable item
+    // All other qualifying classes of inbound mail $9.35」。**原典で確認済み。**
+    //
+    // **この手数料は無条件ではない。**IMM 712.11 原文:「Post Office facilities must
+    // collect a Postal Service fee from the addressee for each item on which customs
+    // duty or Internal Revenue tax **is collected**」。712.2 は「mail items examined
+    // and passed free of duty」を明示的に除外する。**配達時に徴収するものが無ければ
+    // 手数料も無い**——GB/DE/FR/SG と同じ構造（`docs/MASTER.md` の共通構造）。
+    //
+    // 日本郵便は米国宛を「差出人が Zonos で関税を事前納付すること」を条件に引き受ける
+    // （下の `dutyPrepayment`、$2,500 まで）。事前納付されていれば配達時の徴収は無く、
+    // 712.11 の条件が立たない。Notice 123 自身も「USPS Delivered Duty Paid (DDP) ...
+    // Per piece $0.00」と別立てしている。**よって $2,500 以下は 0**（取得できた 0）。
+    clearanceBands: [
+      {
+        upTo: 2500, amount: 0,
+        note: 'duty is prepaid by the sender through Zonos, so the Postal Service has'
+          + ' nothing to collect at delivery — IMM 712.11 charges the fee only on items'
+          + ' on which duty is collected, and Notice 123 lists DDP at $0.00',
+      },
+      {
+        upTo: Number.POSITIVE_INFINITY, amount: 9.35,
+        note: 'USPS customs clearance and delivery fee, per dutiable item — above the'
+          + ' $2,500 prepayment band, duty is collected at delivery instead',
+      },
+    ],
+    clearanceCcy: 'USD', clearanceTier: 'fixed',
+    // 原典 = USPS Notice 123（Price List）。IMM 712 は徴収条件、Notice 123 は額。
+    clearanceSourceUrl: 'https://pe.usps.com/text/dmm300/Notice123.htm',
+    clearanceSourceUrl2: 'https://pe.usps.com/text/imm/immc7_002.htm',
+    clearanceCheckedOn: '2026-09-07',
+    // **CBP 側の手数料は、この計算機の帯では買い手に課されない。**原文で確認した:
+    // - 19 CFR 24.22(f)(2)「The fee specified in paragraph (f)(1) of this section
+    //   does not apply to dutiable Inbound EMS items」→ 名宛人課金の Dutiable Mail
+    //   Fee $7.39 は **EMS に適用されない**
+    // - 19 CFR 24.22(l)(2) の EMS 手数料 $1.00 は USPS が外国郵便事業者との
+    //   settlement で受け取り四半期ごとに CBP へ送金するもの。**名宛人には課されない**
+    // - 19 CFR 24.23(c)(v)「merchandise imported by mail, other than Inbound EMS items
+    //   that are **formally entered**」→ MPF は郵便免除。EMS が正式輸入申告される
+    //   （＝$2,500 超）ときだけ 24.23(b)(1) の formal MPF（0.3464%・最低 $33.58）。
+    //   **$2,500 超の帯に未実装**（`docs/TODO-NEXT.md`）。
     notes: ['de_minimis_suspended'],
     sourceUrl: 'https://hts.usitc.gov/',
     sellerCollectsBelow: null,

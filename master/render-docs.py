@@ -82,7 +82,19 @@ def findings():
         out.append("")
     return "\n".join(out).rstrip()
 
-BLOCKS = {"counts": counts, "countries": country_table, "findings": findings}
+def validator_output():
+    """`validate.py` の出力そのものを埋める。**貼り付けた実行例は必ず古くなる**——
+    以前ここには『通関経路 21』『[CONFLICT] ca-canadapost-forum ... 未解決』が
+    手書きで残っていた。実数は 22、矛盾は解消済みだった。"""
+    import subprocess
+    r = subprocess.run([sys.executable, str(ROOT / "validate.py")],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print("NG: validate.py が失敗した\n" + r.stdout + r.stderr); sys.exit(1)
+    return "```\n" + r.stdout.strip() + "\n```"
+
+BLOCKS = {"counts": counts, "countries": country_table, "findings": findings,
+          "validator": validator_output}
 
 def main():
     doc = DOC.read_text(encoding="utf-8")

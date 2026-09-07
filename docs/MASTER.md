@@ -54,7 +54,7 @@
 }
 ```
 
-**`rule.type` は 31 種類**（ゼロ系4型を `zero` に統合し、閾値キーを `declared_value_jpy_over` に統一した後の数）。現行 `src/data.js` の `SERVICES` が表現できるのは4種類。
+**`rule.type` は 31 種類**（ゼロ系4型を `zero` に統合し、閾値キーを `declared_value_jpy_over` に統一した後の数）。現行 `src/lib/pricing/services.ts` の `SERVICES` が表現できるのは4種類。
 
 ### B_inferred の7行（推論の中身を全部書く）
 
@@ -63,7 +63,7 @@
 | ZenMarket F26 | 輸出通関 ¥2,800（20万円超・日本郵便） | Buyee・FROM JAPAN・Jauce の**3社が同額・同条件**。日本郵便の輸出通関料の転嫁なので、日本郵便を使う限り発生する。ZenMarket 公式に記載も否定も無い |
 | Neokyo F26 | 同上 | 同上 |
 | Jauce F36 | 豪州 GST 10% を代理徴収 | **豪州法が A$1,000 以下の低額輸入について販売者・マーケットプレイス・再送業者に徴収を義務づけている。**5社中4社で確認済み |
-| **Buyee F05** | **国内配送サービス料 ¥500 は存在しない** | 公式料金ページは1回目を3項目（商品代・購入手数料・保証プラン）、2回目を4項目と**網羅的に列挙**しており、この費目が無い。Buyee Cart の料金ページも同構成。**→ `src/data.js` の `domesticServicePerOrder: 500` は過大計上** |
+| **Buyee F05** | **国内配送サービス料 ¥500 は存在しない** | 公式料金ページは1回目を3項目（商品代・購入手数料・保証プラン）、2回目を4項目と**網羅的に列挙**しており、この費目が無い。Buyee Cart の料金ページも同構成。**→ 当時の `src/data.js` の `domesticServicePerOrder: 500` は過大計上だった。2026-09 に是正済みで、現行 `src/lib/pricing/services.ts:431` は「『Domestic handling ¥500』は存在しない費目だった」と注記し、実体である`protectionPlanPerOrderYen: 500`（保証プラン）に置き換わっている** |
 | ZenMarket F07 | PayPal 入金手数料 3.2% ＋ ¥40 | 独語圏の**複数の独立した書き手が一致**。Jauce の ¥40＋3.9% と構造・水準が整合的。公式の方法別表は要ログインで未取得 |
 | Buyee F14 | まとめ梱包は申請制のオプション（額は未取得） | 公式はオプションであることを明記。「申請すれば無料」は `REQUIREMENTS.md` §8.5 の調査由来で、今回の一次取得では無料の引用が取れていない |
 | FROM JAPAN F36 | GST 15% は NZ 向け | 率15%・同一の課税ベース記述。**原文に国名が無い**ので推定。要確認 |
@@ -77,7 +77,7 @@
 <!-- generated:BEGIN countries -->
 | 国 | 関税 | VAT/GST | 通関手数料（経路ごと） |
 |---|---|---|---|
-| **US** | 12.5%† | — | USPS USD 9.35 |
+| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 |
 | **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 |
 | **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 14.88 |
 | **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 |
@@ -99,6 +99,7 @@
 - **DE**: Die Auslagepauschale wird fällig, wenn der Empfänger Einfuhrabgaben bezahlen muss
 - **FR**: frais administratifs liés au traitement de votre dédouanement（税が発生する処理に紐づく）
 - **SG**: S$400 以下は OVR で徴収済みなので SingPost が徴収するものが無い
+- **US**: USPS IMM 712.11「must collect a Postal Service fee from the addressee for each item on which customs duty or Internal Revenue tax **is collected**」／712.2 は「mail items examined and passed free of duty by U.S. Customs」を明示的に除外
 
 → **手数料は独立した費目ではなく、税の発生に従属する。**免税帯では税も手数料も 0。国ごとに単一の定額を無条件で足すモデルは、免税帯で必ず過大になる
 
@@ -149,7 +150,7 @@ Handling       $9.95
 | 州・地方税 | US（州）・CA（州）は郵便番号が必要 |
 
 **画面では「—」と出し、0 と書かない。総額から黙って落とさない。**
-現行 `src/calc.js:122` の `l.amount || 0` はこれを 0 として落としているので、
+現行 `src/lib/pricing/compare.ts:27` の `(l.amount ?? 0)` はこれを 0 として落としているので、
 **C の項目がある限り総額は必ず過小になる。**
 
 ---
@@ -202,15 +203,16 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
 **書き直して、`customs.json` の `rule` を実際に評価するインタプリタにした。**
 その結果、隠れていた欠陥が即座に2件出た（台湾の課税ベース欠落）。
 
+<!-- generated:BEGIN validator -->
 ```
 == 1. スキーマ ==
-  費目 70 行 / rule.type 31 種 / catalog 41 / 国 9 / 通関経路 21
+  費目 70 行 / rule.type 31 種 / catalog 41 / 国 9 / 通関経路 22
 
 == 2. 実請求の再現（customs.json の rule を評価する） ==
   [PASS    ] es-zenmarket-ups-2023-07-26  (循環（率をこの請求書から導いている）)
              IVA 56.10(算出)/56.15(実請求) 手数料 15.89/15.9 手数料VAT 3.34/3.34 合計 342.51/342.52
-  [CONFLICT] ca-canadapost-forum  (独立)
-             GST 99.44/99.44 PST 139.21/139.21 手数料 9.95/9.95 手数料GST 0.50/(実請求に行が無い) 合計 249.09/248.6 ／ マスタは Canada Post 公式の『CA$9.95 + 5% GST』を持つが、この実請求には手数料への GST 行が無い（99.44+139.21+9.95=248.60）。マスタ通りに評価すると 249.10 で 0.50 ずれる。未解決
+  [PASS    ] ca-canadapost-forum  (独立)
+             GST 99.44/99.44 PST 139.21/139.21 手数料 9.95/9.95 手数料GST 0.00/(実請求に行が無い) 合計 248.59/248.6
   [PASS    ] es-fedex-30pct  (循環（率をこの請求書から導いている）)
              手数料 7.54/7.54 手数料込み 9.12/9.12
   [PASS    ] es-correos-selfclear  (循環（率をこの請求書から導いている）)
@@ -219,9 +221,10 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
              仕入先と国内送料が記事に無く Charge1 の内訳 ¥1,184 を分解できない。さらに豪州GSTが総額に現れておらずマスタと矛盾する
 
 
-OK: スキーマ通過 / 再現 3件（うち独立 0件）/ マスタと矛盾 1件
+OK: スキーマ通過 / 再現 4件（うち独立 1件）/ マスタと矛盾 0件
    ※ 独立 = fixture の出典とマスタの数値の出典が別文書であること
 ```
+<!-- generated:END validator -->
 
 ### 直近の結果が意味すること
 
