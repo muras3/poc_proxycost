@@ -1,0 +1,308 @@
+{
+  "what": "The query plan behind data/weights-corpus.json. Kept in the repo so the corpus can be rebuilt and so anyone can see which parts of the catalogue were deliberately sampled and which were not.",
+  "how": "Each query is sent verbatim to the production /api/search, which appends the ten-site filter itself. A query is a sampling decision, not a test: the titles it returns are labelled by hand afterwards.",
+  "groups": [
+    {
+      "id": "figures",
+      "why": "Table category. Scale lines, brand lines and the generic line all need real titles.",
+      "queries": [
+        "フィギュア",
+        "スケールフィギュア 完成品",
+        "1/7スケール フィギュア",
+        "1/6 フィギュア ドール",
+        "ねんどろいど",
+        "figma フィギュア",
+        "ポップアップパレード フィギュア",
+        "nendoroid figure",
+        "ドラゴンボール 悟空 フィギュア",
+        "鬼滅の刃 禰豆子 フィギュア",
+        "初音ミク 1/7 スケール",
+        "ガレージキット 未塗装",
+        "プライズ フィギュア 一番くじ",
+        "anime figure scale japan"
+      ]
+    },
+    {
+      "id": "music",
+      "why": "Table category (cd / lp). Both the disc and the machines and accessories that carry the same words.",
+      "queries": [
+        "中古レコード LP",
+        "CD アルバム 邦楽",
+        "アナログレコード 12インチ",
+        "vinyl record japan",
+        "HMV CD 限定盤",
+        "レコード プレーヤー",
+        "CD 収納ケース"
+      ]
+    },
+    {
+      "id": "books-manga",
+      "why": "Table category. Single volumes, complete sets, novels, and the how-to books that must not resolve.",
+      "queries": [
+        "漫画 全巻セット",
+        "マンガ 単行本 中古",
+        "文庫本 小説",
+        "新書 ハードカバー",
+        "同人誌 とらのあな",
+        "manga complete set",
+        "画集 設定資料集",
+        "攻略本 ムック"
+      ]
+    },
+    {
+      "id": "tcg",
+      "why": "Table category. Raw singles, graded slabs, sealed product and the storage goods that share the words.",
+      "queries": [
+        "ポケモンカード シングル",
+        "遊戯王 カード レリーフ",
+        "ワンピースカード パラレル",
+        "トレカ PSA10 鑑定品",
+        "MTG シングルカード",
+        "pokemon card japanese",
+        "トレカ スリーブ 100枚",
+        "ポケモンカード BOX 未開封"
+      ]
+    },
+    {
+      "id": "kpop",
+      "why": "Table category. Albums, photocards, lightsticks, photobooks — and the DVD line that must stay in its lane.",
+      "queries": [
+        "BTS アルバム 未開封",
+        "K-POP フォトカード トレカ",
+        "ペンライト 公式 ライトスティック",
+        "TWICE 写真集",
+        "SEVENTEEN weverse album",
+        "kpop album photocard",
+        "アイドル DVD ライブ"
+      ]
+    },
+    {
+      "id": "used-luxury",
+      "why": "Table category. Bag shapes are separate lines, so each shape needs its own titles. Watches too.",
+      "queries": [
+        "ルイヴィトン バッグ 中古",
+        "トートバッグ 本革",
+        "ショルダーバッグ 斜めがけ",
+        "ハンドバッグ ブランド 中古",
+        "長財布 中古 ブランド",
+        "腕時計 ロレックス 中古",
+        "セイコー 腕時計 メンズ",
+        "ポーチ クラッチバッグ",
+        "used designer bag japan"
+      ]
+    },
+    {
+      "id": "sneakers",
+      "why": "Table category, but the mainstream athletic gap is known. Both sides of the gap are sampled on purpose.",
+      "queries": [
+        "スニーカー",
+        "ナイキ エアジョーダン 27cm",
+        "地下足袋 祭り",
+        "安全靴 先芯",
+        "new balance sneakers japan",
+        "スニーカー 収納ケース"
+      ]
+    },
+    {
+      "id": "food-tea-sake",
+      "why": "Table category. Bottle sizes, tea, snacks, seasonings — plus the assortment boxes that must not resolve.",
+      "queries": [
+        "日本酒 720ml 純米",
+        "焼酎 一升瓶 1800ml",
+        "抹茶 宇治 缶",
+        "煎茶 茶葉 100g",
+        "お菓子 詰め合わせ 日本",
+        "醤油 ポン酢",
+        "カップ麺 詰め合わせ",
+        "japanese snack box",
+        "japanese sake bottle 720ml"
+      ]
+    },
+    {
+      "id": "fishing-tackle",
+      "why": "Table category with many close lines (reel types, rod piece counts, lure types).",
+      "queries": [
+        "シマノ スピニングリール ステラ",
+        "ダイワ ベイトリール",
+        "電動リール シーボーグ",
+        "エギング ロッド 2ピース",
+        "メタルジグ ジギング",
+        "ワーム ソフトベイト",
+        "PEライン 釣り糸",
+        "shimano reel japan"
+      ]
+    },
+    {
+      "id": "sports-goods",
+      "why": "Table category built entirely from budo. Adult sizes only, so kids sizes are sampled to prove they stay out.",
+      "queries": [
+        "剣道 防具セット",
+        "空手着 上下セット",
+        "竹刀 SSPシール",
+        "袴 剣道 テトロン",
+        "弓道 弓 グラス",
+        "居合刀 模擬刀",
+        "空手着 子供用",
+        "kendo bogu set",
+        "野球 グローブ 硬式"
+      ]
+    },
+    {
+      "id": "games",
+      "why": "Table category with only two lines (console / software) and a hard trap between them.",
+      "queries": [
+        "ファミコン ソフト",
+        "スーパーファミコン 本体",
+        "PS2 ソフト 中古",
+        "ニンテンドースイッチ 本体",
+        "PS5 本体 ディスク版",
+        "ゲームボーイアドバンス 本体",
+        "レトロゲーム 駿河屋",
+        "nintendo switch game japan",
+        "ゲームソフト まとめ売り"
+      ]
+    },
+    {
+      "id": "off-table-electronics",
+      "why": "Deliberately outside the table. Nothing here should resolve; every hit is a misfire we would not otherwise see.",
+      "queries": [
+        "カメラ",
+        "デジタル一眼レフ 中古",
+        "ミラーレス一眼 レンズ",
+        "Canon EOS Kiss",
+        "Nikon Z6II ボディ",
+        "webカメラ USB",
+        "炊飯器 象印",
+        "ドライヤー ヘアアイロン",
+        "掃除機 コードレス",
+        "イヤホン ワイヤレス",
+        "ノートパソコン 中古",
+        "スマホケース iPhone",
+        "Apple Watch バンド"
+      ]
+    },
+    {
+      "id": "off-table-apparel",
+      "why": "Deliberately outside the table. Apparel is recorded in index.json as notObtained, so the corpus must show what it costs us.",
+      "queries": [
+        "ユニクロ Tシャツ メンズ",
+        "パーカー 古着",
+        "ZOZOTOWN ワンピース レディース",
+        "デニムパンツ メンズ",
+        "コート レディース 冬",
+        "着物 帯 中古",
+        "japanese vintage denim"
+      ]
+    },
+    {
+      "id": "off-table-hobby",
+      "why": "Deliberately outside the table. Plastic kits, plush and toys are next to figures and share words with them.",
+      "queries": [
+        "ガンダム プラモデル HG",
+        "レゴ ブロック セット",
+        "ぬいぐるみ 大きい",
+        "プラモデル 塗料 ラッカー",
+        "鉄道模型 Nゲージ",
+        "トミカ ミニカー",
+        "ジグソーパズル 1000ピース"
+      ]
+    },
+    {
+      "id": "off-table-instruments-tools",
+      "why": "Deliberately outside the table. Both are named in index.json as notObtained (instruments) or never attempted (tools).",
+      "queries": [
+        "エレキギター 中古",
+        "エフェクター ペダル",
+        "電子ピアノ キーボード",
+        "マキタ 電動ドライバー",
+        "工具セット 収納",
+        "ミシン 家庭用"
+      ]
+    },
+    {
+      "id": "off-table-misc",
+      "why": "Deliberately outside the table. Cosmetics, stationery, supplements, parts — the long tail a proxy cart really carries.",
+      "queries": [
+        "化粧品 日本製 スキンケア",
+        "サプリメント 国産",
+        "万年筆 パイロット",
+        "文房具 セット",
+        "自転車 パーツ ロード",
+        "PCパーツ グラフィックボード",
+        "香水 メンズ"
+      ]
+    },
+    {
+      "id": "ambiguous",
+      "why": "Words the dictionary is known to over-reach on. These queries exist to catch misfires, not to raise coverage.",
+      "queries": [
+        "フィギュアスケート 衣装",
+        "杖 高齢者 ステッキ",
+        "カメラ ストラップ",
+        "レコード クリーナー",
+        "ワンピース 全巻",
+        "ワンピース レディース 夏",
+        "フィギュア ケース アクリル",
+        "ジュース 700ml",
+        "帯 レコード 付属",
+        "面 マスク",
+        "スニーカー シューキーパー",
+        "1/7 発売日 予約"
+      ]
+    },
+    {
+      "id": "sites",
+      "why": "Site-name queries. Mercari, ZOZO, Toranoana, Mandarake and Suruga-ya are thin in the topic queries above, and a corpus skewed to Amazon and Rakuten would optimise for Amazon and Rakuten.",
+      "queries": [
+        "メルカリ スニーカー",
+        "メルカリ フィギュア 中古",
+        "メルカリ トレカ",
+        "まんだらけ フィギュア",
+        "まんだらけ 同人誌",
+        "駿河屋 中古 フィギュア",
+        "駿河屋 ゲーム ソフト",
+        "とらのあな 同人誌 通販",
+        "ZOZOTOWN シューズ",
+        "HMV アルバム 特典",
+        "ヤフオク 中古 カメラ",
+        "楽天市場 日本酒"
+      ]
+    },
+    {
+      "id": "sites-thin",
+      "why": "A second pass aimed at the five shops the topic queries barely reach. The first 158 queries returned 632 Amazon titles and zero ZOZOTOWN ones, and a corpus shaped like that would optimise the dictionary for Amazon's title format. These queries name brands and goods that live on the thin shops.",
+      "queries": [
+        "ZOZOTOWN BEAMS ニット",
+        "ZOZOTOWN ユナイテッドアローズ シャツ",
+        "ZOZOUSED 古着 ジャケット",
+        "zozo GU スカート",
+        "ZOZOTOWN スニーカー メンズ",
+        "ZOZOTOWN バッグ レディース",
+        "とらのあな 同人誌 特典",
+        "とらのあな アクリルスタンド",
+        "とらのあな 限定 グッズ",
+        "同人誌 委託 通販 とらのあな",
+        "まんだらけ 中野 中古",
+        "まんだらけ ソフビ 怪獣",
+        "まんだらけ セル画",
+        "まんだらけ 同人誌 中古",
+        "まんだらけ 通販 フィギュア",
+        "駿河屋 中古 CD",
+        "駿河屋 トレカ 買取",
+        "駿河屋 プラモデル 中古",
+        "駿河屋 中古 本",
+        "HMV 限定盤 特典",
+        "HMV 洋楽 CD",
+        "HMV Blu-ray 映画",
+        "HMV BOOKS 雑誌",
+        "ヤフオク 当時物 ジャンク",
+        "ヤフオク 中古 まとめ売り",
+        "ヤフオク 落札 レトロ",
+        "ヤフオク 骨董 古道具",
+        "メルカリ 古着 レディース",
+        "メルカリ 本 中古",
+        "メルカリ おもちゃ 中古"
+      ]
+    }
+  ]
+}
