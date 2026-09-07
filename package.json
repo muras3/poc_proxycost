@@ -17,6 +17,7 @@
     "weights:fetch": "node scripts/shopify-probe.mjs",
     "weights:build": "tsx scripts/weights-build.ts",
     "fees:check": "tsx scripts/fees-check.ts",
+    "sites:fetch": "tsx scripts/proxy-sites-fetch.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:all": "vitest run && playwright test",

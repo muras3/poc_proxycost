@@ -28,8 +28,14 @@ import { EMS_SOURCE_URL } from '../src/lib/pricing/ems';
 import { COUNTRIES } from '../src/lib/pricing/countries';
 import { RATES, RATES_AS_OF, RATES_SOURCE_URL } from '../src/lib/pricing/rates';
 import { parseEcbDaily, yenPer, ECB_DAILY_URL } from './lib/ecb';
+import {
+  SOURCES as SITE_SOURCES, fetchSource, diffLabels, unmappedLabels,
+  type SitesStore,
+} from './lib/proxy-sites';
 
 const STORE = 'data/fee-pages.json';
+/** 代行5社の対応サイト一覧の記録。**この Action では書き換えない**（料金ページと同じ作法）。 */
+const SITES_STORE = 'data/proxy-sites.json';
 const UA = 'proxycost-fee-watch/0.1 (+https://github.com/muras3/poc_proxycost)';
 /** XML(ECB) と JSON(日本郵便) も取りに行くので、HTML だけを名乗らない。 */
 const ACCEPT = 'text/html,text/plain,application/json,application/xml;q=0.9,*/*;q=0.8';
@@ -353,6 +359,38 @@ const fx = checkFx(today, ecbBody);
 changed.push(...fx.changed);
 unreachable.push(...fx.unreachable);
 
+/**
+ * 代行5社の「対応サイト」一覧。**ハッシュでは見ない。**トップページは在庫や広告で
+ * 毎回変わるので、ハッシュ差分は毎週必ず出て意味を失う。見るのは
+ * 「並んでいたサイト名が増えたか／消えたか」だけ。
+ * ここも自動更新しない（`npm run sites:fetch -- --write` を人が回す）。
+ */
+const sitesStore: SitesStore | null = existsSync(SITES_STORE)
+  ? (JSON.parse(readFileSync(SITES_STORE, 'utf8')) as SitesStore)
+  : null;
+for (const src of SITE_SOURCES) {
+  const rec = await fetchSource(src, today);
+  seen.push({ status: rec.status ?? 0, url: rec.url, note: `${rec.service} の対応サイト一覧` });
+  if (!rec.ok) {
+    unreachable.push(`- ${rec.service} の対応サイト一覧 — ${rec.reason}: ${rec.url}`);
+    continue;
+  }
+  const { added, gone } = diffLabels(sitesStore?.sources?.[rec.url], rec);
+  if (added.length) {
+    changed.push(`- **${rec.service} の対応サイトが増えた**: ${added.join(' / ')} — ${rec.url}`);
+  }
+  if (gone.length) {
+    changed.push(`- **${rec.service} の対応サイトが消えた**: ${gone.join(' / ')} — ${rec.url}`);
+  }
+  const unmapped = unmappedLabels(rec, sitesStore?.known ?? {});
+  if (unmapped.length) {
+    changed.push(
+      `- ${rec.service} に host を対応づけていない名前がある: ${unmapped.join(' / ')}`
+      + `（data/proxy-sites.json の known に一次情報を見て書く。**推測で埋めない**）`,
+    );
+  }
+}
+
 writeFileSync(STORE, `${JSON.stringify(next, null, 2)}\n`);
 
 // **毎回、対象と HTTP status を全部出す。**「全件 200 だったか」を実行ログだけで確かめられるように。
@@ -370,6 +408,8 @@ const body = [
   unreachable.length ? `## 取得できなかったページ\n\n${unreachable.join('\n')}` : '',
   '\n**数字は自動更新していない。**原文を読んで、変わっていれば',
   '`src/lib/pricing/services.ts` / `ems.ts` / `countries.ts` を手で直し、',
+  '対応サイトが増減していれば `npm run sites:fetch -- --write` で記録を更新し、',
+  '検索対象（`src/lib/search/sites.ts`）に足すかどうかを判断すること。',
   '確認日を更新すること。為替なら `npm run fx:fetch` が出典の値を出すので、',
   'それを `src/lib/pricing/rates.ts` に転記し、参照日と取得日の両方を更新すること。',
 ].filter(Boolean).join('\n\n');
