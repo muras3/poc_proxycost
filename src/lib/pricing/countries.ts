@@ -136,7 +136,20 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   },
   GB: {
     name: 'United Kingdom', ccy: 'GBP', base: 'CIF',
-    dutyFreeLimit: 135, dutyRate: null, dutyTier: 'none',
+    // **£135 超の関税率。**以前は null で画面に「—」を出していた。EU・カナダで直したのと
+    // 同じ欠陥で、しかも英国は課税ベースが CIF なので**関税は VAT の課税ベースに入る**
+    // ——null が 0 に畳まれて VAT まで縮んでいた。
+    //
+    // WTO World Tariff Profiles 2025 の英国プロファイル Part A.1 原文:
+    //   Simple average 2025 — Total 3.7 / Ag 8.6 / **Non-Ag 2.9**
+    //   Trade weighted average 2025 — 3.4 / 12.4 / 2.4
+    // 非農産品の単純平均 **2.9%**（EU 4.1% / カナダ 2.0% と同じ選び方）。
+    //
+    // **反証**: 同 Part A.1 の度数分布で、英国は非農産品の税表の行の **55.2% が無税**
+    // （EU 29.1% / カナダ 79.2%）。0〜5% に 73.2% が集まる分布なので、2.9% は
+    // EU よりは代表性があるが、それでも**最頻値は 0%**。だから tier は estimate。
+    dutyFreeLimit: 135, dutyRate: 0.029, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/GB_e.pdf',
     vatRate: 0.20, vatFreeLimit: 0,
     clearanceBands: [{
       upTo: Number.POSITIVE_INFINITY, amount: 8,
