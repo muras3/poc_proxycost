@@ -148,12 +148,13 @@
 | Jauce の入金手数料の掛かり方 | 「¥40 + 3.9%」。定額が先に乗り率が gross-up で効くと解釈しているが原文未確認 |
 | Jauce の紹介報酬の有無 | 確認できていない。**払うと書けないので「払わない」扱い**にしている |
 
-**Brave（キーが無いため実測できていない）**
+**Brave（2026-09-07 に本番の `/api/search` を 55 クエリ叩いて実測。`docs/audit/search-reality.md`）**
 
 | | |
 |---|---|
-| $5/1,000 プランに storage rights が含まれるか | **公式に明記が無い。**含まれないと検索結果をキャッシュできず、1検索ごとに必ず課金される。**Brave に問い合わせが必要** |
-| EC の商品ページで thumbnail / product.price を返すか | スキーマには存在するが型が `any?` で返る保証の記載が無い。実装は zod で受けて**通らなければ null に落とす**（推測で埋めない）。返る割合の実測はキー取得後 |
+| $5/1,000 プランに storage rights が含まれるか | <https://brave.com/search/api/> に「結果の一部または全部を保存したいならば、保存権を明示的に付与するプランに加入する必要がある」とある（確認日 2026-09-07）。**Search プランがそれに当たるとは書かれていない。**いま `cache.ts` は 24h 保存している。**Brave に問い合わせが必要（未決のまま）** |
+| EC の商品ページで product.price を返すか | **返らない。**55 クエリ 1,090 件で 0 件。しかも現在の Web Search のドキュメント本文に `product` という語が1度も出てこない（確認日 2026-09-07） |
+| thumbnail を返すか | **41%（1,090 件中 451 件）**。ドキュメントには載っていないが実測では返る。0% のクエリが 8 つあった |
 
 **設計・方針**
 
@@ -196,10 +197,22 @@ Handling Fee **¥500/点**（`500 yen per item`）／Product Protection Plan ¥5
 Neokyo（45日）・FROM JAPAN（60日、一次原文取得）・ZenMarket（60日、準一次）は
 いずれも「貯めて選択 → 1個口」型。**Buyee だけが外れ値。**
 
-**Brave Search API**：`site:` 演算子、Goggles、`country=JP` / `search_lang=ja` は使える。
-`thumbnail` と `product.price` / `offers[].price` / `gtin13` はスキーマに存在するが
-型が `any?` で返却保証の記載が無い。`availability`（在庫）は**取得不可**。
-1クエリ最大20件（offset 9 まで＝実質200件）。$5/1,000 requests、月$5クレジット、50 QPS。
+**Brave Search API**（2026-09-06 の記載を 2026-09-07 に原文で取り直して訂正）:
+`site:` 演算子、Goggles、`country=JP` / `search_lang=ja` は使える。
+1クエリ最大20件（offset 0–9 ＝実質200件）。$5/1,000 requests、月$5クレジット、50 QPS。
+
+**訂正**: `thumbnail` と `product.price` は「スキーマに存在する」と書いていたが、
+現在の Web Search のドキュメント本文（全文取得）には `product` も `thumbnail` も
+**1度も出てこない**。実測でも `product.price` は 1,090 件で 0 件、`thumbnail` は 41%。
+**ドキュメントに書かれた検索演算子は `"..."` / `-` / `site:` / `filetype:` の4つだけで、
+`OR` も括弧も書かれていない。**いま `siteFilter()` が投げている
+`(site:a OR site:b OR …)` は**ドキュメントに無い形**（実測では効いている）。
+クエリ長・演算子の個数の上限は公式には見つからなかった
+（`/documentation/resources/search-operators` は 2026-09-07 時点で 404）。
+`extra_snippets`（1件あたり最大5本の追加抜粋）は未使用。
+出典: <https://api-dashboard.search.brave.com/app/documentation/web-search/responses>
+／ <https://brave.com/search/api/>（いずれも確認日 2026-09-07）。詳細は
+`docs/audit/search-reality.md`。
 
 ## 9. 工程と日数
 

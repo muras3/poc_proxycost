@@ -96,4 +96,24 @@ test.describe('the calculator survives an unusable search', () => {
       : await page.getByRole('heading', { name: /^Cart \(/ }).innerText();
     expect(after, 'a failed fetch must not add an item').toBe(before);
   });
+
+  test('pasting a search page says what to paste instead, and adds nothing', async ({ page }) => {
+    await page.goto('/');
+    const banner = page.getByRole('dialog', { name: 'Cookie consent' });
+    if (await banner.count()) await banner.getByRole('button', { name: 'Reject' }).click();
+
+    const cart = async () => (await page.getByRole('button', { name: /^Cart \(/ }).count()
+      ? page.getByRole('button', { name: /^Cart \(/ }).innerText()
+      : page.getByRole('heading', { name: /^Cart \(/ }).innerText());
+    const before = await cart();
+
+    // Brave が返してくる形そのまま。実測ではヤフオクの候補 192 件中 189 件がこれだった
+    // （docs/audit/search-reality.md）。取りに行っても値段は書かれていない。
+    await page.getByLabel('Listing URL or keyword')
+      .fill('https://auctions.yahoo.co.jp/closedsearch/closedsearch/nendoroid');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+
+    await expect(page.getByText(/not one listing/i)).toBeVisible();
+    expect(await cart(), 'a search page must not become a cart row').toBe(before);
+  });
 });
