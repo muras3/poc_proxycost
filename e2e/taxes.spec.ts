@@ -166,16 +166,19 @@ test('picking Ontario turns the estimate into HST 13%, and Alberta into a real z
   expect(Math.abs((gst + ontario) / (gst / 0.05) - 0.13)).toBeLessThan(0.001);
 
   // アルバータは 0。**「調べていない」ではなく「国境では取られない」**と書いてある。
-  const onTotal = (await readRanking(page))[0]!.total;
+  // **総額は額の付いた行から取る。**国際送料が取れていない行は総額を名乗らない。
+  const cheapestTotal = async () =>
+    (await readRanking(page)).find((r) => r.total != null)!.total!;
+  const onTotal = await cheapestTotal();
   await page.getByLabel('Province').selectOption('AB');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeLessThan(onTotal);
+  await expect.poll(cheapestTotal).toBeLessThan(onTotal);
   const ab = await rowCells(costRow(await openRankRow(page, 0), 'Provincial tax').first());
   expect(ab[1]).toBe('¥0');
   expect(ab[0]).toContain('no provincial tax at the border');
 
   // ケベックは一番高い（QST 9.975%）。
   await page.getByLabel('Province').selectOption('QC');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(onTotal);
+  await expect.poll(cheapestTotal).toBeGreaterThan(onTotal);
   const qc = await rowCells(costRow(await openRankRow(page, 0), 'Provincial tax').first());
   expect(qc[0]).toContain(`${+(CA_PROVINCES.QC.rate * 100).toFixed(3)}%`);
 });
