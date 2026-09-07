@@ -255,7 +255,31 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   },
   AU: {
     name: 'Australia', ccy: 'AUD', base: 'FOB',
-    dutyFreeLimit: 1000, dutyRate: null, dutyTier: 'none',
+    // **A$1,000 超の関税率。**以前は null で画面に「—」を出していた。7カ国で最後まで
+    // 残っていた穴で、英・EU・加と同じ理由で埋める——「関税が無い」ではなく
+    // 「我々が調べていない」であり、しかも豪州は関税が GST の課税ベースに入るので
+    // null が 0 に畳まれると GST まで縮む。
+    //
+    // WTO World Tariff Profiles 2025 の豪州プロファイル Part A.1 原文:
+    //   MFN applied, Simple average 2025 — Total 2.1 / Ag 1.1 / **Non-Ag 2.3**
+    //   Trade weighted average 2025 — 2.5 / 2.6 / 2.5
+    // 非農産品の単純平均 **2.3%** を採る（英・EU・加と同じ選び方。加重平均はその国の
+    // 実際の輸入額の構成で、個人小包の中身の分布ではない）。
+    //
+    // **反証1: 度数分布の上では、この率が当たる品目は存在しない。**同 Part A.1 の
+    // 非農産品 MFN applied 2025 は **無税 54.9% / 0〜5% 45.1% / 5% 超 0%**。
+    // つまり実際の税率は **0% か 5% のどちらか**で、2.3% はその間の平均でしかない。
+    //
+    // **反証2（こちらが重い）: 日本原産なら、ほぼ確実に無税。**同プロファイルの
+    // 主要輸入相手先の表（Part B）の原文——豪州の非農産品輸入で
+    //   `2. Japan 2024 … Simple 1.7 / Weighted 0.0 / 無税の税表行 99.5% / 無税の輸入額 100.0%`
+    // 日豪EPA（JAEPA）が効いており、**日本原産の非農産品は輸入額ベースで 100% が無税。**
+    // それでも 2.3% を置くのは、**特恵税率は原産地証明を伴って初めて適用される**もので、
+    // 代行が送る小包にそれが付く根拠を我々が持っていないため。
+    // **持っている一次情報の範囲で高めに倒している**ことをここに残す。
+    // 原産地証明の扱いが分かれば、この行は 0 に近づく（`docs/TODO-NEXT.md`）。
+    dutyFreeLimit: 1000, dutyRate: 0.023, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/AU_e.pdf',
     vatRate: 0.10, vatFreeLimit: 0,
     // ABF の Import Processing Charge の表（原文は Cargo Channel に **Post** を含む）。
     // 電子申告（Electronic）の行を採る——書類申告（Documentary、A$90 / A$192）は例外的で、
