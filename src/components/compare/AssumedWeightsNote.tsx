@@ -140,6 +140,7 @@ export function AssumedMark({ className = '' }: { className?: string }) {
   return (
     <span
       aria-hidden
+      data-testid="assumed-mark"
       title="No weight data for this title — the number is our placeholder"
       className={
         'inline-flex h-[1.05em] w-[1.05em] shrink-0 items-center justify-center rounded-full'
