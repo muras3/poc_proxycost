@@ -63,6 +63,18 @@ async function taxRowsOf(li: Locator): Promise<{ label: string; cells: string[] 
   return out;
 }
 
+/**
+ * **総額が出ている行だけ。**国際送料が取れていない行（既定の宛先＝米国では
+ * Neokyo。日本郵便を売っていない）は 'NOT COMPARABLE' と `—` を出し、総額を
+ * 名乗らない。「安くなった」「高くなった」「昇順だ」はどれも額のある行の話なので、
+ * 額の無い行を混ぜると、比べていないものを比べたことになる。
+ */
+const priced = (rows: RankRow[]): (RankRow & { total: number })[] =>
+  rows.filter((r): r is RankRow & { total: number } => r.total != null);
+
+/** 順位が付いている行のうち1位。額の無い行を1位と読まない。 */
+const first = (rows: RankRow[]) => priced(rows)[0]!;
+
 /** 行の開示文から報酬の有無を読む。'pays us nothing' 以外は我々に報酬を払う社。 */
 const paysUs = (r: RankRow) => !/pays us nothing/.test(r.text);
 
@@ -79,10 +91,13 @@ function rankOf(rows: RankRow[], name: string, variant: string | null = null): n
 
 test('1. the ranking is sorted by total, ascending, and so are the gaps', async ({ page }) => {
   await gotoCompare(page);
-  const rows = await readRanking(page);
+  const all = await readRanking(page);
+  // **順位が付いている行だけが並びの対象。**既定の宛先（米国）では Neokyo が
+  // 日本郵便を売っていないので、その行は 'NOT COMPARABLE' と `—` を出して末尾に回る。
+  const rows = all.filter((r) => r.comparable);
 
-  expect(rows.length).toBeGreaterThanOrEqual(5);
-  expect(isNonDecreasing(rows.map((r) => r.total))).toBe(true);
+  expect(rows.length).toBeGreaterThanOrEqual(4);
+  expect(isNonDecreasing(rows.map((r) => r.total!))).toBe(true);
   expect(isNonDecreasing(rows.map((r) => r.diff))).toBe(true);
 
   // 1位だけが CHEAPEST で、差額は 0。
@@ -90,10 +105,17 @@ test('1. the ranking is sorted by total, ascending, and so are the gaps', async 
   expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
   expect(rows[0]!.diff).toBe(0);
 
+  // 比べられない行は総額も差額も名乗らず、なぜ比べられないのかを書く。
+  for (const r of all.filter((x) => !x.comparable)) {
+    expect(r.total, `${r.name} prints a total it cannot stand behind`).toBeNull();
+    expect(r.cheapest).toBe(false);
+    expect(r.text).toMatch(/does not (sell|ship)|no published rate/);
+  }
+
   // 差額と総額が同じ順位付けを指していること。総額は ¥100 丸めなので誤差を許す。
   for (const r of rows.slice(1)) {
     expect(r.diff).toBeGreaterThan(0);
-    expect(Math.abs(r.total - rows[0]!.total - r.diff)).toBeLessThanOrEqual(100);
+    expect(Math.abs(r.total! - rows[0]!.total! - r.diff)).toBeLessThanOrEqual(100);
   }
 });
 
@@ -104,18 +126,20 @@ test('2. rank is decided by the total alone — paying us buys neither the top s
   await expect(page.getByText(/ranked by the total that reaches your door/i)).toBeVisible();
   await expect(page.getByText(/pay us and some do not — that never moves a row/i)).toBeVisible();
 
-  const rows = await readRanking(page);
-  expect(rows.length).toBeGreaterThanOrEqual(5);
+  const all = await readRanking(page);
+  const rows = all.filter((r) => r.comparable);
+  expect(rows.length).toBeGreaterThanOrEqual(4);
 
-  // 報酬の有無は全行が名乗る。名乗らない行があると混在を確かめようがない。
-  for (const r of rows) expect(r.text, `${r.name} does not disclose the referral`).toMatch(/pays us/);
+  // 報酬の有無は全行が名乗る（比べられない行も含む）。名乗らない行があると混在を
+  // 確かめようがない。
+  for (const r of all) expect(r.text, `${r.name} does not disclose the referral`).toMatch(/pays us/);
 
   // 並びは総額の昇順そのもの。報酬で並べ替えられていないことを、画面の並びで見る。
   const key = (r: RankRow) => `${r.name}${r.variant ? `/${r.variant}` : ''}`;
-  expect(rows.map(key)).toEqual([...rows].sort((a, b) => a.total - b.total).map(key));
+  expect(rows.map(key)).toEqual([...rows].sort((a, b) => a.total! - b.total!).map(key));
 
   // 1位が1位である理由は総額が最小であること。CHEAPEST もそこにだけ付く。
-  expect(rows[0]!.total).toBe(Math.min(...rows.map((r) => r.total)));
+  expect(rows[0]!.total).toBe(Math.min(...rows.map((r) => r.total!)));
   expect(rows[0]!.cheapest).toBe(true);
   expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
 
@@ -142,10 +166,12 @@ test('2. rank is decided by the total alone — paying us buys neither the top s
   await expect(cart(page).getByRole('listitem')).toHaveCount(1);
   await expect(rankButtons(page)).toHaveCount(rowsBefore - 1);
 
-  const single = await readRanking(page);
+  // **最下位は順位が付いた行の最下位。**比べられない行はその下に置かれるが、
+  // それは「いちばん高い」ではなく「値段が付いていない」なので数えない。
+  const single = (await readRanking(page)).filter((r) => r.comparable);
   expect(paysUs(single[single.length - 1]!), 'the bottom row still pays us — both sides must be able to land there').toBe(false);
-  expect(isNonDecreasing(single.map((r) => r.total))).toBe(true);
-  expect(single[0]!.total).toBe(Math.min(...single.map((r) => r.total)));
+  expect(isNonDecreasing(single.map((r) => r.total!))).toBe(true);
+  expect(single[0]!.total).toBe(Math.min(...single.map((r) => r.total!)));
   expect(single[0]!.cheapest).toBe(true);
 });
 
@@ -229,6 +255,11 @@ const PLUSH = 'plush toy, no weight data';
 
 test('5. an item with no weight data gets an assumed weight, says so, and is corrected in place', async ({ page }) => {
   await gotoCompare(page);
+  // **宛先をドイツにする。**後半が見せたいのは「仮置きの重量が1位を決めるので、
+  // 決めていると画面がその場で言う」こと。その反転は Neokyo と FROM JAPAN の間で
+  // 起き、**Neokyo は米国宛に日本郵便を売っていない**ので、米国では 500 g でも
+  // 10 kg でも FROM JAPAN のまま＝この警告そのものが出ない。
+  await page.getByLabel('Ship to').selectOption('DE');
 
   // 'plush toy' はどのラインにも当たらない。以前は重量 null で「段ごとの総額」に落ちていた。
   // いまは仮置きの 1,000 g が入り、**仮置きだと名乗り**、その場で直せる。
@@ -242,11 +273,11 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   await expect(page.getByRole('region', { name: 'Totals by weight step' })).toHaveCount(0);
   await expect(c.getByText(/weight unknown/i)).toHaveCount(0);
 
-  const assumed = await readRanking(page);
+  const assumed = priced(await readRanking(page));
   expect(assumed.length).toBeGreaterThanOrEqual(5);
   for (const r of assumed) expect(r.total).toBeGreaterThan(0);
 
-  // **この品の重量が1位を決める**（既定の2点＋仮置き1点、米国。2026-09-06 実測:
+  // **この品の重量が1位を決める**（既定の2点＋仮置き1点、ドイツ。2026-09-06 実測:
   // 500 g で Neokyo、10 kg で FROM JAPAN）。仮置きの数字を信じるなと、その場で言う。
   await expect(li.getByText(DECIDES)).toBeVisible();
   const flag = (await li.getByText(DECIDES).innerText()).replace(/\s+/g, ' ');
@@ -259,17 +290,20 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
 
   // 軽くすれば総額は下がり、重くすれば上がる。
   await weightBox(page, PLUSH).fill('200');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeLessThan(assumed[0]!.total);
+  await expect.poll(async () => first(await readRanking(page)).total)
+    .toBeLessThan(assumed[0]!.total);
   const light = await readRanking(page);
   await weightBox(page, PLUSH).fill('5000');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(assumed[0]!.total);
-  const heavy = await readRanking(page);
+  await expect.poll(async () => first(await readRanking(page)).total)
+    .toBeGreaterThan(first(assumed).total);
+  const heavy = priced(await readRanking(page));
   for (const r of heavy) {
-    const l = light.find((x) => x.name === r.name && x.variant === r.variant);
+    const l = priced(light).find((x) => x.name === r.name && x.variant === r.variant);
     if (l) expect(r.total, `${r.name} did not get dearer with weight`).toBeGreaterThan(l.total);
   }
   // そして1位が替わる。これが「重量を入れてもらうしかない」理由そのもの。
-  expect(light[0]!.name, 'the winner did not change between 200 g and 5 kg').not.toBe(heavy[0]!.name);
+  expect(first(light).name, 'the winner did not change between 200 g and 5 kg')
+    .not.toBe(heavy[0]!.name);
 
   // 打ち込んだ数字は利用者のもの。✎ と「entered by you」、そして仮置きに戻す道。
   await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(1);
@@ -332,10 +366,13 @@ test('22. two rows with the same total share the rank, and both are CHEAPEST', a
 });
 
 test('23. a tie below the top shares its rank too, and does not move the winner', async ({ page }) => {
-  // 1点 ¥12,800・1,450 g・ヤフオク・米国で Buyee と Neokyo が ¥26,761 の2位タイ。
+  // 1点 ¥12,800・1,450 g・ヤフオク・**ドイツ**で Buyee と Neokyo が ¥28,417 の3位タイ。
   // **旧実装はここで社名の辞書順に割っていて、報酬を払う Buyee が、報酬ゼロの Neokyo を
   // 常に上に置いていた**（同額 3,938 組のうち 3,716 組が同じ向き）。
+  // **宛先が米国からドイツに変わった。**同額になる2社の片方（Neokyo）は米国宛に
+  // 日本郵便を売っていないので、米国ではこの同額そのものが起きない。
   await gotoCompare(page);
+  await page.getByLabel('Ship to').selectOption('DE');
   await emptyCart(page);
   await addByHand(page, TIE, 12800);
   await openCart(page);
@@ -347,8 +384,8 @@ test('23. a tie below the top shares its rank too, and does not move the winner'
   const tied = rows.filter((r) => r.tied);
   expect(tied.map((r) => r.name).sort()).toEqual(['Buyee', 'Neokyo']);
   expect(tied[0]!.shownRank).toBe(tied[1]!.shownRank);
-  expect(tied[0]!.shownRank).toBe(2);
-  // 2位タイなので CHEAPEST は付かず、差額も同じ。
+  expect(tied[0]!.shownRank).toBe(3);
+  // 上位ではない同額なので CHEAPEST は付かず、差額も同じ。
   expect(tied.some((r) => r.cheapest)).toBe(false);
   expect(tied[0]!.diff).toBe(tied[1]!.diff);
 
@@ -363,8 +400,8 @@ test('23. a tie below the top shares its rank too, and does not move the winner'
   expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
   expect(rows[0]!.shownRank).toBe(1);
   expect(rows[0]!.tied).toBe(false);
-  // 同順位が2つ在るぶん、そのあとは 4 に飛ぶ。
-  expect(rows.map((r) => r.shownRank)).toEqual([1, 2, 2, 4, 5]);
+  // 同順位が2つ在るぶん、そのあとは 5 に飛ぶ（3-3 のあと 5）。
+  expect(rows.map((r) => r.shownRank)).toEqual([1, 2, 3, 3, 5]);
 });
 
 test('6. one more of an item raises the total', async ({ page }) => {
@@ -375,13 +412,13 @@ test('6. one more of an item raises the total', async ({ page }) => {
   await cart(page).getByRole('button', { name: /^One more of / }).first().click();
 
   await expect
-    .poll(async () => (await readRanking(page))[0]!.total)
-    .toBeGreaterThan(before[0]!.total);
+    .poll(async () => first(await readRanking(page)).total)
+    .toBeGreaterThan(first(before).total);
 
   // 全行が上がる。1点増えて安くなる社は無い。
-  const after = await readRanking(page);
+  const after = priced(await readRanking(page));
   for (const r of after) {
-    const same = before.find((b) => b.name === r.name && b.variant === r.variant);
+    const same = priced(before).find((b) => b.name === r.name && b.variant === r.variant);
     if (same) expect(r.total).toBeGreaterThan(same.total);
   }
 });
@@ -413,10 +450,12 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   for (const name of HANDMADE) await tellWeight(page, name, 200);
 
   const before = await readRanking(page);
+  // 6行のうち、額が付くのは5行。**Neokyo は米国宛に日本郵便を売っていない。**
   expect(before).toHaveLength(6);
-  expect(before[0]!.name).toBe('Neokyo');
-  expect(rankOf(before, 'ZenMarket')).toBe(4);
-  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(3);
+  expect(priced(before)).toHaveLength(5);
+  expect(first(before).name).toBe('FROM JAPAN');
+  expect(rankOf(before, 'ZenMarket')).toBe(3);
+  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(2);
 
   // 国内送料が無くなる前の内訳。仮定の ~¥800 × 5点。
   const liBefore = await openRankRow(page, 0);
@@ -429,9 +468,9 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   for (let i = 0; i < HANDMADE.length; i++) await boxes.nth(i).check();
 
   await expect
-    .poll(async () => (await readRanking(page))[0]!.total)
-    .toBeLessThan(before[0]!.total);
-  const after = await readRanking(page);
+    .poll(async () => first(await readRanking(page)).total)
+    .toBeLessThan(first(before).total);
+  const after = priced(await readRanking(page));
 
   // 国内送料は消えた。**「未取得」ではなく確定した ¥0** として出る。
   const liAfter = await openRankRow(page, 0);
@@ -442,15 +481,24 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // Neokyo の ¥350 に国内送料は含まれない（公式は「商品代＋国内送料」に加算する形）。
   // 5社とも国内送料は別建てなので、送料込み出品は全社に等しく効く
   // （docs/DESIGN-NOTES.md §1「逆転条件」）。
-  expect(after[0]!.name, 'seller-paid shipping moved the cheapest row').toBe(before[0]!.name);
-  expect(after[0]!.name).toBe('Neokyo');
-  expect(after[1]!.name).toBe(before[1]!.name);
+  expect(after[0]!.name, 'seller-paid shipping moved the cheapest row').toBe(first(before).name);
+  // **1位が Neokyo から FROM JAPAN に替わった。**送料込み出品の効き方が変わった
+  // からではなく、この画面の宛先（米国）に Neokyo が居なくなったから
+  // ——日本郵便を売っておらず、行は 'NOT COMPARABLE' になる。
+  // 主張（送料込みは全社に等しく効くので1位は動かない）はそのまま成り立っている。
+  expect(after[0]!.name).toBe('FROM JAPAN');
+  // 2位は**動く**——それがこのテストの後半の主張（下の rankOf）。以前ここで
+  // 「2位も動かない」と書けていたのは、1位が Neokyo で ZenMarket の繰り上がりが
+  // 3位止まりだったから。Neokyo が米国の盤面から抜けて1つずつ繰り上がり、
+  // ZenMarket は 3位 → 2位に上がる。
+  expect(priced(before)[1]!.name).toBe('Buyee');
+  expect(after[1]!.name).toBe('ZenMarket');
   expect(isNonDecreasing(after.map((r) => r.total))).toBe(true);
 
   // 全社が同じ国内送料（~¥800 × 5点）のぶん下がる。総額は ¥100 丸めなので誤差を許す。
   const DOMESTIC = 4000;
   const dropOf = (name: string, variant: string | null = null) => {
-    const b = before.find((r) => r.name === name && r.variant === variant);
+    const b = priced(before).find((r) => r.name === name && r.variant === variant);
     const a = after.find((r) => r.name === name && r.variant === variant);
     expect(b && a, `${name} disappeared from the ranking`).toBeTruthy();
     return b!.total - a!.total;
@@ -462,12 +510,14 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // 送金合計に率で乗る費目を持つ社は、その率のぶん余計に下がる（ZenMarket の入金手数料 3.5%）。
   expect(dropOf('ZenMarket')).toBeGreaterThanOrEqual(DOMESTIC + 100);
   // 定額の費目しか持たない社は、国内送料ちょうどしか下がらない。
-  expect(dropOf('Neokyo')).toBeLessThanOrEqual(DOMESTIC + 100);
+  // （以前ここは Neokyo で見ていた。米国の盤面に居なくなったので、同じく
+  //  送金額に率を掛けない FROM JAPAN で見る。）
+  expect(dropOf('FROM JAPAN')).toBeLessThanOrEqual(DOMESTIC + 100);
 
   // **動くのは中位。**国内送料が消えた分だけ率の費目が軽くなり、
-  // ZenMarket が Buyee, consolidated を抜いて 4位 → 3位に上がる。
-  expect(rankOf(after, 'ZenMarket')).toBe(3);
-  expect(rankOf(after, 'Buyee', 'consolidated')).toBe(4);
+  // ZenMarket が Buyee, consolidated を抜いて 3位 → 2位に上がる。
+  expect(rankOf(after, 'ZenMarket')).toBe(2);
+  expect(rankOf(after, 'Buyee', 'consolidated')).toBe(3);
 });
 
 test('8. editing a price marks that number as ours, not theirs', async ({ page }) => {
@@ -577,7 +627,8 @@ test('16. a weight from our table is shown with its source and spread, can be ov
   // 上書きすると総額が動き、数字は利用者のものになる。
   const before = await readRanking(page);
   await weightBox(page, FIGURE).fill('3000');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(before[0]!.total);
+  await expect.poll(async () => first(await readRanking(page)).total)
+    .toBeGreaterThan(first(before).total);
   await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(1);
   await expect(li.getByText('entered by you')).toBeVisible();
   // 表の出どころは消える。利用者の数字に「n=647」を添えたら出所の偽装になる。
@@ -593,8 +644,14 @@ test('16. a weight from our table is shown with its source and spread, can be ov
 
 test('17. when the weight decides the winner, the note says so and takes you to the box that matters', async ({ page }) => {
   await gotoCompare(page);
+  // **宛先をドイツにする。**この画面が見せたいのは「重量が1位を決めるときは
+  // そう書いて、決めている品の入力に連れて行く」こと。その反転は Neokyo と
+  // FROM JAPAN の間で起き、**Neokyo は米国宛に日本郵便を売っていない**
+  // （自社の見積が3方式すべてに "Not available or suspended in your country."）。
+  // 米国では反転が起きないので、この導線を米国では実演できない。
+  await page.getByLabel('Ship to').selectOption('DE');
 
-  // 既定の2点は FROM JAPAN が ×1/3〜×3 で安定。何も言わず、誰も名指ししない。
+  // 既定の2点は ×1/3〜×3 で安定。何も言わず、誰も名指ししない。
   await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
   await expect(page.getByText(DECIDES)).toHaveCount(0);
@@ -648,8 +705,9 @@ test('18. a single item: the weight does not decide anything, so we do not nag',
   // それでも直せる。直せば総額は動く（1位は動かない）。
   const before = await readRanking(page);
   await weightBox(page, PLUSH).fill('8000');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).toBeGreaterThan(before[0]!.total);
-  expect((await readRanking(page))[0]!.name).toBe(before[0]!.name);
+  await expect.poll(async () => first(await readRanking(page)).total)
+    .toBeGreaterThan(first(before).total);
+  expect(first(await readRanking(page)).name).toBe(first(before).name);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -672,15 +730,22 @@ test('18b. the shipping method is a control, and picking one moves every total',
   // **既定は EMS。**「運べる中で最安」を既定にすると最安はたいてい船便（1〜3か月）で、
   // ほぼ誰も払わない額を総額として出すことになる。
   await expect(picker).toHaveValue('ems');
-  const before = (await readRanking(page)).map((r) => r.total);
-  expect(before.length).toBeGreaterThan(0);
+  // **方式で動くのは送料が乗っている行だけ。**既定の宛先（米国）では Neokyo が
+  // 日本郵便を売っていないので、どの方式を選んでもその行に額は付かない
+  // ——動かないのが正しい。額の無い行を「安くなっていない」と数えない。
+  // **Buyee は2行（同梱／既定）出るので、社名だけを鍵にすると片方が消える。**
+  const keyOf = (r: RankRow) => `${r.name}${r.variant ? `/${r.variant}` : ''}`;
+  const before = new Map(priced(await readRanking(page)).map((r) => [keyOf(r), r.total]));
+  expect(before.size).toBeGreaterThan(0);
 
   // 船便に切り替えると総額が下がる。**同時に日数が読めること。**
   await picker.selectOption('parcel-surface');
-  await expect.poll(async () => (await readRanking(page))[0]!.total).not.toBe(before[0]);
-  const after = (await readRanking(page)).map((r) => r.total);
-  for (let i = 0; i < after.length; i++) {
-    expect(after[i], `${i} 行目が船便で安くなっていない`).toBeLessThan(before[i]!);
+  await expect.poll(async () => first(await readRanking(page)).total)
+    .not.toBe([...before.values()][0]);
+  const after = priced(await readRanking(page));
+  expect(after.length).toBe(before.size);
+  for (const r of after) {
+    expect(r.total, `${keyOf(r)} が船便で安くなっていない`).toBeLessThan(before.get(keyOf(r))!);
   }
 
   // 行を開くと、額の隣に所要日数と追跡の有無がある。

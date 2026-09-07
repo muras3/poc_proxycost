@@ -36,6 +36,13 @@ function tiedText(row: Row, rows: Row[]): string {
 }
 
 function totalText(row: Row, result: CompareResult): string {
+  // **比べられない行の総額は出さない。**`Row.total` は費目の合計なので、国際送料が
+  // 取れていない行では**最大の費目を欠いた数字**になる。それを揃っている総額の隣に
+  // 同じ書式で並べると、いちばん安い行に見える（米国の Neokyo は日本郵便を売って
+  // いないので ¥22,100 と出ていた。送料の乗った最安は ¥30,000 台）。
+  // 「¥0 と書かず `—` と書く」（Not included in the total — this is not zero）の
+  // 総額版。差額側は既に 'NOT COMPARABLE' と言っているので、こちらも黙る。
+  if (!row.comparable) return '—';
   if (result.rowTotalRange) {
     const r = result.rowTotalRange[row.id];
     if (r) return `${row.approximate ? '~' : ''}${yenRange(r, true)}`;

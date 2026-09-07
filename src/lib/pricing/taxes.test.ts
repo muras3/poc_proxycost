@@ -142,7 +142,15 @@ describe('the US prepayment fee is disclosed as a cost we cannot price', () => {
     const rows = rowsFor('US', 15000);
     for (const row of rows) {
       expect(row.total, row.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
-      expect(row.comparable, row.id).toBe(true);
+    }
+    // **比較不能になる行があるとしても、理由は前払手数料ではない。**
+    // 米国で落ちるのは Neokyo の1行だけで、その理由は日本郵便を売っていないこと。
+    // 「額を出せない費目を開示しても盤面は壊れない」という主張はそのまま生きている。
+    const blocked = rows.filter((r) => !r.comparable);
+    expect(blocked.map((r) => r.serviceId)).toEqual(['neokyo']);
+    for (const row of blocked) {
+      expect(row.notComparableReason, row.id).toContain('does not ship');
+      expect(row.notComparableReason, row.id).not.toContain(PREPAY_LABEL);
     }
   });
 
