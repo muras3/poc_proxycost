@@ -40,8 +40,11 @@ function paint(t: Tone, o: Opt = {}) {
   const base: Record<string, string | number> = {
     fill,
     stroke: 'currentColor',
-    strokeOpacity: 0.62,
-    strokeWidth: o.sw ?? 0.9,
+    // **輪郭が形を読ませている唯一の線。**塗りは 0.14〜0.42 の濃度段しかないので、
+    // ここを薄くすると、白い見本帳では見えていても段ボールの内側のような
+    // 中間色の地に置いた瞬間にコントラストが 1.1:1 まで落ちて形が消える。
+    strokeOpacity: 0.95,
+    strokeWidth: o.sw ?? 1.2,
     strokeLinejoin: 'round',
     strokeLinecap: 'round',
     vectorEffect: 'non-scaling-stroke',
