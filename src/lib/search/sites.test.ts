@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isListingUrl, siteFilter, siteFromUrl } from './sites';
+import { SITES, isListingUrl, siteFilter, siteFromUrl } from './sites';
 
 describe('siteFromUrl', () => {
   it.each([
@@ -91,5 +91,26 @@ describe('isListingUrl', () => {
 
   it('URL でないものは false（例外を投げない）', () => {
     expect(isListingUrl('ねんどろいど')).toBe(false);
+  });
+});
+
+describe('検索対象の集合', () => {
+  // 「代行業者が実際に使うサイトのトップ20以内」に収める。
+  // 20 を超えると 1 クエリの site: の並びが長くなり、Brave のドキュメントに
+  // 上限の記載が無いまま挙動に賭けることになる（docs/audit/search-reality.md §4）。
+  it('20 サイト以内', () => {
+    expect(SITES.length).toBeLessThanOrEqual(20);
+  });
+
+  it('site: は1クエリに収める（次ページは1回 $0.005 の追加課金）', () => {
+    // siteFilter() が返すのは OR で繋いだ1本の並び。分割すると課金が倍になる。
+    expect(siteFilter().split(' OR ')).toHaveLength(SITES.length);
+    expect(siteFilter()).not.toContain('\n');
+  });
+
+  it('どのサイトも出品ページの形を持っている（一覧を候補に混ぜないため）', () => {
+    for (const s of SITES) {
+      expect(s.listing.length, `${s.id} に listing が無い`).toBeGreaterThan(0);
+    }
   });
 });
