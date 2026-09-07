@@ -5,6 +5,17 @@
 //   none       … 未取得。画面では「—」。**0 とは書かない**
 export type Tier = 'fixed' | 'estimate' | 'unverified' | 'none';
 
+/**
+ * 国際配送の方式。**日本郵便が地帯別の料金表を公表していて、通関経路が郵便のままで、
+ * 実重量課金のものだけ。**宅配便がここに無い理由は `postage.ts` の先頭に書いてある。
+ */
+export type PostalMethod =
+  | 'ems'
+  | 'small-packet-air'
+  | 'small-packet-surface'
+  | 'parcel-air'
+  | 'parcel-surface';
+
 export type CountryCode = 'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG';
 
 /**
@@ -93,6 +104,8 @@ export interface Row {
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;
+  /** この行に実際に使った国際配送の方式。`method: 'cheapest'` のとき行ごとに違いうる。 */
+  method: PostalMethod;
   /**
    * 1 始まり。総額のみで決まる。**同額なら同じ数字**（競技順位。1-1-3 で次は飛ぶ）。
    * 社名の辞書順のようなタイブレークは使わない（compare.ts の `rank()` に理由）。
@@ -200,6 +213,15 @@ export interface CompareResult {
 export interface CompareInput {
   items: Item[];
   country: CountryCode;
+  /**
+   * 国際配送の方式。**未指定（既定）は 'cheapest'** ＝ その行の荷物を実際に運べる方式のうち
+   * 最安を、行ごとに選ぶ。**方式は利用者が選ぶもの**で、代行はメニューを出すだけ
+   * （Neokyo 原文「please select Japan Post as the shipment method」）。
+   *
+   * 以前は EMS 固定だった。EMS は日本郵便の中で**どの重量でも最安ではない**ので、
+   * 既定を EMS にすることは「一番高い郵便」を黙って選ぶことだった。
+   */
+  method?: PostalMethod | 'cheapest';
   /**
    * カナダ宛のときの州。**未指定でも州税は出す**（発生が確実なので `—` にしない）。
    * 未指定なら人口加重の代表値を tier estimate で、「州を選ぶと確定する」と note に書く。

@@ -36,7 +36,11 @@
           "tier": "B_inferred",
           "decided_on": "2026-09-07",
           "basis": "プロダクトの前提として原産国＝日本に固定する（利用者判断）。この計算機は**日本の商品を代行で買う人**のためのもので、12.5% は products of Japan に紐づく。**反証: 日本の出品でも中国製・スイス製は普通にあり、その場合 MFN も 301 も別になる。**誤差はこの仮定に丸ごと帰属するので、入力軸を足すまでは既知の系統誤差として扱う。"
-        }
+        },
+        "threshold_unit": "shipment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.post.japanpost.jp/service/send/oversea/information/2026/0413_01_en.html",
+        "threshold_unit_quote": "$2,500 の帯は郵便物単位（実装は元から個口あたりで判定していた）"
       },
       "vat": {
         "rule": {
@@ -45,7 +49,11 @@
         "tier": "A_confirmed",
         "note": "州 sales tax は郵便番号依存で未取得",
         "base": null,
-        "threshold_base": null
+        "threshold_base": null,
+        "threshold_unit": "shipment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.post.japanpost.jp/service/send/oversea/information/2026/0413_01_en.html",
+        "threshold_unit_quote": "$2,500 の帯は郵便物単位（実装は元から個口あたりで判定していた）"
       },
       "clearance": [
         {
@@ -159,7 +167,11 @@
         },
         "tier": "C_unknown",
         "base": "goods_plus_shipping",
-        "threshold_base": "goods"
+        "threshold_base": "goods",
+        "threshold_unit": "consignment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.gov.uk/guidance/vat-and-overseas-goods-sold-directly-to-customers-in-the-uk",
+        "threshold_unit_quote": "The £135 limit applies to the value of a total consignment that is imported, not the separate value of individual items that are in a consignment. ... Unless sent individually, the seller must add the individual values of all items in a consignment together to get the total value of the consignment."
       },
       "vat": {
         "rule": {
@@ -168,7 +180,11 @@
         },
         "tier": "A_confirmed",
         "base": "goods_plus_shipping",
-        "threshold_base": "goods"
+        "threshold_base": "goods",
+        "threshold_unit": "consignment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.gov.uk/guidance/vat-and-overseas-goods-sold-directly-to-customers-in-the-uk",
+        "threshold_unit_quote": "The £135 limit applies to the value of a total consignment that is imported, not the separate value of individual items that are in a consignment. ... Unless sent individually, the seller must add the individual values of all items in a consignment together to get the total value of the consignment."
       },
       "clearance": [
         {
@@ -275,7 +291,11 @@
         "corrected_from": {
           "tier": "A_confirmed",
           "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
-        }
+        },
+        "threshold_unit": "consignment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://vat-one-stop-shop.ec.europa.eu/one-stop-shop/declare-and-pay-oss_en",
+        "threshold_unit_quote": "Supplies of goods ... imported from a third territory/third country, in consignments <= EUR 150. This threshold applies per consignment."
       },
       "vat": {
         "rule": {
@@ -285,7 +305,11 @@
         "tier": "A_confirmed",
         "base": "goods_plus_shipping",
         "threshold_base": null,
-        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
+        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則",
+        "threshold_unit": "consignment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://vat-one-stop-shop.ec.europa.eu/one-stop-shop/declare-and-pay-oss_en",
+        "threshold_unit_quote": "Supplies of goods ... imported from a third territory/third country, in consignments <= EUR 150. This threshold applies per consignment."
       },
       "clearance": [
         {
@@ -372,7 +396,11 @@
         "corrected_from": {
           "tier": "A_confirmed",
           "why": "適用対象（DSIG）の限定を見落として A にしていた。実装側の分析の方が慎重だった"
-        }
+        },
+        "threshold_unit": "consignment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://vat-one-stop-shop.ec.europa.eu/one-stop-shop/declare-and-pay-oss_en",
+        "threshold_unit_quote": "Supplies of goods ... imported from a third territory/third country, in consignments <= EUR 150. This threshold applies per consignment."
       },
       "vat": {
         "rule": {
@@ -382,7 +410,11 @@
         "tier": "A_confirmed",
         "base": "goods_plus_shipping",
         "threshold_base": null,
-        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則"
+        "base_source": "elotrolado.net（複数の利用者が一致）＋ EU の一般原則",
+        "threshold_unit": "consignment",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://vat-one-stop-shop.ec.europa.eu/one-stop-shop/declare-and-pay-oss_en",
+        "threshold_unit_quote": "Supplies of goods ... imported from a third territory/third country, in consignments <= EUR 150. This threshold applies per consignment."
       },
       "clearance": [
         {
@@ -619,7 +651,11 @@
         },
         "tier": "C_unknown",
         "base": "goods",
-        "threshold_base": "goods"
+        "threshold_base": "goods",
+        "threshold_unit": "parcel",
+        "threshold_unit_tier": "B_inferred",
+        "threshold_unit_source": "https://neokyo.com/en/shipping",
+        "threshold_unit_quote": "we will be charging 10% of the declared value for parcels containing Low-Value Goods (1000 AUD or less) ... GST will not be directly charged for parcels with a declared price of over 1000 AUD"
       },
       "vat": {
         "rule": {
@@ -629,7 +665,11 @@
         "tier": "A_confirmed",
         "base": "varies_by_collector",
         "base_note": "代理徴収する会社ごとに違う。FROM JAPAN は Charge1+Charge2（手数料込み）、Buyee は商品代＋Buyee 手数料＋オプション料、ZenMarket は未取得",
-        "threshold_base": "customs_value"
+        "threshold_base": "customs_value",
+        "threshold_unit": "parcel",
+        "threshold_unit_tier": "B_inferred",
+        "threshold_unit_source": "https://neokyo.com/en/shipping",
+        "threshold_unit_quote": "we will be charging 10% of the declared value for parcels containing Low-Value Goods (1000 AUD or less) ... GST will not be directly charged for parcels with a declared price of over 1000 AUD"
       },
       "collected_at_source": {
         "tier": "A_confirmed",
@@ -695,7 +735,11 @@
           "inference_basis": "品目分類を持たないので、WTO の非農産品 MFN 単純平均 2.0% を採る（EU と同じ選び方）。",
           "counter_evidence": "**EU より不確か。**カナダは非農産品の税表の行の 79.2% が無税（EU は 29.1%）。つまり最頻値は 0% で、2.0% は「無税が大半・残りに 5〜25% が散る」分布の平均。個別品目では 0% か 2% よりずっと高いかに割れやすい。",
           "checked_on": "2026-09-07"
-        }
+        },
+        "threshold_unit": "mail_item",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.canadapost-postescanada.ca/cpc/en/support/kb/receiving/duty-and-taxes",
+        "threshold_unit_quote": "The CBSA doesn't assess duty or tax on mail items valued at CAN$20 or less."
       },
       "vat": {
         "rule": {
@@ -705,7 +749,11 @@
         },
         "tier": "A_confirmed",
         "base": "duty_paid_value",
-        "threshold_base": "goods"
+        "threshold_base": "goods",
+        "threshold_unit": "mail_item",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.canadapost-postescanada.ca/cpc/en/support/kb/receiving/duty-and-taxes",
+        "threshold_unit_quote": "The CBSA doesn't assess duty or tax on mail items valued at CAN$20 or less."
       },
       "provincial_tax": {
         "rule": {
@@ -790,7 +838,11 @@
         "tier": "A_confirmed",
         "note": "大半の物品で関税0",
         "base": "goods",
-        "threshold_base": "goods"
+        "threshold_base": "goods",
+        "threshold_unit": "postal_parcel",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.customs.gov.sg/",
+        "threshold_unit_quote": "the postal parcel contains goods of a total CIF value exceeding S$400"
       },
       "vat": {
         "rule": {
@@ -801,7 +853,11 @@
         "tier": "A_confirmed",
         "note": "2024-01-01 から 9%",
         "base": "goods_plus_shipping",
-        "threshold_base": "goods"
+        "threshold_base": "goods",
+        "threshold_unit": "postal_parcel",
+        "threshold_unit_tier": "A_confirmed",
+        "threshold_unit_source": "https://www.customs.gov.sg/",
+        "threshold_unit_quote": "the postal parcel contains goods of a total CIF value exceeding S$400"
       },
       "collected_at_source": {
         "tier": "A_confirmed",
@@ -961,6 +1017,18 @@
       },
       "tier": "A_confirmed",
       "impact": "料金表ではなく利用者の操作で決まる。予測はどちらを想定するか明示しなければならない"
+    },
+    {
+      "finding": "免税限度はすべて「1個口（consignment）あたり」で測る。注文全体では測らない",
+      "tier": "A_confirmed",
+      "confirmed_in": {
+        "GB": "The £135 limit applies to the value of a total consignment that is imported ... Unless sent individually, the seller must add the individual values of all items in a consignment together",
+        "DE/FR (EU)": "in consignments <= EUR 150. This threshold applies per consignment",
+        "CA": "The CBSA doesn't assess duty or tax on mail items valued at CAN$20 or less",
+        "SG": "the postal parcel contains goods of a total CIF value exceeding S$400",
+        "AU": "（B推論・ABF 原文に未到達）代行の運用文言が parcels containing Low-Value Goods (1000 AUD or less)"
+      },
+      "impact": "実装は 2026-09-07 まで**カート全額**で判定していた。注文ごとに別送する Buyee の既定では1個口 €110 ずつ（€150 以下）なのに『€330 超』と判定して 4.1% を掛けており、**個口を分けたほうが税は安くなるのに逆に高く出していた**（DE 3点×¥20,000 で ¥2,876 対 正しくは ¥1,634）。ただし個口を分けると EMS が個口ごとに乗るので総額は上がる（同ケースで ¥91,263 → ¥101,137）。**『分ければ安い』は断言できず、両方計算して初めて言える。**"
     }
   ]
 }

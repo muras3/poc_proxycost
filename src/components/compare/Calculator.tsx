@@ -12,6 +12,7 @@ import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
 import { ItemList, type ItemListHandle } from './ItemList';
 import { OptionalExtras } from './OptionalExtras';
+import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
 import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
@@ -25,7 +26,7 @@ import { useCompare, type Draft } from './useCompare';
  * 順位 → 凡例 → 内訳 → 弱点 → 広告の順で、確かな情報ほど上に置く。
  */
 export function Calculator() {
-  const { items, country, province, seq, unpriced, result, dispatch } = useCompare();
+  const { items, country, province, method, seq, unpriced, result, dispatch } = useCompare();
   // URL 取得で確定値になった項目の取得日。Item に日付欄が無いのでここで持つ。
   // 追加は必ずクライアント側の操作なので、SSR と食い違わない。
   const [readOn, setReadOn] = useState<Record<string, string>>({});
@@ -63,6 +64,13 @@ export function Calculator() {
           <CountryPicker
             value={country}
             onChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
+          />
+          {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
+              （Neokyo 原文「please select ... as the shipment method」）。
+              既定は EMS で、各社の既定が分かったら変える（`compare()` の `DEFAULT_METHOD`）。 */}
+          <MethodPicker
+            value={method}
+            onChange={(m) => dispatch({ type: 'method', method: m })}
           />
           {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
               他国で常に出しておくと、選べない欄が画面に残る。 */}

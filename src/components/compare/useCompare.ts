@@ -4,7 +4,9 @@ import { useMemo, useReducer } from 'react';
 import { compare } from '@/lib/pricing/compare';
 import { weightFieldsFor } from '@/lib/pricing/weights';
 import { siteById } from '@/lib/search/sites';
-import type { CompareResult, CountryCode, Item, ProvinceCode, SiteId } from '@/lib/pricing/types';
+import type {
+  CompareResult, CountryCode, Item, PostalMethod, ProvinceCode, SiteId,
+} from '@/lib/pricing/types';
 
 export interface Draft {
   title: string;
@@ -27,6 +29,8 @@ interface State {
    * 未選択でも compare() は人口加重の代表値を tier estimate で出す。
    */
   province: ProvinceCode | null;
+  /** 国際配送の方式。既定は EMS（`compare()` の `DEFAULT_METHOD` と同じ）。 */
+  method: PostalMethod | 'cheapest';
   seq: number;
   /**
    * 価格をまだ一度も貰えていない項目の id。
@@ -42,7 +46,8 @@ type Action =
   | { type: 'remove'; id: string }
   | { type: 'patch'; id: string; patch: Partial<Item> }
   | { type: 'country'; country: CountryCode }
-  | { type: 'province'; province: ProvinceCode | null };
+  | { type: 'province'; province: ProvinceCode | null }
+  | { type: 'method'; method: PostalMethod | 'cheapest' };
 
 function itemFromDraft(draft: Draft, id: string): Item {
   // 重量はタイトルから引く。当たらなければ仮置き（ASSUMED_WEIGHT_G）を 'assumed' として入れる。
@@ -104,6 +109,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, country: action.country, province: null };
     case 'province':
       return { ...state, province: action.province };
+    case 'method':
+      return { ...state, method: action.method };
   }
 }
 
@@ -122,7 +129,7 @@ const EXAMPLES: Draft[] = [
 function initial(): State {
   let seq = 0;
   const items = EXAMPLES.map((d) => itemFromDraft(d, `i${seq++}`));
-  return { items, country: 'US', province: null, seq, unpriced: [] };
+  return { items, country: 'US', province: null, method: 'ems', seq, unpriced: [] };
 }
 
 export function useCompare() {
@@ -133,8 +140,10 @@ export function useCompare() {
     [state.items, state.unpriced],
   );
   const result: CompareResult = useMemo(
-    () => compare({ items: priced, country: state.country, province: state.province }),
-    [priced, state.country, state.province],
+    () => compare({
+      items: priced, country: state.country, province: state.province, method: state.method,
+    }),
+    [priced, state.country, state.province, state.method],
   );
   return { ...state, result, dispatch };
 }

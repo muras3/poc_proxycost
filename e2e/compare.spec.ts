@@ -653,14 +653,87 @@ test('18. a single item: the weight does not decide anything, so we do not nag',
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T10: 比較の範囲（EMS 限定）の常時開示。
-// この表は「全社を日本郵便の EMS で送ったら」の総額でしかない。各社はもっと安い方式を
-// 実際に売っていて、我々はそれを price していない（docs/audit/gaps.md G1・§2）。
-// **黙っていれば、実際より高い表を「これが全部です」と出していることになる。**
+// T10: 比較の範囲の常時開示。
+// **2026-09-07 に範囲が狭まった。**日本郵便の他方式（小形包装物・国際小包の航空/船便）を
+// 価格化したので、出せないのは**宅配便だけ**になった。開示もそこだけに絞る。
+// 宅配便は①料率非公開 ②通関が別モデル ③容積重量（寸法が入力に無い）の3つが同時に立つ
+// （docs/COMPLETENESS.md §6）。**黙っていれば、選べる範囲を狭く見せることになる。**
 // 畳まれていないこと・順位が出ている限り必ず居ることを、押して確かめる。
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('19. the ranking says out loud that only EMS was priced, and that cheaper methods exist', async ({ page }) => {
+test('18b. the shipping method is a control, and picking one moves every total', async ({ page }) => {
+  // **方式は利用者が選ぶ。**代行はメニューを出すだけ（Neokyo 原文
+  // 「please select Japan Post as the shipment method」）。総額は方式で決まるので、
+  // 方式が入力に無ければ「可能な限り正確な総額」を出しようがない。
+  await gotoCompare(page);
+  const picker = page.getByLabel('Ship by');
+  await expect(picker).toHaveCount(1);
+
+  // **既定は EMS。**「運べる中で最安」を既定にすると最安はたいてい船便（1〜3か月）で、
+  // ほぼ誰も払わない額を総額として出すことになる。
+  await expect(picker).toHaveValue('ems');
+  const before = (await readRanking(page)).map((r) => r.total);
+  expect(before.length).toBeGreaterThan(0);
+
+  // 船便に切り替えると総額が下がる。**同時に日数が読めること。**
+  await picker.selectOption('parcel-surface');
+  await expect.poll(async () => (await readRanking(page))[0]!.total).not.toBe(before[0]);
+  const after = (await readRanking(page)).map((r) => r.total);
+  for (let i = 0; i < after.length; i++) {
+    expect(after[i], `${i} 行目が船便で安くなっていない`).toBeLessThan(before[i]!);
+  }
+
+  // 行を開くと、額の隣に所要日数と追跡の有無がある。
+  // **額だけ出して日数を出さなければ、遅いほうを選ばせる誤誘導になる。**
+  const li = await openRankRow(page, 0);
+  const ship = costRow(li, /International parcel \(surface\)/);
+  await expect(ship).toHaveCount(1);
+  await expect(ship).toContainText('1–3 months');
+
+  // 選択肢には日数が載っていて、選ぶ前に時間が見える。
+  const options = await picker.locator('option').allInnerTexts();
+  expect(options.join(' | ')).toMatch(/1–3 months/);
+  expect(options.join(' | ')).toMatch(/no tracking/);
+  expect(options.join(' | ')).toMatch(/Cheapest that fits/);
+  // **宅配便は選択肢に無い。**料率が非公開で、通関が別モデルで、寸法が入力に無い。
+  for (const c of ['FedEx', 'DHL', 'UPS']) {
+    expect(options.join(' | '), `${c} が選択肢に居る`).not.toContain(c);
+  }
+});
+
+test('18c. a method too small for the parcel marks every row not comparable, it does not make them cheap', async ({ page }) => {
+  // 小形包装物は 2kg まで。**上限超を最上段の額で通すと、送れないものを最安に見せる。**
+  await gotoCompare(page);
+  await addByHand(page, 'Heavy box', 8000);
+  const heavy = weightBox(page, 'Heavy box');
+  await expect(heavy).toHaveCount(1);
+  // 梱包後 = 実重量 ×1.2 + 300g。5,000g なら 6,300g で 2kg の上限を大きく超える。
+  await heavy.fill('5000');
+  await heavy.blur();
+
+  const before = await readRanking(page);
+  expect(before.length).toBeGreaterThan(0);
+
+  await page.getByLabel('Ship by').selectOption('small-packet-air');
+  // **全行が「比較できない」になる。**額を付けずに理由を出すのが正しい
+  // ——「この重量ではこの方式で送れない」であって「安い」ではない。
+  await expect.poll(async () => {
+    const n = await rankButtons(page).count();
+    let flagged = 0;
+    for (let i = 0; i < n; i++) {
+      if ((await rankButtons(page).nth(i).innerText()).includes('NOT COMPARABLE')) flagged++;
+    }
+    return { n, flagged };
+  }).toEqual({ n: 6, flagged: 6 });
+  // 理由が読める。**方式名と上限が入っていること。**
+  await expect(page.getByText(/Small packet .* has no published rate above/).first()).toBeVisible();
+
+  // 方式を戻せば表も戻る。片道の壊れ方をしていないこと。
+  await page.getByLabel('Ship by').selectOption('parcel-surface');
+  await expect.poll(async () => (await readRanking(page)).length).toBe(before.length);
+});
+
+test('19. the ranking says which methods are priced, and that couriers are not', async ({ page }) => {
   await gotoCompare(page);
   const note = emsOnlyNote(page);
 
@@ -670,16 +743,19 @@ test('19. the ranking says out loud that only EMS was priced, and that cheaper m
   expect(await isCollapsed(note), '開示が「開かないと読めない」場所に居る').toBe(false);
 
   const text = (await note.innerText()).replace(/\s+/g, ' ');
-  // (1) EMS でしか比べていないこと。
-  expect(text).toMatch(/Japan Post EMS only/);
-  // (2) もっと安い手段が実在すること、それを我々が値付けしていないこと、
-  //     そして誤差の向き（総額は高く出ている）まで。
-  expect(text).toMatch(/cheaper ways to send the same parcel/);
-  expect(text).toMatch(/small packet/);
-  expect(text).toMatch(/surface mail/);
-  expect(text).toMatch(/couriers/);
-  expect(text).toMatch(/we do not price/);
-  expect(text).toMatch(/under the totals below/);
+  // (1) 日本郵便の方式は価格化してあり、選べること。
+  expect(text).toMatch(/Japan Post methods/);
+  expect(text).toMatch(/cheapest that fits/i);
+  // (2) 出せないのは宅配便だけで、それを名指しすること。
+  expect(text).toMatch(/Courier rates are not priced/);
+  expect(text).toMatch(/FedEx/);
+  expect(text).toMatch(/DHL/);
+  expect(text).toMatch(/UPS/);
+  expect(text).toMatch(/none of them publishes/);
+  // (3) **誤差の向きが「安く出ている」の一方向ではないこと。**
+  //     宅配便は送料が安いことが多いが通関手数料が高い（スペイン €1.56〜€70）。
+  //     「総額は高く出ている」と書けば、片側だけの誤差だと誤解させる。
+  expect(text).toMatch(/either direction/);
 
   // 5社とも名指しする。1社でも落ちれば「その社は EMS しか無い」と読めてしまう。
   for (const s of ALTERNATIVE_SHIPPING) expect(text).toContain(s.serviceName);
@@ -869,9 +945,9 @@ test('27. both disclosures link to the rules, quoted with their source and date'
   await expect(page.getByText(/What we could not get:/)).toBeVisible();
 });
 
-test('21. the disclosure links to the methods we did not price, named company by company', async ({ page }) => {
+test('21. the disclosure links to why couriers are left out, named company by company', async ({ page }) => {
   await gotoCompare(page);
-  await emsOnlyNote(page).getByRole('link', { name: /small packet/ }).click();
+  await emsOnlyNote(page).getByRole('link', { name: /why we leave couriers out/ }).click();
   await expect(page).toHaveURL(/\/sources#ems$/);
   await expect(page.getByRole('heading', { name: 'EMS postage from Japan' })).toBeVisible();
 
@@ -920,7 +996,7 @@ test.describe('desktop layout', () => {
     }
   });
 
-  test('the EMS-only disclosure holds for every destination, and there is only ever one', async ({ page }) => {
+  test('the scope disclosure holds for every destination, and there is only ever one', async ({ page }) => {
     await gotoCompare(page);
     const note = emsOnlyNote(page);
     for (const code of ['GB', 'DE', 'FR', 'AU', 'CA', 'SG', 'US']) {
@@ -1020,7 +1096,7 @@ test.describe('mobile layout', () => {
     expect(await headerCells(first)).toEqual(['Cost', rows[0]!.name]);
   });
 
-  test('the EMS-only disclosure is readable on a phone without opening anything', async ({ page }) => {
+  test('the scope disclosure is readable on a phone without opening anything', async ({ page }) => {
     await gotoCompare(page);
     const note = emsOnlyNote(page);
 
