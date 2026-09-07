@@ -25,7 +25,8 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
 import { SERVICES, EXPORT_DECLARATION_FEE_SOURCE } from '../src/lib/pricing/services';
 import { EMS_SOURCE_URL } from '../src/lib/pricing/ems';
-import { COUNTRIES } from '../src/lib/pricing/countries';
+import { CA_PROVINCE_SOURCE_URL, COUNTRIES } from '../src/lib/pricing/countries';
+import { RESTRICTED_GOODS } from '../src/lib/pricing/restricted-goods';
 import { RATES, RATES_AS_OF, RATES_SOURCE_URL } from '../src/lib/pricing/rates';
 import { parseEcbDaily, yenPer, ECB_DAILY_URL } from './lib/ecb';
 import {
@@ -247,6 +248,17 @@ function targets(): Target[] {
   out.push({ url: ECB_DAILY_URL, note: '為替の出典（ECB 日次参照レート）', watch: 'value' });
   for (const [cc, c] of Object.entries(COUNTRIES)) {
     if (c.sourceUrl) out.push({ url: c.sourceUrl, note: `${cc} の税・免税限度`, watch: 'text' });
+    // 通関手数料の出典が税のページと別なら、それも見る（カナダは Canada Post）。
+    if (c.clearanceSourceUrl && c.clearanceSourceUrl !== c.sourceUrl) {
+      out.push({ url: c.clearanceSourceUrl, note: `${cc} の通関手数料`, watch: 'text' });
+    }
+  }
+  // **カナダの州税は国コードでは足りない。**率が動けば7カ国のうち1つの総額が丸ごと動く。
+  out.push({ url: CA_PROVINCE_SOURCE_URL, note: 'CA の州税（CBSA D2-3-6 Appendix A）', watch: 'text' });
+  // 送れないかもしれない品の原文。**数字ではなく開示文がここから来ている**ので、
+  // 消えたり書き換わったら、我々は根拠の無い文を画面に出していることになる。
+  for (const g of RESTRICTED_GOODS) {
+    out.push({ url: g.sourceUrl, note: `禁制品（${g.labelEn}）`, watch: 'text' });
   }
   return out;
 }

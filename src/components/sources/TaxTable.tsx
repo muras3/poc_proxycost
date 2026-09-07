@@ -10,8 +10,6 @@ const HEAD = [
 const NOTE_TEXT: Record<string, string> = {
   de_minimis_suspended:
     'The US de minimis exemption is suspended, so duty applies from the first item.',
-  province_tax_not_included:
-    'Canadian provincial sales tax is not included — we only apply the 5% federal GST.',
   seller_collects_gst:
     'Below the threshold this GST is charged by the proxy service at checkout, not by customs.'
     + ' The calculator shows it per service, because it is not the same amount at each one —'

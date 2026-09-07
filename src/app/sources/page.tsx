@@ -8,7 +8,10 @@ import {
   ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_CHECKED_ON,
 } from '@/lib/pricing/shipping-methods';
 import { LITHIUM_AIRMAIL_LISTED, RESTRICTED_GOODS } from '@/lib/pricing/restricted-goods';
-import { COUNTRIES, COUNTRY_CODES } from '@/lib/pricing/countries';
+import {
+  CA_POPULATION_AS_OF, CA_POPULATION_SOURCE_URL, CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE,
+  CA_PROVINCE_CHECKED_ON, CA_PROVINCE_SOURCE_URL, COUNTRIES, COUNTRY_CODES, PROVINCE_CODES,
+} from '@/lib/pricing/countries';
 import {
   RATES, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_NAME, RATES_SOURCE_URL, RATES_STALE, rateLabel,
 } from '@/lib/pricing/rates';
@@ -248,6 +251,76 @@ export default function SourcesPage() {
         <div className="mt-4">
           <TaxTable />
         </div>
+
+        <h3 id="ca-province" className="mt-8 scroll-mt-20 text-sm font-semibold">
+          Canada: the province changes the bill
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Canada is the one destination where the country code is not enough. The CBSA collects the
+          provincial tax at the border according to your province of residence, so the same parcel
+          costs nothing extra in Alberta and 9.975% more in Quebec. The rates below are the ones the
+          CBSA publishes for <em>imports</em>, not the ones a province charges its own shops — they
+          are not always the same, and where the CBSA has no collection agreement nothing is
+          charged at the border at all.{' '}
+          <strong>Leaving the picker alone does not blank this line.</strong> We apply{' '}
+          {(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%, the average across all provinces weighted
+          by population, drawn as an estimate — because a provincial tax certainly happens, and
+          dropping a line that certainly happens is a bigger error than estimating it.
+        </p>
+        <div className="mt-3 max-w-3xl overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <caption className="sr-only">Provincial tax collected by the CBSA on imports</caption>
+            <thead>
+              <tr className="border-b border-neutral-300 text-left text-[11px] uppercase tracking-wide text-neutral-500 dark:border-neutral-700">
+                <th scope="col" className="px-2 py-2 font-medium">Province or territory</th>
+                <th scope="col" className="px-2 py-2 font-medium">Provincial part</th>
+                <th scope="col" className="px-2 py-2 font-medium">With the 5% GST</th>
+                <th scope="col" className="px-2 py-2 font-medium">Population {CA_POPULATION_AS_OF}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {PROVINCE_CODES.map((code) => {
+                const p = CA_PROVINCES[code];
+                return (
+                  <tr key={code} className="border-b border-neutral-200 dark:border-neutral-800">
+                    <td className="px-2 py-2">{p.name}</td>
+                    <td className="px-2 py-2 tabular-nums">
+                      {p.taxName
+                        ? `${p.taxName} ${+(p.rate * 100).toFixed(3)}%`
+                        : 'none collected at the border'}
+                    </td>
+                    <td className="px-2 py-2 tabular-nums">{+(p.totalWithGst * 100).toFixed(3)}%</td>
+                    <td className="px-2 py-2 tabular-nums">
+                      {p.populationOn20260401.toLocaleString('en-US')}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 max-w-3xl text-xs text-neutral-600 dark:text-neutral-400">
+          Rates from{' '}
+          <a className="underline" href={CA_PROVINCE_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            CBSA Memorandum D2-3-6, Appendix A
+          </a>
+          , read {CA_PROVINCE_CHECKED_ON}. Population from{' '}
+          <a className="underline" href={CA_POPULATION_SOURCE_URL} target="_blank" rel="noopener noreferrer">
+            Statistics Canada quarterly estimates
+          </a>{' '}
+          for {CA_POPULATION_AS_OF}, used only as the weight behind the average. The CAN$9.95 in the
+          clearance column is Canada Post&rsquo;s own figure —{' '}
+          <a
+            className="underline"
+            href={COUNTRIES.CA.clearanceSourceUrl ?? ''}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            &ldquo;a handling fee of CAN$9.95 per dutiable or taxable mail item&rdquo;
+          </a>{' '}
+          — so it is charged per parcel, and not at all below CAN$20, where the CBSA assesses
+          nothing to collect.
+        </p>
       </section>
 
       <section className="mt-12">

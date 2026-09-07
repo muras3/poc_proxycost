@@ -7,6 +7,16 @@ export type Tier = 'fixed' | 'estimate' | 'unverified' | 'none';
 
 export type CountryCode = 'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG';
 
+/**
+ * カナダの州・準州。**州によって国境で取られる税が違う**（CBSA D2-3-6）ので、
+ * カナダだけは国コードでは足りない。null = 利用者が選んでいない
+ * ——そのときも `—` にはせず、人口加重の代表値を tier estimate で出す
+ * （`countries.ts` の `CA_PROVINCE_AVERAGE_RATE`）。
+ */
+export type ProvinceCode =
+  | 'ON' | 'QC' | 'BC' | 'AB' | 'MB' | 'SK' | 'NS' | 'NB' | 'NL' | 'PE'
+  | 'YT' | 'NT' | 'NU';
+
 /** 出品元のサイト。Jauce のサービス料が無料になるかがここで決まる。 */
 export type SiteId =
   | 'yahoo-auctions'
@@ -190,4 +200,10 @@ export interface CompareResult {
 export interface CompareInput {
   items: Item[];
   country: CountryCode;
+  /**
+   * カナダ宛のときの州。**未指定でも州税は出す**（発生が確実なので `—` にしない）。
+   * 未指定なら人口加重の代表値を tier estimate で、「州を選ぶと確定する」と note に書く。
+   * カナダ以外では無視する。
+   */
+  province?: ProvinceCode | null;
 }

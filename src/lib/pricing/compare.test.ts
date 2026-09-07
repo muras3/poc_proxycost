@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
 import { SERVICES } from './services';
+import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE, PROVINCE_CODES } from './countries';
 import { EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G } from './ems';
-import type { CountryCode, Item, Row } from './types';
+import { rateFor } from './rates';
+import type { CountryCode, Item, ProvinceCode, Row } from './types';
 
 const COUNTRIES_ALL: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
 
@@ -61,12 +63,15 @@ describe('the breakdown explains the total', () => {
     }
   });
 
-  test('Canada admits three unknowns instead of pretending they are zero', () => {
+  test('Canada is down to one unknown: the two lines that certainly happen now carry numbers', () => {
+    // 以前は Duty・Provincial tax・Customs clearance fee の3つとも `—` だった。
+    // **州税と Canada Post の手数料は確実に発生する**ので、`—` は誤り（T23）。
+    // 残る Duty は品目分類が要る（T24）ので、これだけが未取得のまま。
     const row = compare({ items: items(1, 600), country: 'CA' }).rows[0]!;
     expect(line(row, 'duty').amount).toBeNull();
-    expect(line(row, 'province-tax').amount).toBeNull();
-    expect(line(row, 'clearance').amount).toBeNull();
-    expect(row.excluded).toEqual(['Duty', 'Provincial tax', 'Customs clearance fee']);
+    expect(line(row, 'province-tax').amount).toBeGreaterThan(0);
+    expect(line(row, 'clearance').amount).toBeGreaterThan(0);
+    expect(row.excluded).toEqual(['Duty']);
   });
 
   test('a fetched zero stays a zero: under-threshold duty is 0 with its reason', () => {
@@ -77,11 +82,33 @@ describe('the breakdown explains the total', () => {
   });
 
   test('a clearance fee we never fetched is null in every country that lacks one', () => {
-    for (const cc of ['DE', 'FR', 'AU', 'CA', 'SG'] as const) {
+    // **CA はここから抜けた**（T23 で Canada Post の原文を取った）。抜けたことを
+    // 空振りにしないため、下の test が CA に数字と出典が在ることを見る。
+    for (const cc of ['DE', 'FR', 'AU', 'SG'] as const) {
       const clearance = line(compare({ items: items(1, 600), country: cc }).rows[0]!, 'clearance');
       expect(clearance.amount, cc).toBeNull();
       expect(clearance.tier, cc).toBe('none');
     }
+  });
+
+  test('the Canada Post handling fee is a published number, per parcel, and zero below CAD 20', () => {
+    const row = compare({ items: items(1, 600), country: 'CA' }).rows[0]!;
+    const fee = line(row, 'clearance');
+    expect(fee.tier).toBe('fixed');
+    expect(fee.note).toContain('CAD 9.95 × 1 parcel');
+    expect(fee.sourceUrl).toContain('canadapost-postescanada.ca');
+    // 個口が割れる行では個口ぶん。原文が「per dutiable or taxable mail item」。
+    const split = byId(compare({ items: items(3, 600), country: 'CA' }).rows, 'buyee:default');
+    expect(split.parcels).toBe(3);
+    expect(line(split, 'clearance').note).toContain('CAD 9.95 × 3 parcels');
+    // 丸めは合計に1回だけ掛ける（個口ごとに丸めて足すと ¥1 ずれる）。
+    expect(line(split, 'clearance').amount).toBe(Math.round(9.95 * rateFor('CAD') * 3));
+    expect(fee.amount).toBe(Math.round(9.95 * rateFor('CAD')));
+    // C$20 以下は課税自体が無いので手数料も 0。**未取得の 0 ではないので tier は fixed。**
+    const tiny = line(compare({ items: items(1, 200, 1500), country: 'CA' }).rows[0]!, 'clearance');
+    expect(tiny.amount).toBe(0);
+    expect(tiny.tier).toBe('fixed');
+    expect(tiny.note).toContain('nothing is charged for collecting it');
   });
 
   test('optional extras are offered but kept out of the total', () => {
@@ -170,6 +197,113 @@ describe('ranking uses the total and nothing else', () => {
     const seen = COUNTRIES_ALL.map((cc) => compare({ items: items(1, 600), country: cc }).currency.code);
     expect(seen).toEqual(['USD', 'GBP', 'EUR', 'EUR', 'AUD', 'CAD', 'SGD']);
     expect(compare({ items: items(1, 600), country: 'US' }).currency.rate).toBe(156.25);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// カナダの州（T23）。**州税は確実に発生するので `—` にしない。**
+// 選んでいれば CBSA が実際に取る率（D2-3-6 Appendix A）、選んでいなければ人口加重の
+// 代表値を tier estimate で出す。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Canada: the province decides the bill, and not choosing one is not an excuse', () => {
+  const ca = (province: ProvinceCode | null, n = 1) =>
+    compare({ items: items(n, 600), country: 'CA', province }).rows[0]!;
+
+  test('the provincial rates add up to the totals the CBSA publishes', () => {
+    // ここが崩れたら、州の取り分と合計のどちらかを書き写し間違えている。
+    for (const code of PROVINCE_CODES) {
+      const p = CA_PROVINCES[code];
+      expect(+(p.rate + 0.05).toFixed(5), code).toBe(+p.totalWithGst.toFixed(5));
+    }
+    expect(CA_PROVINCES.ON.totalWithGst).toBe(0.13);
+    expect(CA_PROVINCES.NS.totalWithGst).toBe(0.14);
+    expect(CA_PROVINCES.QC.rate).toBe(0.09975);
+  });
+
+  test('picking Ontario makes the line a number: HST 8% on top of the 5% GST = 13%', () => {
+    const row = ca('ON');
+    const gst = line(row, 'vat');
+    const prov = line(row, 'province-tax');
+    expect(prov.amount).toBeGreaterThan(0);
+    expect(prov.tier).toBe('fixed');
+    expect(prov.note).toContain('Ontario');
+    expect(prov.note).toContain('13% together');
+    // 州の取り分と連邦 GST を足すと、原文の合計率になる。**合計を1行で出して
+    // 二重に積んでいない**ことをここで縛る。
+    expect(gst.amount! + prov.amount!).toBe(Math.round((gst.amount! / 0.05) * 0.13));
+  });
+
+  test('not choosing a province still produces a number, drawn as an estimate', () => {
+    const row = ca(null);
+    const prov = line(row, 'province-tax');
+    // **`—` にしない。**発生が確実なものを未取得として落とすほうが誤りが大きい。
+    expect(prov.amount).not.toBeNull();
+    expect(prov.amount).toBeGreaterThan(0);
+    expect(prov.tier).toBe('estimate');
+    expect(prov.note).toContain('weighted by population');
+    expect(prov.note).toContain('Pick your province');
+    // 総額から漏れている費目の一覧にも入らない（漏れていないので）。
+    expect(row.excluded).not.toContain('Provincial tax');
+    // 代表値は全州の間に収まる。どの州の値でもない。
+    const rates = PROVINCE_CODES.map((c) => CA_PROVINCES[c].rate);
+    expect(CA_PROVINCE_AVERAGE_RATE).toBeGreaterThan(Math.min(...rates));
+    expect(CA_PROVINCE_AVERAGE_RATE).toBeLessThan(Math.max(...rates));
+  });
+
+  test('the estimate is the population-weighted average, not a simple one', () => {
+    // 単純平均だと人口 4 万の準州がオンタリオと同じ重みになる。実際に払う人の
+    // 分布から離れるので、重みは人口で置く。**その差が実際に在ること**を見る。
+    const rows = PROVINCE_CODES.map((c) => CA_PROVINCES[c]);
+    const simple = rows.reduce((a, p) => a + p.rate, 0) / rows.length;
+    const pop = rows.reduce((a, p) => a + p.populationOn20260401, 0);
+    const weighted = rows.reduce((a, p) => a + p.rate * p.populationOn20260401, 0) / pop;
+    expect(CA_PROVINCE_AVERAGE_RATE).toBeCloseTo(weighted, 10);
+    expect(Math.abs(weighted - simple)).toBeGreaterThan(0.005);
+  });
+
+  test('a province with no collection agreement is a real zero, with the reason on the line', () => {
+    for (const code of ['AB', 'YT', 'NT', 'NU'] as const) {
+      const prov = line(ca(code), 'province-tax');
+      // **0 は「調べていない」ではない。**tier fixed のままで、理由が note に在る。
+      expect(prov.amount, code).toBe(0);
+      expect(prov.tier, code).toBe('fixed');
+      expect(prov.note, code).toContain('no provincial tax at the border');
+    }
+  });
+
+  test('Quebec costs more than Ontario, and Alberta costs less than both', () => {
+    // 州が総額を動かすこと自体を、順位表の数字で見る。
+    expect(ca('QC').total).toBeGreaterThan(ca('ON').total);
+    expect(ca('ON').total).toBeGreaterThan(ca('AB').total);
+    // 代表値はその間のどこか。
+    expect(ca(null).total).toBeGreaterThan(ca('AB').total);
+    expect(ca(null).total).toBeLessThan(ca('QC').total);
+  });
+
+  test('below CAD 20 nothing is charged — and that zero keeps its reason', () => {
+    const row = compare({ items: items(1, 200, 1500), country: 'CA', province: 'QC' }).rows[0]!;
+    for (const key of ['duty', 'vat', 'province-tax', 'clearance']) {
+      const l = line(row, key);
+      expect(l.amount, key).toBe(0);
+      expect(l.tier, key).toBe('fixed');
+      expect(l.note, key).toMatch(/CAD 20|threshold/);
+    }
+    expect(row.excluded).toEqual([]);
+  });
+
+  test('the province is ignored outside Canada, and an unknown one is rejected', () => {
+    for (const cc of ['US', 'GB', 'DE', 'FR', 'AU', 'SG'] as const) {
+      const withProvince = compare({ items: items(1, 600), country: cc, province: 'ON' }).rows;
+      const without = compare({ items: items(1, 600), country: cc }).rows;
+      expect(withProvince.map((r) => r.total), cc).toEqual(without.map((r) => r.total));
+      // 州税の行はカナダにしか出ない。
+      expect(without[0]!.lines.some((l) => l.key === 'province-tax'), cc).toBe(false);
+    }
+    // 知らないコードを黙って「未選択」に落とすと、代表値を「あなたの州の率」として
+    // 出すことになる。呼び出し側の不具合なので投げる。
+    expect(() => compare({
+      items: items(1, 600), country: 'CA', province: 'XX' as ProvinceCode,
+    })).toThrow(RangeError);
   });
 });
 
@@ -855,8 +989,9 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     const totals = Object.fromEntries(COUNTRIES_ALL.map((cc) => [
       cc, compare({ items: items(5, 600), country: cc }).rows.map((r) => r.total),
     ]));
-    // CA がびた一文動いていないのは、この籠が免税限度の下にいて、
-    // 通貨建ての費目（米国の通関手数料・EU の定額関税）を持たないため。
+    // **CA は T23 で動いた**（州税の代表値 7.3% と Canada Post の C$9.95 が入った）。
+    // 以前ここは「CA がびた一文動いていない」と書いてあり、それは州税も手数料も
+    // `—` だったからで、動かないことは正しさの証拠ではなく欠落の証拠だった。
     // **AU と SG は T15（代行の前徴収 GST）で動いた。** 費目モデルが変わったので
     // ここが動くのは正しい。AU は5社とも徴収を明記しているので全行に税が乗り、
     // 課税ベースの違い（内容品価格のみ／総額）で並びまで変わった。
@@ -868,7 +1003,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
       DE: [41373, 42323, 43823, 44053, 45780, 60602],
       FR: [41699, 42649, 44149, 44379, 46106, 61069],
       AU: [33950, 36630, 36740, 36900, 40543, 51000],
-      CA: [33745, 34695, 36195, 36425, 38152, 51000],
+      CA: [36762, 37712, 39212, 39442, 41169, 59552],
       SG: [28500, 31036, 32101, 32747, 33736, 45235],
     });
   });

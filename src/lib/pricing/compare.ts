@@ -1,4 +1,7 @@
-import { COUNTRIES } from './countries';
+import {
+  CA_POPULATION_AS_OF, CA_POPULATION_SOURCE_URL, CA_PROVINCES,
+  CA_PROVINCE_AVERAGE_RATE, CA_PROVINCE_SOURCE_URL, COUNTRIES,
+} from './countries';
 import { EMS_ZONE, EMS_SOURCE_URL, EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G, emsFor, formatStep } from './ems';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -6,7 +9,7 @@ import { SERVICES, type OptionalFeeContext, type Service } from './services';
 import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import type {
-  Band, CompareInput, CompareResult, Item, Line, Row, Tier, WeightSensitivity,
+  Band, CompareInput, CompareResult, Item, Line, ProvinceCode, Row, Tier, WeightSensitivity,
 } from './types';
 
 // 出品ページに重量は書いていない。以下は仮定であって実測ではない。
@@ -28,6 +31,8 @@ const grossG = (netG: number) => Math.round(netG * PACKING_MULTIPLIER + PACKING_
 interface Ctx {
   items: Item[];
   cc: CompareInput['country'];
+  /** カナダ宛のときの州。null = 未選択（代表値を出す）。他国では使わない。 */
+  province: ProvinceCode | null;
   /** 重量不明の item にこの値（g／点）を仮置きする。null なら仮置きしない。 */
   assumeUnknownG: number | null;
   /** 既知の重量にこの倍率を掛ける（順位の頑健性チェック用）。 */
@@ -45,9 +50,49 @@ function domesticFor(item: Item): { yen: number; estimated: boolean } {
   return { yen: ASSUMED_DOMESTIC_SHIPPING_YEN, estimated: true };
 }
 
+/**
+ * カナダの州税。**発生は確実なので、州を選んでいなくても `—` にしない。**
+ *
+ * 選んでいれば CBSA が実際に徴収する率（D2-3-6 Appendix A）で tier fixed。
+ * 選んでいなければ人口加重の代表値で tier estimate ——「州を選ぶと確定する」と note に書く。
+ * `—` は**発生しないものだけ**に使う（docs/DESIGN-NOTES.md §2）。
+ *
+ * 徴収協定が無い州（AB・準州3つ）を選んだときの 0 は**取得できた 0** なので tier fixed。
+ * 未取得の 0 ではないから、そう描き分ける。
+ */
+function provincialTaxLine(
+  province: ProvinceCode | null, baseYen: number, taxed: boolean,
+): Line {
+  const src = CA_PROVINCE_SOURCE_URL;
+  if (!taxed) {
+    // C$20 以下は国境で何も課されない。州税も同じ帯で 0（取得できた 0）。
+    return L('province-tax', 'Provincial tax', 0,
+      'under the CAD 20 threshold — the CBSA assesses nothing on this parcel', 'fixed', src);
+  }
+  if (province) {
+    const p = CA_PROVINCES[province];
+    const label = p.taxName ?? 'Provincial tax';
+    return L('province-tax', 'Provincial tax', Math.round(baseYen * p.rate),
+      p.rate === 0
+        // 0 を黙って出さない。**なぜ 0 なのか**を書かないと未取得と区別が付かない。
+        ? `${p.name}: the CBSA collects no provincial tax at the border there`
+        : `${p.name}: ${label} ${(p.rate * 100).toFixed(p.rate === 0.09975 ? 3 : 0)}%`
+          + ` on top of the 5% GST (${(p.totalWithGst * 100).toFixed(3).replace(/\.?0+$/, '')}% together)`,
+      'fixed', src);
+  }
+  return L('province-tax', 'Provincial tax',
+    Math.round(baseYen * CA_PROVINCE_AVERAGE_RATE),
+    `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}% — our estimate across all provinces,`
+    + ` weighted by population (${CA_POPULATION_AS_OF}).`
+    + ' Pick your province above and this becomes the rate the CBSA actually charges'
+    + ' (0% in Alberta and the territories, 9.975% in Quebec).',
+    'estimate', CA_POPULATION_SOURCE_URL);
+}
+
 // ── 受取国の税。未取得は null を返し、画面で「—」にする。0 と書かない。
 function taxLines(
   cc: CompareInput['country'],
+  province: ProvinceCode | null,
   a: { itemsYen: number; domYen: number; emsYen: number; units: number; parcels: number },
 ): Line[] {
   const c = COUNTRIES[cc];
@@ -105,18 +150,30 @@ function taxLines(
       `${(c.vatRate * 100).toFixed(0)}%`, 'fixed', c.sourceUrl));
   }
 
-  if (c.notes.includes('province_tax_not_included')) {
-    out.push(L('province-tax', 'Provincial tax', null,
-      'depends on your province — not included', 'none', c.sourceUrl));
+  // **カナダの州税は連邦 GST とは別の行。**合計（HST 13% など）ではなく州の取り分だけを
+  // 出す——GST 5% の行が既に在るので、合計を出すと二重に積む。
+  const caTaxed = c.vatFreeLimit == null || declared > c.vatFreeLimit;
+  if (cc === 'CA') {
+    out.push(provincialTaxLine(province, c.base === 'CIF' ? cif : a.itemsYen + a.emsYen, caTaxed));
   }
 
+  // 通関手数料。**「課税対象の郵便物1個ごと」と原文が書いている国では、免税の帯で 0。**
+  // その 0 は取得できた 0 なので tier は fixed のまま（未取得の `—` と混ぜない）。
+  const clearanceFree = c.clearanceFreeAtOrBelow != null && declared <= c.clearanceFreeAtOrBelow;
+  const clearanceSrc = c.clearanceSourceUrl ?? c.sourceUrl;
   if (c.clearanceFeePerParcel == null) {
     out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl));
+  } else if (clearanceFree) {
+    out.push(L('clearance', 'Customs clearance fee', 0,
+      `no duty or tax is assessed at or below ${c.clearanceCcy} ${c.clearanceFreeAtOrBelow},`
+      + ' so nothing is charged for collecting it',
+      c.clearanceTier, clearanceSrc));
   } else {
     out.push(L('clearance', 'Customs clearance fee',
       Math.round(c.clearanceFeePerParcel * rateFor(c.clearanceCcy) * a.parcels),
-      `${c.clearanceCcy} ${c.clearanceFeePerParcel} × ${plural(a.parcels, 'parcel')}`,
-      c.clearanceTier, c.sourceUrl));
+      `${c.clearanceCcy} ${c.clearanceFeePerParcel} × ${plural(a.parcels, 'parcel')}`
+      + (c.clearanceNote ? ` — ${c.clearanceNote}` : ''),
+      c.clearanceTier, clearanceSrc));
   }
 
   // 関税の事前納付（米国）。**「発生するが額を知らない」を画面に出すための行。**
@@ -365,7 +422,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const shippingYen = lines
     .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'ems')
     .reduce((acc, l) => acc + (l.amount ?? 0), 0);
-  lines.push(...taxLines(ctx.cc, { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
+  lines.push(...taxLines(ctx.cc, ctx.province,
+    { itemsYen, domYen: domCharged, emsYen: emsYen ?? 0, units, parcels }));
   const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
     itemsYen,
     declared: itemsYen / rateFor(COUNTRIES[ctx.cc].ccy),
@@ -550,7 +608,7 @@ function sensitivityRange(item: Item): [number, number] | null {
  * 両端の2点しか見ない（rankStable と同じ規則）。
  */
 function weightSensitivityFor(
-  items: Item[], cc: CompareInput['country'], base: Row[],
+  items: Item[], cc: CompareInput['country'], province: ProvinceCode | null, base: Row[],
 ): Record<string, WeightSensitivity> {
   const out: Record<string, WeightSensitivity> = {};
   const baseIds = cheapestIds(base);
@@ -563,7 +621,7 @@ function weightSensitivityFor(
     const at = (g: number) => {
       const rows = rowsFor({
         items: items.map((i) => (i.id === item.id ? { ...i, weightG: g } : i)),
-        cc, assumeUnknownG: null, weightScale: 1,
+        cc, province, assumeUnknownG: null, weightScale: 1,
       });
       const ids = cheapestIds(rows);
       return {
@@ -609,9 +667,14 @@ function weightSensitivityFor(
  * （src/components/compare/useCompare.ts）。つまりこれは利用者に見せるエラーではなく、
  * 我々が直すべき不具合の通報である。
  */
-function assertUsableInput({ items, country }: CompareInput): void {
+function assertUsableInput({ items, country, province }: CompareInput): void {
   if (!COUNTRIES[country]) {
     throw new RangeError(`compare(): unknown destination country ${String(country)}`);
+  }
+  // 知らない州コードを黙って「未選択」に落とすと、代表値を「あなたの州の率」として
+  // 出すことになる。呼び出し側の不具合なので、そこで止める。
+  if (province != null && !CA_PROVINCES[province]) {
+    throw new RangeError(`compare(): unknown province ${String(province)}`);
   }
   for (const i of items) {
     const bad = (field: string, v: unknown) =>
@@ -632,8 +695,8 @@ function assertUsableInput({ items, country }: CompareInput): void {
   }
 }
 
-export function compare({ items, country }: CompareInput): CompareResult {
-  assertUsableInput({ items, country });
+export function compare({ items, country, province = null }: CompareInput): CompareResult {
+  assertUsableInput({ items, country, province });
   const currency = {
     code: COUNTRIES[country].ccy,
     rate: rateFor(COUNTRIES[country].ccy),
@@ -651,14 +714,14 @@ export function compare({ items, country }: CompareInput): CompareResult {
   const hasUnknownWeight = items.some((i) => i.weightG == null);
 
   if (!hasUnknownWeight) {
-    const base = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: 1 });
+    const base = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: 1 });
     // 一番大きく一番弱い数字（重量）を 1/3・3倍 に振って、1位が動くか見る。
     // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（30kg）を
     // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
     // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
     const baseComparable = base.filter((r) => r.comparable).length;
     const winners = [1 / 3, 3].map((sc) => {
-      const rows = rowsFor({ items, cc: country, assumeUnknownG: null, weightScale: sc });
+      const rows = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: sc });
       const comparable = rows.filter((r) => r.comparable);
       // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
       // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
@@ -719,7 +782,7 @@ export function compare({ items, country }: CompareInput): CompareResult {
               .join('; ')
           }.`,
       hasUnknownWeight: false,
-      weightSensitivity: weightSensitivityFor(items, country, base),
+      weightSensitivity: weightSensitivityFor(items, country, province, base),
     };
   }
 
@@ -728,7 +791,7 @@ export function compare({ items, country }: CompareInput): CompareResult {
   // null を渡す呼び出し側のために残す。
   const bands: Band[] = [];
   for (const stepG of UNKNOWN_WEIGHT_STEPS_G) {
-    const rows = rowsFor({ items, cc: country, assumeUnknownG: stepG, weightScale: 1 });
+    const rows = rowsFor({ items, cc: country, province, assumeUnknownG: stepG, weightScale: 1 });
     if (!rows.length) continue;
     // 段ごとの最安も**集合**で持つ。同額のとき `rows[0]` を最安と呼ぶと、
     // 並びの偶然を段ごとの答えとして出すことになる。

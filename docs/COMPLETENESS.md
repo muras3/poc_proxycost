@@ -76,7 +76,7 @@
 | B1 | US：MFN>12.5% の品目（衣類 16.5〜32%）、原産国、CBP の MPF／EMS 手数料 $1+$2.69〜12.09 | −¥480〜2,340 / −¥550〜1,960 | Duty 行 note「12.5%: Japan-origin goods with MFN ≤12.5% (figures, games, books). Apparel is higher.」／excluded に「US CBP entry fees」 |
 | B2 | US：USPS $9.35 は DDP 前払い経路では発生しない疑い（taxes と gaps が対立、§7） | +¥1,403（過大の疑い） | tier `unverified` 維持、note「charged only if USPS collects duty on delivery」 |
 | B3 | SG：OVR 9% 前徴収（A12 の対称部分）。全社が徴収するなら総額のみ | −¥1,503（−8%） | T15 で行を追加。未確認の社は `unverified` |
-| B4 | CA：州税（ON 8% 等）と Canada Post CAN$9.95 | −¥2,495（−13%） | 現状「Provincial tax — depends on your province」は正しい。州選択は P2（T22）。Canada Post 手数料は excluded に名指し |
+| B4 | CA：州税（ON 8% 等）と Canada Post CAN$9.95 | −¥2,495（−13%） | **解消（T23、2026-09-07）。**「depends on your province — not included」は正しくなかった: 州税は確実に発生するので `—` は誤り。州選択を作り、未選択でも人口加重の代表値を estimate で出す。Canada Post の CAN$9.95 は原文を取って通関手数料の行に入れた |
 | B5 | AU：A$1,000 超の IPC A$50＋生物検疫 A$48 | −¥9,702（該当帯） | excluded に「Import Processing Charge + biosecurity (over A$1,000)」 |
 | B6 | GB：≤£135 で VAT と £8 を両方積む。売り手徴収なら £8 は発生しない。Royal Mail £8 自体も未検証 | +¥1,520（過大） | note「Either the proxy charges UK VAT at checkout, or Royal Mail charges VAT + £8 on delivery」。tier `unverified` 維持 |
 | B7 | DE/FR：€3 が代行経由（DSIG か）に当たるか未確定。IOSS 経路では €3 に VAT を掛けない | ±¥93〜98 | €3 の tier を `fixed` → `unverified` に落とし note「EU flat duty for distance sales; applicability to proxy purchases not confirmed」（T17）。Union handling fee（2026-11 予定）は excluded に予告 |
@@ -154,7 +154,7 @@
 
 | # | タスク | 完了の定義 |
 |---|---|---|
-| T23 | CA の州選択と Canada Post CAN$9.95 | ON 選択で HST 13%、州税行が数値になる |
+| T23 | **済**。州選択を作った（既定は未選択）。率は **CBSA Memorandum D2-3-6 Appendix A**（輸入品に対する州税の徴収表。州の財務省ではなくこちらを正とする——国境で取られる率は州が住民に課す率と一致しないことがあり、徴収協定が無い州では国境で取られない）。**州の取り分だけを行にする**（連邦 GST 5% の行が別に在るので、HST 13% を1行で出すと二重計上）。未選択でも `—` にせず、Statistics Canada 2026-04-01 推計の**人口加重平均 7.3%** を tier estimate で出し、note に「州を選ぶと確定する」と書く。単純平均にしないのは、人口 4 万の準州（0%）が1,610 万のオンタリオ（8%）と同じ重みになるため。AB・準州3つの 0% は**取得できた 0**なので tier fixed のまま、理由を note に書く。Canada Post の CAN$9.95 は原文（「a handling fee of CAN$9.95 per dutiable or taxable mail item」）を取り、**C$20 以下では 0**（同ページが「CBSA doesn't assess duty or tax on mail items valued at CAN$20 or less」と書いている＝発生しないことが取得できている）。行き先を変えると州の選択は捨てる——残すと選んだ覚えの無い率が確定値の顔で出る。**残るカナダの未取得は関税率だけ**（T24） | ON で HST 13%（州税 8% ＋ GST 5%）が数値。未選択でも数値（estimate）。ユニット8件と E2E 8件（desktop / mobile 各4）が**実操作で**選んで確かめる |
 | T24 | US：品目カテゴリ→HTS の対応表（衣類・収集品の除外）、AU IPC、GB excise の行 | 該当カテゴリで Duty 行が変わる |
 | T25 | Jauce 入金手数料の方式（gross-up か加算か）を原文とサポートに確認して直す | 原文の引用と実効率が `services.ts` の note に載る |
 | T26 | **済**。同額は同順位（競技順位 1-1-3）。第2キーを消した。**社名の辞書順は無害ではなかった**——同額 3,938 組のうち 3,716 組（94%）で報酬を払う社が報酬ゼロの社より上に置かれていた（`'Buyee' < 'Neokyo'`）。CHEAPEST は**同額の全行に付ける**（「これより安い選択肢は無い」という事実の表明で、1社を推すバッジではない。どちらにも付けない案は「最安が存在しない」と読める）。同順位の縦の並びは `SERVICES` の宣言順で意味を持たないので、画面が `tied with … — the order between them means nothing` と行内で打ち消す。「1位が動いたか」（`rankStable` / `weightSensitivity` / 段ごとの最安）は集合で見る——`rows[0]` で見ると並びの偶然を「順位が動いた」と読む。実測は `docs/audit/ties-2026-09-07.md`（`npm run ties:scan` で測り直せる） | 同額2行で rank が同じ値。ユニット7件と E2E 2件（desktop / mobile 各2＝4）が**実操作で**同額を作って見る（AU・楽天・¥4,200・450 g で1位タイ、US・ヤフオク・¥12,800・1,450 g で2位タイ） |
