@@ -35,6 +35,9 @@ function describe(cat: WeightCategory, line: WeightLine): string {
 export function resolveWeight(title: string, categoryId?: string | null): WeightResolution {
   const t = title.toLowerCase();
 
+  // 段0: 出品ではない題名（店頭・カテゴリ・検索結果）。**語ではなく形で見る。**
+  if (isNotOneListing(title)) return UNRESOLVED;
+
   const search = categoryId
     ? WEIGHT_CATEGORIES.filter((c) => c.category === categoryId)
     : WEIGHT_CATEGORIES;
@@ -121,6 +124,62 @@ function boundary(char: string, side: 'left' | 'right'): string {
   const cls = /[a-z]/i.test(char) ? '[a-z]' : /[0-9]/.test(char) ? '[0-9]' : null;
   if (!cls) return '';
   return side === 'left' ? `(?<!${cls})` : `(?!${cls})`;
+}
+
+// ── 段0の門。**題名が1点の商品を指していない**とき、どの行にも当てない。
+//
+// 語ではなく **形**（末尾・区切り・パンくず）で見る。'スニーカー' や 'フィギュア' は
+// 商品にも店頭にも出るので、語では店頭と商品を分けられない（docs/DESIGN-WEIGHT-MATCH.md §1.4）。
+// 各サイトが店頭・カテゴリ・検索結果に付ける定型の形だけを列挙する。
+//
+// 商品ページの形と衝突しないことを母数で確かめてある:
+//   Yahoo!ショッピングの商品は '… : 店名 - 通販 - Yahoo!ショッピング'（半角ハイフン、'通販' 付き）、
+//   店頭は '店名 - カテゴリ｜Yahoo!ショッピング'（全角の縦棒）。
+//   楽天の商品は '【楽天市場】商品名：店名'（'】' の直後から商品名）、
+//   カテゴリは '【楽天市場】 …' か 'A > B：店名' のパンくず。
+interface StorefrontForm {
+  /** 題名がこの形なら、1点の商品ではない。 */
+  is: (title: string) => boolean;
+  why: string;
+}
+
+const NOT_ONE_LISTING: StorefrontForm[] = [
+  {
+    // 'スニーカー - ハニーズ Yahoo!店'、'駿河屋Yahoo!店 - フィギュア'。
+    // 商品ページも店名に 'Yahoo!店' を含むが、そちらは必ず ' - 通販 - ' を挟む。
+    is: (t) => t.includes('Yahoo!店') && !t.includes('通販'),
+    why: 'A Yahoo shop name with no 通販 marker is the shop front, not one of its items',
+  },
+  {
+    // 'サンワダイレクト - ボックス収納ケース｜Yahoo!ショッピング'。全角の縦棒が店頭の形。
+    is: (t) => t.includes('｜Yahoo!ショッピング'),
+    why: 'The full-width bar form is a Yahoo category page; items use " - 通販 - Yahoo!ショッピング"',
+  },
+  {
+    // '【楽天市場】シューズ・靴 > スニーカー：SHOPLIST'。'>' は楽天のパンくず。
+    is: (t) => t.includes('【楽天市場】') && t.includes(' > '),
+    why: 'A breadcrumb inside a Rakuten title is a category page',
+  },
+  {
+    // '【楽天市場】 PEライン/釣り糸 : SOZOKI'。商品名は '】' の直後から始まる。
+    is: (t) => t.includes('【楽天市場】 '),
+    why: 'A Rakuten item title starts right after the bracket; a space means a category page',
+  },
+  {
+    // '【2026年最新】Yahoo!オークション -禰豆子 フィギュアの中古品・新品・未使用品一覧'。
+    is: (t) => t.includes('中古品・新品・未使用品') || t.includes('商品一覧'),
+    why: 'A Yahoo Auctions search result page lists many items',
+  },
+  {
+    // '五番街〜バッグ・財布のお店'。
+    is: (t) => t.includes('のお店'),
+    why: 'The title names a shop, not a thing the shop sells',
+  },
+];
+
+/** 題名が1点の商品を指していないか。 */
+function isNotOneListing(title: string): boolean {
+  return NOT_ONE_LISTING.some((f) => f.is(title));
 }
 
 // ── ここから下は「当て方」の門。docs/audit/logic.md 第5節の誤爆一覧への対処。
