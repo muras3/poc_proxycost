@@ -63,7 +63,7 @@
 - **EMS 固定**（gaps G1/G5/G6/§2）。同一方式を全社に当てる限り1位は不動（gaps 自身の実測）。差額は Jauce の非EMS保険 ¥250/kg で最大 47% 動き、Buyee 分割／同梱の差は符号が反転する。**これは「順位が間違っている」ではなく「比較の範囲が画面に書かれていない」。** 範囲を明示する（T10）。方式選択は §6 で「やらない」と決めた。
 - **米国の DDP／Zonos／Neokyo の FedEx 13.4%**（gaps G2）。FedEx を選んだ場合の話で、EMS 比較の外。EMS（日本郵便）経路では Zonos 前払いの利用料が全社に等しく乗り、額は非公開 → **null 行で開示**（T11）。
 - **請求通貨・カード外貨手数料が社ごとに違う**（gaps G7）。¥260〜520 で1位2位差と同じ桁。だがカード発行会社ごとで一次情報が取れない → §6。
-- **保管料**（gaps G13）。Buyee 30日 → ¥100〜300/日、ZM 60日 → ¥50/日/点（§0 で確認）、Neokyo 45日・Jauce 60日・FJ 60日（額は未取得）。同梱前提の利用では既定で発生しうるが、**時間が入力に無い**。任意欄に「free storage N days, then …」を並べる（T19）。
+- **保管料**（gaps G13）。Buyee 30日 → ¥100〜300/日、ZM 60日 → ¥50/日/点（§0 で確認）、Neokyo 45日・Jauce 60日・FJ 60日。同梱前提の利用では既定で発生しうるが、**時間が入力に無い**。任意欄に「free storage N days, then …」を並べる（T19）。**2026-09-07 追記（T19 で取得済み）: 「Neokyo・FJ・Jauce は額が未取得」はこの行の誤りだった。**Neokyo は /en/storage に週次の表が在り（fees と FAQ しか見ていなかった）、FJ は 60日で廃棄・延長不可なので有料延長がそもそも存在しない。額が本当に無いのは Jauce だけ。
 
 ---
 
@@ -86,7 +86,7 @@
 | B11 | `approximate` が常に true（EMS 行の tier が固定で 'estimate'）。`~` に情報が無い | 表記 | EMS 行の tier を「料金 fixed／重量 estimate」に分ける（T16） |
 | B12 | 重量の誤爆（日付 `1/7`、1文字 CJK トークン、`1/6 ドール 服`）。`1a28305` で L4（最長語）は修正済みだが誤爆は残る | 30x の総額ずれ。1つの数字が「確定」に見えて段表が消える | P1（T18）。当面は重量チップの note に「from title keywords — check it」 |
 | B13 | Jauce 入金手数料 gross-up（原文は加算と読める） | −¥22〜63 | P3（T25）。§7 の矛盾あり |
-| B14 | 任意欄：FJ Protection Plan の二重計上、輸出通関 ¥2,800 が Jauce/Neokyo に無い、Neokyo 開梱は 1,000＋梱包料 | 総額外 | P2（T21） |
+| B14 | 任意欄：FJ Protection Plan の二重計上、輸出通関 ¥2,800 が Jauce/Neokyo に無い、Neokyo 開梱は 1,000＋梱包料 | 総額外 | **済**（T21）。輸出通関は ZenMarket にも無かった——**日本郵便の費目**なので5社すべてに出す |
 | B15 | `SGD Infinity threshold` の表示 | 表記 | P0 で消す（T13 と同時、1行） |
 | B16 | 15〜30kg・30kg 超・Neokyo の米国宛 20kg 上限 | A1 で解決。30kg 超は「EMS で送れない」 | T1 の中で「over 30 kg — not accepted by EMS」を全行に出し、**1位を出さない** |
 
@@ -99,7 +99,7 @@
 | ZenMarket 全般 | **公開してよい。** 公式ページの Wayback 2026-07-25 を取得でき（§0）、手数料・梱包無料・保管料・入金手数料の原文がある。直アクセス 403 は取得手段の問題で情報の欠如ではない | `sourceUrl` は `fees.aspx` のまま、`/sources` に「archived copy 2026-07-25」と確認日を併記。`primarySource: true` 維持 |
 | Royal Mail £8 | 公開してよい | `unverified`（点線）維持。B6 の note |
 | DE/FR 郵便の立替手数料 | 公開してよい | `null`（—）維持。既にそうなっている |
-| Neokyo 週次保管料・Jauce 月次保管料の額 | 公開してよい | 任意欄に「free N days, then a fee (amount not published)」 |
+| Neokyo 週次保管料・Jauce 月次保管料の額 | 公開してよい | **Neokyo は取れた**（/en/storage の週次表）。額が無いのは Jauce だけで、そこは「free 60 days, then a monthly fee (amount not published)」＋額 null |
 | Zonos 利用料の額 | 公開してよい | **null 行を必ず出す**（T11）。無いことにしない |
 | FJ 会員ランクの国際送料 %OFF | 公開してよい | What could be off に1行「FROM JAPAN discounts international shipping for repeat customers (rate not published)」 |
 | EU €3 の代行への適用 | 公開してよい | tier を `unverified` に（T17） |
@@ -139,14 +139,14 @@
 
 | # | タスク | 完了の定義 |
 |---|---|---|
-| T14 | Buyee ショッピングの同一店舗まとめ（同一 site かつ同一店舗ドメインで1注文） | 同一店舗2点で purchase-fee ¥500 × 1 |
+| T14 | **済**。Buyee ショッピングの同一店舗まとめ（同一 site かつ同一店舗ドメインで1注文）。**店舗は `Item` に欄を足さず出品URLから引いた**（`src/lib/pricing/shops.ts`）。欄にすると画面側の埋め忘れが黙って点ごと課金に戻り、誤りが表に出ない。rakuten / yahoo-shopping は URL の店舗コード、駿河屋・まんだらけ・ZOZO・HMV・とらのあなはドメインで1店。ヤフオク・メルカリは原文が「1件ごと」なのでまとめない。Amazon は同一出品者と読める根拠が無いのでまとめず、**まとめ損ねた点数を内訳に書く**（この過大計上は報酬を払う社に不利だが黙って安くはしない） | 同一店舗2点で purchase-fee ¥500 × 1 |
 | T15 | AU ≤A$1,000・SG <S$400 の代行前徴収 GST を全社に実装（基数＝商品＋手数料＋国内送料＋国際送料）。Buyee・FJ・ZM(AU) は `fixed`、Neokyo・Jauce・ZM(SG) は `unverified` | SG 基準例で GST 9% ≒ ¥1,500 が全社に出る。tier が社ごとに違う |
-| T16 | EMS 行の tier を「料金 fixed／重量 estimate」に分離。`emsMarkupTier` を Neokyo・Buyee・ZM は `fixed`、FJ は `estimate` のまま。「published rate」は tier に従って表記 | 価格・重量・国内送料が全て確定の入力で `approximate === false` になる入力が存在する |
-| T17 | €3 の tier を `unverified`、ZM 入金手数料 3.5% を `estimate`（原文 from 1%） | 点線／琥珀で描かれる |
+| T16 | **済**。EMS 行の tier を「料金の確度／重量の確度」に分離。EMS 行の tier は**その社が公表額をそのまま転嫁しているか**だけを表し、重量が推定であることは `Row.approximate` が別に数える。`emsMarkupTier` は Neokyo `fixed`（原文「We do not charge any Neokyo fee on shipping cost」）、ZM・FJ は `estimate` のまま。**Buyee は指示の `fixed` ではなく `unverified` にした**——社の記述が無く、根拠は実請求1件の一致（二次情報）だけなので、不変条件4「二次情報は点線」に従った | 価格・重量・国内送料が全て確定の入力で `approximate === false` になる入力が存在する |
+| T17 | **済**。€3（DE/FR）を `unverified`——制度の原文は取れているが「代行経由の購入が distance sale of imported goods に当たるか」が断定できず、当たらなければ ¥489/点 が総額から消える。ZM 入金手数料 3.5% を `estimate`——公表値は「Funds Deposit Fee (from 1%)」だけで、3.5% は実請求からの逆算。実請求が固定するのは**掛け方（gross-up）**であって率ではない | 点線／琥珀で描かれる |
 | T18 | `resolveWeight`：スケール表記は前後に「スケール／scale／フィギュア」を要求、1文字 CJK トークンを削除、PSA/BGS の数字連結に対応 | `logic.md` §5 の誤爆 13 件が null か妥当値になり、取りこぼし `psa10 charizard` が当たる |
-| T19 | 保管料を任意欄に（Buyee 30日→¥100〜300/日、ZM 60日→¥50/日/点、Neokyo 45日・Jauce 60日・FJ 60日は額 null） | 5社の optionalLines に storage 行が出る |
+| T19 | **済**。保管料を5社の任意欄に。額を取りに行った結果、指示の想定と3社ずれた: **Neokyo は額が在った**（/en/storage の週次表 Small ¥350〜Large ¥1,400。fees ページと FAQ しか見ていなかったのが原因）。**FROM JAPAN は有料延長が存在しない**（60日で廃棄・延長不可 help_logistics_110）＝分かっている 0 なので 0。Jauce だけ「monthly storage fee」で額が無く null。Buyee は梱包後重量で段が決まるので個口ごとに実額。任意費目の型に `amountFor`（個口・重量・点数から実額）と null 額を足し、note（単位・上限）も画面に出す | 5社の optionalLines に storage 行が出る |
 | T20 | `compare()` 入口で `Number.isFinite` と `qty >= 1` を検査 | NaN／Infinity／qty 0 で例外か空結果。順位表に NaN が混ざらない |
-| T21 | 任意欄の整理：FJ Protection Plan の二重計上を削除、輸出通関 ¥2,800 を Jauce・Neokyo にも、Neokyo 開梱＝1,000＋梱包料、Jauce 割れ物梱包 600+240/kg | 各社の optionalLines が fees.md の原文一覧と一致 |
+| T21 | **済**。FJ Protection Plan の二重計上を削除（原文 title_serviceRule_670 で必須＝既に service-fee にある）。**輸出通関 ¥2,800 は5社すべてに**——これは代行の費目ではなく日本郵便の費目なので、日本郵便の原文（輸出申告代行手数料 2,800円／件、複数個口は合わせて1件）に当たって `EXPORT_DECLARATION_FEE_YEN` に出典ごと置き、額を書いていない Neokyo・ZenMarket も「書いていない」を note に出したうえで同額で出す（ZM は Arquivo.pt の写しを全文検索して記載が無いことを確認）。Neokyo 開梱＝¥1,000＋その個口の梱包料。Jauce は割れ物梱包 ¥600+¥240/kg（必須 Smart Packing の**代わり**なので全額＋置き換えの note）・速達・写真・個別作業を追加し、プレミアム保険 1.9% は**基数が原文から読めない**ので額 null。Buyee 写真 ¥300/個口、FJ 外注梱包（「実費」なので null）も追加 | 各社の optionalLines が fees.md の原文一覧と一致 |
 | T22 | 監視：`fees-check.ts` に日本郵便の国際郵便お知らせページと為替の出典を追加、jauce の新 URL を登録 | 週次 Action の対象 URL 一覧に 3 件増え、直近実行が全件 200 |
 | T22b | **済**（為替の分）。`fees-check.ts` が ECB の出典を見る。**ハッシュでは見ない**（参照レートは毎日変わるので毎週必ず差分が出て、出た瞬間に意味を失う）。見るのは (a) `rates.ts` の値と出典の値のずれが 2% 以上か、(b) 転記が出典の参照日より 14 日以上古いか、(c) 通貨が出典から消えたか。消えた通貨は据え置いて報せるだけで、推測で埋めない | `npm run fees:check` が「為替は出典の 2026-09-04 値と 2% 以内（転記は 2026-09-04、2026-09-06 確認）」を出す。閾値 2% の根拠は ¥20,000 で ¥400＝実測の籠で1位と2位を分ける ¥50 より大きいこと |
 
