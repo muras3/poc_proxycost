@@ -100,6 +100,9 @@ export function WeightLadder({
   const nowRef = useRef<HTMLLIElement | null>(null);
 
   // 現在段を視界に入れる。42段あるので、探させない。
+  // **目盛りの中だけを動かす。** scrollIntoView() は祖先も動かすので、ページ全体が
+  // 勝手にスクロールし、順位表の上に置いたはずの開示が画面から押し出される
+  // （e2e/compare.spec.ts の 19・24 がそれを掴んだ）。ここは自分の中だけを送る。
   useEffect(() => {
     const list = listRef.current;
     const now = nowRef.current;
@@ -107,7 +110,11 @@ export function WeightLadder({
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    now.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+    const behavior: ScrollBehavior = reduce ? 'auto' : 'smooth';
+    // 縦積み（sm 以上）と横並び（モバイル）の両方があるので、両軸を送る。
+    const top = now.offsetTop - list.clientHeight / 2 + now.clientHeight / 2;
+    const left = now.offsetLeft - list.clientWidth / 2 + now.clientWidth / 2;
+    list.scrollTo({ top: Math.max(0, top), left: Math.max(0, left), behavior });
   }, [stepIndex, overMax]);
 
   return (
@@ -115,10 +122,15 @@ export function WeightLadder({
       <h3 className="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
         EMS steps
       </h3>
+      {/* **スクロールする領域はキーボードで届かなければならない**（WCAG 2.1.1）。
+          42段あってスクロールするので、tabIndex と名前を持たせて焦点を当てられるようにする。
+          axe の scrollable-region-focusable がここを serious で掴む。 */}
       <ol
         ref={listRef}
         data-testid="weight-ladder"
-        className="flex max-h-64 flex-row overflow-auto sm:max-h-72 sm:flex-col"
+        tabIndex={0}
+        aria-label="EMS weight steps"
+        className="flex max-h-64 flex-row overflow-auto rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neutral-700 sm:max-h-72 sm:flex-col dark:focus-visible:outline-neutral-300"
       >
         {rungs.map((rung) => {
           if (rung.kind === 'gap') {

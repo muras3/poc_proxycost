@@ -172,7 +172,10 @@ export function ParcelView({
       window.clearTimeout(t2);
       window.clearTimeout(t3);
     };
-  }, [anim.phase, anim.sig, target]);
+    // **依存は sig だけ。** phase を依存に入れると、着地で effect が張り直されて
+    // 掃除関数が段判定のタイマーを消し、箱が 'landed' のまま止まる。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anim.sig, target]);
 
   const { shown, phase, delta } = anim;
   if (!shown || !target) return null;
