@@ -250,13 +250,15 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 ├──────────────────────────────────────────────────────────────────────────┤
 │ [ Paste a listing URL, or search by keyword                    ] [Add]   │
 │                                                                          │
-│ CART                                                                     │
-│  1/7 scale figure ...     ¥3,000   Yahoo! Auctions · read 09-06        ✕ │
-│                           shipping included by seller                    │
-│                           ~1,500 g · 1/7 scale · n=647 → /weights        │
-│  Nendoroid ...           ~¥2,800 ✎  from mercari.com search · reference ✕ │
-│                           ~¥800 domestic assumed · paste URL to know     │
-│                           ~440 g · Nendoroid · n=426 → /weights          │
+│ PARCEL — IF EVERYTHING SHIPS TOGETHER │ CART                             │
+│  ┌───────────────┐  EMS STEPS         │  1/7 scale figure ...    ¥3,000 ✕ │
+│  │  ▯   ▯        │  2 kg     ¥7,900   │   Yahoo! Auctions · read 09-06   │
+│  │               │ [3 kg    ¥10,300]  │   shipping included by seller    │
+│  └───────────────┘  3.5 kg  ¥11,500   │   ~1,500 g · 1/7 scale · n=647   │
+│  Weight     ~2.6 kg after packing     │  Nendoroid ...        ~¥2,800 ✎ ✕ │
+│  EMS postage ¥10,300 zone 4, 1 parcel │   from mercari.com · reference   │
+│  +¥0 same step, so the box did not …  │   ~¥800 domestic assumed         │
+│  EMS is priced by weight alone — …     │   ~440 g · Nendoroid · n=426     │
 ├──────────────────────────────────────────────────────────────────────────┤
 │ Neokyo is cheapest. FROM JAPAN costs ¥1,250 more, ZenMarket ¥2,950,      │
 │ Buyee (default) ¥5,250.                                                  │
@@ -309,6 +311,15 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 ┌────────────────────────────┐
 │ proxycost    Ship to [US ▾]│
 │ [Paste URL or search    ][+]│
+│ PARCEL — IF EVERYTHING …   │
+│ ┌────────────────────────┐ │
+│ │   ▯    ▯               │ │
+│ └────────────────────────┘ │
+│ Weight  ~2.6 kg after pack.│
+│ EMS postage ¥10,300 zone 4 │
+│ +¥0 same step, box unchanged│
+│ EMS STEPS ‹2 kg [3 kg] 3.5›│
+│ EMS is priced by weight … │
 │ CART (2)  ▸                │
 ├────────────────────────────┤
 │ Neokyo is cheapest.        │
@@ -356,6 +367,15 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 
 - カートはモバイルでは折りたたみ（件数表示）。編集時に開く。
 - 展開は複数行同時に開けてよい（閉じる操作を強いない）。
+- **箱は入力とカートと同じ視界に置く**（2026-09-07）。足した品が箱に落ちる絵は、
+  見られなければ何も伝えない。順位表の下に置いていたときは入力から1画面以上下で、
+  誰も見ていないあいだに動いて終わっていた。
+  - `lg` 以上: 入力の直下に2列（左＝箱＋段、右＝カート）。横に並べるので順位表は下がらない。
+  - `< lg`: 縦積みで**箱をカートの上**に。カートは足すたびに開き1点で 300px 以上あるので、
+    下に置くと2点目から画面の外に出る。**スクロールで解決しない**（`scrollIntoView` が
+    祖先ごと動かして常時開示を画面外へ押し出した前科がある）。位置で解決する。
+  - DOM の順＝画面の順＝フォーカスの順。だから縦積みで先に来る箱が `lg` では左の列になる。
+  - カートが空でも箱は残す（落ちる先を先に見せる）。**空の箱は数字を1つも出さない。**
 
 ### 7.3 `/` 重量が分からない場合（差分のみ）— **廃止（2026-09-06、§4 改訂）**
 
@@ -475,7 +495,7 @@ Tailwind v4 の `dark:` は `prefers-color-scheme` に従う。テーマ切替�
 | `BreakdownMatrix` | `lg` 以上の全表。列順＝順位。一次／二次で見出し下線の線種を変える |
 | ~~`WeightStepTable`~~ | 撤去（§4 改訂）。重量欄が常時編集可能になったため |
 | `WeightBox`（`ItemList` 内） | 重量入力（常に数字入り）。出どころ（表のライン／仮置き／利用者）、P25–P75、`reset to ~439 g`、`⚠ This weight decides the cheapest: …`（`weightSensitivity`） |
-| `ParcelView` | 箱・EMS の段・**送料の差分**。順位の下・内訳の上（答え → その根拠 → 全費目）。数字は `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()` だけから来る。**跨がなかった回は「+¥0」を出して静止する** |
+| `ParcelView` | 箱・EMS の段・**送料の差分**。**入力の直下**、カートと同じ視界（`lg` で左の列、モバイルでカートの上）。数字は `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()` だけから来る。**跨がなかった回は「+¥0」を出して静止する**。カートが空のときは空の箱だけを出し、数字は出さない |
 | `PackingBox` | 段ボール箱。**「詰める」絵ではない**（EMS は重量だけで決まり体積は効かない）。大きさは段の添字からだけ、離散的に決まる。推定重量の品は半透明 |
 | `WeightLadder` | EMS 42段の目盛り。現在段と段の中の進み。表の外は `···` の先に置き、料金は `—` |
 | `ConsolidationCallout` | Buyee 同梱の呼びかけ（`n ≥ 2` のときのみ） |
