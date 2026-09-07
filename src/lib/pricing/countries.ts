@@ -279,7 +279,22 @@ export const COUNTRIES: Record<CountryCode, Country> = {
   },
   CA: {
     name: 'Canada', ccy: 'CAD', base: 'FOB',
-    dutyFreeLimit: 20, dutyRate: null, dutyTier: 'none',
+    // **C$20 超の関税率。**以前は null で画面に「—」を出していた。EU と同じ理由で埋める
+    // ——「関税が無い」ではなく「我々が調べていない」で、しかも関税は GST の課税ベースに
+    // 入るので null が 0 に畳まれて GST まで縮む。
+    //
+    // WTO World Tariff Profiles 2025 のカナダプロファイル Part A.1 原文:
+    //   Simple average 2025 — Total 3.7 / Ag 14.5 / **Non-Ag 2.0**
+    //   Trade weighted average 2025 — 3.6 / 15.1 / 2.3
+    // 非農産品の単純平均 **2.0%** を採る（EU と同じ選び方。加重平均はその国の実際の
+    // 輸入額の構成で、個人小包の中身の分布ではない）。
+    //
+    // **EU より不確かである点を明記しておく。**同 Part A.1 の度数分布で、カナダは
+    // 非農産品の税表の行の **79.2% が無税**（EU は 29.1%）。つまり**最頻値は 0%** で、
+    // 2.0% は「無税の行が大半・残りに 5〜25% が散る」分布の平均でしかない。
+    // 個別の品目では 0% か、2% よりずっと高いかのどちらかになりやすい。
+    dutyFreeLimit: 20, dutyRate: 0.02, dutyTier: 'estimate',
+    dutyRateSourceUrl: 'https://www.wto.org/english/res_e/statis_e/daily_update_e/tariff_profiles/CA_e.pdf',
     vatRate: 0.05, vatFreeLimit: 20,
     // Canada Post 原文:「We apply a handling fee of CAN$9.95 per dutiable or taxable
     // mail item.」——**課税対象の郵便物1個ごと**。C$20 以下は同じページが

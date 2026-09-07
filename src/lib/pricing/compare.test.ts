@@ -64,15 +64,21 @@ describe('the breakdown explains the total', () => {
     }
   });
 
-  test('Canada is down to one unknown: the two lines that certainly happen now carry numbers', () => {
+  test('Canada has no unknowns left: all three lines carry a number', () => {
     // 以前は Duty・Provincial tax・Customs clearance fee の3つとも `—` だった。
-    // **州税と Canada Post の手数料は確実に発生する**ので、`—` は誤り（T23）。
-    // 残る Duty は品目分類が要る（T24）ので、これだけが未取得のまま。
+    // 州税と Canada Post の手数料は確実に発生するので `—` は誤り（T23）。
+    // **Duty も 2026-09-07 に埋めた。**品目分類は持っていないので、WTO のカナダ
+    // プロファイルの非農産品 MFN 単純平均 2.0% を推定として出す。
+    // **反証**: 同プロファイルでカナダは非農産品の税表の行の 79.2% が無税。
+    // 最頻値は 0% で、2.0% は分布の平均でしかない。だから tier は estimate。
     const row = compare({ items: items(1, 600), country: 'CA' }).rows[0]!;
-    expect(line(row, 'duty').amount).toBeNull();
+    const duty = line(row, 'duty');
+    expect(duty.amount).toBeGreaterThan(0);
+    expect(duty.tier).toBe('estimate');
+    expect(duty.note).toContain('2.0%');
     expect(line(row, 'province-tax').amount).toBeGreaterThan(0);
     expect(line(row, 'clearance').amount).toBeGreaterThan(0);
-    expect(row.excluded).toEqual(['Duty']);
+    expect(row.excluded).toEqual([]);
   });
 
   test('a fetched zero stays a zero: under-threshold duty is 0 with its reason', () => {
@@ -122,7 +128,10 @@ describe('the breakdown explains the total', () => {
   test('the German Auslagepauschale is EUR 7.50 per consignment — the 2026-03-10 amount, not the 2018 one', () => {
     // €6 は 2018-03-01 の導入時の額で、**2026-03-10 に €7.50 へ上がっている。**
     // 「一次情報だから正しい」ではなく「いつの一次情報か」を見ないと、7年前の値を今日の値として出す。
-    const fee = line(compare({ items: items(1, 600), country: 'DE' }).rows[0]!, 'clearance');
+    // **手数料が立つ行を選ぶ。**ZenMarket は IOSS で決済時に VAT を払うので国境で
+    // 徴収するものが無く、この社だけ 0 になる（別テストで見ている）。
+    const rows = compare({ items: items(1, 600), country: 'DE' }).rows;
+    const fee = line(byId(rows, 'neokyo'), 'clearance');
     expect(fee.amount).not.toBeNull();
     expect(fee.note).toContain('EUR 7.5 × 1 parcel');
     // 原典（Deutsche Post「Leistungen und Preise」）には当たれていない。二次情報として出す。
@@ -736,9 +745,21 @@ describe('domestic shipping is charged by every service, and taxed where the bas
     for (const n of [1, 2, 3]) {
       const paid = compare({ items: items(n, 600), country: 'GB' }).rows;
       const free = compare({ items: items(n, 600, 3000, { freeShipping: true }), country: 'GB' }).rows;
+      // **税を運んでいる行で測る。**ZenMarket は閾値の中では決済時に払う（IOSS）ので
+      // 国境 VAT が 0 になり、代わりに prepaid-import-tax が同じ課税ベースを持つ。
+      // どちらの経路でも「実際に払う国内送料が課税ベースに入る」ことは変わらない。
+      const taxOf = (row: Row) => (line(row, 'vat').amount ?? 0)
+        + (row.lines.find((l) => l.key === 'prepaid-import-tax')?.amount ?? 0);
       for (const row of paid) {
-        const delta = line(row, 'vat').amount! - line(byId(free, row.id), 'vat').amount!;
-        expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n));
+        const delta = taxOf(row) - taxOf(byId(free, row.id));
+        if (row.serviceId === 'zenmarket') {
+          // **IOSS の課税ベースは「代行が請求する全部」**なので、国内送料が増えると
+          // その社の入金手数料（3.5%）も増え、その増分にも VAT が乗る。
+          // 国境払い（課税ベース = CIF）にはこの連鎖が無い。**同じ 20% でも額が違う。**
+          expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n * 1.035));
+        } else {
+          expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n));
+        }
       }
     }
   });
@@ -1127,11 +1148,11 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **SG はこの帯（5点×¥12,800＝CIF が S$400 超）で S$10.90 が乗る。**
     expect(totals).toEqual({
       US: [36125, 37075, 38575, 38870, 40605, 55825],
-      GB: [40121, 41071, 42571, 42801, 44528, 66256],
-      DE: [42735, 43685, 45185, 45415, 47142, 67412],
-      FR: [43152, 44102, 45602, 45832, 47559, 68333],
+      GB: [40121, 41071, 42156, 42571, 44528, 66256],
+      DE: [42735, 43685, 44529, 45185, 47142, 67412],
+      FR: [43152, 44102, 44880, 45602, 47559, 68333],
       AU: [33950, 36630, 36740, 36900, 40543, 51000],
-      CA: [36762, 37712, 39212, 39442, 41169, 59552],
+      CA: [37062, 38012, 39512, 39742, 41469, 59852],
       SG: [30836, 32101, 33372, 33736, 35083, 45235],
     });
   });
