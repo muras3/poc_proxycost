@@ -1728,12 +1728,6 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
 // 叩いたが商品ごとの重量が取れなかったカテゴリ。/weights はこれも出す。
 export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
   {
-    id: 'apparel',
-    labelEn: 'Clothing and outfit sets',
-    labelJa: 'アパレル・コーデセット',
-    reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
-  },
-  {
     id: 'instruments',
     labelEn: 'Musical instruments',
     labelJa: '楽器',

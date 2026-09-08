@@ -67,6 +67,7 @@ const CATEGORY_ORDER = [
   'books-manga',
   'tcg-singles',
   'kpop',
+  'apparel',
   'used-luxury',
   'sneakers',
   'food-tea-sake',
@@ -118,12 +119,6 @@ const MATCH_DENYLIST: Record<string, Record<string, [string, string][]>> = {
 // 出典: REQUIREMENTS.md §4 / README.md「今できないこと」。
 const NOT_OBTAINED = [
   {
-    id: 'apparel',
-    labelEn: 'Clothing and outfit sets',
-    labelJa: 'アパレル・コーデセット',
-    reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
-  },
-  {
     id: 'instruments',
     labelEn: 'Musical instruments',
     labelJa: '楽器',
@@ -151,6 +146,10 @@ const PENDING_CATEGORIES: { id: string; waitingOn: string }[] = [
     id: 'cameras',
     waitingOn: 'a US duty verdict in src/lib/pricing/us-duty.ts (HTS headings for cameras and lenses) and a glyph shape in src/lib/ui/glyphs/shapes.ts for each of the 8 lines. The resolver also needs an accessory gate: a camera strap listed with the words for SLR takes the 640 g body weight.',
   },
+  {
+    id: 'apparel',
+    waitingOn: 'a US duty verdict (HTS 61/62 rates run past the 12.5% floor, so this category is almost certainly can-exceed and needs the headings pulled), a glyph shape for each of the 10 lines (the garment family has no t-shirt, hoodie, skirt or coat kind yet), and labels in data/weights-corpus.json for the 18 apparel titles that read listing-no-data because apparel was not obtained.',
+  },
 ];
 
 // ── 出さないライン。カテゴリごとではなく1本だけ待たせるときに使う。
@@ -174,7 +173,8 @@ const PARTIAL_GAPS = [
   { category: 'games', gap: 'Handheld consoles', reason: 'The adopted shop has only 26 handheld rows, below the threshold of 50, and they range from 400 g to 4,100 g. A Chinese pocket handheld and a boxed Game Boy are not the same object, and there is nothing to separate them with, so nothing is claimed.' },
   { category: 'games', gap: 'Current-generation consoles', reason: 'The console line is built from retro systems (Famicom through Wii) sold as boxed sets. No shop publishing grams for a Switch or a PS5 console was found.' },
   { category: 'books-manga', gap: 'Illustrated reference books', reason: 'The general-book line comes from 84 novels. A 図鑑 or a 教科書 is a different object, so titles that name one resolve to nothing rather than to the novel median.' },
-  { category: 'cameras', gap: 'A body sold as a lens kit, and a Japan-based seller', reason: 'The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says ダブルレンズキット is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue.' },
+  { category: 'cameras', gap: 'A body sold as a lens kit, and a Japan-based seller', reason: 'The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says twin-lens kit is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue.' },
+  { category: 'apparel', gap: 'Dresses, kimono and a Japan-based seller', reason: 'The dress slice is real (n=3,578, median 431 g, spread 1.71) but the Japanese word ワンピース is also the title of One Piece, which the live search returns by the hundred, so it cannot be a match word. Kimono rows at the Japanese shops are pseudo or under the threshold. The adopted shop is a US retailer whose whole-catalogue verdict is suspect.' },
 ];
 
 // ── フィギュア / レコード・CD の種。JSON が無いときだけ書き出す。

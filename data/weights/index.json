@@ -9,7 +9,7 @@
     "domainsProbed": 162,
     "domainsWithUsableData": 51,
     "matchWordsDropped": 16,
-    "notObtained": 3
+    "notObtained": 2
   },
   "categoryIds": [
     "figures",
@@ -33,6 +33,14 @@
         "lineCount": 8,
         "sampleN": 6543,
         "waitingOn": "a US duty verdict in src/lib/pricing/us-duty.ts (HTS headings for cameras and lenses) and a glyph shape in src/lib/ui/glyphs/shapes.ts for each of the 8 lines. The resolver also needs an accessory gate: a camera strap listed with the words for SLR takes the 640 g body weight."
+      },
+      {
+        "id": "apparel",
+        "labelEn": "Clothing",
+        "labelJa": "衣類",
+        "lineCount": 10,
+        "sampleN": 8899,
+        "waitingOn": "a US duty verdict (HTS 61/62 rates run past the 12.5% floor, so this category is almost certainly can-exceed and needs the headings pulled), a glyph shape for each of the 10 lines (the garment family has no t-shirt, hoodie, skirt or coat kind yet), and labels in data/weights-corpus.json for the 18 apparel titles that read listing-no-data because apparel was not obtained."
       }
     ],
     "lines": [
@@ -48,12 +56,6 @@
     ]
   },
   "notObtained": [
-    {
-      "id": "apparel",
-      "labelEn": "Clothing and outfit sets",
-      "labelJa": "アパレル・コーデセット",
-      "reason": "Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway."
-    },
     {
       "id": "instruments",
       "labelEn": "Musical instruments",
@@ -116,7 +118,12 @@
     {
       "category": "cameras",
       "gap": "A body sold as a lens kit, and a Japan-based seller",
-      "reason": "The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says ダブルレンズキット is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue."
+      "reason": "The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says twin-lens kit is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue."
+    },
+    {
+      "category": "apparel",
+      "gap": "Dresses, kimono and a Japan-based seller",
+      "reason": "The dress slice is real (n=3,578, median 431 g, spread 1.71) but the Japanese word ワンピース is also the title of One Piece, which the live search returns by the hundred, so it cannot be a match word. Kimono rows at the Japanese shops are pseudo or under the threshold. The adopted shop is a US retailer whose whole-catalogue verdict is suspect."
     }
   ],
   "matchWordsDropped": [
