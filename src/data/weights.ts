@@ -1751,6 +1751,18 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     labelJa: '電動工具・ミシン',
     reason: 'Never attempted, and no Shopify catalogue carrying them with per-product grams was found. Tool sets are multi-piece anyway, which no single weight would answer.',
   },
+  {
+    id: 'stationery',
+    labelEn: 'Stationery',
+    labelJa: '文房具',
+    reason: 'Measured and rejected. japanesetaste.com carries 285 office-supply rows, but the slice spans a 2 g refill to a 1,208 g paper pack: writing supplies n=113 spread 6.3, paper n=83 spread 46.8. Nothing in a title separates a pen from a ream.',
+  },
+  {
+    id: 'supplements',
+    labelEn: 'Supplements',
+    labelJa: 'サプリメント',
+    reason: 'Measured and rejected. kokorojapanstore.com n=163 median 90 g spread 5.0, japanesetaste.com n=149 median 174 g spread 6.6. A 30-day pouch of capsules and a 3.4 kg tub of protein powder sit in one slice and a title does not say which it is.',
+  },
 ];
 
 export const WEIGHTS_CHECKED_ON = '2026-09-08';

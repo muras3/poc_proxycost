@@ -69,6 +69,7 @@ const CATEGORY_ORDER = [
   'tcg-singles',
   'tcg-sealed',
   'kpop',
+  'cosmetics',
   'apparel',
   'used-luxury',
   'sneakers',
@@ -144,6 +145,18 @@ const NOT_OBTAINED = [
     labelJa: '電動工具・ミシン',
     reason: 'Never attempted, and no Shopify catalogue carrying them with per-product grams was found. Tool sets are multi-piece anyway, which no single weight would answer.',
   },
+  {
+    id: 'stationery',
+    labelEn: 'Stationery',
+    labelJa: '文房具',
+    reason: 'Measured and rejected. japanesetaste.com carries 285 office-supply rows, but the slice spans a 2 g refill to a 1,208 g paper pack: writing supplies n=113 spread 6.3, paper n=83 spread 46.8. Nothing in a title separates a pen from a ream.',
+  },
+  {
+    id: 'supplements',
+    labelEn: 'Supplements',
+    labelJa: 'サプリメント',
+    reason: 'Measured and rejected. kokorojapanstore.com n=163 median 90 g spread 5.0, japanesetaste.com n=149 median 174 g spread 6.6. A 30-day pouch of capsules and a 3.4 kg tub of protein powder sit in one slice and a title does not say which it is.',
+  },
 ];
 
 // ── 取得済みだが、まだ src/data/weights.ts に出さないもの。
@@ -163,6 +176,10 @@ const PENDING_CATEGORIES: { id: string; waitingOn: string }[] = [
   {
     id: 'apparel',
     waitingOn: 'a US duty verdict (HTS 61/62 rates run past the 12.5% floor, so this category is almost certainly can-exceed and needs the headings pulled), a glyph shape for each of the 10 lines (the garment family has no t-shirt, hoodie, skirt or coat kind yet), and labels in data/weights-corpus.json for the 18 apparel titles that read listing-no-data because apparel was not obtained.',
+  },
+  {
+    id: 'cosmetics',
+    waitingOn: 'a US duty verdict (HTS 3304 / 3305 / 3401) and a glyph shape for each of the 8 lines (a bottle family exists and fits).',
   },
   {
     id: 'toys-models',
@@ -200,6 +217,7 @@ const PARTIAL_GAPS = [
   { category: 'toys-models', gap: 'Lego, die-cast cars, jigsaw puzzles and model paint', reason: 'The only block rows are 63 Nanoblock kits, a different object; die-cast is 184 rows with a spread of 5.9 at one shop and 76 candy-toy-mixed rows at another; the 51 puzzle rows are small anime and 3D puzzles while the live titles ask about 1,000-piece boards; no catalogue carrying model paint was found. Model trains are 169 rows with a spread of 6.0.' },
   { category: 'cameras', gap: 'A body sold as a lens kit, and a Japan-based seller', reason: 'The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says twin-lens kit is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue.' },
   { category: 'apparel', gap: 'Dresses, kimono and a Japan-based seller', reason: 'The dress slice is real (n=3,578, median 431 g, spread 1.71) but the Japanese word ワンピース is also the title of One Piece, which the live search returns by the hundred, so it cannot be a match word. Kimono rows at the Japanese shops are pseudo or under the threshold. The adopted shop is a US retailer whose whole-catalogue verdict is suspect.' },
+  { category: 'cosmetics', gap: 'Perfume, toothpaste and sample sets', reason: 'Perfume is 30 rows and toothpaste 30, both under the threshold of 50. A three-piece sample set is three containers and the lines hold one.' },
   { category: 'tcg-sealed', gap: 'Single sealed packs and lots', reason: 'A pack is roughly a tenth of a box and the catalogue does not type packs separately. Oripa and lucky-bag listings state a count and the table holds no per-item weight to multiply.' },
 ];
 
