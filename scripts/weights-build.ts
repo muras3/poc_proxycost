@@ -137,13 +137,13 @@ const NOT_OBTAINED = [
     id: 'home-appliances',
     labelEn: 'Home appliances and consumer audio',
     labelJa: '家電・オーディオ',
-    reason: 'Not obtained. Rice cookers, vacuum cleaners, hair dryers, earphones, record players and Apple Watch straps are all in the live search and none of them is in any catalogue that publishes per-product grams.',
+    reason: 'Not obtained, and four catalogues were read before saying so. audio46.com (3,819 products) types 1,375 in-ear headphones and 59% of them carry exactly 907 g, which is two pounds of packing box and not an earphone. turntablelab.com (5,000 products) has 180 turntables at a median of 9,072 g, spread 2.27, and the slice is sound — but it is a hi-fi dealer, and the live titles are suitcase and portable players that weigh a third of that with nothing in a title to separate them, so nothing is claimed. u-turnaudio.com and us.zojirushi.com do not answer products.json. Rice cookers, vacuum cleaners, hair dryers and watch straps were not found in any catalogue that publishes per-product grams.',
   },
   {
     id: 'power-tools',
     labelEn: 'Power tools and sewing machines',
     labelJa: '電動工具・ミシン',
-    reason: 'Never attempted, and no Shopify catalogue carrying them with per-product grams was found. Tool sets are multi-piece anyway, which no single weight would answer.',
+    reason: 'Not obtained. toolnut.com publishes real per-product weights (distinct 49.7%) but only 483 of its 5,000 products carry grams at all, and they are bits, pliers and sandpaper rather than drivers and drills; no product type reaches the threshold of 50. acmetools.com and www.andertons.co.uk do not answer products.json. Tool sets are multi-piece anyway, which no single weight would answer.',
   },
   {
     id: 'stationery',
