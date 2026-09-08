@@ -1739,6 +1739,18 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     labelJa: 'webカメラ・PC周辺機器',
     reason: 'The used-camera catalogue behind the cameras category carries no webcam, and no other shop publishing a per-product weight for one was found. Sixteen live titles ask about them.',
   },
+  {
+    id: 'home-appliances',
+    labelEn: 'Home appliances and consumer audio',
+    labelJa: '家電・オーディオ',
+    reason: 'Not obtained. Rice cookers, vacuum cleaners, hair dryers, earphones, record players and Apple Watch straps are all in the live search and none of them is in any catalogue that publishes per-product grams.',
+  },
+  {
+    id: 'power-tools',
+    labelEn: 'Power tools and sewing machines',
+    labelJa: '電動工具・ミシン',
+    reason: 'Never attempted, and no Shopify catalogue carrying them with per-product grams was found. Tool sets are multi-piece anyway, which no single weight would answer.',
+  },
 ];
 
 export const WEIGHTS_CHECKED_ON = '2026-09-08';
