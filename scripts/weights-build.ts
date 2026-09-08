@@ -73,6 +73,7 @@ const CATEGORY_ORDER = [
   'fishing-tackle',
   'sports-goods',
   'games',
+  'cameras',
 ];
 
 // ── 誤爆する match 語を落とす。**数値は一切いじらない。**当てる語を狭めるだけ。
@@ -117,12 +118,6 @@ const MATCH_DENYLIST: Record<string, Record<string, [string, string][]>> = {
 // 出典: REQUIREMENTS.md §4 / README.md「今できないこと」。
 const NOT_OBTAINED = [
   {
-    id: 'cameras',
-    labelEn: 'Cameras and lenses',
-    labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
-  },
-  {
     id: 'apparel',
     labelEn: 'Clothing and outfit sets',
     labelJa: 'アパレル・コーデセット',
@@ -133,6 +128,12 @@ const NOT_OBTAINED = [
     labelEn: 'Musical instruments',
     labelJa: '楽器',
     reason: 'No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg).',
+  },
+  {
+    id: 'webcams-pc-peripherals',
+    labelEn: 'Webcams and PC peripherals',
+    labelJa: 'webカメラ・PC周辺機器',
+    reason: 'The used-camera catalogue behind the cameras category carries no webcam, and no other shop publishing a per-product weight for one was found. Sixteen live titles ask about them.',
   },
 ];
 
@@ -146,6 +147,10 @@ const NOT_OBTAINED = [
 // data/weights/index.json の `obtainedNotWiredUp` に理由ごと出るので、
 // 「測ったのに表に無い」が黙って埋もれることはない。
 const PENDING_CATEGORIES: { id: string; waitingOn: string }[] = [
+  {
+    id: 'cameras',
+    waitingOn: 'a US duty verdict in src/lib/pricing/us-duty.ts (HTS headings for cameras and lenses) and a glyph shape in src/lib/ui/glyphs/shapes.ts for each of the 8 lines. The resolver also needs an accessory gate: a camera strap listed with the words for SLR takes the 640 g body weight.',
+  },
 ];
 
 // ── 出さないライン。カテゴリごとではなく1本だけ待たせるときに使う。
@@ -169,8 +174,7 @@ const PARTIAL_GAPS = [
   { category: 'games', gap: 'Handheld consoles', reason: 'The adopted shop has only 26 handheld rows, below the threshold of 50, and they range from 400 g to 4,100 g. A Chinese pocket handheld and a boxed Game Boy are not the same object, and there is nothing to separate them with, so nothing is claimed.' },
   { category: 'games', gap: 'Current-generation consoles', reason: 'The console line is built from retro systems (Famicom through Wii) sold as boxed sets. No shop publishing grams for a Switch or a PS5 console was found.' },
   { category: 'books-manga', gap: 'Illustrated reference books', reason: 'The general-book line comes from 84 novels. A 図鑑 or a 教科書 is a different object, so titles that name one resolve to nothing rather than to the novel median.' },
-  { category: 'figures', gap: 'Capsule-toy and gashapon figures', reason: 'The 800 g generic line was measured on finished figures around 1/7 scale. A 20-50 g capsule-toy figure is twenty times lighter and no catalogue publishing grams for them was found, so the resolver refuses ガシャポン and 食玩 rather than lending them the generic number.' },
-  { category: 'figures', gap: 'Garage kits', reason: 'Every figure line was measured on finished figures. japan-figure.com has 3 resin-kit rows, so an unpainted unassembled kit is still unanswered.' },
+  { category: 'cameras', gap: 'A body sold as a lens kit, and a Japan-based seller', reason: 'The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says ダブルレンズキット is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue.' },
 ];
 
 // ── フィギュア / レコード・CD の種。JSON が無いときだけ書き出す。
