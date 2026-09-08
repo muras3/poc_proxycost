@@ -171,11 +171,13 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
       'フィギュア台座 スタンド 10個', 'フィギュア収納ボックス', 'ねんどろいど 専用ケース',
       '1/7 スケール フィギュア用 アクリルケース',
       'トレカ用スリーブ 100枚', 'トレカ ケース ローダー 25枚', 'トレカ バインダー 収納',
-      'PSA トレカ デッキケース',
       'スニーカーボックス 収納ケース', 'スニーカー用シューキーパー', 'スニーカー 靴紐 3足分',
     ]) {
       expect(resolveWeight(t).grams, t).toBeNull();
     }
+    // 2026-09-08 に tcg-sealed の行が入ったので、デッキケースは**容れ物の行**に当たる。
+    // 中身のシングル 50 g に流れないことがこの門の仕事で、そこは変わらない。
+    expect(resolveWeight('PSA トレカ デッキケース').lineId).toBe('deck-box');
     // **門は本物の出品を食わない。**中身を売っている出品は今までどおり当たる。
     expect(resolveWeight('ワンピース フィギュア ルフィ 正規品').lineId).toBe('figure-generic');
     expect(resolveWeight('トレカ プロモカード 5種11枚').lineId).toBe('single-card');
@@ -260,9 +262,24 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
   });
 
   test('a sealed card box and a photocard binder are not one card', () => {
-    expect(resolveWeight('ポケモンカード151 BOX シュリンク付き 新品 未開封 ポケカ').grams).toBeNull();
+    // 未開封の箱には 2026-09-08 に tcg-sealed の行が入った。**シングル 50 g ではない**
+    // ことがこの門の仕事で、7 倍の取り違えは今も止まっている。
+    expect(resolveWeight('ポケモンカード151 BOX シュリンク付き 新品 未開封 ポケカ').lineId).toBe('booster-box');
     expect(resolveWeight('Kpop Photo Card Binder with 6 Sticker Sheets & 50 Sleeves, Photo Card Holder').grams).toBeNull();
-    expect(resolveWeight('遊戯王 ブラックマジシャン ユニクロ Tシャツ メンズ').grams).toBeNull();
+    // 作品名はグッズにも付く。カードの 50 g ではなく、シャツの行に行く。
+    expect(resolveWeight('遊戯王 ブラックマジシャン ユニクロ Tシャツ メンズ').lineId).toBe('tshirt');
+  });
+
+  test('an accessory is not the thing it is for', () => {
+    // 2026-09-08 に入った行（カメラ・プラモデル・化粧品）に付属品が流れ込んでいた。
+    expect(resolveWeight('カメラストラップ 一眼レフ ミラーレス - メルカリ').grams).toBeNull();
+    expect(resolveWeight('塗装作業ベース ホビー 塗装用具 プラモデル 模型 フィギュア 塗料').grams).toBeNull();
+    expect(resolveWeight('ガンダムマーカー 塗装用 GSI クレオス 塗料 ラッカー プラモデル').grams).toBeNull();
+    // 'ストレイトナー' の中の 'トナー' が化粧水に当たっていた。日本語に語の境界は無い。
+    expect(resolveWeight('ダイソン Dyson Airstrait ストレイトナー ドライヤー ヘアアイロン').grams).toBeNull();
+    // 本体そのものは当たる。門は本物の出品を食わない。
+    expect(resolveWeight('Nikon D850 ボディ デジタル 一眼レフ カメラ 中古').lineId).toBe('dslr-body');
+    expect(resolveWeight('HG 1/144 ハンブラビ 組み立て式プラモデル').lineId).toBe('plastic-model');
   });
 
   test('a run of a magazine is not a manga set and not one issue', () => {
@@ -453,7 +470,7 @@ describe('titles that must still resolve', () => {
 // ── 当たらないときに何かを返してはいけない。ここが崩れると総額が嘘になる。
 describe('a title we cannot resolve stays unresolved', () => {
   test('no fallback, no guess, no zero', () => {
-    const r = resolveWeight('ミラーレス一眼 カメラ ボディ');
+    const r = resolveWeight('この題名は表のどの行にも当たらない');
     expect(r.grams).toBeNull();
     expect(r.grams).not.toBe(0);
     expect(r.tier).toBe('none');
@@ -492,7 +509,7 @@ describe('the weight the calculator puts on a cart item', () => {
   });
 
   test('a title off the table gets the assumed weight and says so', () => {
-    const w = weightFieldsFor('ミラーレス一眼 カメラ ボディ');
+    const w = weightFieldsFor('この題名は表のどの行にも当たらない');
     expect(w.weightG).toBe(ASSUMED_WEIGHT_G);
     expect(w.weightG).not.toBeNull();
     expect(w.weightG).not.toBe(0);
@@ -516,15 +533,15 @@ describe('the weight the calculator puts on a cart item', () => {
   });
 
   test('resolveWeight itself still refuses to guess — the assumption lives one layer up', () => {
-    expect(resolveWeight('ミラーレス一眼 カメラ ボディ').grams).toBeNull();
-    expect(weightFieldsFor('ミラーレス一眼 カメラ ボディ').weightG).toBe(ASSUMED_WEIGHT_G);
+    expect(resolveWeight('この題名は表のどの行にも当たらない').grams).toBeNull();
+    expect(weightFieldsFor('この題名は表のどの行にも当たらない').weightG).toBe(ASSUMED_WEIGHT_G);
   });
 });
 
 describe('a category the user picked by hand', () => {
   test('the category average is used only when the user names the category', () => {
-    expect(resolveWeight('ミラーレス一眼 カメラ ボディ').grams).toBeNull();
-    const r = resolveWeight('ミラーレス一眼 カメラ ボディ', 'figures');
+    expect(resolveWeight('この題名は表のどの行にも当たらない').grams).toBeNull();
+    const r = resolveWeight('この題名は表のどの行にも当たらない', 'figures');
     expect(r.grams).toBe(1000);
     expect(r.tier).toBe('estimate');
     expect(r.source).toBe('Figures category average');
