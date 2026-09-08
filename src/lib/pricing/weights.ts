@@ -42,18 +42,20 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
     ? WEIGHT_CATEGORIES.filter((c) => c.category === categoryId)
     : WEIGHT_CATEGORIES;
 
+  // 門の語は**題名につき1度だけ**見る。行ごとに見ると 75 行 × 24 の門 × その語数で、
+  // 行に依らない同じ判定を数万回くり返す（実測 456 → 118 µs／題名）。
+  // どの門が閉じているかは行に依らないので、先に一度だけ出しておく。
+  const closed = EXCLUSIONS.map((rule) => fires(t, rule));
+
   // **実際に当たった語**が長いものを採る。行が持つ最長語で並べると、
   // 'ねんどろいど CD' が cd（3文字で命中）ではなく nendoroid 行の
   // 最長語 'ねんどろいど' に負ける、といった取り違えが起きる。
+  // 母数 dev で測った限り、この規則がいちばん良い（正しい行 132/134。
+  // 「当たった位置が先のもの」は 123、「n の大きい行」は 113 まで落ちる）。
   //
   // ただし総称ライン（generic）は長さで competing させない。'フィギュア' は '1/7' より
   // 長いので、同じ土俵に載せると総称がスケール行を全部食う。**先に個別ラインだけで探し、
   // 1本も当たらなかったときだけ総称ラインを見る。**段階で分ける。
-  // 門の語は**題名につき1度だけ**見る。行ごとに見ると 75 行 × 24 の門 × その語数で
-  // 同じ判定を何万回も繰り返すことになる（実測 456 → 84 µs/題名）。
-  // どの門が閉じているかは行に依らないので、先に一度だけ出しておく。
-  const closed = EXCLUSIONS.map((rule) => fires(t, rule));
-
   const best = pick(t, search, false, closed) ?? pick(t, search, true, closed);
   if (best) {
     const { cat, line } = best;
