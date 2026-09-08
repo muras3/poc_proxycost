@@ -70,7 +70,7 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     category: 'figures',
     labelEn: 'Figures',
     labelJa: 'フィギュア',
-    checkedOn: '2026-09-07',
+    checkedOn: '2026-09-08',
     measured: false,
     sources: [
       {
@@ -80,6 +80,14 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
         variantsWithGrams: 4747,
         verdict: 'usable',
         reason: 'Every product carries grams. Lines with a scale in the title have a spread of 1.0x. Re-fetched 2026-09-07: 5,000 products, 10,630 variants with grams, verdict usable (distinct=287 at 2.7%, top value 22%). product_type=\'Figure\' is n=9,893.',
+      },
+      {
+        domain: 'japan-figure.com',
+        url: 'https://japan-figure.com/products.json?limit=250&page=1',
+        products: 10000,
+        variantsWithGrams: 17428,
+        verdict: 'usable',
+        reason: 'distinct=801 (4.6%), top value 9%, multiples of 100: 25%. Adopted 2026-09-08 for the prize line only. product_type=\'Prize Figures\' is n=749, median 480 g, p25 331 / p75 650, spread 1.96, verdict usable (distinct=173 at 23.1%, top value 7%). The plush rows from the same shop went to the toys-models category, because the resolver refuses every figures line on a title that says ぬいぐるみ.',
       },
     ],
     lines: [
@@ -97,7 +105,11 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     notes: 
       '5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight.\n'
       + '\n'
-      + '2026-09-07: added the generic line. The audit (docs/audit/logic.md §5) recorded that this category had no Japanese word for "a figure" at all — only the Japanese spellings of Nendoroid and Pop Up Parade — so ordinary Yahoo! Auctions and Mercari titles matched nothing. Two of the 37 live search titles were plain figure listings and both fell through. The 800 g is the same Solaris Japan catalogue re-fetched, sliced to product_type=\'Figure\' with the rows the existing lines already claim removed (1/4, 1/6, 1/7, 1/8, Nendoroid, figma, Pop Up Parade): n=5,103, verdict usable (distinct=179 at 3.5%, top value 41%), median 800 g, p25 800 / p75 1,300, spread 1.63. It is marked generic, which means it only resolves when no other line in the table matched. The Japanese word for a figure is five characters and \'1/7\' is three, so under the longest-match rule the generic line would otherwise swallow every scale line.',
+      + '2026-09-07: added the generic line. The audit (docs/audit/logic.md §5) recorded that this category had no Japanese word for "a figure" at all — only the Japanese spellings of Nendoroid and Pop Up Parade — so ordinary Yahoo! Auctions and Mercari titles matched nothing. Two of the 37 live search titles were plain figure listings and both fell through. The 800 g is the same Solaris Japan catalogue re-fetched, sliced to product_type=\'Figure\' with the rows the existing lines already claim removed (1/4, 1/6, 1/7, 1/8, Nendoroid, figma, Pop Up Parade): n=5,103, verdict usable (distinct=179 at 3.5%, top value 41%), median 800 g, p25 800 / p75 1,300, spread 1.63. It is marked generic, which means it only resolves when no other line in the table matched. The Japanese word for a figure is five characters and \'1/7\' is three, so under the longest-match rule the generic line would otherwise swallow every scale line.\n'
+      + '\n'
+      + '2026-09-08: prize figures came in from a second shop, japan-figure.com. A prize figure is 480 g against the 800 g generic figure line, so lending it the generic number overstated it by two thirds. Plush from the same catalogue is 184 g and lives in the toys-models category, not here.\n'
+      + '\n'
+      + 'The prize line deliberately does not carry the bare word プライズ. A dictionary that matches one word at a time cannot tell プライズ フィギュア (a prize figure, 480 g) from プライズ ぬいぐるみ or a prize towel, and the bare word would take every one of them off the 800 g generic line. It only resolves when the compound is written without a space. Two live titles in data/weights-corpus.json (h-b7780a18, h-b8cf7c0e) are single prize figures whose labels read "no prize-specific line exists, so the generic figure line is the closest measured population"; that sentence is no longer true, and whether those rows should now expect prize-figure — and the bare word be added with a corroborating word in the resolver — is a labelling decision, not a data one.',
   },
   {
     category: 'music',
@@ -1716,12 +1728,6 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
 // 叩いたが商品ごとの重量が取れなかったカテゴリ。/weights はこれも出す。
 export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
   {
-    id: 'instruments',
-    labelEn: 'Musical instruments',
-    labelJa: '楽器',
-    reason: 'No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg).',
-  },
-  {
     id: 'cameras',
     labelEn: 'Cameras and lenses',
     labelJa: 'カメラ・レンズ',
@@ -1733,6 +1739,12 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     labelJa: 'アパレル・コーデセット',
     reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
   },
+  {
+    id: 'instruments',
+    labelEn: 'Musical instruments',
+    labelJa: '楽器',
+    reason: 'No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg).',
+  },
 ];
 
-export const WEIGHTS_CHECKED_ON = '2026-09-07';
+export const WEIGHTS_CHECKED_ON = '2026-09-08';
