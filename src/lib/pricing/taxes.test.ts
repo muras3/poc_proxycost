@@ -420,3 +420,55 @@ describe('a second-hand clearance fee still says it is second-hand', () => {
     expect(COUNTRY_CODES.some((cc) => COUNTRIES[cc].clearanceTier === 'unverified')).toBe(true);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **関税率を持っていない国はもう無い。**豪州の A$1,000 超が7カ国で最後の穴だった。
+// 「関税が無い」ではなく「我々が調べていない」だったので、しかも豪州は関税が GST の
+// 課税ベースに入るため、`—` が 0 に畳まれると **GST まで一緒に縮んでいた。**
+// ─────────────────────────────────────────────────────────────────────────────
+describe('every destination has a duty rate above its threshold', () => {
+  test('no country leaves duty as a dash — the last hole was Australia over A$1,000', () => {
+    for (const cc of COUNTRY_CODES) {
+      const c = COUNTRIES[cc];
+      // 無税だと**言い切れる**国（SG）は率 0・tier fixed。それ以外は率を持つ。
+      expect(c.dutyRate, `${cc}: duty rate is still null`).not.toBeNull();
+      expect(c.dutyTier, cc).not.toBe('none');
+      // 推定で置いた率は、必ず出典を指す。
+      if (c.dutyTier === 'estimate') expect(c.dutyRateSourceUrl, cc).toBeTruthy();
+    }
+  });
+
+  test('Australia: zero below the threshold is published, the rate above it is ours', () => {
+    // A$1,000 以下 = ABF の表が 0 と書いている 0。`—` ではない。
+    const low = line(rowsFor('AU', 3000, 5)[0]!, 'duty');
+    expect(low.amount).toBe(0);
+    expect(low.tier).toBe('fixed');
+    expect(low.note).toContain('under the AUD 1000 threshold');
+
+    // A$1,000 超 = WTO 豪州プロファイルの非農産品 単純平均 2.3%。**推定と名乗る。**
+    const high = line(rowsFor('AU', 40_000, 5)[0]!, 'duty');
+    expect(high.amount).toBeGreaterThan(0);
+    expect(high.tier).toBe('estimate');
+    expect(COUNTRIES.AU.dutyRate).toBe(0.023);
+    expect(COUNTRIES.AU.dutyRateSourceUrl).toContain('AU_e.pdf');
+  });
+
+  test('the dash that remains is always a dash on purpose', () => {
+    // **総額から漏れている費目は米国の3つだけ**で、3つとも「取れていない」ではなく
+    // 「そこには無い／額が公表されていない／その社が売っていない」。
+    // ここが増えたら、それは新しい穴が開いたということ。
+    const seen = new Set<string>();
+    for (const cc of COUNTRY_CODES) {
+      for (const priceYen of [3000, 15_000, 40_000, 200_000]) {
+        for (const row of rowsFor(cc, priceYen, 5)) {
+          for (const e of row.excluded) seen.add(`${cc}: ${e}`);
+        }
+      }
+    }
+    expect([...seen].sort()).toEqual([
+      'US: EMS to United States',                       // Neokyo は米国宛に日本郵便を売っていない
+      'US: Sales tax / VAT',                            // 米国に連邦売上税は無い
+      'US: US import prepayment (Zonos) fee — not published',  // 額が公表されていない
+    ]);
+  });
+});
