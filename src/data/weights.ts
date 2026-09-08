@@ -1728,12 +1728,6 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
 // 叩いたが商品ごとの重量が取れなかったカテゴリ。/weights はこれも出す。
 export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
   {
-    id: 'cameras',
-    labelEn: 'Cameras and lenses',
-    labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
-  },
-  {
     id: 'apparel',
     labelEn: 'Clothing and outfit sets',
     labelJa: 'アパレル・コーデセット',
@@ -1744,6 +1738,12 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     labelEn: 'Musical instruments',
     labelJa: '楽器',
     reason: 'No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg).',
+  },
+  {
+    id: 'webcams-pc-peripherals',
+    labelEn: 'Webcams and PC peripherals',
+    labelJa: 'webカメラ・PC周辺機器',
+    reason: 'The used-camera catalogue behind the cameras category carries no webcam, and no other shop publishing a per-product weight for one was found. Sixteen live titles ask about them.',
   },
 ];
 
