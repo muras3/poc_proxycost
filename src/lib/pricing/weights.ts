@@ -49,7 +49,12 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
   // ただし総称ライン（generic）は長さで competing させない。'フィギュア' は '1/7' より
   // 長いので、同じ土俵に載せると総称がスケール行を全部食う。**先に個別ラインだけで探し、
   // 1本も当たらなかったときだけ総称ラインを見る。**段階で分ける。
-  const best = pick(t, search, false) ?? pick(t, search, true);
+  // 門の語は**題名につき1度だけ**見る。行ごとに見ると 75 行 × 24 の門 × その語数で
+  // 同じ判定を何万回も繰り返すことになる（実測 456 → 84 µs/題名）。
+  // どの門が閉じているかは行に依らないので、先に一度だけ出しておく。
+  const closed = EXCLUSIONS.map((rule) => fires(t, rule));
+
+  const best = pick(t, search, false, closed) ?? pick(t, search, true, closed);
   if (best) {
     const { cat, line } = best;
     return {
@@ -81,13 +86,13 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
 
 /** generic が一致するラインだけを見て、当たった語が一番長いものを返す。 */
 function pick(
-  t: string, search: readonly WeightCategory[], generic: boolean,
+  t: string, search: readonly WeightCategory[], generic: boolean, closed: readonly boolean[],
 ): { cat: WeightCategory; line: WeightLine } | null {
   let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
   for (const cat of search) {
     for (const line of cat.lines) {
       if ((line.generic === true) !== generic) continue;
-      if (namesSomethingElse(t, cat, line)) continue;
+      if (namesSomethingElse(cat, line, closed)) continue;
       for (const m of [...line.match, ...extraWordsFor(line.id)]) {
         const hit = hitLength(t, m);
         if (hit === null) continue;
@@ -125,11 +130,25 @@ function hitLength(title: string, raw: Word): number | null {
   }
   const m = raw.trim().toLowerCase();
   if (!m) return null;
-  if (!ASCII.test(m)) return title.includes(m) ? m.length : null;
-  const esc = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const left = boundary(m[0]!, 'left');
-  const right = boundary(m[m.length - 1]!, 'right');
-  return new RegExp(`${left}${esc}${right}`, 'i').test(title) ? m.length : null;
+  const re = compiled(m);
+  if (re === null) return title.includes(m) ? m.length : null;
+  return re.test(title) ? m.length : null;
+}
+
+// 語ごとの正規表現は**1度だけ組む**。組み直しは意味を変えないのに時間の 8 割を使っていた。
+// 語は表と門に書かれた定数なので、辞書の大きさで頭打ちになる（今 550 語ほど）。
+// 日本語の語は正規表現を使わない（境界が要らない）ので null を憶えて includes に落とす。
+const COMPILED = new Map<string, RegExp | null>();
+function compiled(m: string): RegExp | null {
+  const seen = COMPILED.get(m);
+  if (seen !== undefined) return seen;
+  let re: RegExp | null = null;
+  if (ASCII.test(m)) {
+    const esc = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    re = new RegExp(`${boundary(m[0]!, 'left')}${esc}${boundary(m[m.length - 1]!, 'right')}`, 'i');
+  }
+  COMPILED.set(m, re);
+  return re;
 }
 
 /** 語の端が英字なら英字を、数字なら数字を隣に許さない。記号なら何も要求しない。 */
@@ -673,23 +692,28 @@ function corroborated(title: string, raw: Word, lineId: string): boolean {
   return rule.needs.some((w) => matches(title, w));
 }
 
-/** タイトルがこの行とは別の物を名指ししていないか。 */
-function namesSomethingElse(title: string, cat: WeightCategory, line: WeightLine): boolean {
-  for (const rule of EXCLUSIONS) {
+/** 門の語がタイトルに在るか。**行を見ない**ので題名につき1度で足りる。 */
+function fires(title: string, rule: Exclusion): boolean {
+  const hit = rule.when.some((w) => matches(title, w))
+    || (rule.pattern?.some((re) => re.test(title)) ?? false);
+  if (!hit) return false;
+  if (rule.and && !rule.and.some((w) => matches(title, w))) return false;
+  if (rule.unless?.some((w) => matches(title, w))) return false;
+  return true;
+}
+
+/** タイトルがこの行とは別の物を名指ししていないか。closed は fires() の結果。 */
+function namesSomethingElse(cat: WeightCategory, line: WeightLine, closed: readonly boolean[]): boolean {
+  for (let i = 0; i < EXCLUSIONS.length; i++) {
+    if (!closed[i]) continue;
+    const rule = EXCLUSIONS[i]!;
     // exceptLineIds はカテゴリ指定・全カテゴリ指定のどちらにも効く（行を名指しした穴）。
     const spared = rule.exceptLineIds?.includes(line.id) === true;
     const byCategory = (rule.categoryId === cat.category || rule.categoryIds?.includes(cat.category) === true)
       && !spared;
     const byAll = rule.allCategories === true
       && rule.exceptCategoryIds?.includes(cat.category) !== true && !spared;
-    const named = rule.lineIds?.includes(line.id) === true || byCategory || byAll;
-    if (!named) continue;
-    const hit = rule.when.some((w) => matches(title, w))
-      || (rule.pattern?.some((re) => re.test(title)) ?? false);
-    if (!hit) continue;
-    if (rule.and && !rule.and.some((w) => matches(title, w))) continue;
-    if (rule.unless?.some((w) => matches(title, w))) continue;
-    return true;
+    if (rule.lineIds?.includes(line.id) === true || byCategory || byAll) return true;
   }
   return false;
 }
