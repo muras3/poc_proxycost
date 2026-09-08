@@ -63,9 +63,11 @@ interface WeightCategory {
 // ── 出力順。調査した順ではなく、利用者が探す順（小さい物から大きい物へ）に並べる。
 const CATEGORY_ORDER = [
   'figures',
+  'toys-models',
   'music',
   'books-manga',
   'tcg-singles',
+  'tcg-sealed',
   'kpop',
   'apparel',
   'used-luxury',
@@ -130,6 +132,18 @@ const NOT_OBTAINED = [
     labelJa: 'webカメラ・PC周辺機器',
     reason: 'The used-camera catalogue behind the cameras category carries no webcam, and no other shop publishing a per-product weight for one was found. Sixteen live titles ask about them.',
   },
+  {
+    id: 'home-appliances',
+    labelEn: 'Home appliances and consumer audio',
+    labelJa: '家電・オーディオ',
+    reason: 'Not obtained. Rice cookers, vacuum cleaners, hair dryers, earphones, record players and Apple Watch straps are all in the live search and none of them is in any catalogue that publishes per-product grams.',
+  },
+  {
+    id: 'power-tools',
+    labelEn: 'Power tools and sewing machines',
+    labelJa: '電動工具・ミシン',
+    reason: 'Never attempted, and no Shopify catalogue carrying them with per-product grams was found. Tool sets are multi-piece anyway, which no single weight would answer.',
+  },
 ];
 
 // ── 取得済みだが、まだ src/data/weights.ts に出さないもの。
@@ -149,6 +163,14 @@ const PENDING_CATEGORIES: { id: string; waitingOn: string }[] = [
   {
     id: 'apparel',
     waitingOn: 'a US duty verdict (HTS 61/62 rates run past the 12.5% floor, so this category is almost certainly can-exceed and needs the headings pulled), a glyph shape for each of the 10 lines (the garment family has no t-shirt, hoodie, skirt or coat kind yet), and labels in data/weights-corpus.json for the 18 apparel titles that read listing-no-data because apparel was not obtained.',
+  },
+  {
+    id: 'toys-models',
+    waitingOn: 'a US duty verdict (HTS 9503) and a glyph shape for the 3 lines, plus the paint gate described in the category notes before the bare word for a plastic model can be taken back.',
+  },
+  {
+    id: 'tcg-sealed',
+    waitingOn: 'a US duty verdict (HTS 9504.40 for sealed cards, 3926/4202 for sleeves and cases) and a glyph shape for the 3 lines. The card family already draws a sleeve.',
   },
 ];
 
@@ -173,8 +195,12 @@ const PARTIAL_GAPS = [
   { category: 'games', gap: 'Handheld consoles', reason: 'The adopted shop has only 26 handheld rows, below the threshold of 50, and they range from 400 g to 4,100 g. A Chinese pocket handheld and a boxed Game Boy are not the same object, and there is nothing to separate them with, so nothing is claimed.' },
   { category: 'games', gap: 'Current-generation consoles', reason: 'The console line is built from retro systems (Famicom through Wii) sold as boxed sets. No shop publishing grams for a Switch or a PS5 console was found.' },
   { category: 'books-manga', gap: 'Illustrated reference books', reason: 'The general-book line comes from 84 novels. A 図鑑 or a 教科書 is a different object, so titles that name one resolve to nothing rather than to the novel median.' },
+  { category: 'figures', gap: 'Capsule-toy and gashapon figures', reason: 'The 800 g generic line was measured on finished figures around 1/7 scale. A 20-50 g capsule-toy figure is twenty times lighter and no catalogue publishing grams for them was found, so the resolver refuses ガシャポン and 食玩 rather than lending them the generic number.' },
+  { category: 'figures', gap: 'Garage kits', reason: 'Every figure line was measured on finished figures. japan-figure.com has 3 resin-kit rows, so an unpainted unassembled kit is still unanswered.' },
+  { category: 'toys-models', gap: 'Lego, die-cast cars, jigsaw puzzles and model paint', reason: 'The only block rows are 63 Nanoblock kits, a different object; die-cast is 184 rows with a spread of 5.9 at one shop and 76 candy-toy-mixed rows at another; the 51 puzzle rows are small anime and 3D puzzles while the live titles ask about 1,000-piece boards; no catalogue carrying model paint was found. Model trains are 169 rows with a spread of 6.0.' },
   { category: 'cameras', gap: 'A body sold as a lens kit, and a Japan-based seller', reason: 'The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says twin-lens kit is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue.' },
   { category: 'apparel', gap: 'Dresses, kimono and a Japan-based seller', reason: 'The dress slice is real (n=3,578, median 431 g, spread 1.71) but the Japanese word ワンピース is also the title of One Piece, which the live search returns by the hundred, so it cannot be a match word. Kimono rows at the Japanese shops are pseudo or under the threshold. The adopted shop is a US retailer whose whole-catalogue verdict is suspect.' },
+  { category: 'tcg-sealed', gap: 'Single sealed packs and lots', reason: 'A pack is roughly a tenth of a box and the catalogue does not type packs separately. Oripa and lucky-bag listings state a count and the table holds no per-item weight to multiply.' },
 ];
 
 // ── フィギュア / レコード・CD の種。JSON が無いときだけ書き出す。

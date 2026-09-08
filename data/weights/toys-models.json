@@ -1,0 +1,80 @@
+{
+  "category": "toys-models",
+  "labelJa": "玩具・模型",
+  "labelEn": "Toys and model kits",
+  "checkedOn": "2026-09-08",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "japan-figure.com",
+      "url": "https://japan-figure.com/products.json?limit=250&page=1",
+      "products": 10000,
+      "variantsWithGrams": 17428,
+      "verdict": "usable",
+      "reason": "distinct=801 (4.6%), top value 9%, multiples of 100: 25%. Re-fetched 2026-09-08 at 40 pages (10,000 products, 17,428 variants with grams) against the 5,000 read for the games category. Three product types were taken: Toys Plush Toys n=1,567, median 184 g, p25 150 / p75 280, spread 1.87, verdict usable (distinct=266 at 17.0%); the 59 of those whose title says big, large, jumbo or XL are n=59, median 440 g, p25 326 / p75 559, spread 1.71; Plastic Models n=929, median 500 g, p25 320 / p75 655, spread 2.05, verdict usable (distinct=119 at 12.8%, top value 13%).",
+      "reasonJa": "distinct=801 (4.6%), 最頻値 9%, 100の倍数 25%。2026-09-08 に40ページ再取得（10,000商品・grams のある variant 17,428件。games カテゴリで読んだのは 5,000件）。採ったのは3つの product_type: Toys Plush Toys が 1,567件で中央値 184g（p25 150 / p75 280、spread 1.87、判定 usable: distinct=266 が 17.0%）。うちタイトルに big / large / jumbo / XL のある 59件は中央値 440g（p25 326 / p75 559、spread 1.71）。Plastic Models が 929件で中央値 500g（p25 320 / p75 655、spread 2.05、判定 usable: distinct=119 が 12.8%、最頻値 13%）"
+    }
+  ],
+  "lines": [
+    {
+      "id": "plush",
+      "labelEn": "Plush toy",
+      "match": [
+        "ぬいぐるみ",
+        "ヌイグルミ",
+        "plush",
+        "plushie"
+      ],
+      "medianG": 184,
+      "p25": 150,
+      "p75": 280,
+      "n": 1567,
+      "spread": 1.87,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    },
+    {
+      "id": "plush-large",
+      "labelEn": "Plush toy, oversized",
+      "match": [
+        "特大ぬいぐるみ",
+        "大きいぬいぐるみ",
+        "ジャンボぬいぐるみ",
+        "big plush",
+        "large plush",
+        "jumbo plush"
+      ],
+      "medianG": 440,
+      "p25": 326,
+      "p75": 559,
+      "n": 59,
+      "spread": 1.71,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    },
+    {
+      "id": "plastic-model",
+      "labelEn": "Plastic model kit",
+      "match": [
+        "ガンプラ",
+        "gunpla",
+        "組み立て式プラモデル",
+        "プラモデルキット",
+        "plastic model",
+        "model kit"
+      ],
+      "medianG": 500,
+      "p25": 320,
+      "p75": 655,
+      "n": 929,
+      "spread": 2.05,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    }
+  ],
+  "fallbackG": null,
+  "fallbackTier": "none",
+  "notes": "One shop, japan-figure.com, verdict usable. grams is an input to a shipping calculator and not a measurement, so measured: false.\n\nPlush and model kits sit in their own category rather than under figures on purpose. src/lib/pricing/weights.ts refuses every figures line when a title says ぬいぐるみ, because a character plush is merchandise carrying the character and not the scale figure the 800 g generic line was measured on. That rule is right and stays; the plush weight now exists as its own line instead of being borrowed from figures.\n\nThe oversized line is 440 g and can only be reached when the size and the noun are written without a space (特大ぬいぐるみ, large plush). Japanese listings normally put a space between them — ぬいぐるみ 特大 — and a longest-match dictionary reads the five-character noun, not the two-character size, so those titles land on 184 g and understate. Splitting them needs the corroboration step in the resolver, not more data.\n\nThe kit line does not carry the bare Japanese word for a plastic model, which is the ordinary name for the object. Paint, thinner, markers and painting stands are all sold with that word in the title — three such titles sit in data/weights-corpus.json — and a 100 g bottle of lacquer is not a 500 g boxed kit. Holding the word cost three wrong answers and bought two right ones, so it is out, and the line fires on the compound spellings instead. Taking the word back is worth doing once src/lib/pricing/weights.ts can refuse it when the title also names paint, thinner, a marker or a cleaner, which is the shape of gate it already runs for cases and stands.\n\nNot obtained: Lego and compatible brick sets (the only block rows in the catalogue are 63 Nanoblock micro-block kits, a different object at 269 g), die-cast cars (japan-figure has 184 die-cast rows but they span 101 g to 2,500 g with a spread of 5.9; sugoimart.com has 76 Tomica rows at a median of 65 g with spread 1.56, but they are mixed with candy toys and cases and the two shops disagree), jigsaw puzzles (51 rows, median 360 g, but they are 35 to 500-piece anime and 3D crystal puzzles, and the live titles ask about 1,000-piece boards which sit at the top of that range), model paint and tools (no catalogue carrying them was found), model trains (169 rows, spread 6.0, over the limit of 3).",
+  "notesJa": "1店のみ（japan-figure.com、判定 usable）。grams は送料計算用の入力値であって実測ではないので measured:false。\n\nぬいぐるみと模型を figures ではなく別カテゴリに置いたのは意図的。src/lib/pricing/weights.ts はタイトルに「ぬいぐるみ」があると figures のラインを全部拒む。キャラクターのぬいぐるみはキャラを載せたグッズであって、総称ライン 800g を測った完成品フィギュアではないからで、この判断は正しいので残す。ぬいぐるみの重量は figures から借りるのではなく、自分のラインとして持たせた。\n\n特大のライン（440g）は、サイズと名詞が続けて書かれたとき（特大ぬいぐるみ / large plush）にしか当たらない。日本語の出品はふつう「ぬいぐるみ 特大」と空白で分け、最長一致は5文字の名詞を読んで2文字のサイズを読まないので、そういうタイトルは 184g に落ちて軽く出る。分けるにはデータではなく裏づけ判定が要る。\n\n模型のラインは「プラモデル」を単語として持たない。物の普通の名前なのに外したのは、塗料・シンナー・マーカー・塗装ベースがタイトルにこの語を書いて売られているから（母数に3件ある）。100g のラッカー1本は 500g の箱入りキットではない。この語を持つと誤り3件と引き換えに正解2件で、割に合わない。代わりに複合語のつづりで当てる。src/lib/pricing/weights.ts が「塗料 / シンナー / マーカー / クリーナー」を名乗るタイトルでこの語を拒めるようになれば取り戻す価値がある。容れ物や台座に対して既にある門と同じ形。\n\n取れなかったもの: レゴと互換ブロック（この店のブロック行は 63件すべてナノブロックで、269g の別物）、ミニカー（japan-figure の die-cast は 184件だが 101〜2,500g に散って spread 5.9。sugoimart の Tomica 76件は中央値 65g・spread 1.56 だが菓子玩具やケースが混ざり、2店の値も食い違う）、ジグソーパズル（51件・中央値 360g だが 35〜500ピースのアニメ絵と立体クリスタルで、実タイトルが訊いているのは 1,000ピースでこの分布の上端）、模型用塗料・工具（扱う公開カタログが見つからない）、鉄道模型（169件・spread 6.0 で上限 3 を超える）"
+}
