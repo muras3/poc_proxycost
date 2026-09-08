@@ -170,7 +170,7 @@
     {
       "category": "books-manga",
       "gap": "Illustrated reference books",
-      "reason": "The general-book line comes from 84 novels. A 図鑑 or a 教科書 is a different object, so titles that name one resolve to nothing rather than to the novel median."
+      "reason": "The general-book line comes from 84 novels. A picture reference or a textbook is a different object, so titles that name one resolve to nothing rather than to the novel median. Re-measured 2026-09-08: the same shop types 33 art-and-design books at a median of 650 g and 37 how-to books at 410 g. Both are under the threshold of 50 and their medians are 1.6x apart, so they were not merged to clear it."
     },
     {
       "category": "figures",
