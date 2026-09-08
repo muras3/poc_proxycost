@@ -93,11 +93,12 @@ describe('what the weight table does with those titles (dev split only)', () => 
     // 総額と順位を出す）。数ではなく**どの行か**で固定する。数だけだと、1件直して
     // 1件増やす変更が緑のまま通る。
     //
-    // いま残っている 28 件のうち 27 件は**ラベルが表より古い**。2026-09-08 に
-    // apparel / cameras / cosmetics / tcg-sealed / toys-models のカテゴリが入り、
+    // 下の一覧は**ラベルが表より古い**行。2026-09-08 に apparel / cameras /
+    // cosmetics / tcg-sealed / toys-models が測られ、表に繋いだり外したりしている最中で、
     // 「Toys are outside the table」「Home appliances are outside the table」と
-    // 書かれた時期の listing-no-data が、いまは表に値のある物になった。
+    // 書かれた時期の listing-no-data が、繋がっている間だけ重量を持つ。
     // **辞書側で黙らせて数を良くしない。**付け直すのは母数の担当の仕事。
+    // （繋がっていなければ黙るので、この一覧に載っていても赤にはならない。）
     const staleLabel = new Set([
       'h-e0e5fe50', 'h-35aee060', 'h-464211cd',                             // tcg-sealed
       'h-d9496cc3', 'h-bbf86909', 'h-f85ebcb7',                             // cameras
