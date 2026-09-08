@@ -609,6 +609,37 @@ const EXCLUSIONS: Exclusion[] = [
     why: 'LP-70 is a paint code, not a record',
   },
   {
+    // 模型の**道具**。'塗装作業ベース … プラモデル 模型 フィギュア 塗料' は台で、
+    // 'ガンダムマーカー … 塗料' はペン、'洗浄用シンナー … プラモデル' は溶剤。
+    // どれも 500 g のキットではない。**道具の重量は取れていない。**
+    // 同じ門を figures にも効かせる。'塗装作業ベース … プラモデル 模型 フィギュア 塗料' は
+    // 台であって、プラモデルでもフィギュアでもない。
+    lineIds: ['plastic-model'],
+    categoryIds: ['figures'],
+    when: [
+      '塗料', 'マーカー', 'シンナー', 'ツールクリーナー', '洗浄', '塗装用具', '作業ベース',
+      '塗装ベース', 'ニッパー', 'ピンセット', 'やすり', 'ヤスリ', 'デカール', '接着剤',
+    ],
+    why: 'The listing sells the paint, the pen or the tool, not the kit',
+  },
+  {
+    // カメラの付属品。'カメラストラップ 一眼レフ ミラーレス' は紐で、450 g の本体ではない。
+    categoryId: 'cameras',
+    when: [
+      'ストラップ', 'strap', 'ケース', 'case', 'バッグ', 'フィルター', 'filter', 'バッテリー',
+      'battery', '充電器', 'charger', '三脚', 'tripod', 'グリップ', 'フード', 'クリーナー',
+      'liquid crystal protector', '液晶保護',
+    ],
+    why: 'A strap, a filter or a battery is not the body we weighed',
+  },
+  {
+    // 'ダイソン … ストレイトナー' の中の 'トナー' が化粧水に当たっていた。
+    // 日本語は語の切れ目が無いので、短い語は長い語の中に入ってしまう。
+    categoryId: 'cosmetics',
+    when: ['ストレイトナー', 'ストレートナー', 'ヘアアイロン', 'ドライヤー', 'スタイラー'],
+    why: 'ストレイトナー contains トナー; a hair tool is not a skin toner',
+  },
+  {
     // 'クロス西洋剣 模造刀 … 居合刀' は西洋剣。居合刀の 2,500 g は日本の模擬刀で測った値。
     lineIds: ['iaito'],
     when: ['西洋剣', 'レイピア', 'サーベル'],
@@ -666,6 +697,16 @@ const EXCLUSIONS: Exclusion[] = [
     lineIds: ['single-card'],
     when: KPOP_CONTEXT,
     why: 'K-pop トレカ is a photocard; the tcg single line was measured on game cards',
+  },
+  {
+    // '剣道 袴 / [鍛錬] 高級テトロン袴 …【剣道着 剣道衣 剣衣 剣道具】' は袴の出品で、
+    // '剣道着' は店が末尾に並べた検索用の語。語の長さでは '剣道着'(3) が '袴'(1) に勝つので、
+    // 上衣 2,200 g が付いていた。**袴と名乗る題名で上衣を名乗らせない。**
+    // 上下で売るものには budo-uniform-set があるので、その語があれば門を開ける。
+    lineIds: ['budo-jacket'],
+    when: ['袴', 'hakama'],
+    unless: ['上下', 'セット', 'set'],
+    why: 'A hakama listing lists the jacket words as keywords; the garment named is the hakama',
   },
   {
     // ガシャポン・食玩の小さい人形。総称の 800 g は 1/7 前後の完成品で測った値で、

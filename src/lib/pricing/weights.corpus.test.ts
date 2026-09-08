@@ -82,32 +82,43 @@ describe('what the weight table does with those titles (dev split only)', () => 
   });
 
   test('accuracy does not fall', () => {
-    // 2026-09-08 時点: 131/134 が期待どおりの行。
+    // 2026-09-08 時点: 132/134 が期待どおりの行。
     // **網羅を上げて正確を下げる変更は、ここで落ちる。**
-    expect(rep.correct).toBeGreaterThanOrEqual(131);
+    expect(rep.correct).toBeGreaterThanOrEqual(132);
     expect(rep.correct / rep.resolved).toBeGreaterThanOrEqual(0.95);
   });
 
-  test('the number of titles that must stay silent but get a weight does not grow', () => {
+  test('nothing new gets a weight that must stay silent', () => {
     // **目標は 0。**間違った行に当たるのは当たらないより悪い（黙って別物の重量で
     // 総額と順位を出す）。数ではなく**どの行か**で固定する。数だけだと、1件直して
     // 1件増やす変更が緑のまま通る。
-    const known: Record<string, string> = {
+    //
+    // いま残っている 28 件のうち 27 件は**ラベルが表より古い**。2026-09-08 に
+    // apparel / cameras / cosmetics / tcg-sealed / toys-models のカテゴリが入り、
+    // 「Toys are outside the table」「Home appliances are outside the table」と
+    // 書かれた時期の listing-no-data が、いまは表に値のある物になった。
+    // **辞書側で黙らせて数を良くしない。**付け直すのは母数の担当の仕事。
+    const staleLabel = new Set([
+      'h-e0e5fe50', 'h-35aee060', 'h-464211cd',                             // tcg-sealed
+      'h-d9496cc3', 'h-bbf86909', 'h-f85ebcb7',                             // cameras
+      'h-ff8a74db', 'h-42541e85', 'h-c41a4d47', 'h-fad48bd6',               // apparel: tshirt
+      'h-1e9058b4', 'h-50fc3c90', 'h-588e77fc',                             // apparel: hoodie
+      'h-05c5cde6', 'h-3da69e6c', 'h-55050028',                             // apparel: denim-jacket
+      'h-9c366bf8', 'h-1032f3b7', 'h-a4752a0b', 'h-bdfa6397',               // apparel: shirt-blouse
+      'h-bba761be', 'h-0ab13f78',                                           // apparel: jacket / jeans
+      'h-33599238', 'h-3a7ebe9b',                                           // toys-models: plastic-model
+      'h-e6d2f5d6', 'h-e4cc8ccd', 'h-f1aee95b',                             // toys-models: plush
+    ]);
+    // 語では直せないもの。母数の注記もそう言っている。
+    const undecidable = new Set([
       // 題名が切れていて、かつおのたたき（食品）か たたきのたれ（調味料）か決まらない。
-      // 母数の注記もそう言っている。語では分けられない。
-      'h-7995ef84': 'the title is truncated and does not say which of the two things it sells',
-      // 2026-09-08 に figures へ plush 行（184 g）が入った。この3件は
-      // 「Toys are outside the table」と書かれた時期のラベルで、表に値が入った今は
-      // listing として付け直す仕事が残っている。**辞書側で黙らせて数を良くしない。**
-      'h-e6d2f5d6': 'label predates the plush line added to the table on 2026-09-08',
-      'h-e4cc8ccd': 'label predates the plush line added to the table on 2026-09-08',
-      'h-f1aee95b': 'label predates the plush line added to the table on 2026-09-08',
-    };
+      'h-7995ef84',
+    ]);
     const unexpected = score(dev)
-      .filter((r) => r.kind !== 'listing' && r.gotLine !== null && !(r.id in known))
-      .map((r) => `${r.id} got ${r.gotLine} on ${r.title.slice(0, 40)}`);
+      .filter((r) => r.kind !== 'listing' && r.gotLine !== null)
+      .filter((r) => !staleLabel.has(r.id) && !undecidable.has(r.id))
+      .map((r) => `${r.id} got ${r.gotLine} on ${r.title.slice(0, 50)}`);
     expect(unexpected).toEqual([]);
-    expect(rep.misfire).toBeLessThanOrEqual(Object.keys(known).length);
     // 店頭・カテゴリページに重量が付くことは、もう1件も許さない。
     expect(rep.misfireOffTarget).toBe(0);
   });
