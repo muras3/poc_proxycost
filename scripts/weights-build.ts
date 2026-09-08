@@ -194,6 +194,11 @@ const PENDING_CATEGORIES: { id: string; waitingOn: string }[] = [
 // ── 出さないライン。カテゴリごとではなく1本だけ待たせるときに使う。
 const PENDING_LINES: { category: string; line: string; waitingOn: string }[] = [
   {
+    category: 'music',
+    line: 'vinyl-7inch',
+    waitingOn: 'a glyph shape in src/lib/ui/glyphs/shapes.ts. The media family already draws a disc and a 7-inch is the same drawing at a smaller size.',
+  },
+  {
     category: 'figures',
     line: 'prize-figure',
     waitingOn: 'a glyph shape in src/lib/ui/glyphs/shapes.ts, and a decision on the two corpus rows (h-b7780a18, h-b8cf7c0e) whose labels say the generic figure line is the closest population because no prize line existed.',
