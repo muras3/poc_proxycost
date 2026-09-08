@@ -276,12 +276,12 @@ const NOT_ONE_LISTING: StorefrontForm[] = [
   {
     // 'スニーカー - ハニーズ Yahoo!店'、'駿河屋Yahoo!店 - フィギュア'。
     // 商品ページも店名に 'Yahoo!店' を含むが、そちらは必ず ' - 通販 - ' を挟む。
-    is: (t) => t.includes('Yahoo!店') && !t.includes('通販'),
+    is: (t) => /yahoo!店/i.test(t) && !t.includes('通販'),
     why: 'A Yahoo shop name with no 通販 marker is the shop front, not one of its items',
   },
   {
     // 'サンワダイレクト - ボックス収納ケース｜Yahoo!ショッピング'。全角の縦棒が店頭の形。
-    is: (t) => t.includes('｜Yahoo!ショッピング'),
+    is: (t) => /｜yahoo!ショッピング/i.test(t),
     why: 'The full-width bar form is a Yahoo category page; items use " - 通販 - Yahoo!ショッピング"',
   },
   {
