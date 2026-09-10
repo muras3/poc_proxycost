@@ -68,12 +68,26 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
+/** 箱に立てる個数。数量ぶん並べるが、列は12個で打ち止め（詰まり具合は意味を持たない）。 */
+function copiesOf(item: Item): number {
+  return Math.max(1, Math.min(12, item.qty));
+}
+
+/**
+ * 重量表に当たらず仮置きが入っている品の、箱の中での個数。
+ * **これは「推定」より弱い。**表の中央値は数百件の出品から出た数字だが、
+ * こちらは何も知らずに置いた 1 kg で、形も「不明」（点線）で描かれる。
+ * 箱の但し書きと読み上げの両方で、その点線が何なのかを名指しするために数える。
+ */
+function placeholderCount(items: readonly Item[]): number {
+  return items.reduce((n, i) => n + (i.weightOrigin === 'assumed' ? copiesOf(i) : 0), 0);
+}
+
 /** カートの1品 → 箱の中身。**推定重量なら半透明。** */
 function packedItems(items: readonly Item[]): PackedItem[] {
   const out: PackedItem[] = [];
   for (const item of items) {
-    // 数量は個数ぶん並べる。ただし箱の中は列で、詰まり具合は意味を持たない。
-    const n = Math.max(1, Math.min(12, item.qty));
+    const n = copiesOf(item);
     for (let k = 0; k < n; k++) {
       out.push({
         id: item.weightLineId ?? 'unknown',
@@ -178,11 +192,19 @@ export function ParcelView({
   }, [anim.sig, target]);
 
   const { shown, phase, delta } = anim;
+  // カートが空。**箱そのものは出しておく。**箱は入力のすぐ隣に置いてあり、
+  // 足した品がここに落ちる。空のあいだ箱ごと消すと、落ちる先が画面に無い状態から
+  // 始まって「どこに落ちたのか」が見えなくなる。数字は1つも出さない（持っていない）。
+  if (items.length === 0) return <EmptyParcel className={className} />;
+  // 重量の無い品が混ざっている（段が決まらない）。空の箱は「何も入っていない」と
+  // 言う絵なので、ここでそれを出すのは嘘になる。何も描かない。
   if (!shown || !target) return null;
 
   const entering = new Set(anim.entering);
   const zone = EMS_ZONE[country];
   const estimatedCount = packed.filter((p) => p.estimated).length;
+  // 重量表に当たらなかった品。**推定より弱い**ので、推定とは別に数えて別に言う。
+  const placeholders = placeholderCount(items);
 
   return (
     <section
@@ -192,9 +214,7 @@ export function ParcelView({
       data-step={shown.overMax ? 'over' : String(shown.stepIndex)}
       className={className}
     >
-      <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
-        Parcel — if everything ships together
-      </h2>
+      <ParcelHeading />
 
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
@@ -204,6 +224,9 @@ export function ParcelView({
             items={packed}
             label={`Parcel box holding ${packed.length} item${packed.length === 1 ? '' : 's'}${
               estimatedCount > 0 ? `, ${estimatedCount} with an estimated weight` : ''
+            }${
+              // 読み上げでも点線を名指しする。形の違いは目で見た人にしか届かない。
+              placeholders > 0 ? `, ${placeholders} of them at a placeholder weight we chose` : ''
             }`}
             renderGlyph={(p) => (
               <div
@@ -268,22 +291,73 @@ export function ParcelView({
             </p>
           )}
 
-          <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
-            EMS is priced by weight alone — volume never enters the price, so this box is not a
-            packing simulation. Faded items are weights we estimated, not measured.{' '}
-            <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
-              Japan Post EMS rates ↗
-            </a>
-          </p>
         </div>
 
+        {/* lg では箱と目盛りは入力の隣の列に入る（Calculator）。そこで目盛りを広く取ると
+            **箱が縮んで中身が読めなくなる。**箱は段が上がるほど大きく描かれ、収まらなければ
+            場面の幅に合わせて縮む。縮むと線画の線が1画素を割ってにじみ、中身と段ボールの
+            コントラストが 3:1（WCAG 1.4.11）を切る（8kg・6点で 2.6:1 まで落ちた）。
+            目盛りは「27 kg ¥30,350」が収まれば足りるので、幅は目盛りより箱に回す。 */}
         <WeightLadder
           stepIndex={shown.stepIndex}
           overMax={shown.overMax}
           zone={zone}
           grams={shown.grams}
-          className="w-full shrink-0 sm:w-56"
+          className="w-full shrink-0 sm:w-56 lg:w-36"
         />
+      </div>
+
+      {/* 但し書きは箱と目盛りの両方に掛かるので、2つの下に幅いっぱいで置く。
+          箱の側の列に入れておくと、縦積み（モバイル）で数字と目盛りのあいだに
+          3行の散文が挟まり、**段が最初の視界から押し出される。** */}
+      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+        EMS is priced by weight alone — volume never enters the price, so this box is not a packing
+        simulation. Faded items are weights we estimated, not measured.{' '}
+        {/* 点線の輪郭（`drawUnknown`）は「重量表に当たらなかった」の形。箱に居るときだけ
+            説明する。居ないときに説明すると、画面に無いものを指すことになる。 */}
+        {placeholders > 0 && (
+          <>
+            A dashed outline means we have no weight for that item at all — it is standing in the
+            box at a placeholder we chose, not at anything we looked up.{' '}
+          </>
+        )}
+        <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
+          Japan Post EMS rates ↗
+        </a>
+      </p>
+    </section>
+  );
+}
+
+/** 区画の見出し。空でも中身が入っていても同じ場所に同じ文言で立つ。 */
+function ParcelHeading() {
+  return (
+    <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
+      Parcel — if everything ships together
+    </h2>
+  );
+}
+
+/**
+ * 空のカートの箱。**段も重量も送料も出さない。**
+ * 空の箱に段（大きさ）の意味は無いので、目盛りも出さず、いちばん小さい箱を
+ * 「落ちてくる先」として置くだけ。ここに数字を出すと、無い数字を出すことになる。
+ */
+function EmptyParcel({ className = '' }: { className?: string }) {
+  return (
+    <section
+      aria-label="Parcel"
+      data-testid="parcel"
+      data-phase="idle"
+      data-step="empty"
+      className={className}
+    >
+      <ParcelHeading />
+      <div className="mt-3">
+        <PackingBox stepIndex={0} items={[]} label="Empty parcel box" />
+        <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
+          Nothing to ship yet — add a listing above and it lands in this box.
+        </p>
       </div>
     </section>
   );

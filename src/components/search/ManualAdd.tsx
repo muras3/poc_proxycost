@@ -49,7 +49,10 @@ export function ManualAdd({ onAdd }: { onAdd: (d: Draft) => void }) {
 
   return (
     <form onSubmit={submit} className="mt-2 flex flex-wrap items-end gap-2 text-xs">
-      <label className="min-w-0 flex-1">
+      {/* **狭い画面では自分の行を取る。** `flex-1 min-w-0` だけだと、価格・サイト・ボタンの
+          固定幅に押されて幅 21px まで縮み（Pixel 7 実測）、ラベルが 'Price ¥' に重なって
+          手入力そのものが使えなくなっていた。折り返すぶんには縦しか使わない。 */}
+      <label className="w-full min-w-0 sm:w-auto sm:flex-1">
         <span className="block text-neutral-500">Item name</span>
         <input
           value={title}

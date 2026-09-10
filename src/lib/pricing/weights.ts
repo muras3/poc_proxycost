@@ -18,7 +18,9 @@ const UNRESOLVED: WeightResolution = {
 };
 
 function describe(cat: WeightCategory, line: WeightLine): string {
-  const domain = cat.sources[0]?.domain ?? 'unknown source';
+  // 行ごとに出所が違うカテゴリがある（games は本体と ソフトで別の店）。
+  // 行が名乗っていればそれを、無ければカテゴリの1店目を出す。
+  const domain = line.sourceDomain ?? cat.sources[0]?.domain ?? 'unknown source';
   const spread = line.spread === 1 ? '1.0x' : `${line.spread}x`;
   // n=0 は「0件で測った」ではなく「件数を記録していない」。0 と書くと嘘になる。
   const n = line.n > 0 ? `n=${line.n}` : 'sample size not recorded';
@@ -40,18 +42,11 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
   // **実際に当たった語**が長いものを採る。行が持つ最長語で並べると、
   // 'ねんどろいど CD' が cd（3文字で命中）ではなく nendoroid 行の
   // 最長語 'ねんどろいど' に負ける、といった取り違えが起きる。
-  let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
-  for (const cat of search) {
-    for (const line of cat.lines) {
-      if (namesSomethingElse(t, cat, line)) continue;
-      for (const m of line.match) {
-        if (!matches(t, m)) continue;
-        if (!corroborated(t, m)) continue;
-        const hit = m.trim().length;
-        if (!best || hit > best.hit) best = { cat, line, hit };
-      }
-    }
-  }
+  //
+  // ただし総称ライン（generic）は長さで competing させない。'フィギュア' は '1/7' より
+  // 長いので、同じ土俵に載せると総称がスケール行を全部食う。**先に個別ラインだけで探し、
+  // 1本も当たらなかったときだけ総称ラインを見る。**段階で分ける。
+  const best = pick(t, search, false) ?? pick(t, search, true);
   if (best) {
     const { cat, line } = best;
     return {
@@ -79,6 +74,26 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
   }
 
   return UNRESOLVED;
+}
+
+/** generic が一致するラインだけを見て、当たった語が一番長いものを返す。 */
+function pick(
+  t: string, search: readonly WeightCategory[], generic: boolean,
+): { cat: WeightCategory; line: WeightLine } | null {
+  let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
+  for (const cat of search) {
+    for (const line of cat.lines) {
+      if ((line.generic === true) !== generic) continue;
+      if (namesSomethingElse(t, cat, line)) continue;
+      for (const m of line.match) {
+        if (!matches(t, m)) continue;
+        if (!corroborated(t, m)) continue;
+        const hit = m.trim().length;
+        if (!best || hit > best.hit) best = { cat, line, hit };
+      }
+    }
+  }
+  return best;
 }
 
 
@@ -159,6 +174,32 @@ const REQUIRES_CORROBORATION: Corroboration[] = [
     needs: ['空手', '柔道', '剣道', '合気道', '武道', '道着', 'karate', 'judo', 'kendo', 'aikido', 'martial'],
     why: 'A record obi strip and a martial-arts belt share the same romanisation',
   },
+  {
+    // 'ファミコン ソフト マリオ' は 100 g のカセット。本体（3,350 g）ではない。
+    // 本体ラインの出典は改造済みの箱入りセットなので、当てる相手を間違えると 30 倍外す。
+    tokens: [
+      'ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube',
+      'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo',
+      'pcエンジン', 'pc engine', 'pc-fx', 'pcfx', 'メガドライブ', 'mega drive', 'megadrive',
+      'プレイステーション', 'playstation', 'プレステ',
+    ],
+    needs: ['本体', 'ゲーム機', 'console', 'system', 'コンソール'],
+    why: 'A system name is on the game as much as on the machine; only the machine is 3.35 kg',
+  },
+  {
+    // 'カメラを止めるな! [DVD]' に 1,750 g が付いていた（本番検索の実タイトル、2件）。
+    // 1,750 g は K-POP 専門店で測った DVD/Blu-ray の値で、中身はライブ映像の箱
+    // （写真集込み）。映画のディスク1枚とは別の物で、17倍ちがう。
+    // **映像ディスク一般の重量は取れていない**（data/weights/index.json partialGaps: kpop）。
+    // K-POP の文脈を示す語が同じタイトルに無ければ、当てずに仮置きへ落とす。
+    tokens: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray'],
+    needs: [
+      'kpop', 'k-pop', 'ケイポップ', 'アルバム', 'album', 'フォトカード', 'photocard', 'トレカ',
+      'ペンライト', 'lightstick', 'weverse', 'ウィバース', 'コンサート', 'concert',
+      'ワールドツアー', 'world tour', 'ファンミ', 'fanmeeting',
+    ],
+    why: 'The 1,750 g came from K-pop concert releases; a film on one disc is not that object',
+  },
 ];
 
 interface Exclusion {
@@ -166,6 +207,9 @@ interface Exclusion {
   lineIds?: string[];
   categoryId?: string;
   exceptLineIds?: string[];
+  /** 全カテゴリに効かせる。exceptCategoryIds のカテゴリだけ免れる。 */
+  allCategories?: true;
+  exceptCategoryIds?: string[];
   /** タイトルがこの語を持つなら、その行は当てない。 */
   when: string[];
   why: string;
@@ -200,6 +244,89 @@ const EXCLUSIONS: Exclusion[] = [
     when: ['女児', '男児', '子供', '子ども', 'こども', 'キッズ', 'ジュニア', '幼児', '小学生', 'kids', 'junior', 'youth'],
     why: 'Every median in this category was taken from adult sizes',
   },
+  {
+    // 'PSA10 SAR リザードン' はスラブ（100 g）。生カードの語も同時に持つので、当たった語の
+    // 長さで single-card に流れると 50 g になる。data/weights/tcg-singles.json の
+    // 「マッチ順は graded-slab を先に見ること」を、語の長さに依存しない形で書き下したもの。
+    // when は graded-slab が実際に持つ語だけにする。持っていない語を書くと、
+    // single-card を落としたあと受け皿が無くて null に落ちる。
+    lineIds: ['single-card'],
+    when: ['psa', 'bgs', 'cgc'],
+    why: 'A graded slab carries the raw-card words too; the grading service decides which it is',
+  },
+  {
+    // 大判の本と手引き書。**図鑑・教科書・ムックの重量は取れていない**
+    // （books-manga が持っているのは小説 408 g と漫画の単巻 210 g で、別の物。
+    // index.json partialGaps 参照）。書籍カテゴリにも当てさせない。
+    // これで「腕時計の図鑑」に腕時計の 839 g が付くのも止まる。
+    allCategories: true,
+    // 「フィギュアの達人 初級編」は塞がっていたが、「フィギュアの作り方 入門書」は
+    // 語が1つ違うだけで通り抜けて 800 g（フィギュア本体）を名乗っていた。
+    // 同じ手引き書なので、同じ門で塞ぐ。
+    when: [
+      '図鑑', '教科書', '入門編', '上級編', '初級編', '攻略本', 'ムック',
+      '入門書', '作り方', '描き方', '解説書', 'ガイドブック', '設定資料集',
+    ],
+    why: 'A large-format or how-to book is not the thing it is about, and not the novel we measured',
+  },
+  {
+    // 出品が「これは本だ」と名乗っているとき。**X についての本は X ではない。**
+    // 実測37件のうち4件がこれ。ここは書籍のラインだけ通す（そこには実データがある）。
+    allCategories: true,
+    exceptCategoryIds: ['books-manga'],
+    // Amazon 日本のパンくず。'本' 単独は「日本」「本体」「3本」に当たるので使えない。
+    when: ['本 | 通販', '|本 |', '｜本｜', '単行本'],
+    why: 'The listing says it is a book, so only the book lines may claim it',
+  },
+  {
+    // 'フィギュアスケート' は競技であって完成品フィギュアではない。
+    lineIds: ['figure-generic'],
+    when: ['スケート', 'skating', 'skate'],
+    why: 'Figure skating is not a figure',
+  },
+  {
+    // **容れ物を売っている出品。**総称の 'フィギュア' 'トレカ' を表に入れた副作用で、
+    // 「フィギュア用アクリルケース」に 800 g、「トレカ用スリーブ 100枚」に 50 g が
+    // 付くようになった（この変更より前は両方 null）。中身の重量は容れ物の重量ではない。
+    // cd / lp に既に在る同じ門を、フィギュアとカードのラインにも効かせる
+    // （スケール行も、'1/7 スケール アクリルケース' で裏付けが揃ってしまうので同じ扱い）。
+    // **容れ物そのものの重量は取れていない**ので、当てずに仮置きへ落とす。
+    categoryId: 'figures',
+    lineIds: ['single-card', 'graded-slab'],
+    when: [
+      'ケース', 'case', 'ボックス', 'スリーブ', 'sleeve', 'ローダー', 'loader',
+      'バインダー', 'binder', 'ホルダー', 'holder', '収納', '台座', 'スタンド', 'stand',
+      'ディスプレイ', 'display', 'アクリル', 'acrylic', 'プロテクター', 'protector',
+    ],
+    why: 'The listing sells the case, the sleeve or the stand, and we have no weight for those',
+  },
+  {
+    // 'スニーカーボックス 収納ケース' は箱、'スニーカー用シューキーパー' は木型。
+    // どちらも 750 g（靴そのもの）ではない。この2件は総称を入れる前から在った誤爆。
+    categoryId: 'sneakers',
+    when: [
+      'ケース', 'case', 'ボックス', '収納', 'スタンド', 'stand', 'ラック', 'rack',
+      'シューキーパー', 'シューツリー', 'shoe keeper', 'shoe tree', 'インソール', 'insole',
+      '靴紐', '靴ひも', 'シューレース', 'shoelace', 'shoe laces', 'クリーナー', 'cleaner',
+    ],
+    why: 'A shoe box, a shoe tree or a lace is not the shoe we weighed',
+  },
+  {
+    // 'ワンピース 全巻セット' は 2,000 g の箱で、210 g の単巻ではない。
+    // いまは語の長さでもラインの並び順でもセット行が勝つが、**どちらも偶然**なので
+    // 「セットの語があるなら単巻には当てない」をここに書いて固定する。
+    lineIds: ['manga-volume'],
+    when: ['全巻', 'complete set', 'コミックセット'],
+    why: 'A complete set is not one volume, and the set has its own line',
+  },
+  {
+    // 'アニメ DVD 全巻セット' は円盤の箱。2,000 g は BOOKOFF USA の**漫画**の全巻セットで
+    // 測った値なので、当てると画面が「漫画の店で読んだ」と名乗る。数字が近くても出所が嘘になる。
+    // 映像ディスクの箱の重量は取れていない。
+    lineIds: ['manga-set'],
+    when: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray', 'cd'],
+    why: 'A disc box set is not a manga box set, and the number would carry a bookshop as its source',
+  },
 ];
 
 /** 当たった語に裏付けが要るなら、それがタイトルにあるか。 */
@@ -214,7 +341,8 @@ function corroborated(title: string, raw: string): boolean {
 function namesSomethingElse(title: string, cat: WeightCategory, line: WeightLine): boolean {
   for (const rule of EXCLUSIONS) {
     const named = rule.lineIds?.includes(line.id) === true
-      || (rule.categoryId === cat.category && rule.exceptLineIds?.includes(line.id) !== true);
+      || (rule.categoryId === cat.category && rule.exceptLineIds?.includes(line.id) !== true)
+      || (rule.allCategories === true && rule.exceptCategoryIds?.includes(cat.category) !== true);
     if (!named) continue;
     if (rule.when.some((w) => matches(title, w))) return true;
   }

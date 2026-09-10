@@ -8,6 +8,7 @@ import { weightFieldsFor } from '@/lib/pricing/weights';
 import type { Item, SiteId, WeightSensitivity } from '@/lib/pricing/types';
 import { Amount, tierClass, tierTitle } from '@/lib/ui/tiers';
 import { grams } from '@/lib/ui/format';
+import { AssumedMark, AssumedWeightsNote, assumedWeightsSummary } from './AssumedWeightsNote';
 
 /** 重量入力の DOM id。StabilityNote の「Check the weights」がここへフォーカスを飛ばす。 */
 export function weightInputId(itemId: string): string {
@@ -51,11 +52,13 @@ export interface ItemListProps {
   sensitivity: Record<string, WeightSensitivity>;
   onPatch: (id: string, patch: Partial<Item>) => void;
   onRemove: (id: string) => void;
+  /** 置き場所は親（Calculator）が決める。カートは箱と横に並ぶ列にもなる。 */
+  className?: string;
   ref?: Ref<ItemListHandle>;
 }
 
 export function ItemList({
-  items, readOn, unpriced, sensitivity, onPatch, onRemove, ref,
+  items, readOn, unpriced, sensitivity, onPatch, onRemove, className = '', ref,
 }: ItemListProps) {
   // モバイルではカートを畳む（docs/UI-DESIGN.md §7.2）。lg 以上では常に開く。
   const [open, setOpen] = useState(false);
@@ -69,24 +72,28 @@ export function ItemList({
     }
   }, [count]);
 
-  // 「Check the weights」から飛んでくる。畳まれたカートの中の入力にはフォーカス
-  // できないので、まず開き、その描画を同期で終えてから focus() する。
-  // クリックのハンドラから呼ばれるので flushSync を使ってよい（描画中ではない）。
-  useImperativeHandle(ref, () => ({
-    focusWeight(itemId: string) {
-      flushSync(() => setOpen(true));
-      const el = document.getElementById(weightInputId(itemId));
-      if (el instanceof HTMLInputElement) {
-        el.focus();
-        el.select();
-      }
-    },
-  }), []);
+  // 「Check the weights」（親）と「Enter the real weights」（下の注記）の両方から来る。
+  // 畳まれたカートの中の入力にはフォーカスできないので、まず開き、その描画を同期で
+  // 終えてから focus() する。クリックのハンドラから呼ばれるので flushSync を使ってよい。
+  function focusWeight(itemId: string) {
+    flushSync(() => setOpen(true));
+    const el = document.getElementById(weightInputId(itemId));
+    if (el instanceof HTMLInputElement) {
+      el.focus();
+      el.select();
+    }
+  }
+  // focusWeight は毎描画で作り直されるが、閉じ込めているのは setOpen（不変）だけなので
+  // 初回のものを握り続けて構わない。
+  useImperativeHandle(ref, () => ({ focusWeight }), []);
+
+  // 重量表に当たらなかった品の集計。**当たっている品しか無ければ null**（＝黙る）。
+  const assumed = assumedWeightsSummary(items, sensitivity);
 
   if (!count) return null;
 
   return (
-    <section className="mt-4" aria-label="Cart">
+    <section className={className} aria-label="Cart">
       {/* lg 以上ではカートは常に開いている。押せないボタンを残すと
           キーボード利用者には反応しない操作子に見えるので、見出しに変える。 */}
       <h2 className="hidden text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:block">
@@ -101,6 +108,16 @@ export function ItemList({
         Cart ({count})
         <span aria-hidden>{open ? '▾' : '▸'}</span>
       </button>
+
+      {/* **畳まれる `ul` の外に置く。**中に入れたら、開いた人にしか言っていないことになる。
+          器（aria-live）は注記が無いときも残す。器ごと現れる領域は読み上げられないので、
+          「足したら仮置きだった」が読み上げから漏れる。 */}
+      <div aria-live="polite">
+        <AssumedWeightsNote
+          summary={assumed}
+          onEnterWeights={assumed ? () => focusWeight(assumed.focusId) : null}
+        />
+      </div>
 
       <ul
         className={`${open ? 'block' : 'hidden lg:block'} divide-y divide-neutral-200 dark:divide-neutral-800`}
@@ -332,6 +349,12 @@ function ItemRow({
               className={`w-16 rounded border border-neutral-300 bg-transparent px-1.5 py-0.5 text-xs num dark:border-neutral-700 ${tierClass.estimate}`}
             />
             <span aria-hidden>g</span>
+            {/* **表に当たらなかった数字には印を付ける。**推定（`~`）と同じ見た目のままだと、
+                「表から引いた中央値」と「何も知らないので置いた数」が同じ顔で並ぶ。
+                色以外の記号を1つ持たせる規約（docs/UI-DESIGN.md §6）。 */}
+            {item.weightOrigin === 'assumed' && (
+              <AssumedMark className={`${tierClass.estimate} translate-y-[0.1em]`} />
+            )}
             {item.weightOrigin === 'user' && (
               <span className={tierClass.estimate} title={tierTitle.estimate} aria-label="edited by you">
                 ✎
@@ -356,9 +379,12 @@ function ItemRow({
               </>
             ) : item.weightOrigin === 'assumed' ? (
               <>
-                {/* 何も知らない。そう書く。段表に落とすのをやめた分、ここで言う。 */}
+                {/* 何も知らない。そう書く。段表に落とすのをやめた分、ここで言う。
+                    「推定」ではなく「こちらが置いた数」であることまで書く。カートに何点
+                    在るかは上の注記が1か所で数える（AssumedWeightsNote）。 */}
                 <span className={tierClass.estimate}>assumed</span>
-                {' — no weight data for this title. Type it if you know it. '}
+                {' — no weight data for this title, so this number is ours, not a measurement.'}
+                {' Type it if you know it. '}
                 <Link href="/weights" className="underline">
                   What we have
                 </Link>

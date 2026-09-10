@@ -11,9 +11,20 @@ import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
  *   3. **実重量課金**＝容積重量の軸（寸法）が要らない。寸法は入力に無い
  *
  * **宅配便（FedEx / DHL / UPS / SF / ECMS）はこの3つとも満たさない**ので入れない。
- * 料率が非公開、自社が通関業者になるので別モデルが要る、容積重量課金。
  * 送料だけ差し替えて通関を郵便のまま置くと、送料は下がり通関は上がるという
  * **向きが逆の2つの誤りが総額に同居する**（`docs/COMPLETENESS.md` §6）。
+ *
+ * **2026-09-07 訂正。**ここには「料率が非公開だから額が取れない」と書いてあったが、
+ * **結論が間違っていた。**公表された料金表が無いのは事実で、それが条件1に当たらない
+ * 理由であることも変わらない。だが**額そのものは公開の見積 API で取れる**——
+ * ZenMarket の計算機は `POST calc.aspx/Calculate` に
+ * `{weight, country, width, height, depth}` を渡すと、便ごとの `Price`（円）と
+ * `ShippingLimitsParamA-CInCm`（寸法制限）を JSON で返す（`docs/O2-COURIER-RUN.md`）。
+ * **寸法は行き止まりではなく引数だった。**「表が無い」から「価格化できない」を
+ * 導いていたのが飛躍で、正しくは**条件3（寸法が入力に無い）が本当の障害**であり、
+ * それも箱を仮定すれば解ける性質のもの（梱包後重量を `×1.2+300g` と仮定しているのと
+ * 同じ）。**いま入れていない理由は条件2（通関が別モデル）と、寸法の仮定を
+ * まだ置いていないこと。**
  *
  * **SAL 便は表があるが入れない。**Buyee の配送方法ページが
  * 「(Japan Post Economy Airmail) * **Currently suspended**」と書いている。
@@ -150,6 +161,19 @@ const TABLES: Record<Exclude<PostalMethod, 'ems'>, Record<number, readonly Step[
   'parcel-air': PARCEL_AIR,
   'parcel-surface': PARCEL_SURFACE,
 };
+
+/**
+ * その方式でその国が属する地帯。**EMS だけ別の割り方を使う。**
+ *
+ * 額の計算は最初から `EMS_ZONE` と `POSTAL_ZONE` を使い分けていたが、
+ * **画面の注記だけが `POSTAL_ZONE` で書かれていた。**そのため米国の EMS は
+ * 第4地帯の額（30kg で ¥75,100。第3地帯なら ¥65,500）を出しながら
+ * 注記に「zone 3」と書いていて、**額と根拠が食い違っていた。**
+ * 地帯を答える口をここ1つにして、呼ぶ側が選び間違える余地を無くす。
+ */
+export function zoneFor(method: PostalMethod, cc: CountryCode): number {
+  return method === 'ems' ? EMS_ZONE[cc] : POSTAL_ZONE[cc];
+}
 
 /** その方式・その地帯で表が持っている最大重量。**表の外は「高い」ではなく「送れない」。** */
 export function maxGramsFor(method: PostalMethod, cc: CountryCode): number {
