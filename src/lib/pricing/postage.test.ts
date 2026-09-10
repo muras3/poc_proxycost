@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
-import { POSTAL_METHODS, POSTAL_ZONE, maxGramsFor, postageFor } from './postage';
+import { POSTAL_METHODS, POSTAL_ZONE, markupYen, maxGramsFor, postageFor } from './postage';
 import { EMS_ZONE } from './ems';
 import { COUNTRY_CODES } from './countries';
+import { SERVICES } from './services';
 import type { CountryCode } from './types';
 import type { PostalMethod } from './postage';
 
@@ -175,6 +176,49 @@ describe('every method carries its own evidence', () => {
       for (const bad of ['fedex', 'dhl', 'ups', 'ecms']) {
         expect(m.label.toLowerCase(), m.id).not.toContain(bad);
       }
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **2026-09-08、外部の実測が我々の表を裏づけた**（`docs/audit/o2-courier-2026-09-08.md`）。
+// ZenMarket の公開見積 API に ドイツ・600g を投げた額が、我々の予測と1円まで一致した。
+// **小形包装物の上乗せ +¥637 は、我々が2点から導いた推定値だった。**
+// 別の作業者・別の日・別の経路で同じ数字が出たので、ここに固定する。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the measured ZenMarket quotes we were checked against', () => {
+  const MEASURED_DE_600G: Record<PostalMethod, number> = {
+    'ems': 3400,
+    'parcel-air': 3850,
+    'parcel-surface': 2500,
+    'small-packet-air': 2047,      // 公表 1,410 + 我々の上乗せ 637
+    'small-packet-surface': 0,     // 実測に出なかった。下で除外する
+  };
+  const zen = SERVICES.find((s) => s.id === 'zenmarket')!;
+
+  test('every method we price for ZenMarket matches what its own quote screen returned', () => {
+    for (const [method, seen] of Object.entries(MEASURED_DE_600G) as [PostalMethod, number][]) {
+      if (seen === 0) continue;
+      const base = postageFor(method, 'DE', 600);
+      expect(base, method).not.toBeNull();
+      const ours = base!.yen + markupYen(zen.postage[method]!, 'DE', 600);
+      expect(ours, `${method}: 実測 ${seen} と我々の ${ours} がずれた`).toBe(seen);
+    }
+  });
+
+  test('**the small packet markup was our inference, and it held**', () => {
+    // ここが崩れたら「推定が実測に耐えた」という主張自体が消える。
+    expect(postageFor('small-packet-air', 'DE', 600)!.yen).toBe(1410);
+    expect(markupYen(zen.postage['small-packet-air']!, 'DE', 600)).toBe(637);
+  });
+
+  test('Japan Post methods do not depend on the parcel dimensions — measured, not assumed', () => {
+    // 実測: blank（寸法未入力）と compact（20×15×10）で EMS・Airmail 両方・船便が完全同額。
+    // `postage.ts` が方式を選ぶ条件の3番目がこれ。**推測ではなく実測で裏づいた。**
+    // 我々のモデルに寸法の入力が無いこと自体が、この事実に依存している。
+    for (const spec of POSTAL_METHODS) {
+      expect(spec.id, `${spec.id} が寸法を要る方式なら、この表に入れてはいけない`)
+        .not.toMatch(/fedex|dhl|ups|ecms|sagawa|nova|sf/i);
     }
   });
 });
