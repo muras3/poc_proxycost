@@ -5,6 +5,10 @@ import {
   weightFieldsFor,
 } from './weights';
 
+/** その行がいま表にあるか。**表は別担当が足したり外したりしている**ので、
+ *  「この題名がこの行に当たる」は行がある前提でしか主張できない。 */
+const hasLine = (id: string) => WEIGHT_CATEGORIES.some((c) => c.lines.some((l) => l.id === id));
+
 describe('resolving a weight from a title', () => {
   test('a Nendoroid is 439 g, with the sample behind it', () => {
     const r = resolveWeight('Nendoroid Hatsune Miku');
@@ -171,11 +175,14 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
       'フィギュア台座 スタンド 10個', 'フィギュア収納ボックス', 'ねんどろいど 専用ケース',
       '1/7 スケール フィギュア用 アクリルケース',
       'トレカ用スリーブ 100枚', 'トレカ ケース ローダー 25枚', 'トレカ バインダー 収納',
-      'PSA トレカ デッキケース',
       'スニーカーボックス 収納ケース', 'スニーカー用シューキーパー', 'スニーカー 靴紐 3足分',
     ]) {
       expect(resolveWeight(t).grams, t).toBeNull();
     }
+    // デッキケースは容れ物。表に容れ物の行があればそれに当たり、無ければ黙る。
+    // **どちらにせよ中身のシングル 50 g には流れない**——それがこの門の仕事。
+    expect(resolveWeight('PSA トレカ デッキケース').lineId).not.toBe('single-card');
+    expect(resolveWeight('PSA トレカ デッキケース').lineId).not.toBe('graded-slab');
     // **門は本物の出品を食わない。**中身を売っている出品は今までどおり当たる。
     expect(resolveWeight('ワンピース フィギュア ルフィ 正規品').lineId).toBe('figure-generic');
     expect(resolveWeight('トレカ プロモカード 5種11枚').lineId).toBe('single-card');
@@ -205,6 +212,94 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
   test('a hakama listing still resolves — the guard must not eat the real hits', () => {
     expect(resolveWeight('袴 単品 男性用').lineId).toBe('hakama');
     expect(resolveWeight('剣道 袴 27号').lineId).toBe('hakama');
+  });
+
+  // ── 段0: 出品ではない題名。母数の off-target 49 件のうち 10 件に重量が付いていた。
+  test('a shop front and a category page get nothing, whatever words they carry', () => {
+    for (const t of [
+      'スニーカー - ハニーズ Yahoo!店',
+      '駿河屋Yahoo!店 - フィギュア',
+      'ZOZOTOWN Yahoo!店 - スニーカー',
+      '【楽天市場】シューズ・靴 > スニーカー：SHOPLIST',
+      '【楽天市場】 PEライン/釣り糸 : SOZOKI',
+      '三省堂書店 - 【楽天市場】 コミック全巻セット',
+      'アイムロワ お菓子 カップ麺 詰め合わせ - お菓子｜Yahoo!ショッピング',
+      '【2026年最新】Yahoo!オークション -禰豆子 フィギュアの中古品・新品・未使用品一覧',
+      '五番街〜バッグ・財布のお店',
+    ]) expect(resolveWeight(t).grams, t).toBeNull();
+  });
+
+  test('the shop-front gate reads the form, so real items from the same shops still resolve', () => {
+    // 商品ページは ' - 通販 - ' を挟み、楽天は '】' の直後から商品名が始まる。
+    expect(resolveWeight('シマノ 22 ステラ 2500S スピニングリール : つり具のマルニシYahoo!店 - 通販 - Yahoo!ショッピング').lineId)
+      .toBe('spinning-reel');
+    expect(resolveWeight('【楽天市場】初音ミク キョンシー Ver. 1/7 スケール フィギュア：chummys 楽天市場店').lineId)
+      .toBe('scale-1-7');
+  });
+
+  // ── 口数の出品。個数を掛ける処理は持たないので、当てずに黙る。
+  test('a lot of N things does not get the weight of one thing', () => {
+    for (const t of [
+      'ファミコン ソフト まとめ売り 19本セット - メルカリ',
+      'PS4 ゲームソフト まとめ売り（10本） - メルカリ',
+      'ワンピース 一番くじ プライズ フィギュア まとめ売り 9点',
+      '人気 カップ麺 12種類 詰め合わせ セット 12個アソート',
+      'ソフトルアー ワーム 10個セット ソフトベイト 疑似餌',
+      '芋焼酎 1800ml 一升瓶 2本セット - メルカリ',
+      'Amazon.co.jp: 漫画 全巻 まとめ セット 137冊 : Toys & Games',
+    ]) expect(resolveWeight(t).grams, t).toBeNull();
+  });
+
+  test('a set that is one product keeps its own line', () => {
+    // 全巻セット・上下セット・防具セットは口数ではなく、その形で1つの商品。
+    expect(resolveWeight('ワンピース 1〜114巻セット 全巻 尾田栄一郎').lineId).toBe('manga-set');
+    expect(resolveWeight('空手着 上下セット 空手衣 大人用').lineId).toBe('budo-uniform-set');
+    expect(resolveWeight('剣道防具セット 一式').lineId).toBe('kendo-bogu-set');
+  });
+
+  test('packaging, parts, clones and paint codes are not the thing', () => {
+    expect(resolveWeight('【空箱のみ】ぶいすぽっ！ スケールフィギュア GiGO').grams).toBeNull();
+    expect(resolveWeight('1/6 フィギュア ドール 用 ヘッド 植毛タイプ 塗装済').grams).toBeNull();
+    expect(resolveWeight('スーパーファミコン 本体 互換機 SFC互換 ゲーム機').grams).toBeNull();
+    expect(resolveWeight('【楽天市場】タミヤ ラッカー塗料 LP-70 アルミシルバー 塗料').grams).toBeNull();
+    expect(resolveWeight('クロス西洋剣 模造刀 模擬刀 日本刀 居合刀').grams).toBeNull();
+    expect(resolveWeight('【中古】SDガンダムフルカラー ウォドム フィギュア').grams).toBeNull();
+  });
+
+  test('a sealed card box and a photocard binder are not one card', () => {
+    // 未開封の箱は 30 パック入り。**シングル 50 g ではない**（7 倍）。箱の行が表に
+    // 入れば箱の行に、無ければ黙る。ゲーム名の語を足した副作用をここで止めている。
+    expect(resolveWeight('ポケモンカード151 BOX シュリンク付き 新品 未開封 ポケカ').lineId).not.toBe('single-card');
+    expect(resolveWeight('Kpop Photo Card Binder with 6 Sticker Sheets & 50 Sleeves, Photo Card Holder').grams).toBeNull();
+    // 作品名はグッズにも付く。カードの 50 g をシャツに付けない。
+    expect(resolveWeight('遊戯王 ブラックマジシャン ユニクロ Tシャツ メンズ').lineId).not.toBe('single-card');
+  });
+
+  test('an accessory is not the thing it is for', () => {
+    // 2026-09-08 に入った行（カメラ・プラモデル・化粧品）に付属品が流れ込んでいた。
+    expect(resolveWeight('カメラストラップ 一眼レフ ミラーレス - メルカリ').grams).toBeNull();
+    expect(resolveWeight('塗装作業ベース ホビー 塗装用具 プラモデル 模型 フィギュア 塗料').grams).toBeNull();
+    expect(resolveWeight('ガンダムマーカー 塗装用 GSI クレオス 塗料 ラッカー プラモデル').grams).toBeNull();
+    // 'ストレイトナー' の中の 'トナー' が化粧水に当たっていた。日本語に語の境界は無い。
+    expect(resolveWeight('ダイソン Dyson Airstrait ストレイトナー ドライヤー ヘアアイロン').grams).toBeNull();
+    // 門は本物の出品を食わない。**その行が表にある限り**、本体は今までどおり当たる
+    // （カメラ・模型の行は 2026-09-08 現在まだ表に繋がったり外れたりしている）。
+    if (hasLine('dslr-body')) expect(resolveWeight('Nikon D850 ボディ デジタル 一眼レフ カメラ 中古').lineId).toBe('dslr-body');
+    if (hasLine('plastic-model')) expect(resolveWeight('HG 1/144 ハンブラビ 組み立て式プラモデル').lineId).toBe('plastic-model');
+  });
+
+  test('a run of a magazine is not a manga set and not one issue', () => {
+    expect(resolveWeight('【付録完備】ONE PIECE ワンピース マガジン 漫画 全巻 セット').grams).toBeNull();
+    // 片方だけなら普通の巻・普通の号。門は2つ揃ったときだけ閉じる。
+    expect(resolveWeight('ONE PIECE 漫画 105巻').lineId).toBe('manga-volume');
+    expect(resolveWeight('SEVENTEEN 雑誌 表紙').lineId).toBe('magazine');
+  });
+
+  test('こどもの日 is a season, not a size', () => {
+    // 端午の節句の飾りとして売られる大人向けの居合刀が、子供サイズの門で黙っていた。
+    expect(resolveWeight('居合刀 模造刀 日本刀 コスプレ 端午の節句 こどもの日 鑑賞用').lineId).toBe('iaito');
+    // 寸法としての子供は今までどおり落ちる。
+    expect(resolveWeight('空手着 上下セット 女児 120cm').grams).toBeNull();
   });
 });
 
@@ -246,10 +341,9 @@ describe('titles that must still resolve', () => {
 
   test('トレカ resolves — the word the live search returns most', () => {
     // 実タイトル37件中7件がトレカの出品で、全部落ちていた。50 g は tcg-singles の
-    // 梱包込み単カード中央値。K-POP のフォトカード（kpop 28 g）より重い側なので安全に倒れる。
+    // 梱包込み単カード中央値。
     for (const t of [
       'トレカ プロモカード 非売品カード 5種11枚 - メルカリ',
-      'RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ',
       'ポケモンカード トレーディングカード ピカチュウ',
       'One Piece trading card Luffy',
     ]) {
@@ -257,6 +351,50 @@ describe('titles that must still resolve', () => {
       expect(r.lineId).toBe('single-card');
       expect(r.grams).toBe(50);
     }
+  });
+
+  test('トレカ in a K-pop title is the photocard, not the tcg single', () => {
+    // 母数の 6 件が「K-POP のトレカ」で、28 g のフォトカードに 50 g が付いていた。
+    // 決めているのは KPOP_CONTEXT のグループ名だけ。**文脈が無ければ動かさない。**
+    for (const t of [
+      'RIIZE ソンチャン 会報 トレカ 紹介特典 - メルカリ',
+      'BOYNEXTDOOR 新規入会 ボネクド トレカ 紹介',
+      '超特急 リョウガ トレカ NO.135 サバイバー - メルカリ',
+    ]) {
+      const r = resolveWeight(t);
+      expect(r.lineId, t).toBe('photocard');
+      expect(r.grams, t).toBe(28);
+    }
+    // グループ名が無ければ今までどおり TCG のシングル。
+    expect(resolveWeight('トレカ 1枚 美品 - メルカリ').lineId).toBe('single-card');
+  });
+
+  test('a disc is 100 g outside K-pop and the album package inside it', () => {
+    // 同じ 'アルバム' が別の物を指す。8 倍ちがうので、どちらに倒すかは文脈で決める。
+    expect(resolveWeight('初音ミク「マジカルミライ 2023」OFFICIAL ALBUM【限定盤】 | HMV&BOOKS online').lineId).toBe('cd');
+    expect(resolveWeight('SEVENTEEN 11th Mini Album「SEVENTEENTH HEAVEN」').lineId).toBe('album');
+    // Weverse 版はプラットフォームアルバム（400 g）で、通常盤の箱ではない。
+    expect(resolveWeight('ARIRANG (Weverse Albums Ver.) : BTS | HMV&BOOKS online').lineId).toBe('platform-album');
+    // ディスクと写真集の同梱はアルバムの箱。写真集単体（1,000 g）ではない。
+    expect(resolveWeight('【中古:盤質A】 #TWICE 【初回限定盤A】 (CD+写真集)').lineId).toBe('album');
+    expect(resolveWeight('TWICE サナ 写真集 Yes, I am Sana.').lineId).toBe('photobook');
+  });
+
+  test('the game names and the platform-plus-ソフト forms find the card and the cartridge', () => {
+    expect(resolveWeight('遊戯王カード PSYフレームギア・δ レリーフ アルティメット').lineId).toBe('single-card');
+    expect(resolveWeight('Pokemon Card Game s8a 25th Anniversary Collection Meu UR').lineId).toBe('single-card');
+    expect(resolveWeight('ファミコンソフト - メルカリ').lineId).toBe('game-software');
+    // 機種名だけなら今までどおり本体を名乗らせない。
+    expect(resolveWeight('ファミコン 中古').grams).toBeNull();
+  });
+
+  test('an English complete set is the set, not one volume', () => {
+    for (const t of [
+      'Jump Comics/Akira Toriyama "Dragon Ball Complete 42 Volume First Edition Set"',
+      'Manga WILD HALF Yuko Asami Complete Volume Set Complete 17 Volumes',
+      'The Girl I Want is So Handsome! - The Complete Manga Collection',
+    ]) expect(resolveWeight(t).lineId, t).toBe('manga-set');
+    expect(resolveWeight('ONE PIECE 漫画 105巻').lineId).toBe('manga-volume');
   });
 
   test('the generic figure line catches the plain listings and loses to every specific one', () => {
@@ -276,7 +414,8 @@ describe('titles that must still resolve', () => {
   test('a line names the shop it was read from, not the category first source', () => {
     // games は本体と ソフトで店が違う。sources[0] を常に名乗ると片方が嘘になる。
     expect(resolveWeight('スーパーファミコン 本体').source).toContain('www.retroasia.com');
-    expect(resolveWeight('ゲームソフト まとめ売り').source).toContain('japan-figure.com');
+    // 'まとめ売り' は口数の門で黙るようになったので、1本の題名で見る。
+    expect(resolveWeight('ゲームソフト ドラゴンクエスト').source).toContain('japan-figure.com');
     expect(resolveWeight('ONE PIECE 漫画 105巻').source).toContain('jpbookstore.com');
     expect(resolveWeight('進撃の巨人 全巻セット').source).toContain('shop.bookoffusa.com');
   });
@@ -300,6 +439,9 @@ describe('titles that must still resolve', () => {
       'sar', 'csr', 'ssr',
       '1800ml', '1,800ml', '1.8l', '1800ｍｌ', '720ml', '750ml', '700ml', '720ｍｌ', '300ml', '300ｍｌ',
       'obi', '杖',
+      // 'シングル' はカードの枚数にも CD の形式にも、茶やコーヒーの産地にも使う。
+      // 'single card' は語そのものが裏付け（'card' を含む）なので門を通る。
+      'シングル',
       // 機種名。'ファミコン ソフト' は 100 g のカセットで、3,350 g の本体ではない。
       'ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube',
       'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo',
@@ -308,12 +450,19 @@ describe('titles that must still resolve', () => {
       // 映像ディスク。1,750 g は K-POP のライブ箱の値で、映画の1枚とは別物。
       'dvd', 'ブルーレイ', 'blu-ray', 'bluray',
     ]);
+    // 語だけなら**別の行が正しい**もの。K-POP のアルバム（800 g）と日本の CD（100 g）は
+    // 8 倍ちがい、'アルバム' だけならディスク1枚と読むのが正しい。
+    const rerouted: Record<string, string> = { 'アルバム': 'cd', 'album': 'cd' };
     const missed: string[] = [];
     for (const c of WEIGHT_CATEGORIES) {
       for (const l of c.lines) {
         for (const m of l.match) {
           if (gated.has(m)) {
-            expect(resolveWeight(m).grams).toBeNull();
+            expect(resolveWeight(m).grams, m).toBeNull();
+            continue;
+          }
+          if (m in rerouted) {
+            expect(resolveWeight(m).lineId, m).toBe(rerouted[m]);
             continue;
           }
           if (resolveWeight(m).lineId !== l.id) missed.push(`${c.category}/${l.id}: "${m}"`);
@@ -327,7 +476,7 @@ describe('titles that must still resolve', () => {
 // ── 当たらないときに何かを返してはいけない。ここが崩れると総額が嘘になる。
 describe('a title we cannot resolve stays unresolved', () => {
   test('no fallback, no guess, no zero', () => {
-    const r = resolveWeight('ぬいぐるみ');
+    const r = resolveWeight('この題名は表のどの行にも当たらない');
     expect(r.grams).toBeNull();
     expect(r.grams).not.toBe(0);
     expect(r.tier).toBe('none');
@@ -366,7 +515,7 @@ describe('the weight the calculator puts on a cart item', () => {
   });
 
   test('a title off the table gets the assumed weight and says so', () => {
-    const w = weightFieldsFor('plush toy, no weight data');
+    const w = weightFieldsFor('この題名は表のどの行にも当たらない');
     expect(w.weightG).toBe(ASSUMED_WEIGHT_G);
     expect(w.weightG).not.toBeNull();
     expect(w.weightG).not.toBe(0);
@@ -390,15 +539,15 @@ describe('the weight the calculator puts on a cart item', () => {
   });
 
   test('resolveWeight itself still refuses to guess — the assumption lives one layer up', () => {
-    expect(resolveWeight('plush toy, no weight data').grams).toBeNull();
-    expect(weightFieldsFor('plush toy, no weight data').weightG).toBe(ASSUMED_WEIGHT_G);
+    expect(resolveWeight('この題名は表のどの行にも当たらない').grams).toBeNull();
+    expect(weightFieldsFor('この題名は表のどの行にも当たらない').weightG).toBe(ASSUMED_WEIGHT_G);
   });
 });
 
 describe('a category the user picked by hand', () => {
   test('the category average is used only when the user names the category', () => {
-    expect(resolveWeight('ぬいぐるみ').grams).toBeNull();
-    const r = resolveWeight('ぬいぐるみ', 'figures');
+    expect(resolveWeight('この題名は表のどの行にも当たらない').grams).toBeNull();
+    const r = resolveWeight('この題名は表のどの行にも当たらない', 'figures');
     expect(r.grams).toBe(1000);
     expect(r.tier).toBe('estimate');
     expect(r.source).toBe('Figures category average');

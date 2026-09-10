@@ -35,18 +35,28 @@ function describe(cat: WeightCategory, line: WeightLine): string {
 export function resolveWeight(title: string, categoryId?: string | null): WeightResolution {
   const t = title.toLowerCase();
 
+  // 段0: 出品ではない題名（店頭・カテゴリ・検索結果）。**語ではなく形で見る。**
+  if (isNotOneListing(title)) return UNRESOLVED;
+
   const search = categoryId
     ? WEIGHT_CATEGORIES.filter((c) => c.category === categoryId)
     : WEIGHT_CATEGORIES;
 
+  // 門の語は**題名につき1度だけ**見る。行ごとに見ると 75 行 × 24 の門 × その語数で、
+  // 行に依らない同じ判定を数万回くり返す（実測 456 → 118 µs／題名）。
+  // どの門が閉じているかは行に依らないので、先に一度だけ出しておく。
+  const closed = EXCLUSIONS.map((rule) => fires(t, rule));
+
   // **実際に当たった語**が長いものを採る。行が持つ最長語で並べると、
   // 'ねんどろいど CD' が cd（3文字で命中）ではなく nendoroid 行の
   // 最長語 'ねんどろいど' に負ける、といった取り違えが起きる。
+  // 母数 dev で測った限り、この規則がいちばん良い（正しい行 132/134。
+  // 「当たった位置が先のもの」は 123、「n の大きい行」は 113 まで落ちる）。
   //
   // ただし総称ライン（generic）は長さで competing させない。'フィギュア' は '1/7' より
   // 長いので、同じ土俵に載せると総称がスケール行を全部食う。**先に個別ラインだけで探し、
   // 1本も当たらなかったときだけ総称ラインを見る。**段階で分ける。
-  const best = pick(t, search, false) ?? pick(t, search, true);
+  const best = pick(t, search, false, closed) ?? pick(t, search, true, closed);
   if (best) {
     const { cat, line } = best;
     return {
@@ -78,17 +88,17 @@ export function resolveWeight(title: string, categoryId?: string | null): Weight
 
 /** generic が一致するラインだけを見て、当たった語が一番長いものを返す。 */
 function pick(
-  t: string, search: readonly WeightCategory[], generic: boolean,
+  t: string, search: readonly WeightCategory[], generic: boolean, closed: readonly boolean[],
 ): { cat: WeightCategory; line: WeightLine } | null {
   let best: { cat: WeightCategory; line: WeightLine; hit: number } | null = null;
   for (const cat of search) {
     for (const line of cat.lines) {
       if ((line.generic === true) !== generic) continue;
-      if (namesSomethingElse(t, cat, line)) continue;
-      for (const m of line.match) {
-        if (!matches(t, m)) continue;
-        if (!corroborated(t, m)) continue;
-        const hit = m.trim().length;
+      if (namesSomethingElse(cat, line, closed)) continue;
+      for (const m of [...line.match, ...extraWordsFor(line.id)]) {
+        const hit = hitLength(t, m);
+        if (hit === null) continue;
+        if (!corroborated(t, m, line.id)) continue;
         if (!best || hit > best.hit) best = { cat, line, hit };
       }
     }
@@ -106,14 +116,41 @@ function pick(
 // の取りこぼし）。同じ種類の文字が続くときだけ弾けば 'sculpture' の 'lp'、
 // '11/4' の中の '1/4' は今までどおり落ちる。
 const ASCII = /^[\x20-\x7e]+$/;
-function matches(title: string, raw: string): boolean {
+function matches(title: string, raw: Word): boolean {
+  return hitLength(title, raw) !== null;
+}
+
+/**
+ * 当たったなら**題名の中で実際に当たった文字数**、当たらなければ null。
+ * 長さを語の長さではなく当たった長さで測るのは、'complete 42 volume' のような
+ * 形（正規表現）も語と同じ土俵で競わせるため。
+ */
+function hitLength(title: string, raw: Word): number | null {
+  if (raw instanceof RegExp) {
+    const m = raw.exec(title);
+    return m ? m[0].length : null;
+  }
   const m = raw.trim().toLowerCase();
-  if (!m) return false;
-  if (!ASCII.test(m)) return title.includes(m);
-  const esc = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const left = boundary(m[0]!, 'left');
-  const right = boundary(m[m.length - 1]!, 'right');
-  return new RegExp(`${left}${esc}${right}`, 'i').test(title);
+  if (!m) return null;
+  const re = compiled(m);
+  if (re === null) return title.includes(m) ? m.length : null;
+  return re.test(title) ? m.length : null;
+}
+
+// 語ごとの正規表現は**1度だけ組む**。組み直しは意味を変えないのに時間の 8 割を使っていた。
+// 語は表と門に書かれた定数なので、辞書の大きさで頭打ちになる（今 550 語ほど）。
+// 日本語の語は正規表現を使わない（境界が要らない）ので null を憶えて includes に落とす。
+const COMPILED = new Map<string, RegExp | null>();
+function compiled(m: string): RegExp | null {
+  const seen = COMPILED.get(m);
+  if (seen !== undefined) return seen;
+  let re: RegExp | null = null;
+  if (ASCII.test(m)) {
+    const esc = m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    re = new RegExp(`${boundary(m[0]!, 'left')}${esc}${boundary(m[m.length - 1]!, 'right')}`, 'i');
+  }
+  COMPILED.set(m, re);
+  return re;
 }
 
 /** 語の端が英字なら英字を、数字なら数字を隣に許さない。記号なら何も要求しない。 */
@@ -121,6 +158,157 @@ function boundary(char: string, side: 'left' | 'right'): string {
   const cls = /[a-z]/i.test(char) ? '[a-z]' : /[0-9]/.test(char) ? '[0-9]' : null;
   if (!cls) return '';
   return side === 'left' ? `(?<!${cls})` : `(?!${cls})`;
+}
+
+/** 表の語も、ここで足す語も、同じ扱い。正規表現は「語では書けない形」のときだけ。 */
+type Word = string | RegExp;
+
+// ── 追加の語彙。**数値はここに置かない。**行 id と語だけで、重量は表のまま。
+//
+// data/weights/*.json は shopify-probe の測定結果で、そこに載る `match` は
+// 「その店でその区分を切り出した語」。**本番の題名がその物をどう呼ぶか**は別の知識で、
+// 母数（data/weights-corpus.json）を見て人が決める judgement なので、
+// 「データは判断を持たない、判断はコード」（docs/DESIGN-FEES-DATA.md §2）に従ってここに置く。
+// 語が増えて安定したら、データ側の担当が JSON に畳んでよい。
+interface ExtraWords {
+  lineId: string;
+  match: Word[];
+  /** なぜこの語がこの行を指すのか。母数のどの取りこぼしから足したか。 */
+  why: string;
+}
+
+const EXTRA_WORDS: ExtraWords[] = [
+  {
+    // 表の語は 'トレカ' 'シングル' などの総称だけで、**遊戯王・ポケカと名乗る題名に当たらない**。
+    // 母数 dev で 6 件が黙っていた（遊戯王のレリーフ 3 件、ポケカの英語題名 2 件、楽天 1 件）。
+    lineId: 'single-card',
+    match: [
+      '遊戯王', 'yugioh', 'yu-gi-oh', 'ポケモンカード', 'ポケカ', 'pokemon card', 'pokémon card',
+      'デュエマ', 'デュエル・マスターズ', 'ワンピースカード', 'ヴァイスシュヴァルツ',
+      'バトルスピリッツ', 'カードファイト', 'mtg',
+    ],
+    why: 'The game names say the object is a trading-card single',
+  },
+  {
+    // 'トレカ' は K-POP の題名ではフォトカード（28 g）を指す。TCG のシングル（50 g）ではない。
+    // 単独では決められないので、K-POP の文脈を裏付けに要求する（REQUIRES_CORROBORATION）。
+    lineId: 'photocard',
+    match: ['トレカ', 'トレーディングカード'],
+    why: 'In a K-pop title トレカ is the photocard, which is where the 28 g was measured',
+  },
+  {
+    // 表の語 'weverse album' は 'Weverse **Albums** Ver.' に当たらない（英字の境界で落ちる）。
+    // 母数 dev で 3 件がこれ（2 件は 800 g の album に流れ、1 件は黙っていた）。
+    lineId: 'platform-album',
+    match: ['weverse'],
+    why: 'Weverse editions write "Weverse Albums Ver."',
+  },
+  {
+    // 'CD+写真集' は写真集（1,000 g）ではなく、写真集を同梱したアルバムの箱（800 g）。
+    lineId: 'album',
+    match: ['cd+写真集', 'cd＋写真集', 'cd+photobook', 'cd+photo book', 'cd＋photobook'],
+    why: 'A disc bundled with a book is the album package, not the book',
+  },
+  {
+    // K-POP の外では「アルバム」はただのCD。'初音ミク … OFFICIAL ALBUM' に
+    // K-POP アルバムの 800 g が付いていた（8 倍）。K-POP の題名では逆に cd を閉じる（EXCLUSIONS）。
+    lineId: 'cd',
+    match: ['アルバム', 'album'],
+    why: 'Outside K-pop an album is a disc in a case, not the 800 g K-pop package',
+  },
+  {
+    // 英語の全巻セットの形。'Complete 42 Volume First Edition Set'、'Complete Volume Set'、
+    // 'The Complete Manga Collection'。表の 'complete set' はどれにも当たらない。
+    lineId: 'manga-set',
+    match: [/complete\s+(\d+\s+)?(manga\s+)?(volumes?|collection|series|set)/],
+    why: 'English listings write the complete set in a dozen ways around "complete"',
+  },
+  {
+    // 'ファミコンソフト' は本体（3,350 g）ではなくカセット（190 g）。表の語は 'ゲームソフト' だけ。
+    lineId: 'game-software',
+    match: [
+      'ファミコンソフト', 'スーファミソフト', 'スーパーファミコンソフト', 'ゲームカセット',
+      'psソフト', 'ps2ソフト', 'ps3ソフト', 'ps4ソフト', 'ps5ソフト', 'switchソフト', 'ソフト 中古',
+    ],
+    why: 'A platform name glued to ソフト names the cartridge, not the machine',
+  },
+  {
+    // 型番だけの靴。ブランド名（ナイキ）は鞄にも服にも付くので**型名**だけを採る。
+    lineId: 'sneaker-casual',
+    match: [
+      'エアジョーダン', 'air jordan', 'エアフォース', 'air force 1', 'エアマックス', 'air max',
+      'ダンク ロー', 'dunk low', 'ニューバランス', 'new balance', 'スタンスミス', 'stan smith',
+    ],
+    why: 'A shoe model name is on shoes only; the brand name alone is on bags and shirts too',
+  },
+  {
+    // 'グラスファイバー弓 「直心 1」 並寸【付属品付き 弓具 弓道】'。表は 'グラス弓' しか持たない。
+    lineId: 'kyudo-yumi',
+    match: ['グラスファイバー弓', 'カーボンファイバー弓', '弓具'],
+    why: 'The bow is written in more ways than the two the slice used',
+  },
+];
+
+const EXTRA_BY_LINE = new Map<string, Word[]>();
+for (const e of EXTRA_WORDS) EXTRA_BY_LINE.set(e.lineId, [...(EXTRA_BY_LINE.get(e.lineId) ?? []), ...e.match]);
+function extraWordsFor(lineId: string): readonly Word[] {
+  return EXTRA_BY_LINE.get(lineId) ?? [];
+}
+
+// ── 段0の門。**題名が1点の商品を指していない**とき、どの行にも当てない。
+//
+// 語ではなく **形**（末尾・区切り・パンくず）で見る。'スニーカー' や 'フィギュア' は
+// 商品にも店頭にも出るので、語では店頭と商品を分けられない（docs/DESIGN-WEIGHT-MATCH.md §1.4）。
+// 各サイトが店頭・カテゴリ・検索結果に付ける定型の形だけを列挙する。
+//
+// 商品ページの形と衝突しないことを母数で確かめてある:
+//   Yahoo!ショッピングの商品は '… : 店名 - 通販 - Yahoo!ショッピング'（半角ハイフン、'通販' 付き）、
+//   店頭は '店名 - カテゴリ｜Yahoo!ショッピング'（全角の縦棒）。
+//   楽天の商品は '【楽天市場】商品名：店名'（'】' の直後から商品名）、
+//   カテゴリは '【楽天市場】 …' か 'A > B：店名' のパンくず。
+interface StorefrontForm {
+  /** 題名がこの形なら、1点の商品ではない。 */
+  is: (title: string) => boolean;
+  why: string;
+}
+
+const NOT_ONE_LISTING: StorefrontForm[] = [
+  {
+    // 'スニーカー - ハニーズ Yahoo!店'、'駿河屋Yahoo!店 - フィギュア'。
+    // 商品ページも店名に 'Yahoo!店' を含むが、そちらは必ず ' - 通販 - ' を挟む。
+    is: (t) => /yahoo!店/i.test(t) && !t.includes('通販'),
+    why: 'A Yahoo shop name with no 通販 marker is the shop front, not one of its items',
+  },
+  {
+    // 'サンワダイレクト - ボックス収納ケース｜Yahoo!ショッピング'。全角の縦棒が店頭の形。
+    is: (t) => /｜yahoo!ショッピング/i.test(t),
+    why: 'The full-width bar form is a Yahoo category page; items use " - 通販 - Yahoo!ショッピング"',
+  },
+  {
+    // '【楽天市場】シューズ・靴 > スニーカー：SHOPLIST'。'>' は楽天のパンくず。
+    is: (t) => t.includes('【楽天市場】') && t.includes(' > '),
+    why: 'A breadcrumb inside a Rakuten title is a category page',
+  },
+  {
+    // '【楽天市場】 PEライン/釣り糸 : SOZOKI'。商品名は '】' の直後から始まる。
+    is: (t) => t.includes('【楽天市場】 '),
+    why: 'A Rakuten item title starts right after the bracket; a space means a category page',
+  },
+  {
+    // '【2026年最新】Yahoo!オークション -禰豆子 フィギュアの中古品・新品・未使用品一覧'。
+    is: (t) => t.includes('中古品・新品・未使用品') || t.includes('商品一覧'),
+    why: 'A Yahoo Auctions search result page lists many items',
+  },
+  {
+    // '五番街〜バッグ・財布のお店'。
+    is: (t) => t.includes('のお店'),
+    why: 'The title names a shop, not a thing the shop sells',
+  },
+];
+
+/** 題名が1点の商品を指していないか。 */
+function isNotOneListing(title: string): boolean {
+  return NOT_ONE_LISTING.some((f) => f.is(title));
 }
 
 // ── ここから下は「当て方」の門。docs/audit/logic.md 第5節の誤爆一覧への対処。
@@ -133,8 +321,30 @@ interface Corroboration {
   tokens: string[];
   /** タイトルに needs のどれかが無ければ当てない。 */
   needs: string[];
+  /** 名指した行だけに効かせる（同じ語が別の行では裏付け無しで正しいとき）。 */
+  lineIds?: string[];
   why: string;
 }
+
+/**
+ * **K-POP の題名だと分かる語。**グループ名と、その界隈にしかない物の名前だけを置く。
+ * 'アルバム' 'トレカ' のような、どちらの世界にも出る語は入れない（裏付けにならない）。
+ *
+ * K-POP の行（album 800 g・dvd-bluray 1,750 g・photocard 28 g）は K-POP 専門店で
+ * 測った値で、同じ言葉で呼ばれる日本の CD（100 g）やTCGのシングル（50 g）とは別の物。
+ * **どちらの世界の題名かを決めるのはこの一覧だけ**なので、増やすときは母数で測ること。
+ */
+const KPOP_CONTEXT = [
+  'kpop', 'k-pop', 'ケイポップ', '韓流', 'weverse', 'ウィバース', 'ペンライト', 'lightstick',
+  'フォトカード', 'photocard', 'photo card', '会報', 'ヨントン', 'サノク',
+  'bts', '防弾少年団', 'バンタン', 'twice', 'トゥワイス', 'blackpink', 'ブラックピンク',
+  'seventeen', 'セブチ', 'セブンティーン', 'nct', 'enhypen', 'エンハイプン',
+  'le sserafim', 'ルセラフィム', 'newjeans', 'ニュージーンズ', 'aespa', 'エスパ',
+  'stray kids', 'straykids', 'ストレイキッズ', 'スキズ', 'ateez', 'riize',
+  'boynextdoor', 'ボネクド', 'ボイネク', 'zerobaseone', 'ゼベワン', 'illit',
+  'red velvet', 'レッドベルベット', 'exo', 'shinee', 'super junior', 'kep1er', 'ケプラー',
+  'nmixx', 'itzy', 'ボイプラ', '超特急',
+];
 
 /**
  * その語だけでは行を決められないもの。**裏付けの語を同じタイトルに要求する。**
@@ -194,11 +404,33 @@ const REQUIRES_CORROBORATION: Corroboration[] = [
     // K-POP の文脈を示す語が同じタイトルに無ければ、当てずに仮置きへ落とす。
     tokens: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray'],
     needs: [
-      'kpop', 'k-pop', 'ケイポップ', 'アルバム', 'album', 'フォトカード', 'photocard', 'トレカ',
-      'ペンライト', 'lightstick', 'weverse', 'ウィバース', 'コンサート', 'concert',
-      'ワールドツアー', 'world tour', 'ファンミ', 'fanmeeting',
+      ...KPOP_CONTEXT, 'アルバム', 'album', 'トレカ',
+      'コンサート', 'concert', 'ワールドツアー', 'world tour', 'ファンミ', 'fanmeeting',
     ],
     why: 'The 1,750 g came from K-pop concert releases; a film on one disc is not that object',
+  },
+  {
+    // '静岡 煎茶 … シングルオリジン 酔える茶葉' にカード 50 g が付いていた。
+    // 'シングル' はカードの枚数にも、CD の形式にも、コーヒー・茶の産地にも使う。
+    tokens: ['シングル', 'single card'],
+    needs: ['カード', 'card', 'cards', 'トレカ', 'ポケカ', '遊戯王', 'tcg'],
+    why: 'シングル on its own says nothing about cards — single origin tea uses the same word',
+  },
+  {
+    // K-POP のアルバム（800 g）は専門店で測った箱で、日本の CD（100 g）とは別の物。
+    // K-POP と分かる語が無ければこの行は名乗れない。無ければ cd の 100 g に落ちる。
+    tokens: ['アルバム', 'album'],
+    lineIds: ['album'],
+    needs: KPOP_CONTEXT,
+    why: 'The 800 g album was measured at a K-pop shop; a Japanese CD album is not that package',
+  },
+  {
+    // 追加語の 'トレカ' は photocard のときだけ、K-POP の裏付けを要る。
+    // TCG の題名では表の 'トレカ'（single-card）がそのまま正しい。
+    tokens: ['トレカ', 'トレーディングカード'],
+    lineIds: ['photocard'],
+    needs: KPOP_CONTEXT,
+    why: 'トレカ is a photocard only when the title is a K-pop one',
   },
 ];
 
@@ -206,12 +438,19 @@ interface Exclusion {
   /** 効かせる行。行 id で名指すか、カテゴリごと（except で穴を開ける）。 */
   lineIds?: string[];
   categoryId?: string;
+  categoryIds?: string[];
   exceptLineIds?: string[];
   /** 全カテゴリに効かせる。exceptCategoryIds のカテゴリだけ免れる。 */
   allCategories?: true;
   exceptCategoryIds?: string[];
   /** タイトルがこの語を持つなら、その行は当てない。 */
   when: string[];
+  /** 語では書けない**形**（数量＋助数詞など）。when と同じ扱いで、どれか一致すれば閉じる。 */
+  pattern?: RegExp[];
+  /** when に加えて、こちらの語も同じタイトルに要る（2つ揃って初めて意味を持つ形）。 */
+  and?: string[];
+  /** ただしこの語があるなら、when の一致は説明が付くので門を開ける。 */
+  unless?: string[];
   why: string;
 }
 
@@ -242,6 +481,9 @@ const EXCLUSIONS: Exclusion[] = [
     categoryId: 'sports-goods',
     exceptLineIds: ['budo-bag', 'budo-small-parts', 'budo-obi'],
     when: ['女児', '男児', '子供', '子ども', 'こども', 'キッズ', 'ジュニア', '幼児', '小学生', 'kids', 'junior', 'youth'],
+    // 'こどもの日' は端午の節句の飾りとしての売り文句で、寸法ではない。
+    // これで大人向けの居合刀 2 件が黙っていた（母数 h-18029f11・h-6b0bb9c3）。
+    unless: ['こどもの日', '子供の日', 'こどもの日', '端午の節句'],
     why: 'Every median in this category was taken from adult sizes',
   },
   {
@@ -291,7 +533,10 @@ const EXCLUSIONS: Exclusion[] = [
     // cd / lp に既に在る同じ門を、フィギュアとカードのラインにも効かせる
     // （スケール行も、'1/7 スケール アクリルケース' で裏付けが揃ってしまうので同じ扱い）。
     // **容れ物そのものの重量は取れていない**ので、当てずに仮置きへ落とす。
-    categoryId: 'figures',
+    // 2026-09-07 追記: 同じ門が K-POP・ゲーム・音楽の行にも要る。
+    // 'Photo Card Binder' に 28 g、'CD・DVDケース … ゲームソフト収納' に 190 g が付いていた。
+    // used-luxury（鞄・財布・カードケース）は容れ物そのものが商品なので入れない。
+    categoryIds: ['figures', 'tcg-singles', 'kpop', 'games'],
     lineIds: ['single-card', 'graded-slab'],
     when: [
       'ケース', 'case', 'ボックス', 'スリーブ', 'sleeve', 'ローダー', 'loader',
@@ -327,24 +572,191 @@ const EXCLUSIONS: Exclusion[] = [
     when: ['dvd', 'ブルーレイ', 'blu-ray', 'bluray', 'cd'],
     why: 'A disc box set is not a manga box set, and the number would carry a bookshop as its source',
   },
+  {
+    // **1点ではなく口数の出品。**'ファミコン ソフト まとめ売り 19本セット' は 190 g × 19、
+    // 'カップ麺 12種類 詰め合わせ' は 122 g × 12。題名から個数を取り出して掛ける処理は
+    // 持っていないし、持つべきでもない（外れたときに 19 倍外れる — DESIGN-WEIGHT-MATCH §9）。
+    // 数量そのものは語ではなく**形**（数字＋助数詞＋まとめ言葉）で見る。
+    // 全巻セット・道着の上下セット・防具セットは「口数」ではなく**その形で1つの商品**なので免れる。
+    allCategories: true,
+    exceptLineIds: ['manga-set', 'budo-uniform-set', 'kendo-bogu-set'],
+    when: ['まとめ売り', 'まとめ買い', '詰め合わせ', '詰合せ', '詰め合せ', '詰合わせ', 'アソート'],
+    pattern: [/[0-9０-９]+\s*(個|本|枚|点|冊|種|種類|袋|缶|パック|足|膳)\s*(セット|組|入|まとめ|アソート)/],
+    why: 'A lot of N items weighs N times the line, and we have no count we trust to multiply by',
+  },
+  {
+    // 中身が無い出品。'【空箱のみ】… スケールフィギュア' は箱だけで、フィギュアではない。
+    allCategories: true,
+    when: ['空箱', '箱のみ', '外箱のみ', 'パッケージのみ', '説明書のみ'],
+    why: 'The listing sells the packaging with nothing in it',
+  },
+  {
+    // 部品だけの出品。'1/6 フィギュア ドール 用 ヘッド 植毛タイプ' は頭部だけ。
+    // '素体' は入れない——素体はドール1体で、部品ではない（母数 h-...: 1/6 素体セット）。
+    categoryId: 'figures',
+    when: ['植毛', 'ヘッドのみ', '頭部のみ', 'パーツのみ', '交換用ヘッド'],
+    why: 'A doll head on its own is a part, and we have no line for parts',
+  },
+  {
+    // 'スーパーファミコン 本体 互換機 … SFC互換' は他社の互換機。
+    // 3,350 g は整備済みの純正本体で測った値で、別の物。
+    lineIds: ['home-console'],
+    when: ['互換機', '互換'],
+    why: 'A third-party clone is not the original console the line was measured on',
+  },
+  {
+    // 'タミヤ ラッカー塗料 LP-70' の 'LP' は塗料の品番。レコードではない。
+    lineIds: ['lp', 'cd'],
+    when: ['塗料', 'ラッカー', 'スプレー缶', 'プラモデル'],
+    why: 'LP-70 is a paint code, not a record',
+  },
+  {
+    // 模型の**道具**。'塗装作業ベース … プラモデル 模型 フィギュア 塗料' は台で、
+    // 'ガンダムマーカー … 塗料' はペン、'洗浄用シンナー … プラモデル' は溶剤。
+    // どれも 500 g のキットではない。**道具の重量は取れていない。**
+    // 同じ門を figures にも効かせる。'塗装作業ベース … プラモデル 模型 フィギュア 塗料' は
+    // 台であって、プラモデルでもフィギュアでもない。
+    lineIds: ['plastic-model'],
+    categoryIds: ['figures'],
+    when: [
+      '塗料', 'マーカー', 'シンナー', 'ツールクリーナー', '洗浄', '塗装用具', '作業ベース',
+      '塗装ベース', 'ニッパー', 'ピンセット', 'やすり', 'ヤスリ', 'デカール', '接着剤',
+    ],
+    why: 'The listing sells the paint, the pen or the tool, not the kit',
+  },
+  {
+    // カメラの付属品。'カメラストラップ 一眼レフ ミラーレス' は紐で、450 g の本体ではない。
+    categoryId: 'cameras',
+    when: [
+      'ストラップ', 'strap', 'ケース', 'case', 'バッグ', 'フィルター', 'filter', 'バッテリー',
+      'battery', '充電器', 'charger', '三脚', 'tripod', 'グリップ', 'フード', 'クリーナー',
+      'liquid crystal protector', '液晶保護',
+    ],
+    why: 'A strap, a filter or a battery is not the body we weighed',
+  },
+  {
+    // 'ダイソン … ストレイトナー' の中の 'トナー' が化粧水に当たっていた。
+    // 日本語は語の切れ目が無いので、短い語は長い語の中に入ってしまう。
+    categoryId: 'cosmetics',
+    when: ['ストレイトナー', 'ストレートナー', 'ヘアアイロン', 'ドライヤー', 'スタイラー'],
+    why: 'ストレイトナー contains トナー; a hair tool is not a skin toner',
+  },
+  {
+    // 'クロス西洋剣 模造刀 … 居合刀' は西洋剣。居合刀の 2,500 g は日本の模擬刀で測った値。
+    lineIds: ['iaito'],
+    when: ['西洋剣', 'レイピア', 'サーベル'],
+    why: 'The iaito line was measured on Japanese practice swords',
+  },
+  {
+    // 'Kpop Photo Card Binder … Photo Card Holder' に革のカードケース 235 g が付いていた。
+    // 'card holder' は両方の言葉。トレカの文脈ならバインダーであって財布ではない。
+    lineIds: ['wallet-small-leather'],
+    when: ['photo card', 'photocard', 'フォトカード', 'トレカ', 'kpop', 'k-pop'],
+    why: 'A photocard binder shares the words with a leather card case but is not one',
+  },
+  {
+    // 未開封の BOX・パックは1枚のシングルではない。'ポケモンカード151 BOX シュリンク付き' は
+    // 30 パック入りの箱。**BOX の重量は取れていない**ので当てずに黙る。
+    categoryId: 'tcg-singles',
+    when: ['未開封', 'シュリンク', '拡張パック', '強化拡張パック', 'booster', 'オリパ', '福袋', 'unopened'],
+    why: 'A sealed box or pack is not the single card we measured',
+  },
+  {
+    // '遊戯王 ブラックマジシャン ユニクロ Tシャツ' はTシャツ。作品名はグッズにも付く。
+    categoryIds: ['figures', 'tcg-singles', 'kpop'],
+    when: [
+      // 'ぬいぐるみ' は入れない。figures に plush の行があり、**それ自体が商品**。
+      'tシャツ', 't-shirt', 'ティーシャツ', 'パーカー', 'マグカップ', 'キーホルダー',
+      'クリアファイル', '缶バッジ', 'タペストリー',
+    ],
+    why: 'The character is on the merchandise as much as on the thing we weighed',
+  },
+  {
+    // '【付録完備】ONE PIECE ワンピース マガジン 漫画 全巻 セット' はムックの揃い。
+    // 大判のムック・雑誌の揃いは記録済みの穴（index.json partialGaps）。
+    // 定期刊行物の語と揃いの語が**両方**あるときだけ閉じる。片方だけなら普通の巻・普通の号。
+    lineIds: ['manga-set', 'manga-volume', 'magazine'],
+    when: ['マガジン', '雑誌', 'ムック', 'magazine'],
+    and: ['全巻', 'セット', 'バックナンバー'],
+    why: 'A run of a magazine or mook is not a manga set and not one issue',
+  },
+  {
+    // '漫画 全巻 まとめ セット 137冊' は複数の作品の口数で、1作品の揃い（2,000 g）ではない。
+    // 揃いの行は数量の門から外してあるので、'まとめ' の形だけここで別に閉じる。
+    lineIds: ['manga-set'],
+    when: ['まとめ売り', 'まとめ セット', 'まとめセット', 'まとめ出品'],
+    why: 'A mixed lot of complete sets is not one complete set',
+  },
+  {
+    // K-POP の題名の 'CD' は、写真集やフォトカードの入ったアルバムの箱（800 g）で、
+    // 100 g のディスク1枚ではない。**同じ 'CD' が世界によって別の物を指す。**
+    lineIds: ['cd', 'lp'],
+    when: KPOP_CONTEXT,
+    why: 'A disc in a K-pop title ships as the album package, not as a bare CD',
+  },
+  {
+    // K-POP の題名の 'トレカ' はフォトカード（28 g）で、TCG のシングル（50 g）ではない。
+    lineIds: ['single-card'],
+    when: KPOP_CONTEXT,
+    why: 'K-pop トレカ is a photocard; the tcg single line was measured on game cards',
+  },
+  {
+    // '剣道 袴 / [鍛錬] 高級テトロン袴 …【剣道着 剣道衣 剣衣 剣道具】' は袴の出品で、
+    // '剣道着' は店が末尾に並べた検索用の語。語の長さでは '剣道着'(3) が '袴'(1) に勝つので、
+    // 上衣 2,200 g が付いていた。**袴と名乗る題名で上衣を名乗らせない。**
+    // 上下で売るものには budo-uniform-set があるので、その語があれば門を開ける。
+    lineIds: ['budo-jacket'],
+    when: ['袴', 'hakama'],
+    unless: ['上下', 'セット', 'set'],
+    why: 'A hakama listing lists the jacket words as keywords; the garment named is the hakama',
+  },
+  {
+    // ガシャポン・食玩の小さい人形。総称の 800 g は 1/7 前後の完成品で測った値で、
+    // 20〜50 g のミニフィギュアとは 20 倍ちがう。**小さい人形の重量は取れていない。**
+    // 'SDガンダムフルカラー' は食玩の商品名（母数 h-5be50c17）。一番くじ・プライズは
+    // 大きさがまちまちで、母数では総称に当てて正しかったので入れない。
+    categoryId: 'figures',
+    when: [
+      'ガシャポン', 'ガチャガチャ', 'カプセルトイ', '食玩', 'ミニフィギュア', 'minifigure',
+      'sdガンダムフルカラー',
+    ],
+    why: 'A capsule-toy figure is nothing like the 800 g the generic line was measured on',
+  },
 ];
 
 /** 当たった語に裏付けが要るなら、それがタイトルにあるか。 */
-function corroborated(title: string, raw: string): boolean {
+function corroborated(title: string, raw: Word, lineId: string): boolean {
+  if (raw instanceof RegExp) return true;
   const m = raw.trim().toLowerCase();
-  const rule = REQUIRES_CORROBORATION.find((r) => r.tokens.includes(m));
+  const rule = REQUIRES_CORROBORATION.find(
+    (r) => r.tokens.includes(m) && (r.lineIds === undefined || r.lineIds.includes(lineId)),
+  );
   if (!rule) return true;
   return rule.needs.some((w) => matches(title, w));
 }
 
-/** タイトルがこの行とは別の物を名指ししていないか。 */
-function namesSomethingElse(title: string, cat: WeightCategory, line: WeightLine): boolean {
-  for (const rule of EXCLUSIONS) {
-    const named = rule.lineIds?.includes(line.id) === true
-      || (rule.categoryId === cat.category && rule.exceptLineIds?.includes(line.id) !== true)
-      || (rule.allCategories === true && rule.exceptCategoryIds?.includes(cat.category) !== true);
-    if (!named) continue;
-    if (rule.when.some((w) => matches(title, w))) return true;
+/** 門の語がタイトルに在るか。**行を見ない**ので題名につき1度で足りる。 */
+function fires(title: string, rule: Exclusion): boolean {
+  const hit = rule.when.some((w) => matches(title, w))
+    || (rule.pattern?.some((re) => re.test(title)) ?? false);
+  if (!hit) return false;
+  if (rule.and && !rule.and.some((w) => matches(title, w))) return false;
+  if (rule.unless?.some((w) => matches(title, w))) return false;
+  return true;
+}
+
+/** タイトルがこの行とは別の物を名指ししていないか。closed は fires() の結果。 */
+function namesSomethingElse(cat: WeightCategory, line: WeightLine, closed: readonly boolean[]): boolean {
+  for (let i = 0; i < EXCLUSIONS.length; i++) {
+    if (!closed[i]) continue;
+    const rule = EXCLUSIONS[i]!;
+    // exceptLineIds はカテゴリ指定・全カテゴリ指定のどちらにも効く（行を名指しした穴）。
+    const spared = rule.exceptLineIds?.includes(line.id) === true;
+    const byCategory = (rule.categoryId === cat.category || rule.categoryIds?.includes(cat.category) === true)
+      && !spared;
+    const byAll = rule.allCategories === true
+      && rule.exceptCategoryIds?.includes(cat.category) !== true && !spared;
+    if (rule.lineIds?.includes(line.id) === true || byCategory || byAll) return true;
   }
   return false;
 }
