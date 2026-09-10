@@ -4,7 +4,7 @@ import {
 } from './countries';
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, POSTAL_ZONE, markupYen, maxGramsFor, postageFor,
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -510,6 +510,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const priceAll = (m: PostalMethod): number | null => {
     const rate = svc.postage[m];
     if (!rate) return null;                        // その社はこの方式を売っていない
+    if (rate.unavailableIn?.includes(ctx.cc)) return null;  // その国へは出していない
     const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
     if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
     // **上乗せは個口ごとに足す。**1kg 段の定額なので、個口を分ければその数だけ乗る。
@@ -525,7 +526,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     : wanted;
   const spec = POSTAL_METHODS.find((s) => s.id === method)!;
   const rate = svc.postage[method];
-  const zone = POSTAL_ZONE[ctx.cc];
+  // **方式ごとの地帯を使う。**EMS は米国が第4地帯で、他方式は第3地帯。
+  // ここが `POSTAL_ZONE` 固定だったので、米国の EMS 行は第4地帯の額を出しながら
+  // 「zone 3」と書いていた。
+  const zone = zoneFor(method, ctx.cc);
 
   // **表の外の重量では料金を持っていない。丸めない。**
   // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
@@ -535,6 +539,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **「その社が売っていない」と「重すぎる」は違う理由なので、書き分ける。**
   const stepLabel = !rate
     ? `${svc.name} does not offer this method`
+    : rate.unavailableIn?.includes(ctx.cc)
+      ? `${svc.name} does not ship this method to ${COUNTRIES[ctx.cc].name}`
     : overMax
       ? `over ${formatStep(maxGramsFor(method, ctx.cc))} — outside this method's table`
       : split
@@ -688,6 +694,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     notComparableReason: shipYen != null ? null
       : !rate
         ? `${svc.name} does not sell ${spec.label}, so there is no total to compare`
+      : rate.unavailableIn?.includes(ctx.cc)
+        ? `${svc.name} does not ship ${spec.label} to ${COUNTRIES[ctx.cc].name}`
+          + ' — its options there are couriers, which we do not price'
         : `${spec.label} has no published rate above ${formatStep(maxGramsFor(method, ctx.cc))}`
           + ' in our table, so this total is missing its largest line',
   };

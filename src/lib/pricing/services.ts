@@ -157,6 +157,16 @@ export interface PostageRate {
   /** 国ごとの上乗せ。**国で額が変わるものがある**（ZenMarket は US と SG が別）。 */
   byCountry?: Partial<Record<CountryCode, PostageMarkup>>;
   /**
+   * **その社がその国へこの方式を出していない国。**「売っていない」であって
+   * 「重すぎる」ではない。上限超と同じ扱い（額を付けず行を比較不能にする）だが、
+   * 理由が違うので画面の文言も分ける。
+   *
+   * 日本郵便は 2025-08 に米国宛を停止し 2026-04 に「差出人が Zonos で関税を
+   * 事前納付すること」を条件に再開した（`countries.ts` の `dutyPrepayment`）。
+   * **その条件を飲まず、米国宛は宅配便だけにした社がある。**
+   */
+  unavailableIn?: readonly CountryCode[];
+  /**
    * **上乗せの確度であって、重量の確度ではない。**料金表そのものは日本郵便の公表値
    * （一次情報）なので、この tier は「その社が公表額をそのまま転嫁しているか」だけを表す。
    *   fixed    … 公表額と一致することを確認した、または上乗せの形が3点で決まった
@@ -262,18 +272,30 @@ export const SERVICES: Service[] = [
     postage: {
       'parcel-surface': {
         markup: { kind: 'none' }, tier: 'fixed',
+        // **米国宛は出していない。**自社の計算機（`country_to=US`）が日本郵便の3方式
+        // すべてに「Not available or suspended in your country.」と返す。
+        // 同じ計算機で `country_to=DE` は3方式とも額を返す（2026-09-07 確認）。
+        unavailableIn: ['US'],
         labelRaw: 'Japan Post / Surface (2-4 months)',
         sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
         checkedOn: '2026-09-07',
       },
       'ems': {
         markup: { kind: 'none' }, tier: 'fixed',
+        // **米国宛は出していない。**自社の計算機（`country_to=US`）が日本郵便の3方式
+        // すべてに「Not available or suspended in your country.」と返す。
+        // 同じ計算機で `country_to=DE` は3方式とも額を返す（2026-09-07 確認）。
+        unavailableIn: ['US'],
         labelRaw: 'Japan Post / EMS (2-5 days)',
         sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
         checkedOn: '2026-09-07',
       },
       'parcel-air': {
         markup: { kind: 'none' }, tier: 'fixed',
+        // **米国宛は出していない。**自社の計算機（`country_to=US`）が日本郵便の3方式
+        // すべてに「Not available or suspended in your country.」と返す。
+        // 同じ計算機で `country_to=DE` は3方式とも額を返す（2026-09-07 確認）。
+        unavailableIn: ['US'],
         labelRaw: 'Japan Post / Airmail (6-10 days)',
         sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
         checkedOn: '2026-09-07',

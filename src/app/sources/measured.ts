@@ -23,6 +23,20 @@ export const MEASURED_BASKET = {
   weightG: 600,
 };
 
+/**
+ * **重量の節だけ宛先がカナダ。**この節の主張は「重量の推定を外すと1位が替わる」で、
+ * 替わる2社は Neokyo と FROM JAPAN。**Neokyo は米国宛に日本郵便を売っていない**
+ * （自社の見積画面が EMS・航空・船便のすべてに
+ * "Not available or suspended in your country." を返す。2026-09-07 確認）ため、
+ * 米国では片側が盤面に存在せず、200 g から 3,000 g まで FROM JAPAN が動かない。
+ *
+ * **これは「米国では重量を気にしなくていい」という良い知らせではない。**
+ * 選べる社が1つ減っただけで、重量が総額に効く度合い（200 g → 3,000 g で +97%）は
+ * 米国でも変わらない。現象が観測できる国で見せるほうが正直なので、
+ * 同じ形が同じ交差重量で成り立つカナダで測る。
+ */
+export const WEIGHT_SHIFT_COUNTRY = 'CA' as CountryCode;
+
 /** 確度ごとの内訳（MEASURED_BASKET の1位の行）。tier は Tier と同じ意味。 */
 export interface ConfidenceSlice {
   tier: 'fixed' | 'estimate' | 'unverified';
@@ -31,13 +45,18 @@ export interface ConfidenceSlice {
   share: string;
 }
 
-/** 合計は WEIGHT_SHIFT の 600g 行と一致する。片方だけ直すとテストが落ちる。 */
+/**
+ * 合計は米国・600 g の1位の行の総額と一致する。片方だけ直すとテストが落ちる。
+ * **1位が Neokyo から FROM JAPAN に替わったので額も替わった**（Neokyo が米国宛に
+ * 日本郵便を売っていないため。`WEIGHT_SHIFT_COUNTRY` の説明を参照）。
+ * 割合はほぼ動いていない——欠けているのは1社であって、確度の構造ではない。
+ */
 export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
   {
     tier: 'fixed',
     what: 'Published price lists and the Japan Post EMS table — every amount is printed somewhere.'
       + ' The weight we look the EMS rate up with is still ours',
-    yen: 30250, share: '84%',
+    yen: 31200, share: '84%',
   },
   {
     tier: 'estimate',
@@ -56,8 +75,9 @@ export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
 export const GB_SPLIT = { publishedShare: '86%', inferredShare: '14%' };
 
 /**
- * 1点あたりの重量だけを動かしたときの1位と総額（米国）。
- * delta は 600g の総額に対する比。**1位が重量で替わることの根拠。**
+ * 1点あたりの重量だけを動かしたときの1位と総額（**カナダ**。理由は
+ * `WEIGHT_SHIFT_COUNTRY`）。delta は 600g の総額に対する比。
+ * **1位が重量で替わることの根拠。**
  */
 export interface WeightShiftRow {
   /** 画面表示。 */
@@ -70,13 +90,17 @@ export interface WeightShiftRow {
 }
 
 export const WEIGHT_SHIFT: WeightShiftRow[] = [
-  { weight: '200 g', perItemG: 200, totalYen: 29725, delta: '−18%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 36125, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', perItemG: 1500, totalYen: 51425, delta: '+42%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', perItemG: 3000, totalYen: 73075, delta: '+102%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
+  { weight: '200 g', perItemG: 200, totalYen: 30754, delta: '−17%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 37062, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '1,500 g', perItemG: 1500, totalYen: 52111, delta: '+41%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '3,000 g', perItemG: 3000, totalYen: 73385, delta: '+98%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
 ];
 
-/** 1位が入れ替わる重量（点数ごと、25g 刻みの走査）。画面の文章がこの3つを名指しする。 */
+/**
+ * 1位が入れ替わる重量（点数ごと、25g 刻みの走査）。画面の文章がこの3つを名指しする。
+ * **重量は米国で測ったときと1gも変わっていない。**測る国だけがカナダに移った
+ * （`WEIGHT_SHIFT_COUNTRY`）。3点・5点は独・英・仏でも同じ重量で交差する。
+ */
 export const CROSSOVER_G: Record<number, number> = { 2: 1150, 3: 1325, 5: 1625 };
 
 export const yen = (n: number) => `¥${n.toLocaleString('en-US')}`;

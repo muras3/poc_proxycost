@@ -53,9 +53,18 @@ describe('resolving a weight from a title', () => {
 describe('titles that must not be read as a weight (audit logic.md §5)', () => {
   test('a date or a deadline is not a figure scale', () => {
     // 1/7(火) は締切、2024/1/8 は発売日。どちらも 1,500 g / 1,300 g のフィギュアではない。
-    expect(resolveWeight('【1/7(火)まで】限定出品 トレカ').grams).toBeNull();
-    expect(resolveWeight('2024/1/8 発売予定 トレーディングカード').grams).toBeNull();
+    // 前2件は 'トレカ' を表に入れたので null ではなく 50 g（カード）に落ちる。
+    // logic.md 第5節が「妥当な値 ~50 g」と書いていたのがこれで、null より強い固定になる。
+    // ここで守るのは「スケールとして読まないこと」なので、行 id でそれを見る。
+    for (const t of ['【1/7(火)まで】限定出品 トレカ', '2024/1/8 発売予定 トレーディングカード']) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('single-card');
+      expect(r.grams).toBe(50);
+      expect(r.categoryId).not.toBe('figures');
+    }
+    // カードの語が無ければ今までどおり何も出さない。
     expect(resolveWeight('11/4 発送 ポスター').grams).toBeNull();
+    expect(resolveWeight('【1/7(火)まで】限定出品 ポスター').grams).toBeNull();
   });
 
   test('a scale without a figure is doll clothing, not the doll', () => {
@@ -105,6 +114,94 @@ describe('titles that must not be read as a weight (audit logic.md §5)', () => 
     expect(resolveWeight('お菓子 詰め合わせ').grams).toBeNull();
   });
 
+  test('a book about a thing is not the thing', () => {
+    // 「腕時計の図鑑」に腕時計の 839 g が付いていた（本番検索の実タイトル）。
+    expect(resolveWeight('腕時計の図鑑 ~世界のハイブランドウォッチを1冊に収めた完全 ...').grams).toBeNull();
+    expect(resolveWeight('フィギュアの達人 上級編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
+    expect(resolveWeight('フィギュアの教科書 原型入門編 | 模型の王国 |本 | 通販 | Amazon').grams).toBeNull();
+    expect(resolveWeight('ポケモンカード 攻略本').grams).toBeNull();
+    expect(resolveWeight('剣道 入門編 ムック').grams).toBeNull();
+  });
+
+  test('a large-format book is not the novel we measured either', () => {
+    // 図鑑・教科書・ムックは大判で、books-manga が持つ小説 408 g / 漫画の単巻 210 g とも
+    // 別の物（index.json partialGaps）。**書籍カテゴリにも当てさせない。**
+    expect(resolveWeight('マンガ図鑑').grams).toBeNull();
+    expect(resolveWeight('コミック 教科書 入門編').grams).toBeNull();
+  });
+
+  test('a disc box set does not borrow the manga box set', () => {
+    // 2,000 g は BOOKOFF USA の**漫画**の全巻セットで測った値。数字が近くても、
+    // アニメの円盤に当てると画面が「漫画の店で読んだ」と名乗る。
+    expect(resolveWeight('アニメ DVD 全巻セット').grams).toBeNull();
+    expect(resolveWeight('攻殻機動隊 Blu-ray BOX').grams).toBeNull();
+    // 本の全巻セットは今までどおり当たる。
+    expect(resolveWeight('進撃の巨人 全巻セット 1-34巻').lineId).toBe('manga-set');
+  });
+
+  test('a system name without the machine is the game, not the machine', () => {
+    // 3,350 g は整備済みの箱入りセット。ソフトに当てると33倍ちがう。
+    expect(resolveWeight('ファミコン ソフト スーパーマリオ').grams).toBeNull();
+    expect(resolveWeight('プレイステーション2 ソフト ドラクエ').grams).toBeNull();
+    // 本体だと名乗っていれば当たる。
+    expect(resolveWeight('スーパーファミコン 本体 ジャンク').lineId).toBe('home-console');
+    expect(resolveWeight('NEC PCFX PC-FX 日本電気ホームエレクトロニクス ゲーム機').grams).toBe(3350);
+  });
+
+  test('figure skating is not a figure', () => {
+    expect(resolveWeight('フィギュアスケート 衣装').grams).toBeNull();
+  });
+
+  test('a how-to book about figures is not a figure either', () => {
+    // 「フィギュアの達人 初級編」は '初級編' で塞がっていたのに、語が1つ違う
+    // 「フィギュアの作り方 入門書」は総称ライン 800 g を名乗って通り抜けていた。
+    for (const t of [
+      'フィギュアの作り方 入門書', 'フィギュア製作 ガイドブック',
+      'フィギュアの描き方 解説書', 'ねんどろいど 設定資料集',
+    ]) {
+      expect(resolveWeight(t).grams, t).toBeNull();
+    }
+  });
+
+  test('the case, the sleeve and the stand are not the thing they hold', () => {
+    // 総称の 'フィギュア' 'トレカ' を表に入れた副作用。中身の重量は容れ物の重量ではない。
+    // **容れ物そのものの重量は取れていない**ので、当てずに仮置きへ落ちるのが正しい。
+    for (const t of [
+      'フィギュア用 アクリルケース 展示用', 'フィギュア ディスプレイケース 5体収納',
+      'フィギュア台座 スタンド 10個', 'フィギュア収納ボックス', 'ねんどろいど 専用ケース',
+      '1/7 スケール フィギュア用 アクリルケース',
+      'トレカ用スリーブ 100枚', 'トレカ ケース ローダー 25枚', 'トレカ バインダー 収納',
+      'PSA トレカ デッキケース',
+      'スニーカーボックス 収納ケース', 'スニーカー用シューキーパー', 'スニーカー 靴紐 3足分',
+    ]) {
+      expect(resolveWeight(t).grams, t).toBeNull();
+    }
+    // **門は本物の出品を食わない。**中身を売っている出品は今までどおり当たる。
+    expect(resolveWeight('ワンピース フィギュア ルフィ 正規品').lineId).toBe('figure-generic');
+    expect(resolveWeight('トレカ プロモカード 5種11枚').lineId).toBe('single-card');
+    expect(resolveWeight('レア 当時物 ヴィンテージ NIKE スニーカー').lineId).toBe('sneaker-casual');
+    expect(resolveWeight('1/7 スケール フィギュア レム').lineId).toBe('scale-1-7');
+  });
+
+  test('a graded slab is never read as a raw single, whatever word is longest', () => {
+    // 'トレーディングカード'(10文字) は 'psa'(3文字) より長い。語の長さで決めると
+    // スラブ 100 g が生カード 50 g に流れる。tcg-singles.json の「graded-slab を先に見ること」。
+    for (const t of ['PSA10 リザードン トレーディングカード', 'BGS9.5 トレカ', 'CGC9 single card']) {
+      expect(resolveWeight(t).lineId).toBe('graded-slab');
+      expect(resolveWeight(t).grams).toBe(100);
+    }
+  });
+
+  test('a film on a disc does not get the weight of a K-pop concert box', () => {
+    // 1,750 g は K-POP 専門店で測った DVD/Blu-ray の値（ライブ映像＋写真集の箱）。
+    // 映画1枚に当てると17倍ちがう。本番検索が返した実タイトル2件がこれだった。
+    expect(resolveWeight('Amazon.co.jp: カメラを止めるな! [DVD] : 濱津隆之: DVD').grams).toBeNull();
+    expect(resolveWeight('君の名は。 Blu-ray 通常版').grams).toBeNull();
+    // K-POP の文脈があれば今までどおり当たる。
+    expect(resolveWeight('SEVENTEEN ワールドツアー DVD').lineId).toBe('dvd-bluray');
+    expect(resolveWeight('BTS concert blu-ray').grams).toBe(1750);
+  });
+
   test('a hakama listing still resolves — the guard must not eat the real hits', () => {
     expect(resolveWeight('袴 単品 男性用').lineId).toBe('hakama');
     expect(resolveWeight('剣道 袴 27号').lineId).toBe('hakama');
@@ -147,6 +244,43 @@ describe('titles that must still resolve', () => {
     expect(resolveWeight('SAR トレカ').grams).toBe(50);
   });
 
+  test('トレカ resolves — the word the live search returns most', () => {
+    // 実タイトル37件中7件がトレカの出品で、全部落ちていた。50 g は tcg-singles の
+    // 梱包込み単カード中央値。K-POP のフォトカード（kpop 28 g）より重い側なので安全に倒れる。
+    for (const t of [
+      'トレカ プロモカード 非売品カード 5種11枚 - メルカリ',
+      'RIIZE ソンチャン 会報 トレカ 紹介特典 ライズ - メルカリ',
+      'ポケモンカード トレーディングカード ピカチュウ',
+      'One Piece trading card Luffy',
+    ]) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('single-card');
+      expect(r.grams).toBe(50);
+    }
+  });
+
+  test('the generic figure line catches the plain listings and loses to every specific one', () => {
+    // logic.md 第5節の取りこぼし。日本語の総称トークンが1つも無かった。
+    for (const t of ['フィギュア 初音ミク 未開封', 'ドラゴンボール 一番くじ フィギュア A賞']) {
+      const r = resolveWeight(t);
+      expect(r.lineId).toBe('figure-generic');
+      expect(r.grams).toBe(800);
+    }
+    // **総称は個別ラインに勝たない。**語の長さでは 'フィギュア' が '1/7' に勝つので、
+    // ここが崩れるとスケール行が全部 800 g になる。
+    expect(resolveWeight('1/7 スケール フィギュア レム').lineId).toBe('scale-1-7');
+    expect(resolveWeight('ねんどろいど フィギュア 初音ミク').lineId).toBe('nendoroid');
+    expect(resolveWeight('figma フィギュア').lineId).toBe('figma');
+  });
+
+  test('a line names the shop it was read from, not the category first source', () => {
+    // games は本体と ソフトで店が違う。sources[0] を常に名乗ると片方が嘘になる。
+    expect(resolveWeight('スーパーファミコン 本体').source).toContain('www.retroasia.com');
+    expect(resolveWeight('ゲームソフト まとめ売り').source).toContain('japan-figure.com');
+    expect(resolveWeight('ONE PIECE 漫画 105巻').source).toContain('jpbookstore.com');
+    expect(resolveWeight('進撃の巨人 全巻セット').source).toContain('shop.bookoffusa.com');
+  });
+
   test('a jo and an obi with their martial-arts word still resolve', () => {
     expect(resolveWeight('杖道 杖 樫').lineId).toBe('bokuto');
     expect(resolveWeight('karate obi black').lineId).toBe('budo-obi');
@@ -166,6 +300,13 @@ describe('titles that must still resolve', () => {
       'sar', 'csr', 'ssr',
       '1800ml', '1,800ml', '1.8l', '1800ｍｌ', '720ml', '750ml', '700ml', '720ｍｌ', '300ml', '300ｍｌ',
       'obi', '杖',
+      // 機種名。'ファミコン ソフト' は 100 g のカセットで、3,350 g の本体ではない。
+      'ファミコン', 'famicom', 'ニンテンドー64', 'nintendo 64', 'ゲームキューブ', 'gamecube',
+      'ドリームキャスト', 'dreamcast', 'セガサターン', 'sega saturn', 'ネオジオ', 'neogeo', 'neo geo',
+      'pcエンジン', 'pc engine', 'pc-fx', 'pcfx', 'メガドライブ', 'mega drive', 'megadrive',
+      'プレイステーション', 'playstation', 'プレステ',
+      // 映像ディスク。1,750 g は K-POP のライブ箱の値で、映画の1枚とは別物。
+      'dvd', 'ブルーレイ', 'blu-ray', 'bluray',
     ]);
     const missed: string[] = [];
     for (const c of WEIGHT_CATEGORIES) {

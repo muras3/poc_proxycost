@@ -1,0 +1,102 @@
+{
+  "category": "books-manga",
+  "labelJa": "書籍・漫画",
+  "labelEn": "Books and manga",
+  "checkedOn": "2026-09-07",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "jpbookstore.com",
+      "url": "https://jpbookstore.com/products.json?limit=250&page=1",
+      "products": 5000,
+      "variantsWithGrams": 5000,
+      "verdict": "usable",
+      "reason": "distinct=163 (3.3%), top value 15%, multiples of 100: 16%. Adopted. Only one value in six is a round hundred, so these read as per-title weights and not as postage bands. product_type='Comics & Manga' n=4,786 median 210 g (p25 200 / p75 250); 'Literature & Fiction' n=84 median 408 g (p25 272 / p75 540). 'Art & Design' (n=33) and 'Self-Help & Hobbies' (n=37) are under the threshold of 50 and were not used.",
+      "reasonJa": "distinct=163 (3.3%), 最頻値 15%, 100の倍数 16%。採用。100の倍数が6分の1しかないので、送料区分ではなく1点ごとの重量とみてよい。product_type='Comics & Manga' が 4,786件で中央値 210g（p25 200 / p75 250）、'Literature & Fiction' が 84件で 408g（p25 272 / p75 540）。'Art & Design'(33件)・'Self-Help & Hobbies'(37件) は判定閾値 50 に届かず不採用"
+    },
+    {
+      "domain": "shop.bookoffusa.com",
+      "url": "https://shop.bookoffusa.com/products.json?limit=250&page=1",
+      "products": 1178,
+      "variantsWithGrams": 1178,
+      "verdict": "usable",
+      "reason": "distinct=124 (10.5%), top value 11%. Adopted for the complete-set line only: the catalogue is entirely manga box sets, n=1,124 median 2,000 g (p25 1,400 / p75 2,800). It also corroborates the single volume from the other direction — a ten-volume set at 2,000 g is 200 g a volume, against jpbookstore's 210 g.",
+      "reasonJa": "distinct=124 (10.5%), 最頻値 11%。全巻セットのラインにのみ採用。在庫が丸ごと漫画の全巻セットで、1,124件の中央値 2,000g（p25 1,400 / p75 2,800）。単巻の裏づけにもなる — 10巻で 2,000g なら1巻 200g で、jpbookstore の 210g と合う"
+    },
+    {
+      "domain": "nipponrama.com",
+      "url": "https://nipponrama.com/products.json?limit=250&page=1",
+      "products": 0,
+      "variantsWithGrams": 0,
+      "verdict": "insufficient",
+      "reason": "products.json returns HTTP 403, so nothing could be read.",
+      "reasonJa": "products.json が HTTP 403。取得不可"
+    }
+  ],
+  "lines": [
+    {
+      "id": "manga-set",
+      "labelEn": "Manga, complete set",
+      "match": [
+        "全巻セット",
+        "全巻",
+        "コミックセット",
+        "complete set"
+      ],
+      "medianG": 2000,
+      "p25": 1400,
+      "p75": 2800,
+      "n": 1124,
+      "spread": 2.0,
+      "tier": "estimate",
+      "sourceDomain": "shop.bookoffusa.com"
+    },
+    {
+      "id": "manga-volume",
+      "labelEn": "Manga volume",
+      "match": [
+        "漫画",
+        "まんが",
+        "マンガ",
+        "コミックス",
+        "コミック",
+        "manga",
+        "comics",
+        "comic"
+      ],
+      "medianG": 210,
+      "p25": 200,
+      "p75": 250,
+      "n": 4786,
+      "spread": 1.25,
+      "tier": "estimate",
+      "sourceDomain": "jpbookstore.com"
+    },
+    {
+      "id": "book-general",
+      "labelEn": "Book, non-manga",
+      "match": [
+        "文庫本",
+        "文庫",
+        "新書",
+        "小説",
+        "単行本",
+        "ハードカバー",
+        "paperback",
+        "hardcover"
+      ],
+      "medianG": 408,
+      "p25": 272,
+      "p75": 540,
+      "n": 84,
+      "spread": 1.99,
+      "tier": "estimate",
+      "sourceDomain": "jpbookstore.com"
+    }
+  ],
+  "fallbackG": 220,
+  "fallbackTier": "estimate",
+  "notes": "Two shops adopted: jpbookstore.com (usable) and shop.bookoffusa.com (usable). grams is an input to a shipping calculator, not a measurement, so measured: false. This category was listed as not obtained until 2026-09-07; it is obtained now.\n\njpbookstore.com is the better source of the two. Of 5,000 rows only 16% are round hundreds and the median is 220 g, which is what a Japanese tankobon actually weighs — so the shop is recording per-title weights rather than filling in a postage band. The manga line (210 g, n=4,786) is the single strongest line in the whole table by sample size and by spread (1.25).\n\nshop.bookoffusa.com sells nothing but complete sets, which is why it is here: a set is a different object from a volume and needed its own line. It also checks the volume from the other side. A 2,000 g set of about ten volumes is 200 g a volume, within 5% of jpbookstore's 210 g, from an unrelated shop on another continent.\n\nThe general-book line is the weak one: 84 rows of 'Literature & Fiction' with a spread of 1.99. It is kept because a novel is not a manga volume and 408 g is nearer the truth than 210 g, but it should be re-taken from a larger catalogue.\n\nWhat is deliberately not here: illustrated reference books. A 図鑑, a 教科書 or a ムック is a large-format book, far heavier than a novel, and none of the adopted shops carry them in quantity. Rather than stretch the 408 g novel median over them, src/lib/pricing/weights.ts refuses those titles outright, and they fall back to the calculator's assumed weight. It also keeps a book about a thing from being read as the thing — a picture book about watches was resolving to 839 g, the weight of a watch.\n\n'box set' was tried as a match word for the set line and dropped: 'CD box set' and 'Blu-ray box set' are not manga, and the phrase is eight characters long, so it outranked the two-letter 'cd' and took the listing.",
+  "notesJa": "採用は jpbookstore.com（usable）と shop.bookoffusa.com（usable）の2店。grams は送料計算用の入力値であって実測ではないので measured:false。2026-09-07 まで「取れていないカテゴリ」に入れていたが、取れた。\n\n2店のうち jpbookstore.com のほうが素性が良い。5,000件のうち 100の倍数が 16% しかなく、中央値 220g は日本の単行本の実際の重さそのものなので、送料区分を埋めているのではなく1点ごとの重量を入れているとみてよい。漫画のライン（210g、n=4,786）は表全体で見ても件数・ばらつき（1.25）ともに最も強い。\n\nshop.bookoffusa.com は全巻セットしか売っていない。セットは単巻とは別の物なので独立したラインが要る、というのがここに入れた理由。同時に単巻の裏づけにもなる。約10巻で 2,000g なら1巻 200g で、無関係な大陸の別の店から jpbookstore の 210g と 5% 差で一致する。\n\n弱いのは一般書のラインで、'Literature & Fiction' 84件・spread 1.99。小説は漫画の単巻ではなく、408g のほうが 210g より真値に近いので残したが、もっと大きなカタログで取り直すべき。\n\n意図的に入れていないもの: 図鑑・教科書・ムック。大判で小説よりはるかに重く、採用した2店のどちらもまとまった数を扱っていない。408g を伸ばして当てるより、src/lib/pricing/weights.ts でそれらのタイトルを当てずに落とし、仮置きに戻す。ついでに「Xについての本」に X の重量が付くのも止まる（腕時計の図鑑に腕時計の 839g が付いていた）。\n\nセットのラインの match に 'box set' を入れて外した。'CD box set' も 'Blu-ray box set' も漫画ではなく、しかも8文字あるので2文字の 'cd' に勝ってしまう。"
+}

@@ -173,7 +173,13 @@ describe('the service table itself', () => {
     }
     // 5点 ¥3,000 200g では Neokyo が最安。**報酬を1円も払わない社が1位に立てること**が、
     // 順位が総額だけで決まっている証拠。
-    const rows = rowsFor(Array.from({ length: 5 }, (_, i) => item({ id: `i${i}`, priceYen: 3000, weightG: 200 })));
+    // **宛先が米国からドイツに変わった。**Neokyo は米国宛に日本郵便を売っていないので
+    // 米国の盤面に居らず、残る報酬ゼロの社（Jauce）はそこで最安にならない。
+    // つまり「報酬ゼロの社が1位に立てる」は米国では実演できない。
+    const rows = compare({
+      items: Array.from({ length: 5 }, (_, i) => item({ id: `i${i}`, priceYen: 3000, weightG: 200 })),
+      country: 'DE',
+    }).rows;
     expect(rows[0]!.serviceId).toBe('neokyo');
     expect(rows[0]!.paysUs).toBe(false);
     expect(rows.map((r) => r.total)).toEqual([...rows.map((r) => r.total)].sort((a, b) => a - b));
