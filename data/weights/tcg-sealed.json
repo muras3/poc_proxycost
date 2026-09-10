@@ -1,0 +1,78 @@
+{
+  "category": "tcg-sealed",
+  "labelJa": "未開封・カード用品",
+  "labelEn": "Sealed TCG product and card supplies",
+  "checkedOn": "2026-09-08",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "japan-figure.com",
+      "url": "https://japan-figure.com/products.json?limit=250&page=1",
+      "products": 10000,
+      "variantsWithGrams": 17428,
+      "verdict": "usable",
+      "reason": "distinct=801 (4.6%), top value 9%, multiples of 100: 25%. The same catalogue the games and tcg-singles categories already read, re-fetched 2026-09-08 at 40 pages. It types sealed product and card supplies separately from singles: Trading Cards Booster Box n=413, median 350 g, p25 250 / p75 460, spread 1.84, usable (distinct=77 at 18.6%, top value 6%); Protect Card (packs of sleeves) n=236, median 175 g, p25 170 / p75 190, spread 1.12, usable (distinct=26 at 11.0%); Protect Deck (deck cases) n=91, median 260 g, p25 150 / p75 300, spread 2.00, usable (distinct=30 at 33.0%). One sleeve row reads 92,500 g and is plainly a typing error in the shop; it moves the maximum and not the median or the quartiles.",
+      "reasonJa": "distinct=801 (4.6%), 最頻値 9%, 100の倍数 25%。games と tcg-singles が既に読んでいるのと同じカタログを 2026-09-08 に40ページ再取得したもの。未開封品とカード用品がシングルとは別の product_type になっている: Trading Cards Booster Box 413件・中央値 350g（p25 250 / p75 460、spread 1.84、判定 usable: distinct=77 が 18.6%、最頻値 6%）、Protect Card（スリーブの袋）236件・175g（170 / 190、1.12、usable: distinct=26 が 11.0%）、Protect Deck（デッキケース）91件・260g（150 / 300、2.00、usable: distinct=30 が 33.0%）。スリーブに 92,500g の行が1件あり、これは店側の打ち間違い。最大値は動かすが中央値・四分位は動かさない"
+    }
+  ],
+  "lines": [
+    {
+      "id": "booster-box",
+      "labelEn": "Booster box, sealed",
+      "match": [
+        "ブースターボックス",
+        "booster box",
+        "シュリンク付き",
+        "シュリンク付",
+        "box 未開封",
+        "未開封 box"
+      ],
+      "medianG": 350,
+      "p25": 250,
+      "p75": 460,
+      "n": 413,
+      "spread": 1.84,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    },
+    {
+      "id": "card-sleeve",
+      "labelEn": "Card sleeves, pack",
+      "match": [
+        "カードスリーブ",
+        "デッキシールド",
+        "card sleeve",
+        "card sleeves"
+      ],
+      "medianG": 175,
+      "p25": 170,
+      "p75": 190,
+      "n": 236,
+      "spread": 1.12,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    },
+    {
+      "id": "deck-box",
+      "labelEn": "Deck case",
+      "match": [
+        "デッキケース",
+        "デッキボックス",
+        "deck case",
+        "deck box"
+      ],
+      "medianG": 260,
+      "p25": 150,
+      "p75": 300,
+      "n": 91,
+      "spread": 2.0,
+      "tier": "estimate",
+      "sourceDomain": "japan-figure.com"
+    }
+  ],
+  "fallbackG": null,
+  "fallbackTier": "none",
+  "notes": "These three are the things the tcg-singles category deliberately stays silent on. src/lib/pricing/weights.ts refuses every tcg-singles line on a title that says 未開封, シュリンク or booster, and refuses it again on a title that says sleeve or deck case, in both cases with the reason that a sealed box and a sleeve are not the 50 g single card that was measured. That is right, and both gates stay: they protect the singles line. What was missing was the weight of the other thing, and this category is it — a sealed box is 350 g, a pack of sleeves 175 g, a deck case 260 g.\n\nThey sit in their own category rather than as extra lines in tcg-singles because that category is named for singles and its gates are written per category, so a sealed line placed inside it could never fire.\n\nThe box line is deliberately word-shy. It does not carry the bare word BOX, which appears in Blu-ray BOX, 収納BOX and a snack box; it fires on the Japanese for booster box written as one compound, on booster box in English, on the Japanese for shrink-wrapped (a listing says that about a sealed TCG box and about almost nothing else) and on BOX written next to the word for unopened. The sleeve line does not carry the bare word スリーブ either, because that is also the sleeve of a garment; it needs the compound word for card sleeve or the brand-neutral term for deck shield.\n\nNot obtained: single sealed packs (a pack is a tenth of a box and the catalogue does not type them separately), oripa and lucky-bag lots (a lot has a stated count and no per-item weight to multiply), graded-card cases sold empty, and card binders and toploaders (no slice with n >= 50 was found).",
+  "notesJa": "この3つは、tcg-singles カテゴリが意図的に黙っている相手そのもの。src/lib/pricing/weights.ts は「未開封」「シュリンク」「booster」のあるタイトルで tcg-singles のラインを全部拒み、「スリーブ」「デッキケース」でも拒む。理由はどちらも「未開封の箱やスリーブは、測った 50g のシングルではない」。これは正しいので両方の門は残す。足りなかったのは相手側の重量で、それがこのカテゴリ — 未開封の箱 350g、スリーブの袋 175g、デッキケース 260g。\n\ntcg-singles に行を足すのではなく別カテゴリにしたのは、あのカテゴリの名前がシングルであり、門がカテゴリ単位で書かれているから。中に置いた未開封のラインは決して当たらない。\n\n箱のラインは語を絞ってある。単語としての BOX は持たない（Blu-ray BOX・収納BOX・お菓子の BOX に当たる）。当たるのは「ブースターボックス」「booster box」「シュリンク付き」（日本語の出品で「シュリンク」と書くのはほぼ未開封の TCG の箱だけ）、そして「未開封」の隣に書かれた BOX。スリーブのラインも単語の「スリーブ」は持たない（衣類の袖でもあるため）。「カードスリーブ」か「デッキシールド」が要る。\n\n取れなかったもの: パック単品（1パックは1箱の10分の1で、この店は別の product_type にしていない）、オリパ・福袋（口数が書かれていて、掛ける1点あたりの重量が無い）、空の鑑定品ケース、バインダーとトップローダー（n≧50 のスライスが取れない）"
+}
