@@ -1,0 +1,180 @@
+{
+  "category": "cosmetics",
+  "labelJa": "化粧品・スキンケア",
+  "labelEn": "Cosmetics and skincare",
+  "checkedOn": "2026-09-08",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "japanesetaste.com",
+      "url": "https://japanesetaste.com/products.json?limit=250&page=1",
+      "products": 5079,
+      "variantsWithGrams": 5173,
+      "verdict": "usable",
+      "reason": "distinct=1,014 (19.6%), top value 1%, multiples of 100: 2%. Adopted. A Japan-based general store that already backs the food category, with a beauty department deep enough to slice. beauty & personal care / skincare as a whole is n=705, median 168 g, p25 113 / p75 233, spread 2.06, and the parts of it are: japanese lotions n=126 median 245 g (186 / 288, 1.55); moisturizers n=115 median 168 g (123 / 209, 1.70); cleansers n=194 median 172 g (140 / 229, 1.64); face masks n=94 median 181 g (136 / 335, 2.46); sun care n=76 median 91 g (64 / 109, 1.70); hair care / shampoo & conditioner n=75 median 556 g (477 / 615, 1.29).",
+      "reasonJa": "distinct=1,014 (19.6%), 最頻値 1%, 100の倍数 2%。採用。食品カテゴリを既に支えている日本の総合店で、美容部門がスライスできるだけ厚い。beauty & personal care / skincare 全体が 705件・中央値 168g（p25 113 / p75 233、spread 2.06）。内訳は japanese lotions 126件・245g（186 / 288、1.55）、moisturizers 115件・168g（123 / 209、1.70）、cleansers 194件・172g（140 / 229、1.64）、face masks 94件・181g（136 / 335、2.46）、sun care 76件・91g（64 / 109、1.70）、shampoo & conditioner 75件・556g（477 / 615、1.29）"
+    },
+    {
+      "domain": "kokorojapanstore.com",
+      "url": "https://kokorojapanstore.com/products.json?limit=250&page=1",
+      "products": 2094,
+      "variantsWithGrams": 2252,
+      "verdict": "usable",
+      "reason": "distinct=353 (15.7%), top value 7%, multiples of 100: 7%. Adopted for the two lines it measures better than japanesetaste: makeup, where product_type is one cosmetic each (mascara, eyeliner, eyebrow, blush, lip) and the five together are n=474, median 20 g, p25 18 / p75 40, spread 2.22; and sunscreen, n=142, median 70 g (50 / 100, 2.00) against 76 rows at japanesetaste. It corroborates the rest from the other direction: face lotion n=150 median 227 g against 245 g, cleanser and face wash n=223 median 181 g against 172 g. Its own face-mask slice (n=207, spread 3.86) and supplement slice (n=163, spread 5.00) are over the limit of 3 and are not used.",
+      "reasonJa": "distinct=353 (15.7%), 最頻値 7%, 100の倍数 7%。japanesetaste より細かく測れる2本にだけ採用。ひとつは化粧品で、product_type が化粧品1種ごとになっている（マスカラ・アイライナー・アイブロウ・チーク・リップ）。5つ合わせて 474件・中央値 20g（p25 18 / p75 40、spread 2.22）。もうひとつは日焼け止めで 142件・70g（50 / 100、2.00。japanesetaste は 76件）。残りは反対側からの裏づけになる: 化粧水 150件・227g（対 245g）、洗顔 223件・181g（対 172g）。この店自身のフェイスマスク（207件・spread 3.86）とサプリメント（163件・spread 5.00）は上限 3 を超えるので使わない"
+    }
+  ],
+  "lines": [
+    {
+      "id": "skin-lotion",
+      "labelEn": "Toner or lotion",
+      "match": [
+        "化粧水",
+        "ローション",
+        "toner",
+        "face lotion"
+      ],
+      "medianG": 245,
+      "p25": 186,
+      "p75": 288,
+      "n": 126,
+      "spread": 1.55,
+      "tier": "estimate",
+      "sourceDomain": "japanesetaste.com"
+    },
+    {
+      "id": "emulsion-cream",
+      "labelEn": "Emulsion or cream",
+      "match": [
+        "乳液",
+        "クリーム",
+        "美容液",
+        "emulsion",
+        "serum",
+        "moisturizer"
+      ],
+      "medianG": 168,
+      "p25": 123,
+      "p75": 209,
+      "n": 115,
+      "spread": 1.7,
+      "tier": "estimate",
+      "sourceDomain": "japanesetaste.com"
+    },
+    {
+      "id": "face-cleanser",
+      "labelEn": "Cleanser",
+      "match": [
+        "洗顔",
+        "クレンジング",
+        "cleanser",
+        "face wash"
+      ],
+      "medianG": 172,
+      "p25": 140,
+      "p75": 229,
+      "n": 194,
+      "spread": 1.64,
+      "tier": "estimate",
+      "sourceDomain": "japanesetaste.com"
+    },
+    {
+      "id": "sheet-mask",
+      "labelEn": "Face mask",
+      "match": [
+        "フェイスマスク",
+        "シートマスク",
+        "フェイスパック",
+        "face mask",
+        "sheet mask"
+      ],
+      "medianG": 181,
+      "p25": 136,
+      "p75": 335,
+      "n": 94,
+      "spread": 2.46,
+      "tier": "estimate",
+      "sourceDomain": "japanesetaste.com"
+    },
+    {
+      "id": "sunscreen",
+      "labelEn": "Sunscreen",
+      "match": [
+        "日焼け止め",
+        "サンスクリーン",
+        "uvカット",
+        "sunscreen"
+      ],
+      "medianG": 70,
+      "p25": 50,
+      "p75": 100,
+      "n": 142,
+      "spread": 2.0,
+      "tier": "estimate",
+      "sourceDomain": "kokorojapanstore.com"
+    },
+    {
+      "id": "makeup-small",
+      "labelEn": "Makeup, one item",
+      "match": [
+        "マスカラ",
+        "アイライナー",
+        "アイブロウ",
+        "チーク",
+        "口紅",
+        "リップグロス",
+        "mascara",
+        "eyeliner",
+        "lipstick"
+      ],
+      "medianG": 20,
+      "p25": 18,
+      "p75": 40,
+      "n": 474,
+      "spread": 2.22,
+      "tier": "estimate",
+      "sourceDomain": "kokorojapanstore.com"
+    },
+    {
+      "id": "shampoo",
+      "labelEn": "Shampoo or conditioner",
+      "match": [
+        "シャンプー",
+        "コンディショナー",
+        "トリートメント",
+        "shampoo",
+        "conditioner"
+      ],
+      "medianG": 556,
+      "p25": 477,
+      "p75": 615,
+      "n": 75,
+      "spread": 1.29,
+      "tier": "estimate",
+      "sourceDomain": "japanesetaste.com"
+    },
+    {
+      "id": "skincare-generic",
+      "labelEn": "Skincare, unspecified",
+      "match": [
+        "スキンケア",
+        "基礎化粧品",
+        "skincare",
+        "skin care"
+      ],
+      "medianG": 168,
+      "p25": 113,
+      "p75": 233,
+      "n": 705,
+      "spread": 2.06,
+      "tier": "estimate",
+      "generic": true,
+      "sourceDomain": "japanesetaste.com"
+    }
+  ],
+  "fallbackG": null,
+  "fallbackTier": "none",
+  "notes": "Two shops, both usable, one of them Japan-based (japanesetaste.com, which already backs the food category). grams is an input to a shipping calculator and not a measurement, so measured: false.\n\nThe two shops agree where they overlap — 245 g against 227 g for a bottle of toner, 172 g against 181 g for a cleanser — which is the first cross-shop check this table has outside food and fishing tackle.\n\nA cosmetic is one of the few things here where the container is most of the weight, so the lines are bottle weights and behave as such: a 100 ml bottle of emulsion is 168 g because the bottle is heavier than what is in it.\n\nNot obtained: supplements. Both shops carry them and both slices are too wide to use — kokorojapanstore n=163 median 90 g with a spread of 5.0 (9 g of capsules to a 13 kg case), japanesetaste n=149 median 174 g with a spread of 6.6 (a 30-day pouch against a 3.4 kg tub of protein). There is nothing in a title that says which of the two it is.\n\nAlso not obtained: perfume (30 rows), toothpaste (30 rows), eye cream (26 rows) and hair styling wax as a separate line (68 rows at 141 g, but no live title asks for it). Sample and travel sets are outside any line here: a three-piece set is three containers and the table holds one.\n\nThe toner line does not carry the katakana word for toner on its own. It is inside the Japanese transliteration of \"straightener\", and a Dyson hair straightener in the live search came back as a 245 g bottle of toner because of it.",
+  "notesJa": "2店とも usable で、うち1店は日本の店（japanesetaste.com。食品カテゴリを既に支えている）。grams は送料計算用の入力値であって実測ではないので measured:false。\n\n重なる部分で2店の値が合う — 化粧水 245g 対 227g、洗顔 172g 対 181g。食品と釣具の外で、この表が店をまたいだ突き合わせを持てた初めてのカテゴリ。\n\n化粧品は、この表の中で珍しく「容器が重量の大半」の物なので、ラインは容器込みの値としてそう振る舞う。100ml の乳液が 168g なのは、中身より瓶が重いから。\n\n取れなかったもの: サプリメント。2店とも扱っているが、どちらのスライスも広すぎて使えない — kokorojapanstore は 163件・中央値 90g・spread 5.0（9g のカプセルから 13kg のケースまで）、japanesetaste は 149件・174g・spread 6.6（30日分の袋と 3.4kg のプロテイン）。どちらなのかはタイトルに書かれていない。\n\nほかに取れなかったもの: 香水（30件）、歯磨き（30件）、アイクリーム（26件）、ヘアワックス単独のライン（68件・141g だが、これを訊く実タイトルが無い）。サンプルセット・トラベルセットはどのラインにも入らない — 3点セットは容器3個で、表が持っているのは1個ぶん\n\n化粧水のラインは「トナー」を単語として持たない。「ストレイトナー」の中に入っていて、実検索のダイソンのヘアアイロンが 245g の化粧水として返ってきた。"
+}
