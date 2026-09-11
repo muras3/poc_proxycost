@@ -51,10 +51,31 @@ for r in fees["rows"]:
 cat_ids = {e["id"] for e in fees["catalog"]}
 row_ids = {r["id"] for r in fees["rows"]}
 check(row_ids <= cat_ids, f"catalog に無い費目IDが rows にある: {sorted(row_ids - cat_ids)}")
+
+OCCURRENCE_VOCAB = set(fees["schema"]["occurrence_vocabulary"])
+DISPLAY_VOCAB = set(fees["schema"]["display_vocabulary"])
+DISPLAY_TOTAL_FORBIDDEN_OCCURRENCE = {"D_user_choice", "E_unpredictable", "nonexistent"}
+display_counts = {}
+
 for e in fees["catalog"]:
     check(e["in_fees_master"] == (e["id"] in row_ids), f'catalog {e["id"]}: in_fees_master が実態と不一致')
     if not e["in_fees_master"]:
         check("excluded_reason" in e, f'catalog {e["id"]}: 行が無いのに理由が書かれていない')
+    # display / occurrence の必須チェック
+    check("occurrence" in e, f'catalog {e["id"]}: occurrence が無い')
+    check("display" in e, f'catalog {e["id"]}: display が無い')
+    check("display_reason" in e, f'catalog {e["id"]}: display_reason が無い')
+    if "occurrence" in e:
+        check(e["occurrence"] in OCCURRENCE_VOCAB,
+              f'catalog {e["id"]}: occurrence \'{e["occurrence"]}\' が語彙集合に無い')
+    if "display" in e:
+        check(e["display"] in DISPLAY_VOCAB,
+              f'catalog {e["id"]}: display \'{e["display"]}\' が語彙集合に無い')
+        display_counts[e["display"]] = display_counts.get(e["display"], 0) + 1
+    check(e.get("display_reason", "") != "", f'catalog {e["id"]}: display_reason が空文字')
+    # 論理矛盾: 総額に入れるのに、利用者が選ぶ／予測不能／存在しない費目であってはならない
+    if e.get("display") == "total" and e.get("occurrence") in DISPLAY_TOTAL_FORBIDDEN_OCCURRENCE:
+        fail.append(f'catalog {e["id"]}: display が total なのに occurrence が {e["occurrence"]}（論理矛盾）')
 
 BASES = set(customs["schema"]["base_vocabulary"])
 for cc, c in CO.items():
@@ -71,6 +92,8 @@ for cc, c in CO.items():
 
 print(f"  費目 {len(fees['rows'])} 行 / rule.type {len(VOCAB)} 種 / catalog {len(fees['catalog'])}"
       f" / 国 {len(CO)} / 通関経路 {sum(len(c['clearance']) for c in CO.values())}")
+print("  display 内訳: " + " / ".join(f"{k} {display_counts.get(k, 0)}" for k in
+      ("total", "engine_only", "optional", "warning_only", "hidden")))
 
 # =============================================================== 2. 再現検証
 print("\n== 2. 実請求の再現（customs.json の rule を評価する） ==")
