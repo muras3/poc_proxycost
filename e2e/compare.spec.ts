@@ -9,6 +9,7 @@ import {
   DECIDES,
   emptyCart,
   emsOnlyNote,
+  freeShippingDomesticNote,
   gotoCompare,
   headerCells,
   isCollapsed,
@@ -1286,4 +1287,62 @@ test('27. a long item is named on the board, and naming it moves no total', asyn
   await weightBox(page, '無名の箱').fill('9780');
   await expect(page.getByText(/long rather than heavy/i)).toHaveCount(0);
   expect(priced(await readRanking(page)).map((r) => r.total)).toEqual(withRod);
+});
+
+test('28. "free shipping" raises a Buyee-only note, and moves no total', async ({ page }) => {
+  // F13b（master/fees.json）: Buyee 自身が「送料無料でも配送方法の変更で
+  // 国内送料が発生しうる」と書いている。額は公表されていないので動かさず、
+  // 警告だけ出す（T-F10）。対象は Buyee だけ ── 他4社は材料が無い。
+  await gotoCompare(page);
+  // 既定の2点だと国内送料の行が2点分の合算になり、1点だけ送料無料にしても
+  // 行の額が ¥0 にならない。**行の額そのものを見る**ため、1点のカートにする。
+  await emptyCart(page);
+  const title = 'test figure';
+  await addByHand(page, title, 3000);
+  await openCart(page);
+
+  // 「送料無料」の出品が無いうちは注記も出ない。
+  await expect(freeShippingDomesticNote(page)).toHaveCount(0);
+
+  // まず「確定で ¥0」（手入力）を作り、Buyee の総額を控えておく。
+  // T-F10 が変えるのは確度（tier）だけなので、次で作る freeShipping の ¥0 と
+  // 総額は一致するはず ── 一致しなければ金額が動いたということ。
+  await page.getByLabel(`Domestic shipping for ${title}`).fill('0');
+  const confirmedZero = await readRanking(page);
+  const buyeeTotalConfirmedZero = confirmedZero.find((r) => r.name === 'Buyee')!.total;
+
+  // 手入力の ¥0 を戻し、代わりに「送料無料（出品ページ）」にする。
+  await page.getByLabel(`Domestic shipping for ${title}`).fill('');
+  const box = cart(page).getByRole('checkbox', { name: 'shipping included by seller' }).first();
+  await box.check();
+
+  // 注記が出て、Buyee だけの話だと読める（原文の言い回しと出典リンクを含む）。
+  const note = freeShippingDomesticNote(page);
+  await expect(note).toBeVisible();
+  const text = (await note.innerText()).replace(/\s+/g, ' ');
+  expect(text).toMatch(/domestic shipping fees may occur due to a change of shipping method/);
+  expect(text).toMatch(/Buyee/);
+  expect(text).toMatch(/other services/);
+  await expect(note.getByRole('link', { name: 'Source' })).toHaveAttribute(
+    'href', 'https://buyee.jp/helpcenter/guide/fees?lang=en',
+  );
+
+  // Buyee の行の内訳: domestic-shipping は ¥0 のまま、確度は「公表値」ではなくなっている。
+  const afterRanking = await readRanking(page);
+  const buyeeIndexAfter = afterRanking.findIndex((r) => r.name === 'Buyee');
+  const li = await openRankRow(page, buyeeIndexAfter);
+  const row = costRow(li, /^Domestic shipping/);
+  // **確度が fixed でなくなった印。**額は変わらないが、`~` が付く（tierClass の描き分け）。
+  expect((await rowCells(row))[1]).toBe('~¥0');
+  const cellTitle = await row.getByRole('cell').nth(1).getAttribute('title');
+  expect(cellTitle).not.toBe(TITLE.fixed);
+  await openRankRow(page, buyeeIndexAfter); // 閉じる
+
+  // **金額は1円も動いていない。**確定の ¥0 と freeShipping の ¥0 で、
+  // Buyee の総額は同じ。
+  expect(afterRanking[buyeeIndexAfter]!.total).toBe(buyeeTotalConfirmedZero);
+
+  // 元に戻せば注記も消える。
+  await box.uncheck();
+  await expect(note).toHaveCount(0);
 });

@@ -216,6 +216,14 @@ export function alcoholNote(page: Page): Locator {
 }
 
 /**
+ * カートに「送料無料」の出品が1点でもあるときだけ出る、Buyee 限定の注記
+ * （`FreeShippingDomesticNote`、T-F10）。無いときは出ない。
+ */
+export function freeShippingDomesticNote(page: Page): Locator {
+  return page.locator('p').filter({ hasText: /domestic shipping fees may occur/ });
+}
+
+/**
  * 手入力で1点足す。**検索も URL 取得も要らない唯一の経路**なので、
  * 入力を組み立てるテストはここを通る。`site` を渡すと出品サイトも選ぶ。
  */
