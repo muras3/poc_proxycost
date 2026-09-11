@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { compare } from '@/lib/pricing/compare';
 import type { CountryCode, Item, Row } from '@/lib/pricing/types';
 import {
-  CONFIDENCE_SPLIT, CROSSOVER_G, GB_SPLIT, MEASURED_BASKET, WEIGHT_SHIFT,
+  CONFIDENCE_SPLIT, CROSSOVER_G, GB_SPLIT, MEASURED_BASKET, RANK_STABILITY, WEIGHT_SHIFT,
   WEIGHT_SHIFT_COUNTRY,
 } from './measured';
 
@@ -95,6 +95,19 @@ describe('the numbers /sources calls measured are what compare() actually return
       const atCross = compare({ items: basket(at, n), country: cc }).rows;
       expect(winner(at25gBelow).serviceId, `n=${n}: ${at - 25}g`).toBe('neokyo');
       expect(winner(atCross).serviceId, `n=${n}: ${at}g`).toBe('fromjapan');
+    }
+  });
+
+  test('rankStable, country by country, is what compare() actually returns', () => {
+    // README は以前「7 カ国すべてで false」と手で書いていた。料金修正で値が動いても
+    // 誰も測り直していなかったからで、この表を足すのはそれを二度と静かに起こさないため。
+    for (const row of RANK_STABILITY) {
+      const result = compare({ items: basket(MEASURED_BASKET.weightG), country: row.country });
+      expect(result.rankStable, `${row.country} rankStable`).toBe(row.rankStable);
+      if (row.staysCheapest) {
+        expect(result.rankStabilityNote, `${row.country} rankStabilityNote`)
+          .toContain(row.staysCheapest);
+      }
     }
   });
 });
