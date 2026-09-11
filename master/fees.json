@@ -1778,7 +1778,27 @@
       "excluded_reason": "gastos suplidos として実請求に存在（ES €4.33/€5.32）が、算定式が不明（C）",
       "occurrence": "C_conditional_no_input",
       "display": "total",
-      "display_reason": "ES の実請求に `gastos suplidos` €4.33/€5.32 が実在するが算定式が不明。"
+      "display_reason": "ES の実請求に `gastos suplidos` €4.33/€5.32 が実在するが算定式が不明。",
+      "external_research_findings": [
+        {
+          "note": "Neokyo・US・FedEx DDP の立替手数料。ES の gastos suplidos とは別の会社・別の経路の式であり、ここに書くのはこの費目カテゴリ（立替・DDP 手数料）の他の一次情報として記録するため。**この式だけを in_fees_master にはしていない**（F35 自体は依然として算定式不明のまま excluded_reason 通り。この行は Neokyo という1社の1経路にのみ確認できた式で、他社は未確認）。コードには実装していない（P2 未着手・宅配便は最終価格のみを正とする方針のため、DDP を要素分解してこの式を services.ts に足すことはしていない）。",
+          "tier": "A_confirmed",
+          "source": "https://neokyo.com/en/shipping",
+          "checked_on": "2026-09-11",
+          "quote": "a flat 13.4% fee on the declared value plus 150 yen per package / 2% of the Base Tax or 15USD, whichever is higher / this broker fee might be charged for shipments containing a large variety of items, from 3.50USD / if the package contains any kind of edible, consumable or cosmetic item, FedEx will charge an additional 29 USD / the duty amount can NOT be modified, amended, or requested for drawback. It will always be charged the 13.4% flat fee, no exception.",
+          "formula": {
+            "base_tax": "0.134 × declared_value_jpy + 150（150 の単位は原文に明記が無い。Base Tax 自体は JPY 建てと解釈するのが自然だが未確認）",
+            "broker_fee_usd": "max(0.02 × base_tax, 15)",
+            "item_line_fee_usd": "3.50 から（上限・段階の詳細は原文になし）",
+            "edible_cosmetic_surcharge_usd": 29
+          },
+          "not_yet_confirmed": [
+            "Base Tax の 150 が JPY か USD か原文だけでは確定できない（外部調査 2026-09-11 時点の主張と一致するが、この一次情報自体が単位を明記していない）",
+            "Item Line Fee が『3.50USD から』の上限・段階",
+            "この式が Neokyo 以外（Buyee/ZenMarket/FROM JAPAN/Jauce）の FedEx DDP にも同じ形で適用されるか（未確認。各社が別々の法人契約を持つ前提と矛盾しないよう、他社への一般化はしない）"
+          ]
+        }
+      ]
     },
     {
       "id": "F36",
