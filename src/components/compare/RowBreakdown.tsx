@@ -92,8 +92,9 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
           {!isCheapest && (
             <td className="py-1 text-right num">
               {/* 1位（cheapest）の総額が確定していなければ「少なくとも」
-                  （外部レビュー④、RankBoard の diffText と同じ規則）。 */}
-              {totalIsCertain(cheapest.total) ? '+' : 'at least +'}
+                  （外部レビュー④、RankBoard の diffText と同じ規則）。
+                  **row 自身が確定していなくても「少なくとも」**（外部レビュー2回目 A-4）。 */}
+              {totalIsCertain(cheapest.total) && totalIsCertain(row.total) ? '+' : 'at least +'}
               {yen(row.total.low - cheapest.total.low)}
             </td>
           )}

@@ -460,11 +460,12 @@ describe('every destination has a duty rate above its threshold', () => {
   });
 
   test('the dash that remains is always a dash on purpose', () => {
-    // **総額から漏れている費目は米国の3つ＋7カ国 × 1つ（0e）だけ**で、全部「取れていない」
-    // ではなく「そこには無い／額が公表されていない／その社が売っていない」。
-    // 0e（`display: total` の1件——FROM JAPAN の外注梱包）で、額を公表していない
-    // 費目も総額の行になった（`excluded` に名前が載る）ので、7カ国すべてに常時この
-    // 1件が加わる。ここがそれ以上増えたら、新しい穴が開いたということ。
+    // **総額から漏れている費目は米国の3つ＋7カ国 × 2つ（0e/A-3）だけ**で、全部
+    // 「取れていない」ではなく「そこには無い／額が公表されていない／その社が
+    // 売っていない」。0e（`display: total` の1件——FROM JAPAN の外注梱包）に加え、
+    // 外部レビュー2回目 A-3 で Buyee の consolidated 行（まとめ梱包・F14、額未取得）にも
+    // 同じ扱いの null 行を足したので、7カ国すべてに常時この2件が加わる。
+    // ここがそれ以上増えたら、新しい穴が開いたということ。
     //
     // **Jauce の Premium insurance は既定では乗らない**（P1-4、オーナー確定
     // 2026-09-11）。任意（利用者が選ぶ）費目なので、選んでいない既定カートの
@@ -480,6 +481,7 @@ describe('every destination has a duty rate above its threshold', () => {
     }
     const expected = COUNTRY_CODES.flatMap((cc) => [
       `${cc}: Outsourced packing`,
+      `${cc}: Package consolidation`,
     ]).concat([
       'US: EMS to United States',                       // Neokyo は米国宛に日本郵便を売っていない
       'US: Sales tax / VAT',                            // 米国に連邦売上税は無い

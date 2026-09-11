@@ -297,6 +297,31 @@ const MAPPED: MappedEntry[] = [
     read: () => svc('buyee').prepaidImportTax!.SG!.rate,
     expect: () => findRow('F36', 'buyee', 'SG GST 代理徴収').rule.rate,
   },
+  // ── 外部レビュー2回目 A-1（解消）: Buyee の保管がマスタに無いままコードが課していた ──
+  // 他4社（zenmarket/neokyo/fromjapan/jauce）はF20/F21が既にあったが、Buyeeだけ
+  // 行が無く、この突き合わせにも入っていなかった。マスタにF20/F21/buyeeを追加し、
+  // ここに他社と同じ形の突き合わせを足す。
+  {
+    id: 'F20', company: 'buyee', name: '保管無料期間',
+    read: () => ({ freeDays: svc('buyee').storage.freeDays, maxDays: svc('buyee').storage.maxDays }),
+    expect: () => {
+      const rule = findRow('F20', 'buyee', '保管無料期間').rule;
+      return { freeDays: rule.days, maxDays: rule.max_days };
+    },
+  },
+  {
+    id: 'F21', company: 'buyee', name: '保管超過',
+    read: () => {
+      const r = svc('buyee').storage.rate;
+      return r.kind === 'per-day-per-parcel-by-weight'
+        ? r.bands.map((b) => ({ maxG: b.maxG === Infinity ? null : b.maxG, amount: b.yen }))
+        : null;
+    },
+    expect: () => {
+      const rule = findRow('F21', 'buyee', '保管超過').rule;
+      return rule.bands.map((b: { max_g: number | null; amount: number }) => ({ maxG: b.max_g, amount: b.amount }));
+    },
+  },
   // ── T-F4（解消）: Neokyo の ¥350 に国内送料が含まれるか ───────────────
   // 2026-09-11 に https://neokyo.com/en/fees・https://neokyo.com/en/how-to-buy を再取得。
   // ORDER PAYMENT 節は (商品代+国内送料) + ¥350 という足し算の図で、¥350 の説明

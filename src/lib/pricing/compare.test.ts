@@ -1528,13 +1528,15 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **Neokyo が消えたのは値段が高いからではなく、米国宛に日本郵便を売っていないから。**
     // 以前ここは Neokyo を ¥29,725 で1位に置いていた。
     // 0d（2026-09-11）: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が
-    // 乗る（他4社は無料60日の内側で¥0）。Buyee の2行がその分だけ上がり、
-    // consolidated が zenmarket を上回るようになった（1個口 vs 5個口ぶんの差）。
+    // 乗る（他4社は無料60日の内側で¥0）。Buyee の2行がその分だけ上がる。
+    // 外部レビュー2回目 A-2（2026-09-11）: 保管は個口（consolidated では1個口）ではなく
+    // **注文単位**（この基準は5点＝5注文）で計算するよう直したので、consolidated の
+    // 保管料も5個口ぶんに上がり（¥1,500→¥7,500）、jauce の後ろに落ちた。
     expect(board('US', 5, 200).map((r) => [r.id, r.total.low])).toEqual([
       ['fromjapan', 30975],
       ['zenmarket', 32549],
-      ['buyee:consolidated', 33975],
       ['jauce', 34008],
+      ['buyee:consolidated', 39975],
       ['buyee:default', 54275],
     ]);
     expect(dropped('US', 5, 200).map((r) => r.id)).toEqual(['neokyo']);
@@ -1549,14 +1551,16 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // Memorandum D13-3-3/D13-3-4 の value for duty は国際送料を含まないが
     // 国内送料は含む——`master/customs.json` の CA.vat.base_note どおりに
     // 揃えた）ので、CA の総額が下がった。
+    // 外部レビュー2回目 A-6（2026-09-11）: CA の関税ベースを GST・州税と揃え
+    // （`items + dom`、以前は `items` のみ）、全社 +¥90（国内送料への 2% 分）動いた。
     const top2 = (w: number) => board('CA', 5, w).slice(0, 2).map((r) => [r.id, r.total.low]);
-    expect(top2(600)).toEqual([['neokyo', 36250], ['fromjapan', 37200]]);
+    expect(top2(600)).toEqual([['neokyo', 36340], ['fromjapan', 37290]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
-    expect(top2(1500)).toEqual([['neokyo', 49750], ['fromjapan', 49800]]);
-    expect(top2(3000)).toEqual([['fromjapan', 68700], ['neokyo', 70000]]);
+    expect(top2(1500)).toEqual([['neokyo', 49840], ['fromjapan', 49890]]);
+    expect(top2(3000)).toEqual([['fromjapan', 68790], ['neokyo', 70090]]);
     // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
-    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 64806 } });
+    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 64896 } });
     // 米国では上位2社が3つの重量で1度も入れ替わらない。
     // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
     // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
@@ -1626,14 +1630,19 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // ので ZenMarket・Jauce の総額を持つ国がわずかに上がり（GB/DE/FR の ¥1 単位の
     // ずれ）、⑤-b は CA の GST・州税ベースから国際送料だけを抜いた（国内送料は
     // 含める、コーディネーター指摘で訂正済み）ので CA が下がった。
+    // 外部レビュー2回目（2026-09-11）:
+    // - A-2: 保管を注文単位（5点＝5注文）で計算するよう直したので、Buyee
+    //   consolidated の保管料が5倍になり、順位が下がった（各国とも consolidated の
+    //   総額が上がる形で並びが変わる）。
+    // - A-6: CA の関税ベースを国内送料込みに揃えたので、CA の全行が動いた。
     expect(totals).toEqual({
-      US: [37075, 38870, 40075, 40605, 63325],
-      GB: [40121, 41071, 42155, 44071, 44528, 73756],
-      DE: [42735, 43685, 44528, 46685, 47142, 74912],
-      FR: [43152, 44102, 44879, 47102, 47559, 75833],
-      AU: [33950, 36684, 36740, 38550, 40539, 59250],
-      CA: [36250, 37200, 38930, 40200, 40657, 64806],
-      SG: [30836, 32101, 33457, 35178, 35371, 53410],
+      US: [37075, 38870, 40605, 46075, 63325],
+      GB: [40121, 41071, 42155, 44528, 50071, 73756],
+      DE: [42735, 43685, 44528, 47142, 52685, 74912],
+      FR: [43152, 44102, 44879, 47559, 53102, 75833],
+      AU: [33950, 36684, 36740, 40539, 45150, 59250],
+      CA: [36340, 37290, 39020, 40747, 46290, 64896],
+      SG: [30836, 32101, 33457, 35178, 41911, 53410],
     });
   });
 });
