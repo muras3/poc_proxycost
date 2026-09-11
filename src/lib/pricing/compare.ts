@@ -992,29 +992,46 @@ function overlapsLeader(rowLow: number, leaderHigh: number): boolean {
 /**
  * おすすめ枠・同等の印（P1-2）。**下端の昇順に並んだ比較可能な行だけを見る。**
  *
- * 1位（下端が最小。同額なら全員が1位）はそのまま枠に入る。1位の区間と重なる社を
- * 下端の昇順に見ていき、**枠に追加できるのは最大2社**（確定仕様2）。
- * それでも重なる社（3社目以降）には枠を広げず、`equivalent` の印だけ付ける
+ * **枠は1位を含めて最大2社。**「1位＋重なる社2社まで＝最大3社」ではない
+ * （最初の実装のバグ。コーディネーター指摘、2026-09-11）。オーナーの言葉は
+ * 「おすすめは上位**二つ**まで」「**二つとも**囲って」——枠に入るのは1位と
+ * もう1社までで、1位の区間と重なる社があれば**そのうち1社だけ**を枠に足す。
+ * それ以上重なる社（3社目以降）には枠を広げず、`equivalent` の印だけ付ける
  * （確定仕様4「3社目以降で1位と幅が重なっている社には『同等』の印を付ける。
  * 枠には入れない」）。重なる社が無ければ1位だけの単独枠になる（確定仕様3）。
+ *
+ * **1位が同額タイで2社を超える場合も、枠は2社を超えない。**下端の昇順
+ * （タイの中では入力順）で先頭2社だけを枠に入れ、残りは「同等」に落とす——
+ * 全員が同着1位であっても、画面に囲えるのは2社までという制約は変わらない。
  */
 function computeBracket(ok: Row[]): { recommended: Set<string>; equivalent: Set<string> } {
+  const BRACKET_CAP = 2; // 1位を含めて最大2社（確定仕様2）
   const recommended = new Set<string>();
   const equivalent = new Set<string>();
   if (!ok.length) return { recommended, equivalent };
   const leadLow = ok[0]!.total.low;
   const leaders = ok.filter((r) => r.total.low === leadLow);
-  for (const r of leaders) recommended.add(r.id);
+  // タイが枠の上限を超えるときは、下端の昇順（＝同額の中では入力順）で先頭だけ枠へ。
+  const leadersInBracket = leaders.slice(0, BRACKET_CAP);
+  const leadersOverflow = leaders.slice(BRACKET_CAP);
+  for (const r of leadersInBracket) recommended.add(r.id);
+  for (const r of leadersOverflow) equivalent.add(r.id);
+  // 「1位の幅」は枠に入りきらなかったタイも含めた**1位グループ全体**で測る——
+  // 枠の定員で溢れた社も、下端でみれば正真正銘の1位なので、他社との重なり判定の
+  // 基準からは除かない。
   const leaderHigh = leaders.some((r) => r.total.high == null)
     ? Infinity
     : Math.max(...leaders.map((r) => r.total.high!));
   const rest = ok.filter((r) => r.total.low > leadLow);
-  let added = 0;
+  let remainingSlots = Math.max(0, BRACKET_CAP - leadersInBracket.length);
   for (const r of rest) {
-    if (!overlapsLeader(r.total.low, leaderHigh)) continue; // 下端の昇順なので以降も重ならない保証はないが、素直に全件見る
-    if (added < 2) {
+    // `rest` は下端の昇順。一度 `overlapsLeader` が false になれば、以降の行は
+    // 下端がさらに大きいだけなので二度と true にならない——素直に全件見て構わない
+    // （早期 break は最適化にすぎず、判定の正しさには影響しない）。
+    if (!overlapsLeader(r.total.low, leaderHigh)) continue;
+    if (remainingSlots > 0) {
       recommended.add(r.id);
-      added += 1;
+      remainingSlots -= 1;
     } else {
       equivalent.add(r.id);
     }
@@ -1056,11 +1073,53 @@ function bracketIds(rows: Row[]): string[] {
 }
 
 /**
+ * 「安定」ではなく「判定不能」（P1-2、コーディネーター判断3、2026-09-11）。
+ *
+ * 比較可能な社が1社以上あって、その**全員**がおすすめ枠か同等の印に収まっている
+ * ——つまり1社も「枠にも同等にも入らない、明確に高い社」が残っていない状態。
+ * これは1位（下端最小）の総額が上限不明（`total.high === null`）で、他社が
+ * どこまで安くなりうるかを否定できないときに起きる（`overlapsLeader` が
+ * leaderHigh=Infinity を返す）。
+ *
+ * この状態で重量を動かしても、枠の集合は最初から「全員」なので変わりようがなく、
+ * 判断2の「枠の集合が変わるか」という判定は機械的に `true`（安定）を返す。
+ * だが実態は「重量が変わっても薦める社が変わらない」という意味の安定ではなく、
+ * 「そもそもどの社が安いか区別できていない」——判断2で潰したのと同じ形の
+ * 自己欺瞞が、上限不明という別の入口から戻ってきたもの。呼び出し側はこれを
+ * 見て `rankStable` を強制的に `false` にし、専用の文言を出す。
+ */
+function isIndeterminate(rows: Row[]): boolean {
+  const comparable = rows.filter((r) => r.comparable);
+  // **1社しか比較可能な社が無いときは「判別できない」ではない。**選べる社が1つしか
+  // 無いだけで、区別すべき相手がいない——「唯一値段が付く社」（`outOfTable` と同じ
+  // 状況）であって、複数社が不確かさの中で見分けられない状態とは違う。
+  return comparable.length > 1 && comparable.every((r) => r.recommended || r.equivalent);
+}
+
+/**
+ * 判定不能の文言（P1-2、判断3）。**社名を全部並べない。**
+ * 比較可能な社の数と、1位（下端最小）の名だけを言う——`docs/ROADMAP.md` の
+ * 全社重なり表示（「最安を狙える可能性が最も高い: Neokyo」）と同じ要約の仕方で、
+ * 5社の正式名を毎回並べると文が長くなりすぎ、他の場所（既定カートの画面）で
+ * 折り返しが増えてレイアウトを押し下げる実害があった。
+ */
+function indeterminateNote(comparable: Row[]): string {
+  const n = comparable.length;
+  const leader = comparable[0]!.label;
+  // **「is cheapest」という文字列を含めない。** 画面の別の場所（1位が確定している
+  // ときの Summary）が `/is cheapest/` で照合しており、同じ文言をここに混ぜると
+  // 2箇所が一致してテストが `strict mode violation` で落ちる——「最安」を
+  // 言い切れない状態なのだから、そもそも「is cheapest」と書くこと自体が適切でない。
+  return `These ${n} companies sit within the same uncertainty — we can't tell which one`
+    + ` wins. ${leader} looks the most likely.`;
+}
+
+/**
  * おすすめ枠の**集合**が変わったか（P1-2、コーディネーター判断2、2026-09-11）。
  *
  * 最初の実装は「基準の枠のうち1社でも両端の枠に残っていれば安定」だったが、
- * **枠は最大3社（1位＋重なる社2社まで）なので、5社中3社が枠に入っていれば
- * 「誰か1人残る」はほぼ自明に成立し、判定として機能しなかった**
+ * **枠は1位を含めて最大2社なので、5社中2社が枠に入っていれば「誰か1人残る」は
+ * 十分高い確率で成立し、判定として機能しなかった**
  * （7カ国すべて `rankStable=true` になった実測がその欠陥そのもの）。
  *
  * 新しい定義は**集合の完全一致**。枠の中で誰が下端最小か（内部の順序）が入れ替わる
@@ -1172,7 +1231,7 @@ function weightSensitivityFor(
       onlyPricedAtHigh: hi.shrank,
       // **判定基準はおすすめ枠の集合が変わるかどうか**（`rankStable` と同じ規則、
       // P1-2・判断2）。「1社でも重なれば動いていない」ではなく集合の完全一致を見る
-      // ——枠は最大3社なので前者はほぼ常に成立してしまい判定にならない
+      // ——枠は1位を含めて最大2社なので前者はほぼ常に成立してしまい判定にならない
       // （`bracketChanged` のコメント参照）。「比べられなくなった」端（枠が空）は
       // 「替わった」に数えない。
       decisive: [lo, hi].some((w) => bracketChanged(baseBracket, w.bracket)),
@@ -1243,7 +1302,7 @@ export function compare(
   };
   const empty: CompareResult = {
     rows: [], bands: null, rowTotalRange: null, rowDiffRange: null,
-    rankStable: true, rankStabilityNote: '', totalRangeYen: null,
+    rankStable: true, rankIndeterminate: false, rankStabilityNote: '', totalRangeYen: null,
     currency, hasUnknownWeight: false, weightSensitivity: {},
   };
   if (!items.length) return empty;
@@ -1270,16 +1329,21 @@ export function compare(
     // **「1位が動かないか」ではなく「おすすめ枠の集合が変わるか」で安定を判定する**
     // （P1-2、コーディネーター判断2、2026-09-11）。
     //
-    // 最初の実装は「基準の枠のうち1社でも両端に残れば安定」だったが、**枠は最大3社
-    // なので5社中3社が枠に入る局面では『誰か1人残る』がほぼ自明に成立し、判定として
-    // 機能しなかった**（7カ国すべて `rankStable=true` になった実測がそれ）。
+    // 最初の実装は「基準の枠のうち1社でも両端に残れば安定」だったが、**枠は1位を
+    // 含めて最大2社なので5社中2社が枠に入る局面でも『誰か1人残る』は十分高い
+    // 確率で成立し、判定として機能しなかった**（7カ国すべて `rankStable=true`
+    // になった実測がそれ）。
     // 集合の完全一致に変える——枠の中で誰が下端最小かの入れ替わりは見ないが
     // （`bracketChanged` は `Set` で比べるので内部の順序は無視する）、
     // **顔ぶれが1社でも変われば `false`。**値段の付く行が消えた端（枠が空）だけは
     // 従来どおり「判定できない」として除外する。
     const first = base.find((r) => r.comparable);
     const changedAt = winners.filter((w) => bracketChanged(baseBracket, w.bracket));
-    const stable = changedAt.length === 0;
+    // **「判定不能」を「安定」に潰さない**（判断3）。全社が枠＋同等に収まっているなら、
+    // 枠の集合はどう重量を動かしても「全員」のままなので `bracketChanged` は
+    // 機械的に false を返す——それを「安定」と読んではいけない。
+    const indeterminate = isIndeterminate(base);
+    const stable = !indeterminate && changedAt.length === 0;
     const labelOf = (id: string) => base.find((r) => r.id === id)?.label ?? id;
     const outOfTable = winners.some((w) => w.ids.length === 0 || w.shrank);
     // 表の中央値や仮置きを「あなたがくれた重量」と呼ぶのは嘘。出どころを知らない
@@ -1290,11 +1354,16 @@ export function compare(
       ...empty,
       rows: base,
       rankStable: stable,
+      rankIndeterminate: indeterminate,
       // **「1位が動くか」ではなく「おすすめ枠の集合が動くか」を言う**（P1-2、判断2）。
       // `stable` はいま枠の完全一致で決まっているので、安定なら基準の枠がそのまま
       // 両端でも枠だと言い切ってよい（`dropped` は不安定側でだけ使う）。
+      // **判定不能（判断3）は独立の分岐**——「動くか動かないか」の問いの前に、
+      // そもそも1位が区別できていないことを言う。
       rankStabilityNote: !first
         ? 'No published EMS rate covers this parcel, so we cannot compare these totals.'
+        : indeterminate
+          ? indeterminateNote(base.filter((r) => r.comparable))
         : stable
           ? `${andList(baseBracket.map(labelOf))} stay${baseBracket.length === 1 ? 's' : ''} in the`
             + ' recommended range even if we are off by 3x on weight.'
@@ -1359,14 +1428,17 @@ export function compare(
 
   const first = bands[0]!;
   // **おすすめ枠の集合が全段で変わらないか**（P1-2、判断2）で「動かない」を判定する。
-  // 「1社でも残れば安定」は枠が最大3社ある時点でほぼ自明に成立して判定として
+  // 「1社でも残れば安定」は枠が最大2社ある時点でも十分な確率で成立して判定として
   // 機能しない（`bracketChanged` のコメント参照）ので、集合の完全一致を見る。
   const firstBracket = bracketIds(first.rows);
-  const stable = bands.every((b) => !bracketChanged(firstBracket, bracketIds(b.rows)));
-  const totals = bands.flatMap((b) => b.rows.map((r) => r.total.low));
   // 代表として真ん中の段を rows に据える。1つの数字を主役にはしないが、
-  // 画面が何も出せないと困るので順序の代表は要る。
+  // 画面が何も出せないと困るので順序の代表は要る。判定不能の判定もこの代表段で見る
+  // （段ごとに全社が重なっているかは変わりうるが、代表段を画面の主張の基準にする）。
   const mid = bands[Math.floor(bands.length / 2)]!;
+  const indeterminate = isIndeterminate(mid.rows);
+  const stable = !indeterminate && bands.every((b) => !bracketChanged(firstBracket, bracketIds(b.rows)));
+
+  const totals = bands.flatMap((b) => b.rows.map((r) => r.total.low));
 
   return {
     rows: mid.rows,
@@ -1374,11 +1446,14 @@ export function compare(
     rowTotalRange,
     rowDiffRange,
     rankStable: stable,
-    rankStabilityNote: stable
-      ? `In the recommended range at every step from ${first.label} to ${bands[bands.length - 1]!.label}: `
-        + `${andList(firstBracket.map((id) => first.rows.find((r) => r.id === id)?.label ?? id))}.`
-      : 'The recommended range changes with weight — '
-        + `${bands.map((b) => `${b.label}: ${andList(bracketIds(b.rows).map((id) => b.rows.find((r) => r.id === id)?.label ?? id))}`).join(', ')}.`,
+    rankIndeterminate: indeterminate,
+    rankStabilityNote: indeterminate
+      ? indeterminateNote(mid.rows.filter((r) => r.comparable))
+      : stable
+        ? `In the recommended range at every step from ${first.label} to ${bands[bands.length - 1]!.label}: `
+          + `${andList(firstBracket.map((id) => first.rows.find((r) => r.id === id)?.label ?? id))}.`
+        : 'The recommended range changes with weight — '
+          + `${bands.map((b) => `${b.label}: ${andList(bracketIds(b.rows).map((id) => b.rows.find((r) => r.id === id)?.label ?? id))}`).join(', ')}.`,
     totalRangeYen: [Math.min(...totals), Math.max(...totals)],
     currency,
     hasUnknownWeight: true,

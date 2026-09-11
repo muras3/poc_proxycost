@@ -53,19 +53,21 @@
 | 3 | 1,325 g |
 | 5 | 1,625 g |
 
-| 国 | `rankStable` | 動かない1位 |
-|---|---|---|
-| US | true | FROM JAPAN |
-| GB | false | — |
-| DE | false | — |
-| FR | false | — |
-| AU | true | Neokyo |
-| CA | false | — |
-| SG | true | Neokyo |
+| 国 | `rankStable` | 状態 | 動かない1位 |
+|---|---|---|---|
+| US | false | 判定不能（全社が不確かさの中） | — |
+| GB | false | 不安定（重量で変わる） | — |
+| DE | false | 不安定（重量で変わる） | — |
+| FR | false | 不安定（重量で変わる） | — |
+| AU | true | 安定 | Neokyo |
+| CA | false | 不安定（重量で変わる） | — |
+| SG | true | 安定 | Neokyo |
 <!-- generated:END weight-rank -->
 
-半数以上の国で不安定なのは変わらないので、この節の見出しは維持する。
-だから画面は `rankStable` をそのまま出す。
+半数以上の国で「安定」と言い切れないのは変わらない（4カ国が重量で1位が変わる不安定、
+1カ国は上限不明の1位が全社を飲み込んで**どの社が安いか判別できない「判定不能」**——
+安定と同じ `true` には潰さない。P1-2、コーディネーター判断3、2026-09-11）ので、
+この節の見出しは維持する。だから画面は `rankStable`（と `rankIndeterminate`）をそのまま出す。
 
 **ここには以前「7 カ国すべてで `rankStable=false`」と書いていた。**それは間違いだった。
 2026-09-06 の測定以降、Neokyo の国内送料・FROM JAPAN の ¥200・ZenMarket のサイト別費目・
