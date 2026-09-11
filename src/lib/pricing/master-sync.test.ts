@@ -624,9 +624,29 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     },
   },
   {
-    id: 'F29', company: 'jauce', name: '保険（Premium）',
+    id: 'F29', company: 'jauce', name: '保険（標準・基本補償 ¥20,000 まで）',
+    reason: '2026-09-11 に記録③として追加。標準の郵便保険（全発送に付く）の基本補償¥20,000までは'
+      + '無料（日本郵便の公表）。基準ケース（5点×¥3,000＝¥15,000）はこの範囲内で影響が無いため、'
+      + 'コードには未接続のまま（額は0で確定しているが行として繋いでいない）。',
+    assertNotInCode: () => {
+      const ins = svc('jauce').optional.find((o) => o.key === 'premium-insurance');
+      expect(ins).toBeDefined();
+    },
+  },
+  {
+    id: 'F29', company: 'jauce', name: '保険（標準・¥20,000 超過分。Jauce が自動付保・請求するかは未確定）',
+    reason: '2026-09-11 に記録③として追加。日本郵便の増額表（¥20,000増ごとに¥50・上限¥200万）は'
+      + 'あるが、Jauce がそれを利用者に自動で付保・請求するかどうかを一次情報から確認できていない'
+      + '（開いた問い）。amount_tier C_unknown。基準ケースは¥20,000以内のため実害は無い。',
+    assertNotInCode: () => {
+      const ins = svc('jauce').optional.find((o) => o.key === 'premium-insurance');
+      expect(ins).toBeDefined();
+    },
+  },
+  {
+    id: 'F29', company: 'jauce', name: '保険（Premium・任意）',
     reason: 'catalog F29:「Jauce の Premium 1.9% は利用者が選ぶもので、かつ課税ベースが'
-      + '原文から読めない」ため額を出さない。',
+      + '原文から読めない」ため額を出さない（2026-09-11 に標準の郵便保険2行と区別するため改名）。',
     assertNotInCode: () => {
       const ins = svc('jauce').optional.find((o) => o.key === 'premium-insurance')!;
       expect(ins.amountYen).toBeNull();
@@ -653,6 +673,30 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + ' optional storage の note 文字列にしか無く、独立した数値フィールドとしては存在しない。',
     assertNotInCode: () => {
       expect((svc('fromjapan') as unknown as Record<string, unknown>).freeStorageDays).toBeUndefined();
+    },
+  },
+  {
+    id: 'F21', company: 'jauce', name: '保管超過',
+    reason: '2026-09-11 に記録①として追加。無料60日・最大保管120日（有料期間は最大60日≒2か月）と'
+      + '公表されているが、月額はサイズ・価値で決まり一律ではない。公表されている参考額（CD約¥200/月・'
+      + 'ギター約¥700/月）は料金表ではなく、¥700 を上限として扱ってはいけない（rule.amount は'
+      + 'unknown・amount_tier C_unknown）。既存の optional storage は5社共通の日数入力欄のみで、'
+      + 'jauce 固有の月額・参考額はコードに未接続。',
+    assertNotInCode: () => {
+      const storage = svc('jauce').optional.find((o) => o.key === 'storage')!;
+      expect(storage.amountYen).toBeNull();
+    },
+  },
+  {
+    id: 'F14', company: 'fromjapan', name: '外注梱包（Outsourced Packing）',
+    reason: '2026-09-11 に記録②として追加。50kg以上／30kg以上かつ30万円以上／壊れ物、の3条件'
+      + '（ヘルプが3条件、利用規約は2条件のみで壊れ物が無い不一致を確認のうえヘルプの3条件を採用）。'
+      + '額は実費のみで上限・料金表が無い（rule.amount は unknown・amount_tier C_unknown）。'
+      + 'このうち条件1・2はこの計算機では原理的に発生せず（EMSの上限が30kgなので50kgは表現できず、'
+      + '30kgは表の上端ぴったり）、残る条件3（壊れ物）は FROM JAPAN の主観判断で検出不能なので、'
+      + 'コードには接続していない。',
+    assertNotInCode: () => {
+      expect((svc('fromjapan').fee as unknown as Record<string, unknown>).outsourcedPackingYen).toBeUndefined();
     },
   },
 ];
