@@ -539,8 +539,14 @@ FROM JAPAN の実測4点・Jauce の寸法入り実測1件・実請求1件を含
 **2026-09-11 追記（PR #45〜#47）── 3経路すべてを試し、すべて塞がっていることを確認した。**
 
 - **`curl`**: サイトには届くが計算機のパスで 403 になる。ZenMarket は Cloudflare のJSチャレンジ、
-  FROM JAPAN は WAF による遮断、Buyee は robots.txt 自体が403で読めない（詳細と個別の観測は
-  `docs/audit/o2-courier-2026-09-11.md`）
+  FROM JAPAN は WAF による遮断（詳細と個別の観測は `docs/audit/o2-courier-2026-09-11.md`）。
+  **Buyee** は `robots.txt` の取得自体が HTTP 403。応答ヘッダの `server` は `awselb/2.0`
+  （2026-09-11 にコーディネーターが `curl` で直接確認。プロキシのトンネルは
+  `200 Connection Established` で確立しており、組織のポリシー遮断ではない）。
+  **`robots.txt` が読めない以上、自動アクセスの可否を判断できないため測定しない**
+  （`docs/audit/o2-courier-2026-09-11.md` の Buyee の項も同じ結論。ヘッダの `awselb/2.0` は
+  今回コーディネーターが新たに確認した一次観測で、`docs/audit/gaps.md` §8.7 が別調査
+  （商品ページのディープリンク検証）で書いている「AWS WAF」とは出所が別なので混ぜない）
 - **実ブラウザ（Playwright + Chromium）**: サイトに届く前に、この環境のエージェントプロキシが
   ヘッドレス Chromium の TLS を切る。**`example.com` すら開けない**——これはサイト側のボット対策
   ではなく、**この環境側の制約**（`docs/audit/gaps.md` §「Playwright の本物の Chromium で開く」）
