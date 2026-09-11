@@ -1,71 +1,2239 @@
 {
-  "$schema_note": "宅配便の最終価格。分解しない（社の契約が外から見えないため）。今回のランでは observations は0件 ── 全社がボット対策/robots.txtで測定不能だった。捏造していない。注記: 外部文書（リポジトリ非搭載の引き継ぎ文書、2026-09-09時点）に既存の実測データがある。別途取り込み予定。詳細は docs/audit/o2-courier-2026-09-11.md §6 を参照（数値はこのファイルには入れていない）。",
+  "$schema_note": "宅配便の最終価格。分解しない（社の契約が外から見えないため）。2026-09-12: 外部作業者が FROM JAPAN / Jauce / Buyee を実測し、その結果をこのファイルに取り込んだ（引き継ぎ元: fromjapan/jauce/buyee の実測3ファイル。うち2ファイルは同内容）。ZenMarket は Cloudflare の Just a moment チャレンジで、Neokyo は robots.txt の Disallow: /*?* で、依然として自動測定できていない（下記 sources / not_available）。price_jpy は画面表示の額をそのまま記録し、計算値を混ぜていない。**配送方法の顔ぶれ（`postage.ts` の `postage` 構成・`unavailableIn`・`Service.courier`）はこの取り込みでは変更していない**（外部作業者が各社の顔ぶれ・可否を追加調査中で、結果は後日届く）。顔ぶれの差分は conclusions.courier_lineup_diffs に記録し、コードには反映していない。",
   "sources": [
     {
+      "proxy": "fromjapan",
+      "url": "https://www.fromjapan.co.jp/en/estimate/",
+      "robots_checked": "2026-09-12: robots.txt はクラウドブラウザで net::ERR_BLOCKED_BY_CLIENT となり再取得できず。依頼者提示の確認済み情報（計算機は Disallow 対象外、Crawl-delay: 30）に従い、計算実行を30秒以上空けた",
+      "terms_checked": "2026-09-12: 公式 Terms of Service（最終更新 2026-04-30）を画面確認。automated access / scraping / crawling を明示禁止する条項は確認できなかった。ただし運営妨害行為の一般的禁止はある",
+      "fetched_at": "2026-09-12",
+      "interval_seconds": 30,
+      "input_fields": [
+        "country_of_purchase",
+        "country",
+        "item_price",
+        "weight",
+        "dimensions",
+        "domestic_delivery_fee"
+      ],
+      "limitation": "robots.txt はクラウドブラウザから net::ERR_BLOCKED_BY_CLIENT で再取得できなかった。依頼者提示の確認済み情報（計算機自体は Disallow 対象外、Crawl-delay: 30）に従って計算実行の間隔を30秒以上空けたが、この robots.txt 情報自体は今回のランでブラウザ再取得して裏づけたものではない。"
+    },
+    {
+      "proxy": "jauce",
+      "url": "https://www.jauce.com/price_check.php",
+      "fetched_at": "2026-09-12",
+      "note": "国×重量×寸法の入力のみ。商品価格の入力欄・宅配便の方式提示は無い（EMS/SAL/Surfaceのみ）。"
+    },
+    {
+      "proxy": "buyee",
+      "url": "https://buyee.jp/helpcenter/guide/shipping-fees?lang=en",
+      "fetched_at": "2026-09-12",
+      "note": "バッチ出力は値が不自然で単位・状態の混入があったため作業者が全部破棄した。信用できるのは verified_single_observation（DE / 600g / 20×15×10cm）の1点のみ。"
+    },
+    {
       "proxy": "zenmarket",
-      "url": "https://zenmarket.jp/calc.aspx/Calculate",
-      "robots_checked": "2026-09-11: /calc.aspx 自体はrobots.txtで許可（Disallow対象は/en/en/等の言語重複パスのみ）。Crawl-delayの指定なし",
-      "terms_checked": "2026-09-11: 未確認（Cloudflareチャレンジで到達不能のため利用規約の自動アクセス条項確認まで進めなかった）",
-      "fetched_at": "2026-09-11",
-      "interval_seconds": null,
+      "url": "https://zenmarket.jp/calc.aspx",
+      "fetched_at": "2026-09-12",
       "result": "blocked_captcha",
-      "note": "POST /calc.aspx/Calculate への実測呼び出しがCloudflareの『Just a moment...』チャレンジ（challenges.cloudflare.com、CAPTCHA相当のJSチャレンジ）を返した。手順書作成時（2026-09-07）以降にCloudflare保護が追加された可能性が高い。指示（AGENTS.md / O2-COURIER-RUN.md）によりCAPTCHA回避は行わず、ここで停止した。観測値は1件も取得していない"
+      "note": "Cloudflare の Just a moment チャレンジに阻まれ、引き続き未測定（2026-09-11 と同じ状況）。手動ブラウザでの追加調査中。"
     },
     {
       "proxy": "neokyo",
       "url": "https://neokyo.com/en/shipping-rates-estimate",
-      "robots_checked": "2026-09-11: robots.txt で `Disallow: /*?*` ── クエリ文字列付きURL全体が禁止。計算機は `?weight=...&country_to=...` というクエリ文字列でしか呼べないため、この計算機自体がrobots.txtで自動アクセス禁止対象",
-      "terms_checked": "2026-09-11: robots.txtの時点で不可と判断したため利用規約は未確認",
-      "fetched_at": "2026-09-11",
-      "interval_seconds": null,
+      "fetched_at": "2026-09-12",
       "result": "blocked_robots",
-      "note": "手順書（2026-09-07確認）はURLだけで結果が出ると記録しているが、robots.txtの `Disallow: /*?*` に抵触するため測定しない。指示（O2-COURIER-RUN.md）通り、規約以前にrobots.txtで自動アクセス禁止と判断した時点で対象外とした"
-    },
-    {
-      "proxy": "buyee",
-      "url": "https://buyee.jp/robots.txt",
-      "robots_checked": "2026-09-11: robots.txt 取得自体が HTTP 403（Bot対策で robots.txt すら読めない）",
-      "terms_checked": "2026-09-11: robots.txtが確認できないため利用規約以前に判断不能。「判断が付かなければ止めて報告」に従い測定しない",
-      "fetched_at": "2026-09-11",
-      "interval_seconds": null,
-      "result": "blocked_unknown",
-      "note": "buyee.jp/helpcenter/guide/shipping-method の計算機リンク先の実測に進む前に、robots.txt確認の段階で403となり停止した"
-    },
-    {
-      "proxy": "fromjapan",
-      "url": "https://fromjapan.co.jp/robots.txt",
-      "robots_checked": "2026-09-11: robots.txt へのアクセスが 301 リダイレクトのみ返り、内容未取得（リダイレクト先の追跡は本ランでは行わなかった）",
-      "terms_checked": "2026-09-11: 未確認",
-      "fetched_at": "2026-09-11",
-      "interval_seconds": null,
-      "result": "not_confirmed",
-      "note": "計算機の場所自体が未確認（手順書記載の通り）。robots.txt確認も完了しなかったため、この社は今回のランでは着手できなかった"
-    },
-    {
-      "proxy": "jauce",
-      "url": "https://jauce.com/robots.txt",
-      "robots_checked": "2026-09-11: TLS証明書エラー（証明書期限切れ）で接続不能",
-      "terms_checked": "2026-09-11: 未確認",
-      "fetched_at": "2026-09-11",
-      "interval_seconds": null,
-      "result": "not_confirmed",
-      "note": "jauce.com へのHTTPS接続がSSL証明書失効のため確立できず、robots.txtの確認にも進めなかった"
+      "note": "robots.txt の Disallow: /*?* に該当するため意図的に自動測定を見送った。手動ブラウザでの追加調査中。"
     }
   ],
-  "observations": [],
-  "defaults": [],
-  "not_available": [
-    { "proxy": "zenmarket", "reason": "計算機APIがCloudflareのCAPTCHA相当チャレンジで保護されており、指示によりバイパスを試みず測定を停止した", "checked_at": "2026-09-11" },
-    { "proxy": "neokyo", "reason": "計算機のURLがクエリ文字列を使う形式で、同社robots.txtの `Disallow: /*?*` に該当するため測定しない", "checked_at": "2026-09-11" },
-    { "proxy": "buyee", "reason": "robots.txt取得自体がHTTP 403で、自動アクセス可否を確認できないため測定しない", "checked_at": "2026-09-11" },
-    { "proxy": "fromjapan", "reason": "計算機の場所が未確認。robots.txtの取得も301リダイレクトで完了せず、今回のランでは着手できなかった", "checked_at": "2026-09-11" },
-    { "proxy": "jauce", "reason": "TLS証明書エラーで接続不能。robots.txtの確認にも進めなかった", "checked_at": "2026-09-11" }
-  ],
+  "cross_check": {
+    "expected": {
+      "fromjapan_DE_600g": {
+        "surface": 2500,
+        "ems": 3400,
+        "fedex_economy": 5309,
+        "fedex_priority": 5671
+      }
+    },
+    "observed": {
+      "fromjapan_DE_600g": {
+        "surface": 2500,
+        "ems": 3400,
+        "fedex_economy": 5309,
+        "fedex_priority": 5671
+      }
+    },
+    "matches": true,
+    "note": "FROM JAPAN / DE / 600g の4点（Surface 2500 / EMS 3400 / FedEx Economy 5309 / FedEx Priority 5671）が既知値と1円まで一致。これがこのデータ全体の信頼性の根拠。"
+  },
+  "measurement_defaults": {
+    "country_of_purchase": "JP",
+    "weight_g": 600,
+    "dims_cm": [
+      20,
+      15,
+      10
+    ],
+    "item_price_jpy": 10000,
+    "domestic_delivery_fee_jpy": 700
+  },
+  "observations": {
+    "single_points": [
+      {
+        "proxy": "fromjapan",
+        "method_name": "International ePacket Light",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1780,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "EMS",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3400,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3850,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 4358,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5309,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5671,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5895,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface (Small Packet)",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1300,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail (Small Packet)",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1410,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface",
+        "country": "DE",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2500,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3487,
+        "extra_fees": [],
+        "ups_is_lower_bound": true,
+        "ups_lower_bound_note": "excludes residential surcharge and extended area surcharge"
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "ECMS",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3506,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 4771,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5109,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5437,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "International ePacket Light",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1780,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "EMS",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3400,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3850,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 4358,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5309,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5671,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5895,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface (Small Packet)",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1300,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail (Small Packet)",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1410,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface",
+        "country": "GB",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2500,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "International ePacket Light",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1780,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "EMS",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3400,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3850,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 4358,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5309,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5671,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5895,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface (Small Packet)",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1300,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail (Small Packet)",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1410,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface",
+        "country": "FR",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2500,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "International ePacket Light",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1780,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "ECMS",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2381,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "EMS",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3400,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3743,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3850,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5146,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 9000,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 11296,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface (Small Packet)",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1300,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail (Small Packet)",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1410,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface",
+        "country": "AU",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2500,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "International ePacket Light",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1780,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3097,
+        "extra_fees": [],
+        "ups_is_lower_bound": true,
+        "ups_lower_bound_note": "excludes residential surcharge and extended area surcharge"
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "EMS",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3400,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3850,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 4771,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5109,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 5437,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface (Small Packet)",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1300,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail (Small Packet)",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1410,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface",
+        "country": "CA",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2500,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "International ePacket Light",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1350,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "ECMS",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1587,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "EMS",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2150,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "SF Express",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2243,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2500,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "UPS",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2891,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Economy",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3421,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "DHL",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3448,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "FedEx - Priority",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 3494,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "AirMail (Small Packet)",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 980,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface (Small Packet)",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 1300,
+        "extra_fees": []
+      },
+      {
+        "proxy": "fromjapan",
+        "method_name": "Surface",
+        "country": "SG",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "price_jpy": 2100,
+        "extra_fees": []
+      }
+    ],
+    "weight_curve_de_20x15x10": [
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 1600,
+          "EMS": 3150,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface (Small Packet)": 800,
+          "AirMail (Small Packet)": 1230,
+          "Surface": 2500
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 700,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 1960,
+          "EMS": 3650,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1590,
+          "Surface": 2500
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 1000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 2500,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "EMS": 4400,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 2130,
+          "Surface": 2500
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 1500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 3400,
+          "UPS": 5411,
+          "FedEx - Economy": 5435,
+          "EMS": 5550,
+          "AirMail": 6000,
+          "FedEx - Priority": 6179,
+          "DHL": 6398,
+          "Surface (Small Packet)": 2200,
+          "AirMail (Small Packet)": 3030,
+          "Surface": 3100
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 4300,
+          "AirMail": 6000,
+          "FedEx - Economy": 6156,
+          "FedEx - Priority": 6276,
+          "UPS": 6329,
+          "EMS": 6700,
+          "DHL": 6900,
+          "Surface (Small Packet)": 2200,
+          "Surface": 3100,
+          "AirMail (Small Packet)": 3930
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 2500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "FedEx - Economy": 6885,
+          "FedEx - Priority": 7189,
+          "UPS": 7300,
+          "EMS": 7750,
+          "AirMail": 8150,
+          "DHL": 8177,
+          "Surface": 3700
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 3000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "FedEx - Economy": 7647,
+          "FedEx - Priority": 8119,
+          "AirMail": 8150,
+          "UPS": 8195,
+          "EMS": 8800,
+          "DHL": 8806,
+          "Surface": 3700
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 5000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "FedEx - Economy": 10542,
+          "FedEx - Priority": 10736,
+          "DHL": 11322,
+          "UPS": 11793,
+          "AirMail": 12450,
+          "EMS": 13000,
+          "Surface": 4900
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 10000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "DHL": 14814,
+          "FedEx - Economy": 15667,
+          "UPS": 16887,
+          "FedEx - Priority": 19981,
+          "AirMail": 23200,
+          "EMS": 23500,
+          "Surface": 7900
+        }
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 20000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "FedEx - Economy": 21638,
+          "DHL": 21764,
+          "UPS": 28363,
+          "FedEx - Priority": 36217,
+          "AirMail": 39200,
+          "EMS": 44500,
+          "Surface": 11900
+        }
+      }
+    ],
+    "country_weight_points": [
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "UPS": 4700,
+          "ECMS": 4895,
+          "DHL": 5247,
+          "FedEx - Economy": 5819,
+          "FedEx - Priority": 5984
+        },
+        "notes": [
+          "UPS price excludes residential surcharge and extended area surcharge"
+        ],
+        "ups_is_lower_bound": true,
+        "ups_lower_bound_note": "excludes residential surcharge and extended area surcharge"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "GB",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 4300,
+          "AirMail": 6000,
+          "FedEx - Economy": 6156,
+          "FedEx - Priority": 6276,
+          "UPS": 6329,
+          "EMS": 6700,
+          "DHL": 6900,
+          "Surface (Small Packet)": 2200,
+          "Surface": 3100,
+          "AirMail (Small Packet)": 3930
+        },
+        "notes": []
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "FR",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 4300,
+          "AirMail": 6000,
+          "FedEx - Economy": 6156,
+          "FedEx - Priority": 6276,
+          "UPS": 6329,
+          "EMS": 6700,
+          "DHL": 6900,
+          "Surface (Small Packet)": 2200,
+          "Surface": 3100,
+          "AirMail (Small Packet)": 3930
+        },
+        "notes": []
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "AU",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "ECMS": 2629,
+          "DHL": 4004,
+          "International ePacket Light": 4300,
+          "FedEx - Economy": 5725,
+          "AirMail": 6000,
+          "EMS": 6700,
+          "FedEx - Priority": 11952,
+          "UPS": 15395,
+          "Surface (Small Packet)": 2200,
+          "Surface": 3100,
+          "AirMail (Small Packet)": 3930
+        },
+        "notes": []
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "CA",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "International ePacket Light": 4300,
+          "UPS": 4310,
+          "DHL": 5247,
+          "FedEx - Economy": 5819,
+          "FedEx - Priority": 5984,
+          "AirMail": 6000,
+          "EMS": 6700,
+          "Surface (Small Packet)": 2200,
+          "Surface": 3100,
+          "AirMail (Small Packet)": 3930
+        },
+        "notes": [],
+        "ups_is_lower_bound": true,
+        "ups_lower_bound_note": "excludes residential surcharge and extended area surcharge"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "SG",
+        "weight_g": 2000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "ECMS": 2067,
+          "SF Express": 2707,
+          "International ePacket Light": 3030,
+          "DHL": 3448,
+          "UPS": 3670,
+          "AirMail": 3700,
+          "FedEx - Economy": 3857,
+          "FedEx - Priority": 4357,
+          "EMS": 4550,
+          "Surface (Small Packet)": 2200,
+          "Surface": 2600,
+          "AirMail (Small Packet)": 2660
+        },
+        "notes": []
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 10000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "UPS": 10458,
+          "FedEx - Economy": 15216,
+          "ECMS": 15861,
+          "DHL": 16680,
+          "FedEx - Priority": 19862
+        },
+        "notes": [
+          "UPS price excludes residential surcharge and extended area surcharge"
+        ],
+        "ups_is_lower_bound": true,
+        "ups_lower_bound_note": "excludes residential surcharge and extended area surcharge"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "AU",
+        "weight_g": 10000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "ECMS": 8468,
+          "DHL": 12419,
+          "FedEx - Economy": 14163,
+          "AirMail": 23200,
+          "EMS": 23500,
+          "UPS": 38161,
+          "FedEx - Priority": 39453,
+          "Surface": 7900
+        },
+        "notes": []
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "CA",
+        "weight_g": 10000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "UPS": 10068,
+          "FedEx - Economy": 15216,
+          "DHL": 16680,
+          "FedEx - Priority": 19862,
+          "AirMail": 23200,
+          "EMS": 23500,
+          "Surface": 7900
+        },
+        "notes": [
+          "UPS price excludes residential surcharge and extended area surcharge"
+        ],
+        "ups_is_lower_bound": true,
+        "ups_lower_bound_note": "excludes residential surcharge and extended area surcharge"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "SG",
+        "weight_g": 10000,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "methods": {
+          "ECMS": 5011,
+          "DHL": 8302,
+          "FedEx - Economy": 8348,
+          "UPS": 8379,
+          "SF Express": 8526,
+          "FedEx - Priority": 9887,
+          "AirMail": 13300,
+          "EMS": 13350,
+          "Surface": 6600
+        },
+        "notes": []
+      }
+    ],
+    "fromjapan_dimension_scan_de_600g": [
+      {
+        "dims_cm": [
+          10,
+          10,
+          10
+        ],
+        "prices": {
+          "International ePacket Light": 1780,
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          20,
+          20,
+          20
+        ],
+        "prices": {
+          "International ePacket Light": 1780,
+          "EMS": 3400,
+          "AirMail": 3850,
+          "FedEx - Economy": 6156,
+          "FedEx - Priority": 6276,
+          "UPS": 6329,
+          "DHL": 6900,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          30,
+          20,
+          10
+        ],
+        "prices": {
+          "International ePacket Light": 1780,
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 5411,
+          "FedEx - Economy": 5435,
+          "FedEx - Priority": 6179,
+          "DHL": 6398,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          40,
+          30,
+          20
+        ],
+        "prices": {
+          "International ePacket Light": 1780,
+          "EMS": 3400,
+          "AirMail": 3850,
+          "FedEx - Economy": 10542,
+          "FedEx - Priority": 10736,
+          "DHL": 11322,
+          "UPS": 11793,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          60,
+          40,
+          30
+        ],
+        "prices": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "FedEx - Economy": 17799,
+          "DHL": 17942,
+          "UPS": 26728,
+          "FedEx - Priority": 27103,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          25,
+          25,
+          25
+        ],
+        "prices": {
+          "International ePacket Light": 1780,
+          "EMS": 3400,
+          "AirMail": 3850,
+          "FedEx - Economy": 8051,
+          "FedEx - Priority": 8201,
+          "UPS": 9140,
+          "DHL": 9435,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          30,
+          30,
+          30
+        ],
+        "prices": {
+          "International ePacket Light": 1780,
+          "EMS": 3400,
+          "AirMail": 3850,
+          "FedEx - Economy": 11137,
+          "DHL": 11672,
+          "UPS": 12452,
+          "FedEx - Priority": 12538,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          35,
+          35,
+          35
+        ],
+        "prices": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "DHL": 14116,
+          "FedEx - Economy": 14662,
+          "FedEx - Priority": 15844,
+          "UPS": 16180,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          40,
+          40,
+          40
+        ],
+        "prices": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "FedEx - Economy": 16751,
+          "DHL": 16899,
+          "UPS": 25437,
+          "FedEx - Priority": 25908,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410,
+          "Surface": 2500
+        }
+      },
+      {
+        "dims_cm": [
+          45,
+          45,
+          45
+        ],
+        "prices": {
+          "FedEx - Economy": 20592,
+          "DHL": 20722,
+          "UPS": 28024,
+          "FedEx - Priority": 35044,
+          "Surface (Small Packet)": 1300,
+          "AirMail (Small Packet)": 1410
+        }
+      },
+      {
+        "dims_cm": [
+          50,
+          50,
+          50
+        ],
+        "prices": {
+          "DHL": 25257,
+          "FedEx - Economy": 44924,
+          "FedEx - Priority": 47900,
+          "UPS": 55487
+        }
+      }
+    ],
+    "fromjapan_default_dimensions_de_600g": {
+      "dims_cm": null,
+      "weight_g": 600,
+      "item_price_jpy": 10000,
+      "prices": {
+        "International ePacket Light": 1780,
+        "EMS": 3400,
+        "AirMail": 3850,
+        "UPS": 4358,
+        "FedEx - Economy": 5309,
+        "FedEx - Priority": 5671,
+        "DHL": 5895,
+        "Surface (Small Packet)": 1300,
+        "AirMail (Small Packet)": 1410,
+        "Surface": 2500
+      }
+    },
+    "fromjapan_price_scan": [
+      {
+        "item_price_jpy": 50000,
+        "shipping": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface": 2500
+        },
+        "export_clearance_fee_jpy": 0
+      },
+      {
+        "item_price_jpy": 100000,
+        "shipping": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface": 2500
+        },
+        "export_clearance_fee_jpy": 0
+      },
+      {
+        "item_price_jpy": 200000,
+        "shipping": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface": 2500
+        },
+        "export_clearance_fee_jpy": 0
+      },
+      {
+        "item_price_jpy": 200001,
+        "shipping": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface": 2500
+        },
+        "export_clearance_fee_jpy": 2800
+      },
+      {
+        "item_price_jpy": 500000,
+        "shipping": {
+          "EMS": 3400,
+          "AirMail": 3850,
+          "UPS": 4358,
+          "FedEx - Economy": 5309,
+          "FedEx - Priority": 5671,
+          "DHL": 5895,
+          "Surface": 2500
+        },
+        "export_clearance_fee_jpy": 2800
+      }
+    ],
+    "jauce_country_600g_20x15x10": [
+      {
+        "country": "US",
+        "EMS": 4180,
+        "Surface": null,
+        "smart_packing": 420
+      },
+      {
+        "country": "DE",
+        "EMS": 3400,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "country": "GB",
+        "EMS": 3400,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "country": "FR",
+        "EMS": 3400,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "country": "AU",
+        "EMS": 3400,
+        "Surface": 2750,
+        "smart_packing": 420,
+        "note": "GST for Australia shown separately without amount"
+      },
+      {
+        "country": "CA",
+        "EMS": 3400,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "country": "SG",
+        "EMS": 2150,
+        "Surface": 2350,
+        "smart_packing": 420
+      }
+    ],
+    "jauce_germany_weight_curve_20x15x10": [
+      {
+        "weight_g": 500,
+        "EMS": 3150,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "weight_g": 600,
+        "EMS": 3400,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "weight_g": 700,
+        "EMS": 3650,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "weight_g": 1000,
+        "EMS": 4400,
+        "Surface": 2750,
+        "smart_packing": 420
+      },
+      {
+        "weight_g": 1500,
+        "EMS": 5550,
+        "Surface": 3600,
+        "smart_packing": 540
+      },
+      {
+        "weight_g": 2000,
+        "EMS": 6700,
+        "Surface": 3600,
+        "smart_packing": 540
+      },
+      {
+        "weight_g": 2500,
+        "EMS": 7750,
+        "Surface": 4450,
+        "smart_packing": 660
+      },
+      {
+        "weight_g": 3000,
+        "EMS": 8800,
+        "Surface": 4450,
+        "smart_packing": 660
+      },
+      {
+        "weight_g": 5000,
+        "EMS": 13000,
+        "Surface": 6150,
+        "smart_packing": 900
+      },
+      {
+        "weight_g": 10000,
+        "EMS": 23500,
+        "Surface": 10400,
+        "smart_packing": 1500
+      },
+      {
+        "weight_g": 20000,
+        "EMS": 44500,
+        "Surface": 16900,
+        "smart_packing": 2700
+      }
+    ],
+    "jauce_dimension_scan_summary": {
+      "10x10x10_through_40x40x40": "EMS 3400, Surface 2750, smart packing 420; unchanged",
+      "45x45x45_and_50x50x50": "all methods unavailable",
+      "blank_dimensions": "all methods unavailable"
+    },
+    "jauce_limits_shown_for_germany": {
+      "EMS": {
+        "max_weight_g": 30000,
+        "max_length_cm": 105,
+        "max_length_plus_girth_cm": 200
+      },
+      "Surface": {
+        "max_weight_g": 30000,
+        "max_length_cm": 105,
+        "max_length_plus_girth_cm": 200
+      }
+    },
+    "buyee_verified_single_observation": {
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "prices": {
+        "Small Packet (AIR)": 1410,
+        "AIR Packet": 2373,
+        "International Parcel Post (Surface Mail)": 2500,
+        "EMS": 3400,
+        "International Parcel Post (AIR)": 3850,
+        "FedEx": 4612,
+        "DHL": 5021
+      }
+    },
+    "buyee_discarded_batch": "Discarded in full because output included implausible values and unit/state contamination; not used as evidence.",
+    "note": "単点（single_points, country_weight_points）と走査（dimension_scan, price_scan）は混ぜていない。"
+  },
+  "separately_displayed_fees": {
+    "fromjapan": [
+      {
+        "proxy": "fromjapan",
+        "name": "Handling fee",
+        "price_jpy": 500,
+        "unit": "per item"
+      },
+      {
+        "proxy": "fromjapan",
+        "name": "Payment Fees",
+        "price_jpy": 0
+      },
+      {
+        "proxy": "fromjapan",
+        "name": "Domestic delivery fee",
+        "price_jpy": 700,
+        "status": "user-input estimate used in these observations"
+      },
+      {
+        "proxy": "fromjapan",
+        "name": "Export Clearance Fee",
+        "price_jpy": 0,
+        "condition": "item_price_jpy=10000"
+      }
+    ],
+    "cross_check_with_master": [
+      {
+        "fee": "Handling fee ¥500/item",
+        "master_id": "F12",
+        "master_quote": "help_fee_140: \"500 yen per item\"",
+        "result": "一致。食い違いなし。"
+      },
+      {
+        "fee": "Domestic delivery fee",
+        "master_id": "F13",
+        "master_quote": "Domestic delivery fee: Seller's cost to warehouse, varies by item",
+        "result": "食い違いなし。マスタは「アイテムにより変動」とのみ記載しており固定額を主張していない。今回の¥700は測定条件をそろえるための利用者入力の推定値であり、マスタの記述と矛盾しない。"
+      },
+      {
+        "fee": "Payment Fees ¥0",
+        "master_id": null,
+        "result": "マスタに対応する既存記述なし。新規情報として記録するのみで、既存記述との矛盾は無い。"
+      },
+      {
+        "fee": "Export Clearance Fee",
+        "master_id": "F26",
+        "master_quote": "Packages with a total value exceeding 200,000 yen sent through Japan Post (EMS, International Parcel) will incur a 2,800 yen Export Clearance Fee.",
+        "result": "price_scan で ¥200,000→¥0 / ¥200,001→¥2,800 を確認。F26 と完全一致。"
+      }
+    ]
+  },
+  "not_available": {
+    "fromjapan": [
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "International ePacket Light",
+        "reason": "計算結果の選択肢に表示されなかった"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "EMS",
+        "reason": "計算結果の選択肢に表示されなかった"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "AirMail",
+        "reason": "計算結果の選択肢に表示されなかった"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "Surface (Small Packet)",
+        "reason": "計算結果の選択肢に表示されなかった"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "AirMail (Small Packet)",
+        "reason": "計算結果の選択肢に表示されなかった"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "Surface",
+        "reason": "計算結果の選択肢に表示されなかった"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 2500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "International ePacket Light",
+        "reason": "2,000gでは表示、2,500gでは選択肢から消えた"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 2500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "Surface (Small Packet)",
+        "reason": "2,000gでは表示、2,500gでは選択肢から消えた"
+      },
+      {
+        "proxy": "fromjapan",
+        "country": "DE",
+        "weight_g": 2500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "item_price_jpy": 10000,
+        "method_name": "AirMail (Small Packet)",
+        "reason": "2,000gでは表示、2,500gでは選択肢から消えた"
+      },
+      {
+        "proxy": "neokyo",
+        "reason": "未アクセス。依頼者提示の robots.txt 情報では Disallow: /*?* に該当するため測定対象外予定。今回の実測では未再確認"
+      }
+    ],
+    "jauce": [
+      {
+        "country": "US",
+        "method_name": "Surface",
+        "reason": "2026-09-12実測で null（US向けSurfaceは提供なし）"
+      }
+    ],
+    "note": "選択肢から消えたケースを全部記録。可否ロジック（unavailableIn 等）は変更していない。"
+  },
   "conclusions": {
     "volumetric_divisor": {
-      "value": null,
-      "confidence": "unknown",
-      "note": "今回のランでは observations が0件のため、容積重量の除数は決まらなかった。前回（2026-09-08）の監査で指摘された blank 測定の欠陥を修正する機会自体がなかった。次に必要なのは、ZenMarketがCloudflareチャレンジを課すようになった経緯の確認（正規ブラウザからの手動確認や、社への問い合わせ等、自動アクセスに拠らない方法）と、Neokyo/Buyee/FROM JAPAN/Jauceそれぞれのrobots.txt・利用規約の人力での再確認"
+      "value": 5000,
+      "unit": "cm3_per_kg",
+      "confidence": "high_for_fromjapan_courier_methods_ge_1kg",
+      "rounding_rule": "縦×横×高さ[cm3] ÷ 5000 を kg 化し、0.5kg単位で切り上げ",
+      "basis": [
+        "FROM JAPAN / DE / UPS・DHL・FedEx Economy・FedEx Priority の4方式すべてで、10×10×10cm(0.5kg換算)・20×20×20cm(2.0kg換算)・30×20×10cm(1.5kg換算)・40×30×20cm(5.0kg換算) の計算結果が、同じ社のDE重量カーブの対応する重量における実測額と1円まで一致した（16点中16点）。",
+        "60×40×30cm以降・25/30/35/40/45/50cmの立方体走査は、予測重量が重量カーブの測定点（0.5/1/1.5/2/2.5/3/5/10/20kg）と一致しない場合が多いが、全点で前後の重量の実測額の間に収まっており、除数5000との矛盾は無い（例: 35×35×35cm→9.0kg換算、UPS実測16,180円は5kg=11,793円と10kg=16,887円の間）。"
+      ],
+      "methods_not_following_this_divisor": [
+        "EMS / AirMail / Surface（日本郵便の方式）は寸法を変えても額が1円も動かない（下記 postal_methods_flat_across_dimensions）。容積重量の対象ではない。"
+      ],
+      "carriers_or_services_where_divisor_could_not_be_checked": [
+        "FROM JAPAN の International ePacket Light / ECMS / SF Express は寸法走査で額が動かず、重量カーブでのみ変化する。容積重量の対象かどうか、今回のデータからは判定できない。"
+      ],
+      "supersedes": "2026-09-08 監査（docs/audit/o2-courier-2026-09-08.md §5）が出した実効除数 9.5 / 11.9 は、その監査自身が自己申告した通り、寸法を `blank` にして実重量カーブを取得したため、全点がその社の既定の箱ぶん高く出ていたことが原因。今回の実測（実際の寸法を入力したdimension_scanと、DEの重量カーブの突き合わせ）でこの診断が正しかったことが裏づけられた。docs/audit/o2-courier-2026-09-08.md 自体は当時の記録として書き換えない。docs/ROADMAP.md P2側に「後の実測で解決した」旨を記載する。"
+    },
+    "postal_methods_flat_across_dimensions": {
+      "confirmed": true,
+      "basis": "FROM JAPAN の寸法走査で、EMS 3,400 / AirMail 3,850 / Surface 2,500 / Surface(Small Packet) 1,300 / AirMail(Small Packet) 1,410 / International ePacket Light 1,780 が10×10×10cmから40×40×40cmまで1円も動いていない（可否が変わるだけ）。Jauce の dimension_scan_summary でも EMS 3,400 / Surface 2,750 / smart packing 420 が10×10×10cmから40×40×40cmまで不変。",
+      "significance": "日本郵便の方式が寸法で額が動かないという我々のモデルの前提が実測で裏づけられた。"
+    },
+    "max_cube_side_cm_cross_check": {
+      "fromjapan_and_jauce_observation": {
+        "45x45x45": "EMS / AirMail / Surface(標準) がFROM JAPANの選択肢から消えた（Jauceでも45/50cmは全方式消滅）",
+        "50x50x50": "Surface(Small Packet) / AirMail(Small Packet) もFROM JAPANの選択肢から消えた"
+      },
+      "vs_code_MAX_CUBE_SIDE_CM": {
+        "ems": {
+          "code_value_cm": 40,
+          "result": "一致。40cmで送れ45cmで消えるという実測と整合。"
+        },
+        "parcel-air": {
+          "code_value_cm": 40,
+          "result": "一致（AirMail標準に対応）。40cmで送れ45cmで消えるという実測と整合。"
+        },
+        "parcel-surface": {
+          "code_value_cm": 40,
+          "result": "一致（Surface標準に対応）。40cmで送れ45cmで消えるという実測と整合。"
+        },
+        "small-packet-air": {
+          "code_value_cm": 30,
+          "result": "食い違い。コードは ZenMarket 実測（2026-09-08、30cmで送れ35cmで消える）に基づき上限30cmとしているが、FROM JAPAN の実測ではAirMail(Small Packet)・Surface(Small Packet)が40cm・45cmでも選択肢に残り、50cmで初めて消えた。同じ「小形包装物」という日本郵便の商品を指しているはずだが、測定した代行業者（ZenMarket vs FROM JAPAN）が違うため閾値が食い違う。コードを直すかどうかはオーナーが決める事項のため、ここでは値を変更せず報告のみに留める。"
+        }
+      },
+      "action": "STOP_AND_REPORT — small-packet-air の上限がZenMarket実測(30cm)とFROM JAPAN実測(40cm以上でも生存)で食い違う。オーナー判断待ち。MAX_CUBE_SIDE_CM は変更していない。"
+    },
+    "export_clearance_threshold": {
+      "confirmed_jpy_200000_boundary": true,
+      "basis": "FROM JAPAN price_scan: ¥200,000→¥0、¥200,001→¥2,800。master/fees.json F26と完全一致。",
+      "also_confirmed": "商品価格が¥10,000〜¥500,000でも送料そのものは同額（EMS 3,400等、価格走査全点で不変）。送料は商品価格で変わらない。"
+    },
+    "courier_lineup_diffs": {
+      "status": "外部の作業者が各社の配送方法の顔ぶれ・可否を追加調査中（ZenMarket手動ブラウザ、Neokyo手動ブラウザ、Buyeeは1条件ずつ再測定）。結果は後日届く。この節はコードには一切反映していない（`services.ts` の `postage` 構成・`unavailableIn`・`Service.courier` は不変）。次にデータが揃ったとき、ここを読んでコードに反映するだけで済むようにするための記録。",
+      "we_have_but_they_dont_offer": [
+        {
+          "proxy": "fromjapan",
+          "method": "US向けの日本郵便すべて",
+          "basis": "2026-09-12実測でUS向けに日本郵便方式が選択肢に出ない。2026-09-07の別実測（外部文書）でもUSは宅配便のみと記録"
+        },
+        {
+          "proxy": "jauce",
+          "method": "小形包装物",
+          "basis": "2026-09-12実測。Jauceが出す方式はEMS/SAL/Surfaceの3つのみ"
+        },
+        {
+          "proxy": "jauce",
+          "method": "US向けSurface",
+          "basis": "2026-09-12実測でnull"
+        }
+      ],
+      "they_offer_but_we_dont_have": [
+        {
+          "proxy": "fromjapan",
+          "method": "International ePacket Light",
+          "de_600g_price_jpy": 1780,
+          "significance": "重要。我々が現在最安としている日本郵便方式（Surface ¥2,500 / DE 600g）より安い。この方式が実在し我々のモデルに無いなら、FROM JAPANの総額を過大に見積もっている可能性がある。規模: DE 600gで最大¥720（2,500-1,780）総額が下振れしうる。"
+        },
+        {
+          "proxy": "fromjapan",
+          "method": "ECMS",
+          "prices_jpy": {
+            "US": 3506,
+            "AU": 2381,
+            "SG": 1587
+          }
+        },
+        {
+          "proxy": "fromjapan",
+          "method": "SF Express",
+          "country": "SG",
+          "price_jpy": 2243
+        },
+        {
+          "proxy": "fromjapan",
+          "method": "小形包装物が船便と航空に分かれている",
+          "prices_jpy": {
+            "surface": 1300,
+            "airmail": 1410
+          }
+        },
+        {
+          "proxy": "buyee",
+          "method": "AIR Packet",
+          "de_600g_price_jpy": 2373
+        }
+      ],
+      "unconfirmed_proxies": {
+        "zenmarket": "Cloudflareチャレンジで自動測定できず。顔ぶれ未確認。外部作業者が手動ブラウザで測定中。",
+        "neokyo": "robots.txtにより自動測定せず。顔ぶれ未確認。外部作業者が手動ブラウザで測定中。"
+      }
+    },
+    "ups_lower_bound_flag": {
+      "note": "FROM JAPAN のUPS表示には「UPS price excludes residential surcharge and extended area surcharge」という注記が付く（US・カナダ向け）。したがってこの計算機が出すUPSの額は下限であり、利用者が実際に払う額はこれより高くなりうる。",
+      "affected_countries": [
+        "US",
+        "CA"
+      ],
+      "machine_readable_flag": "is_lower_bound: true を該当observationに付与済み（下記 upper_bound_unknown フィールド）",
+      "guidance": "将来この額を価格化するときに確定値として扱わないこと。"
     }
   }
 }
