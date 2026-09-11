@@ -403,15 +403,15 @@ marks a 3rd company "equivalent"」節ほか）。
 
 ## P2 ── 宅配便を価格化する（金額の効きが最大）
 
-**状態: ⚪ 未着手（2026-09-11 時点）**
+**状態: 🟡 器のみ実装（2026-09-11、`claude/courier-model` PR）。データは未投入。**
 
-| # | やること |
-|---|---|
-| 2a | `Item`／個口に**寸法の軸**を足す（箱を仮定する。梱包後重量を `×1.2+300g` と仮定しているのと同じ性質） |
-| 2b | ZenMarket の見積 API で境界値を取り、**容積重量の除数**を決める |
-| 2c | F28／F40 燃油・遠隔地サーチャージ（**送料の 2〜3 割**） |
-| 2d | F34 通関手数料に**業者の軸**（経路で €1.56〜€70 = 45倍） |
-| 2e | 方式セレクタ ＋ 即時再ランキング |
+| # | やること | 状態 |
+|---|---|---|
+| 2a | `Item`／個口に**寸法の軸**を足す（箱を仮定する。梱包後重量を `×1.2+300g` と仮定しているのと同じ性質） | ✅ 器のみ。既定の箱 20×15×10cm（後述） |
+| 2b | ZenMarket の見積 API で境界値を取り、**容積重量の除数**を決める | ⚪ 未着手（下記「この環境での制約」） |
+| 2c | F28／F40 燃油・遠隔地サーチャージ（**送料の 2〜3 割**） | ⚪ 未着手 |
+| 2d | F34 通関手数料に**業者の軸**（経路で €1.56〜€70 = 45倍） | ⚪ 未着手 |
+| 2e | 方式セレクタ ＋ 即時再ランキング | ⚪ UI 未着手。**計算側の `method: 'cheapest'` は宅配便込みで動くことを確認済み** |
 
 実請求の言及数は **FedEx 12 / EMS 11 / UPS 7 / DHL 7 / 船便 3**。
 **発送の約半数が宅配便なのに、そこに 1 円も出していない。**
@@ -422,6 +422,90 @@ marks a 3rd company "equivalent"」節ほか）。
 
 **2a〜2d は切り離せない。**送料だけ入れて通関を郵便のまま置くと、
 **送料は下がり通関は上がるという向きが逆の誤りが総額に同居する。**
+
+### `claude/courier-model` PR で入れた器（2026-09-11）
+
+**方針（オーナー確定 2026-09-11）: 宅配便は「最終価格」を正とする。分解しない。**
+各社は FedEx 等と法人契約しており、割引・重量帯別契約・燃油・住宅地サーチャージ・
+自社マージンが外から分離できない。「定価 × 上乗せ率」を逆算すると根拠のない構造を
+発明することになるので、日本郵便のような「公表額＋上乗せ」（`markup`）の形は使わず、
+帯（重量・容積重量）ごとの最終価格をそのまま持つ `measured` を新設した。
+`FROM JAPAN × FedEx Economy = ¥5,309`（DE, 600g）を正として持てる形にする——
+公式が「送料／手数料」を分けて表示している場合だけ、呼び出し側で別項目にする
+（データそのものは分けない）。**日本郵便の `markup` の仕組みには一切手を入れていない。**
+
+- `services.ts`: `PostageRate` を判別可能合併にした。
+  - `MarkupPostageRate`（`kind: 'markup'`）── 既存の日本郵便5方式そのまま。
+    `Service.postage: Partial<Record<PostalMethod, MarkupPostageRate>>` で型を締め、
+    どの postage エントリも markup 以外になり得ないことをコンパイラに保証させた。
+  - `MeasuredPostageRate`（`kind: 'measured'`）── 新設。国ごとの
+    `bandsByCountry: Partial<Record<CountryCode, { maxG, yen }[]>>` と
+    `volumetricDivisorCm3PerKg` を持つ。`Service.courier?: Partial<Record<CourierMethod,
+    MeasuredPostageRate>>` という別フィールドに置き、`postage` とは混ざらない。
+  - **このPR時点でどの社の `courier` にもデータを入れていない**（後述）。
+- `types.ts`: `CourierMethod`（'courier-fedex' 等5社分の識別子）と
+  `BoxDimensionsCm` を新設。`Row.method` を `PostalMethod | CourierMethod` に広げた
+  （UI で `Row.method` を読んでいる箇所は無かったので、この拡張は無害）。
+- `postage.ts`:
+  - `DEFAULT_PARCEL_DIMENSIONS_CM = { lengthCm: 20, widthCm: 15, heightCm: 10 }`。
+    **根拠**: `docs/audit/o2-courier-2026-09-08.md` の `compact`（実測の基準として
+    使われている水準）。コーディネーターが2026-09-11に伝えた外部実測（Jauce の
+    実測条件 30×20×10cm・実請求の梱包 42×31×24cm）とも桁が近く、突飛な仮定では
+    ないことの追加の裏付けとした。**確定値ではなく仮定であり、note にその旨を書く**
+    （`DEFAULT_PARCEL_DIMENSIONS_NOTE`、tier `estimate`）。利用者が寸法を入力できる
+    UI は本PRのスコープ外（オーナー指示）。
+  - `MAX_CUBE_SIDE_CM` ── 日本郵便の「寸法による送れない」（額ではなく可否。P2の
+    やること③）。実測（同監査 §2、立方体を5cm刻みで走査）で、小形包装物(航空)は
+    30cmで送れて35cmで消え、EMS・国際小包(航空/船便)は40cmで送れて45cmで消えた。
+    まだ送れることが確認できた側（30/40cm）を上限として置く（tier `estimate`）。
+    **既定の箱（最大辺20cm）はどの上限も下回るので、この器を足しても今日の計算は
+    1円も変わらない**——寸法非依存の実測（次項）と合わせて、挙動不変の理由の一つ。
+  - `volumetricWeightG` / `billableWeightG` / `courierPriceFor` ── 宅配便の
+    容積重量と最終価格の参照。国のキーが無ければ `null`（未価格。0円にしない）。
+- `compare.ts`: `method: 'cheapest'` の候補に `svc.courier` のエントリも足した。
+  **`svc.courier` が全社空の間はこの分岐が候補を1件も生まないので、既存の
+  郵便オンリーの選択と結果は同じになる。** データが入り、かつある社のある国で
+  宅配便が最安になったときだけ `Row.method` に `CourierMethod` が現れる設計。
+
+### 型の検証（実データではなくフィクスチャで）
+
+コーディネーターが2026-09-11に伝えた外部実測（GPT引き継ぎ文書、2026-09-09時点）が
+型に素直に載るかを `courier-postage.test.ts` で確認した:
+- FROM JAPAN・FedEx Economy・DE・600g・¥5,309 → `MeasuredPostageRate` の
+  `bandsByCountry.DE` に1行で載る（`courierPriceFor` のテスト）。
+- 実請求の寸法 42×31×24cm・実重量3,210g → `billableWeightG` が容積重量を
+  正しく実重量より重く判定する（宅配便は容積重量が効く、という監査の結論どおり）。
+- Jauce の「EMS ¥3,400 + Smart Packing ¥420」（公式が分けて表示する例）は、
+  `MeasuredPostageRate` 自体を分けるのではなく、`compare.ts` が組み立てる
+  `Line[]` にもう1行足す形で表現できる（既存の `Line` 配列がそのまま使える。
+  オーナー方針「公式が分けて表示している場合のみ別項目にする」に合致）。
+
+**この文書の数字はマスタ（`master/courier-rates.json`）には入れていない。**
+データの取り込みは、実測の可否が未解決のため別PRにする（次項）。
+
+### この環境からは新規の宅配便実測ができない
+
+並行していた測定エージェントは、この環境から5社の宅配便計算機に到達できなかった:
+ZenMarket は Cloudflare の CAPTCHA、Neokyo は robots.txt の `Disallow: /*?*`、
+Buyee は robots.txt 自体が403、FROM JAPAN は robots.txt が301のみ、Jauce は
+TLS証明書失効。**次にデータを取り込む作業者は、この環境の外（別のネットワーク・
+別の到達手段）から測定するか、既存の外部文書（GPT引き継ぎ文書 2026-09-09、
+FROM JAPAN の実測4点・Jauce の寸法入り実測1件・実請求1件を含む）を出典として
+使うかを判断する必要がある。**いずれにせよ「一次情報として検証できるか」を
+確かめてから `master/courier-rates.json` に入れること。
+
+### 未価格の宅配便の扱い（最重要）
+
+**データの無い宅配便は「値段が付かない」として扱い、0円にしない。**
+`svc.courier` にキーが無い、または `bandsByCountry` にその国のキーが無ければ
+`courierPriceFor` は `null` を返し、`priceCourier`（`compare.ts`）はその方式を
+`method: 'cheapest'` の候補から外す——他の方式（日本郵便）が普通に選ばれるので、
+**その社が不当に安く見えることも、不当に比較不能に落ちることもない。**
+Buyee の宅配便の粒度が未確定、Jauce の宅配便実測条件では DHL/FedEx が
+表示されなかった、という不確実性がある以上、「全社が同じだけ調べられている」
+という前提を計算側が置かないことが特に重要——`courier-postage.test.ts` と
+本PRの前後比較（7カ国で総額・順位・`rankIndeterminate` が1円も動いていないこと）
+がこれを縛っている。
 
 ---
 
