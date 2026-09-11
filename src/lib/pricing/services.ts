@@ -6,6 +6,14 @@ export interface FeeModel {
   /** 出品サイトで額が変わる社（ZenMarket）。無い site は perItemYen。 */
   perItemBySite?: Partial<Record<SiteId, number>>;
   /**
+   * サイト別の額の確度。**原文がそのサイトを名指ししていないものだけ落とす。**
+   * 指定の無いサイトは `tier` に従う（`perItemBySite` の額に対する確度の上書き）。
+   * 例: ZenMarket の ¥800 は原文が `all Mercari items` と `JDirectItems Auction`
+   * を名指ししているが、`Yahoo` の語は一度も出てこない。ヤフオク＝JDirectItems Auction
+   * は我々の解釈なので、ヤフオクだけ `estimate` に落とす（メルカリは `fixed` のまま）。
+   */
+  perItemBySiteTier?: Partial<Record<SiteId, Tier>>;
+  /**
    * 同一商品を複数個買っても手数料は1回か。
    * Neokyo / ZenMarket / FROM JAPAN は自社ページで明記している。
    * Buyee は注文ごとなのでこの欄を使わない。
@@ -167,6 +175,16 @@ export interface PostageRate {
    */
   unavailableIn?: readonly CountryCode[];
   /**
+   * **この方式が選べる商品価格の上限（円）。**F30（`master/fees.json`
+   * `method_eligibility`）の `Charge 1`（商品代のみ。手数料・送料は入らない——
+   * `en_help.txt` の Charge 1/Charge 2 定義を 2026-09-11 に確認済み、Charge 2 が
+   * 「plan fee, domestic shipping, international shipping, payment fee」と明記して
+   * いるので、それ以外＝ Charge 1 は商品代と読める）が、この上限を超えたら選べない。
+   * **「重すぎる」（`maxGramsFor`）や「売っていない」（`unavailableIn`）とは理由が違う**
+   * ので画面の文言も分ける——選べないのは商品価格のせいであって、重量や国のせいではない。
+   */
+  priceCapJpy?: number;
+  /**
    * **上乗せの確度であって、重量の確度ではない。**料金表そのものは日本郵便の公表値
    * （一次情報）なので、この tier は「その社が公表額をそのまま転嫁しているか」だけを表す。
    *   fixed    … 公表額と一致することを確認した、または上乗せの形が3点で決まった
@@ -216,6 +234,11 @@ export interface Service {
   postage: Partial<Record<PostalMethod, PostageRate>>;
   optional: OptionalFee[];
   /**
+   * **条件がこの計算機では成立しない、既知の費目。**マスタに `A_confirmed` で値が
+   * あるが、画面にも総額にも出さない（F27。理由は `DormantCourierFee` のコメント参照）。
+   */
+  dormantFees?: DormantCourierFee[];
+  /**
    * 受取国ごとの前徴収税。**確認できた国だけ。** 未確認の国は欄ごと無い。
    * 「無い」と「0」を区別できるように、ここに 0 を置くことはしない。
    */
@@ -233,9 +256,10 @@ export const SERVICES_CHECKED_ON = '2026-09-06';
 
 /**
  * 輸出申告代行手数料 ¥2,800。**代行5社の費目ではなく日本郵便の費目。**
- * だから5社すべての任意欄に同じ額で出す。3社（Buyee・Jauce・FROM JAPAN）は自社ページに
- * 額を書いており、Neokyo は「代行する」とだけ書き、ZenMarket は何も書いていない。
- * **書いていない社に出さなければ、その社が安いのではなく我々が調べていないだけの表になる。**
+ * だから5社すべての総額に同じ額で条件判定して出す（`compare.ts` の `exportClearanceLine`）。
+ * 3社（Buyee・Jauce・FROM JAPAN）は自社ページに額を書いており、Neokyo は「代行する」
+ * とだけ書き、ZenMarket は何も書いていない。**書いていない社に出さなければ、その社が
+ * 安いのではなく我々が調べていないだけの表になる。**
  *
  * 原文（2026-09-07 取得）:
  *   「内容品の合計価格が20万円を超える（税込み20万1円以上の）郵便物を海外へ発送する
@@ -243,12 +267,45 @@ export const SERVICES_CHECKED_ON = '2026-09-06';
  *   「郵便料金とは別に、輸出申告代行手数料を1件につき2,800円お支払いください。」
  *   「同じ受取人あてに2個以上発送する場合は、全ての梱包を合わせて1件となります。」
  *
- * 最後の1文から、これは個口あたりではなく申告1件あたり。よって `amountFor` を持たせず
- * 定額で出す。**同時発送でなければ別の申告になるが、発送のタイミングは入力に無い。**
+ * **区分は `B_conditional_known`（docs/FEE-ITEMS.md §1）——閾値も条件も分かっている。**
+ * `optional`（利用者が選ぶ費目）に置くのは誤りだった（0b、docs/ROADMAP.md）。
+ *
+ * **判定は行の商品代合計（¥200,000 超）、個口の数では倍にしない。**最後の原文の1文
+ * 「同じ受取人あてに2個以上は全ての梱包を合わせて1件」から、個口を分けても申告は
+ * 1件のまま。よって行につき1回、定額で積む。**同時発送でなければ別の申告になりうるが、
+ * 発送のタイミングは入力に無い**（Buyee は既定で注文ごとに別送するので特にここが外れう
+ * る——`docs/FEE-ITEMS.md` §5 の R4 にリスク登録した）。
+ *
+ * **発生しないとき（¥200,000 以下）も行を出す。**額 0・tier `fixed`。消すと「調べていない」
+ * と区別が付かない（このリポジトリの開示原則）。
  */
 export const EXPORT_DECLARATION_FEE_YEN = 2800;
 export const EXPORT_DECLARATION_FEE_SOURCE =
   'https://www.post.japanpost.jp/service/send/oversea/attention/sendover20/';
+export const EXPORT_DECLARATION_FEE_THRESHOLD_JPY = 200000;
+
+/**
+ * F27 ── FROM JAPAN の FedEx 直配エリア外サーチャージ ¥2,710。
+ *
+ * マスタ（`master/fees.json` F27/fromjapan）に `A_confirmed` で額があるが、
+ * 条件が2つとも、いまのこの計算機では成立しない:
+ *   - `carrier: FedEx` ── 宅配便を1円も価格化していない（日本郵便5方式のみ）
+ *   - `address: outside_direct_distribution_area` ── 住所は入力に無い
+ *
+ * つまりいま総額に足せる費目ではない。**だが接続漏れのまま放置すると、次に宅配便を
+ * 価格化する人が同じ調査をやり直す。**存在・額・出典をデータとして持たせ、画面には
+ * 出さない（P2 で宅配便を価格化するまで寝かせる。理由は PR 参照）。
+ * `master-sync.test.ts` がこの接続を見張る。
+ */
+export interface DormantCourierFee {
+  amountYen: number;
+  /** 発生条件（英語で画面に出せる形にしていない — まだ画面に出さない前提のデータ）。 */
+  condition: string;
+  sourceUrl: string;
+  checkedOn: string;
+  /** 一次情報の原文。 */
+  quote: string;
+}
 
 export const SERVICES: Service[] = [
   {
@@ -257,9 +314,15 @@ export const SERVICES: Service[] = [
     url: 'https://neokyo.com/',
     sourceUrl: 'https://neokyo.com/en/fees',
     primarySource: true,
-    // 公式の ORDER PAYMENT は「Order and domestic shipping price」の下にプラス記号を置き、
-    // その下が ¥350。つまり（商品代＋国内送料）＋¥350 で、**¥350 に国内送料は含まれない。**
-    // 「同一商品の複数個は1回だけ」も同ページに明記。
+    // T-F4（2026-09-11 再取得、https://neokyo.com/en/fees・https://neokyo.com/en/how-to-buy
+    // を自分で読んだ）。ORDER PAYMENT 節は見出し「Order and domestic shipping price」の下に
+    // まず（商品代＋国内送料）に当たる要素があり、その後にプラス記号、さらに ¥350 が続く
+    // ── つまり (商品代 + 国内送料) + ¥350 という足し算の図で、**¥350 に国内送料は
+    // 含まれない**。「What does this price cover?」の説明にも国内送料は入っていない
+    // （purchasing the item / support / storage for up to 45 days のみ）。
+    // タイトル・OG説明「350 yen per item」、計算例「Service fee (350¥ x 3)」から
+    // **商品ごと**課金であることも確認。「If you purchase multiples copies of the same
+    // item within the same Buy Request, this fee is only applied once.」も明記。
     fee: { perItemYen: 350, chargedPerDistinctItem: true, tier: 'fixed' },
     domesticIncluded: false,
     deposit: null,
@@ -311,17 +374,6 @@ export const SERVICES: Service[] = [
         note: '¥1,000 plus the packing fee for the same parcel', tier: 'fixed',
       },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
-      // 額の出どころは日本郵便（EXPORT_DECLARATION_FEE_SOURCE）。**Neokyo 自身は額を
-      // 書いていない**（FAQ は「any item worth more than 200,000 yen is subject to
-      // special export procedures on our part」＝申告を代行するとだけ書く）。
-      // 額は一次情報なので fixed。誰が書いていないかは note に出す。
-      {
-        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
-        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
-        note: 'only over ¥200,000 — Neokyo says it handles the export declaration but does'
-          + ' not print the amount; ¥2,800 is the fee Japan Post itself publishes',
-        tier: 'fixed',
-      },
       // https://neokyo.com/en/storage（2026-09-07 取得）。原文の表:
       //   Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost
       //   Small 350 yen / 210 yen ・ Average 700 yen / 490 yen ・ Large 1400 yen / 980 yen
@@ -361,9 +413,26 @@ export const SERVICES: Service[] = [
     // 一律 ¥800 ではない。原文は「500 yen … Amazon, Rakuten, and most other stores /
     // 300 yen … Recommended Stores / 800 yen … all Mercari items and JDirectItems Auction bids」。
     // 「If you buy 3 identical T-shirts, our service fee will still be the same」も明記。
+    //
+    // **ヤフオクの ¥800 は一次情報から読めない（2026-09-11 に英日両ページを再確認）。**
+    // - 英語料金ページ原文（fees.aspx）: 上記の通り。500円 / 300円 / 800円の内訳しかない。
+    // - 日本語料金ページも同じ構成 ── 「メルカリ全商品、JDirectItems Auction：商品1点に
+    //   つき800円」／「楽天市場やAmazon、その他一般的な通販サイト：商品1点につき500円」。
+    // - **英語・日本語とも、料金ページに `Yahoo` / `ヤフオク` の語が1つも出てこない。**
+    // - トップページは `Bid real-time on JDirectItems Auction from anywhere in the world.`
+    //   とだけ書き、サイト内では `JDirectItems Auction` と `JDirectItems Shopping` を
+    //   別項目として並べている。
+    // - `zenmarket.jp/en/yahoo.aspx` / `zenmarket.jp/ja/yahoo.aspx` は現行ページとして存在せず、
+    //   公式ブログ・ニュースにも `JDirectItems Auction = Yahoo Auctions` の対応を示す記述は
+    //   見つからなかった。
+    // 金額（¥800）は変えない。**「ヤフオク＝JDirectItems Auction」は我々の推論**（Auction/
+    // Shopping の対がヤフオク／Yahoo!ショッピングの対に一致することからの強い推論だが推論）
+    // なので、ヤフオクだけ確度を `estimate` に落とす。メルカリは原文が名指ししているので
+    // `fixed` のまま。
     fee: {
       perItemYen: 500,
       perItemBySite: { 'yahoo-auctions': 800, mercari: 800 },
+      perItemBySiteTier: { 'yahoo-auctions': 'estimate' },
       chargedPerDistinctItem: true,
       tier: 'fixed',
     },
@@ -430,18 +499,6 @@ export const SERVICES: Service[] = [
     optional: [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
-      // 額の出どころは日本郵便（EXPORT_DECLARATION_FEE_SOURCE）。**ZenMarket の写しには
-      // 記載が無い**（料金ページ・help とも「Customs fees may apply upon delivery」まで。
-      // Arquivo.pt 2025-11-27 の写しを 2026-09-07 に全文検索して 200,000 も 2,800 も
-      // 出ないことを確認した）。5社とも同じ日本郵便で送る以上、この費目を ZenMarket
-      // にだけ出さなければ、料金差ではなく我々の調査量の差を安さとして見せることになる。
-      {
-        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
-        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
-        note: 'only over ¥200,000 — ZenMarket does not print this fee anywhere we can read;'
-          + ' ¥2,800 is the export declaration fee Japan Post itself publishes',
-        tier: 'fixed',
-      },
       // 料金ページ原文（Arquivo.pt 2025-11-27 の写し、2026-09-07 読了）:
       //   「Storage Over 60 Days: 50 JPY a day per item.」
       // help の同じ説明:「free for 60 days … a fee of 50 JPY will start to be taken for
@@ -532,15 +589,24 @@ export const SERVICES: Service[] = [
     consolidationOnRequest: false,
     // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
     // **5社で唯一、既定で方式が選ばれている**（最安を自動選択）。International ePacket Light ¥1,780 は未価格化
+    // F30（`master/fees.json` A_confirmed）: 小形包装物(Small Packet)は Charge 1
+    // （商品代のみ）が¥30,000以下でしか選べない。原文（en_help.txt、2026-09-11 再取得）
+    // 「Packages with Charge 1 value under 30,000 yen」are eligible for "Small packets"。
+    // ePacket_Light（¥10,000）・ePacket / IPA（$400）・PMI（$2,499.99）はこの計算機が
+    // 価格化していない方式なので繋がない（master-sync.test.ts の NOT_IN_CODE に理由あり）。
     postage: {
       'small-packet-surface': {
         markup: { kind: 'none' }, tier: 'fixed',
+        // 上限の出典は料金表（estimate ページ）とは別（en_help.txt）。rate 本体の
+        // sourceUrl/checkedOn は料金表のまま変えない。
+        priceCapJpy: 30000,
         labelRaw: 'Surface (Small Packet)',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
       },
       'small-packet-air': {
         markup: { kind: 'none' }, tier: 'fixed',
+        priceCapJpy: 30000,
         labelRaw: 'AirMail (Small Packet)',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
@@ -570,11 +636,6 @@ export const SERVICES: Service[] = [
       // our Product Protection Plan. Use of the Product Protection Plan is mandatory for
       // all items.」＝必須で、その ¥500/点 は既に service-fee として総額に入っている。
       // 任意欄にも並べると同じ費目を二度見せることになる（docs/audit/fees.md §3）。
-      {
-        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
-        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
-        note: 'only over ¥200,000', tier: 'fixed',
-      },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1500, note: 'from ¥1,500', tier: 'fixed' },
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: '3 photos', tier: 'fixed' },
@@ -600,6 +661,19 @@ export const SERVICES: Service[] = [
         key: 'storage', label: 'Storage after 60 free days', amountYen: 0,
         note: 'there is no paid extension — items not shipped within 60 days are discarded',
         tier: 'fixed',
+      },
+    ],
+    // F27（`master/fees.json` A_confirmed）。この計算機は宅配便を価格化しておらず、
+    // 住所も入力に無いので、いま総額にも画面にも出さない。データだけ繋いで寝かせる
+    // （`DormantCourierFee` のコメント、および PR 本文の判断3参照）。
+    dormantFees: [
+      {
+        amountYen: 2710,
+        condition: 'carrier=FedEx かつ address=outside FedEx direct distribution area',
+        sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt',
+        checkedOn: '2026-09-07',
+        quote: "Shipments destined for an address outside of FedEx's direct distribution"
+          + ' area will incur a 2,710 yen Special Delivery Fee.',
       },
     ],
     // 公式配信の翻訳ファイル（確認日 2026-09-06）。原文:
@@ -681,14 +755,6 @@ export const SERVICES: Service[] = [
     optional: [
       { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
-      // 他社と同じ費目なので同じキー・同じラベルにする（社をまたいで並べるのが任意欄の役目）。
-      // 原文:「If you send item(s) valued over 200,000 yen with EMS … a customs clearance
-      // commission fee (2,800 yen) will be charged.」
-      {
-        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
-        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
-        note: 'only over ¥200,000', tier: 'fixed',
-      },
       // /helpcenter/guide/photo-shoot（2026-09-07 取得）:「Photo Service Fee is 300 yen /
       // $3 per package(5 photos).」
       {
@@ -806,13 +872,6 @@ export const SERVICES: Service[] = [
         ),
         note: '¥600 per package + ¥240/kg, instead of the Smart Packing already in the total',
         tier: 'fixed',
-      },
-      // 「If the total value of the contents of a package exceeds JPY 200,000, Japan Post
-      //  will apply an additional fee of JPY 2,800 for the customs clearance.」
-      {
-        key: 'export-clearance', label: 'Export clearance fee', amountYen: EXPORT_DECLARATION_FEE_YEN,
-        sourceUrl: EXPORT_DECLARATION_FEE_SOURCE,
-        note: 'only over ¥200,000', tier: 'fixed',
       },
       // 「it costs 300 yen per auction. … If the auction closing price is 20,000 yen or
       //  higher, we provide this service for the supported categories for free!」

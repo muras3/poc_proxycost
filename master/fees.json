@@ -161,21 +161,38 @@
           "other_shops": 500,
           "mercari": 800,
           "jdirectitems_auction": 800,
-          "yahoo_auction": null
+          "yahoo_auction": 800
         },
         "default": 500,
         "currency": "JPY",
-        "unknown_marketplaces": [
-          "yahoo_auction"
-        ]
+        "inferred_marketplaces": {
+          "yahoo_auction": {
+            "tier": "B_inferred",
+            "mapped_to": "jdirectitems_auction",
+            "sources": [
+              {
+                "lang": "en",
+                "source": "https://zenmarket.jp/en/fees.aspx",
+                "checked_on": "2026-09-11",
+                "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids."
+              },
+              {
+                "lang": "ja",
+                "source": "https://zenmarket.jp/ja/fees.aspx",
+                "checked_on": "2026-09-11",
+                "quote": "メルカリ全商品、JDirectItems Auction：商品1点につき800円 / 楽天市場やAmazon、その他一般的な通販サイト：商品1点につき500円"
+              }
+            ],
+            "inference_basis": "料金ページは Mercari と JDirectItems Auction を¥800とする。原文（英日とも）に Yahoo の語は無い。ZenMarket はトップページで JDirectItems Auction と JDirectItems Shopping を別項目として並べており、ヤフオク／Yahoo!ショッピングの対応として解釈した。未確定"
+          }
+        }
       },
       "mandatory": true,
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
       "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids.",
-      "amount_tier": "C_unknown",
-      "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。最大の仕入先である Yahoo オークションが ¥500 か ¥800 か公式から読めない。default で埋めない"
+      "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。Yahoo オークションの語は原文に出てこない。yahoo_auction: 800 は rule.inferred_marketplaces に印を付けた推論値（JDirectItems Auction = Yahoo Auctions と解釈）であり、他の区分のような一次情報の確定値ではない"
     },
     {
       "id": "F04",
@@ -478,23 +495,25 @@
     {
       "id": "F36",
       "company": "zenmarket",
-      "name": "EU VAT 前払い（任意）",
+      "name": "EU/UK VAT 前払い（2026-03-02から強制）",
       "stage": "import",
       "rule": {
         "type": "collects_destination_tax",
-        "region": "EU",
+        "region": "EU_UK",
         "scheme": "IOSS",
         "when": {
-          "item_value_eur_max": 150
+          "item_value_eur_max": 150,
+          "item_value_gbp_max": 135
         },
-        "mandatory": false
+        "mandatory": true,
+        "mandatory_from": "2026-03-02"
       },
-      "mandatory": false,
+      "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://zenmarket.jp/en/fees.aspx",
-      "checked_on": "2026-09-07",
-      "quote": "customers may optionally select to pay VAT in advance on any parcel sent to Europe with a total item value of 150 EUR or less",
-      "note": "DDU/DDP を利用者が選ぶ軸の実例"
+      "source": "https://zenmarket.jp/en/blog/post/16240/mandatory-vat-precharge-eu-norway",
+      "checked_on": "2026-09-11",
+      "quote": "Starting March 2, 2026, ZenMarket will make VAT pre-charge mandatory for eligible shipments to the European Union (EU), Norway and the UK. Customers will no longer be able to opt out of VAT pre-charge for applicable shipments.",
+      "note": "T-F6（コードが正）。services.ts のコメントが引く自社ブログ原文（2026-02-19付、2026-03-02施行）に合わせた。マスタが強制化前の記述のまま古くなっていた。"
     },
     {
       "id": "F02",
@@ -504,16 +523,14 @@
       "rule": {
         "type": "fixed_per_item",
         "amount": 350,
-        "currency": "JPY",
-        "includes": [
-          "domestic_shipping"
-        ]
+        "currency": "JPY"
       },
       "mandatory": true,
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "Order and domestic shipping price: 350 ¥JPY"
+      "checked_on": "2026-09-11",
+      "quote": "Service Cost : 350 yen per item / \"Order and domestic shipping price\" followed by \"350 ¥JPY\" then \"+\" then \"Order Price\"",
+      "note": "T-F4（2026-09-11 再取得）: ¥350に国内送料は含まれない。旧 note の判断を訂正（services.ts は変更なし、正しかった）。"
     },
     {
       "id": "F13",
@@ -521,16 +538,13 @@
       "name": "国内送料",
       "stage": "domestic",
       "rule": {
-        "type": "zero",
-        "reason": "included_in",
-        "fee_id": "F02"
+        "type": "actual_cost_per_order"
       },
       "mandatory": true,
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "the order fee covers Shipping towards Neokyo",
-      "note": "5社中 Neokyo だけ。src/data.js の domesticIncluded: true は正しい"
+      "checked_on": "2026-09-11",
+      "quote": "+ Order Price（Order and domestic shipping price の下に \"+\" を挟んで350¥とは別枠で計上される）"
     },
     {
       "id": "F14",
@@ -590,15 +604,35 @@
       "stage": "warehouse",
       "rule": {
         "type": "free_days",
-        "days": 45,
-        "after": "weekly_fee_amount_unknown"
+        "days": {
+          "items": 45,
+          "packages": 7
+        },
+        "after": {
+          "unit": "week",
+          "unpaid_weeks_limit": 6,
+          "amounts_by_size": {
+            "small": {
+              "order": 350,
+              "parcel": 210
+            },
+            "average": {
+              "order": 700,
+              "parcel": 490
+            },
+            "large": {
+              "order": 1400,
+              "parcel": 980
+            }
+          }
+        }
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "45 days of free storage per item",
-      "amount_tier": "C_unknown"
+      "source": "https://neokyo.com/en/storage",
+      "checked_on": "2026-09-11",
+      "quote": "Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost — Small 350 / 210 ・ Average 700 / 490 ・ Large 1400 / 980. 45 days for items and 7 days for packages. up to a limit of six unpaid weeks.",
+      "note": "T-F11b（コードが正）。「Neokyoは額が未取得」は誤りで、/en/fees と FAQ しか見ていなかった。/en/storage に週次の表があり、docs/COMPLETENESS.md にも記録済み。寸法最小段(small/order)の¥350をservices.tsに合わせた。"
     },
     {
       "id": "F36",
@@ -608,19 +642,17 @@
       "rule": {
         "type": "collects_destination_tax",
         "countries": [
-          "AU",
-          "EU27",
-          "US_territories"
+          "AU"
         ],
-        "rate": "unknown"
+        "rate": 0.1,
+        "base": "declared"
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "Import/customs taxes … charged by destination country (not by Neokyo, except Australia, EU27, and US territories)",
-      "note": "徴収する国は公式。率は未取得（C）",
-      "amount_tier": "C_unknown"
+      "source": "https://neokyo.com/en/shipping",
+      "checked_on": "2026-09-11",
+      "quote": "effective March 24th, 2023, we will be charging 10% of the declared value for parcels containing Low-Value Goods (1000 AUD or less) bound for Australia as GST, in addition to international shipping and insurance fees",
+      "note": "T-F6（コードが正）。TODO-NEXT.md の一次情報（2026-09-06 取得、Japan Post 発送は Delivered Duty Unpaid で EU VAT は取らない）に合わせ、対象国をAUのみに絞った。EU27/US_territoriesの記載はマスタ側の古い記述だった。"
     },
     {
       "id": "F02",
@@ -636,7 +668,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "500 yen per item"
+      "quote": "500 yen per item",
+      "note": "この¥500はProduct Protection Plan（必須）と同一の費目。F12は内包（T-F5、2026-09-11）。"
     },
     {
       "id": "F04",
@@ -651,6 +684,20 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "If multiple units of the same item are paid together, handling fees will be the same as for one item."
+    },
+    {
+      "id": "F04",
+      "company": "neokyo",
+      "name": "同一商品の複数個",
+      "stage": "purchase",
+      "rule": {
+        "type": "fee_once_per_distinct_item"
+      },
+      "mandatory": true,
+      "tier": "A_confirmed",
+      "source": "https://neokyo.com/en/fees",
+      "checked_on": "2026-09-11",
+      "quote": "If you purchase multiples copies of the same item within the same Buy Request, this fee is only applied once."
     },
     {
       "id": "F06",
@@ -714,18 +761,16 @@
       "name": "Product Protection Plan",
       "stage": "purchase",
       "rule": {
-        "type": "fixed_per_item",
-        "amount": 500,
-        "currency": "JPY"
+        "type": "zero",
+        "reason": "included_in",
+        "fee_id": "F02"
       },
-      "mandatory": false,
-      "tier": "B_inferred",
+      "mandatory": true,
+      "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
-      "checked_on": "2026-09-07",
-      "quote": "Product Protection Plan: 500 yen per item",
-      "note": "別に Plan Fee があり年間 Charge1 実績で変動。額は未取得（C）",
-      "quote_status": "要再確認（原文の該当文を特定しきれていない）",
-      "inference_basis": "REQUIREMENTS.md §8.5 が一次配信ファイルから ¥500/点 を取得済み。今回の再取得で金額を含む文を特定できず"
+      "checked_on": "2026-09-11",
+      "quote": "help_fee_120: \"Handling Fees\" / help_fee_130: \"Product Protection Plan\" / help_fee_140: \"500 yen per item\" / help_fee_150: \"*If multiple units of the same item are paid together, handling fees will be the same as for one item.\" / title_serviceRule_670: \"Members agree that all purchased items will be covered by our Product Protection Plan. Use of the Product Protection Plan is mandatory for all items.\"",
+      "note": "T-F5（2026-09-11再取得、コードが正）。en_help.txt の並び (help_fee_120 Handling Fees > help_fee_130 Product Protection Plan > help_fee_140 500 yen per item) と help_fee_252/381/382 の対応から、Handling Fees / Plan Fee / Product Protection Plan は同じ¥500/点の呼び分けで、並立しない。必須なので任意欄には出さない。"
     },
     {
       "id": "F13",
@@ -741,6 +786,32 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "Actual cost (Items which do not charge shipping fees inside Japan are charged 0 yen)"
+    },
+    {
+      "id": "F14",
+      "company": "fromjapan",
+      "name": "外注梱包（Outsourced Packing）",
+      "stage": "warehouse",
+      "rule": {
+        "type": "actual_cost_per_order",
+        "amount": "unknown",
+        "trigger_conditions_help": [
+          "50 kg or above",
+          "30 kg or above and 300,000 yen or above",
+          "Fragile, breakable and delicate items that require special handling"
+        ],
+        "trigger_conditions_terms_of_service": [
+          "50 kg or above",
+          "30 kg or above and 300,000 yen or above"
+        ]
+      },
+      "mandatory": false,
+      "tier": "A_confirmed",
+      "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
+      "checked_on": "2026-09-11",
+      "quote": "50 kg or above / 30 kg or above and 300,000 yen or above / Fragile, breakable and delicate items that require special handling",
+      "note": "F14（初回梱包・まとめ梱包）とは別種の追加費用として同じ id に置く（総額行 F14 の基本梱包費とは別。発生条件が立ったときだけの上乗せ）。条件は3つ：(1) 50kg以上 (2) 30kg以上かつ30万円以上 (3) 壊れ物等で特別な取扱いを要する。help_logistics_1622 は壊れ物を複数含む荷物も対象になりうるとする。**額は『Actual cost（実費）』としか書かれておらず、上限額・標準価格・価格レンジ・重量別料金表・過去の請求実例・外注業者の料金表はいずれも公表されていない（探して無かったことの記録）。**事前に額を知る手段も無い：help_logistics_1490/1621/1661/1731 は対象商品の Charge 2 が『梱包・計測後』に確定すると説明しており、title_serviceRule_1820 と help_logistics_1540 は利用者による梱包方法の指定・個別要求を原則認めていない。つまり見積提示・事前同意・外注梱包の拒否の仕組みは無い。**公式内の不一致：ヘルプ（en_help.txt の help_logistics_*）は条件を3つ列挙するが、利用規約（title_serviceRule_1870 直後の title_serviceRule_1880/1890）は50kg以上・30kg以上かつ30万円以上の2つしか列挙せず、条件3（壊れ物）が無い。ここではヘルプの3条件を採用する：理由は、ヘルプの方が詳しく、かつ包括条件『FROM JAPAN が梱包できないと判断した商品』（help_logistics_1730）を持つため、条件3はその具体化として整合するから。この不一致自体を消さずに残す。**この計算機にとっての意味：条件1・2はこの計算機では原理的に発生しない（EMS の上限が30kgなので50kgは表現できず、30kgは表の上端ぴったり）。残るのは条件3（壊れ物）だけで、これは FROM JAPAN の主観判断なので我々には検出できない。額は出せないままだが、『ほぼ起きない』と言える根拠が初めて得られた。**",
+      "amount_tier": "C_unknown"
     },
     {
       "id": "F16",
@@ -1081,13 +1152,39 @@
       "rule": {
         "type": "free_days",
         "days": 60,
+        "max_days": 120,
+        "after_max": "disposal",
         "after": "monthly_fee_days_61_120_amount_unknown"
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://www.jauce.com/japan_auction_detail",
-      "checked_on": "2026-09-07",
-      "quote": "Free for 60 days; monthly fee charged days 61-120",
+      "source": "https://www.jauce.com/japan_auction_detail#storage",
+      "checked_on": "2026-09-11",
+      "quote": "Storage fees depend on the item size and value. Very roughly, a music CD would cost around 200yen/month and a guitar around 700yen/month. / Maximum storage time in Jauce.com warehouses is 120 days. Unclaimed items are discarded at the end of 120 days.",
+      "note": "無料60日・最大保管120日（＝有料期間は最大60日≒約2か月）。月額は一律ではなく『サイズと価値で変わる』と公式が明記。参考額はCD約¥200/月・ギター約¥700/月の2点のみで料金表ではない（\"Very roughly\"と前置き）。金額そのもの（F21）とは別行に分ける。以前の checked_on 2026-09-07 の quote（Free for 60 days; monthly fee charged days 61-120／同じ https://www.jauce.com/japan_auction_detail ページ）は矛盾しないため rule.after にそのまま残す。",
+      "amount_tier": "C_unknown"
+    },
+    {
+      "id": "F21",
+      "company": "jauce",
+      "name": "保管超過",
+      "stage": "warehouse",
+      "rule": {
+        "type": "per_month_variable_by_size_value",
+        "amount": "unknown",
+        "max_days": 120,
+        "after_max": "disposal",
+        "reference_examples_jpy_per_month": {
+          "music_cd": 200,
+          "guitar": 700
+        }
+      },
+      "mandatory": false,
+      "tier": "A_confirmed",
+      "source": "https://www.jauce.com/help/knowledgebase.php?article=18",
+      "checked_on": "2026-09-11",
+      "quote": "Storage fees depend on the item size and value. Very roughly, a music CD would cost around 200yen/month and a guitar around 700yen/month. / Maximum storage time in Jauce.com warehouses is 120 days. / Unclaimed items are discarded at the end of 120 days.",
+      "note": "有料期間は F20 の無料60日を過ぎた61〜120日目（最大60日≒約2か月）。月額は一律ではなく、サイズと価値で決まると公式が明記。公表されている参考額は CD 約¥200/月・ギター約¥700/月の2点だけで、料金表ではない（\"Very roughly\"の前置き付き）。**¥700 はギターの一例であって上限ではない。大きい・高価な物はこれより高い可能性がある。¥700 を上限として扱ってはいけない。**計算式・最低額・金額の上限・未払い許容回数はいずれも公表されておらず、探しても見つからなかった（無かったことの記録）。120日を過ぎると未回収の荷物は放棄品とみなされ処分される。処分前に通知する旨が利用規約にある：User Agreement（https://www.jauce.com/terms#Storage）\"Items left in our warehouse for over 120 days without shipping directives or communication from the user will be considered abandoned. ... JAUCE reserves the right to dispose of them. JAUCE will notify users as the end of the complimentary storage period nears and again before taking any disposal actions.\"",
       "amount_tier": "C_unknown"
     },
     {
@@ -1112,7 +1209,43 @@
     {
       "id": "F29",
       "company": "jauce",
-      "name": "保険（Premium）",
+      "name": "保険（標準・基本補償 ¥20,000 まで）",
+      "stage": "export",
+      "rule": {
+        "type": "zero",
+        "reason": "free_up_to_threshold",
+        "threshold_jpy": 20000
+      },
+      "mandatory": true,
+      "tier": "A_confirmed",
+      "source": "https://www.post.japanpost.jp/service/send/oversea/list/delivery/ems/damage_en.html",
+      "checked_on": "2026-09-11",
+      "quote": "Claim amount under 20,000JPY is free of charge.",
+      "note": "Jauce は『全発送に郵便保険を付ける』とだけ案内している（https://www.jauce.com/help/knowledgebase.php?article=23 \"We ship all items with postal insurance\"、確認日2026-09-11。同ページに料金・補償額・計算式は無い）。Premium Insurance（1.9%、利用者が選ぶ任意）とは別物。額の出どころは Jauce ではなく日本郵便（EMS 損害賠償）なので、source は日本郵便のページに立てる（輸出通関¥2,800と同じ構造）。基準ケース（5点×¥3,000＝¥15,000）はこの¥20,000以内に収まるため、この行では追加費用は発生しない。"
+    },
+    {
+      "id": "F29",
+      "company": "jauce",
+      "name": "保険（標準・¥20,000 超過分。Jauce が自動付保・請求するかは未確定）",
+      "stage": "export",
+      "rule": {
+        "type": "risk_flag",
+        "reference_schedule_source": "japan_post_ems_damage_compensation",
+        "reference_per_20000_jpy_increment": 50,
+        "reference_cap_jpy": 2000000
+      },
+      "mandatory": false,
+      "tier": "B_inferred",
+      "source": "https://www.post.japanpost.jp/service/send/oversea/list/delivery/ems/damage_en.html",
+      "checked_on": "2026-09-11",
+      "inference_basis": "日本郵便 EMS 損害賠償ページの公表表（基本補償¥20,000までは無料、以降は補償額¥20,000増ごとに¥50、補償上限¥2,000,000）を rule に転記した。表全体を quote として引用していないため tier は B とする。Jauce 自身の料金・計算機（https://www.jauce.com/price_check.php、米国向け1,000g・20x20x20cmで確認、確認日2026-09-11）は EMS ¥5,300 / Smart Packing ¥420 / Postal Insurance『Available』とだけ表示し、標準保険の別料金行も商品価額の入力欄も無い。つまりこの日本郵便の増額保険料を Jauce が利用者に自動で付保・請求するかどうかを一次情報から確認できていない——これが残る問い。",
+      "amount_tier": "C_unknown",
+      "note": "我々の計算機での実害の見積もり：基準ケースは5点×¥3,000＝¥15,000で¥20,000の基本補償の内側に収まるため、この行の増額保険料は発生しない。影響が出るのは申告額が¥20,000を超えるカートから。"
+    },
+    {
+      "id": "F29",
+      "company": "jauce",
+      "name": "保険（Premium・任意）",
       "stage": "export",
       "rule": {
         "type": "rate_of_total",
@@ -1122,7 +1255,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Premium insurance: 1.9% over the total amount"
+      "quote": "Premium insurance: 1.9% over the total amount",
+      "note": "利用者が注文時に選ぶ任意のオプション（区分D）。標準の郵便保険（このIDの他の2行）とは別物。課税ベース（『total amount』が何を指すか）・最低額・補償上限は公表されていない。利用規約にある『過去12か月のサービス料累計または$200』はJauce全体の責任上限であり、Premium Insuranceの補償上限としては採らない。総額外・額は出さない（確定）。"
     },
     {
       "id": "F30",
@@ -1299,16 +1433,15 @@
         "countries": [
           "AU"
         ],
-        "rate": "unknown",
-        "base": "unknown"
+        "rate": 0.1,
+        "base": "before-shipping"
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "amount_tier": "C_unknown",
-      "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
-      "quote": "GST (Australia, New Zealand, Singapore)",
-      "note": "料金ページに AU の GST サブページへのリンクがあるが、そのページは取得できなかった（401）。徴収する事実は A、率と課税ベースは C",
-      "checked_on": "2026-09-07"
+      "source": "https://buyee.jp/helpcenter/guide/au-gst?lang=en",
+      "quote": "10% GST",
+      "note": "T-F6（コードが正）。以前は AU GST サブページが401で取得できず C_unknown だったが、services.ts のコメントにある通り後日 /helpcenter/guide/au-gst を取得し確定済み。",
+      "checked_on": "2026-09-11"
     },
     {
       "id": "F18",
@@ -1349,232 +1482,356 @@
       "name": "商品代（日本の消費税10%込み）",
       "in_fees_master": false,
       "kind": "actual_cost",
-      "excluded_reason": "入力値そのもの。5社共通で行にする意味が無い"
+      "excluded_reason": "入力値そのもの。5社共通で行にする意味が無い",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "総額の起点。代行が払う落札額・販売価格そのもの。"
     },
     {
       "id": "F02",
       "name": "代行・入札手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "代行会社の差が最も直接に出る費目。"
     },
     {
       "id": "F03",
       "name": "↑ 仕入先による分岐",
       "in_fees_master": false,
-      "excluded_reason": "F02 の rule 内（fixed_per_item_by_marketplace / conditions.marketplace）で表現。独立行にしない"
+      "excluded_reason": "F02 の rule 内（fixed_per_item_by_marketplace / conditions.marketplace）で表現。独立行にしない",
+      "occurrence": "B_conditional_known",
+      "display": "engine_only",
+      "display_reason": "F02 の rule 内で仕入先ごとに分岐させる。独立行にしない。"
     },
     {
       "id": "F04",
       "name": "↑ 同一商品の複数個",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "engine_only",
+      "display_reason": "F02 の課金回数を決めるパラメータ。間違えると qty>1 で必ず過大になる。"
     },
     {
       "id": "F05",
       "name": "国内配送サービス料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "nonexistent",
+      "display": "hidden",
+      "display_reason": "存在しない費目だと判定した記録。以前 ¥500 を注文ごとに過大計上していたので、記録を消すと同じ誤りが足し直される。画面には出さない。"
     },
     {
       "id": "F06",
       "name": "特定仕入先の支払手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "FJ のヤフオク落札ごと ¥200。順位を動かす——5点で ¥1,000 に対し基準ケースの1位2位差は ¥650。"
     },
     {
       "id": "F07",
       "name": "入金・決済手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "代行へ入金する段の手数料。カード前提で率を取り直す（オーナー決定 2026-09-11、T-F9）。現在の 3.5% は支払方法が不明な逆算値。"
     },
     {
       "id": "F08",
       "name": "コンビニ・郵便局払い",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "カード前提なので発生しない（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F09",
       "name": "出品者への国内銀行送金料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "代行が売り手へ振り込む実費。"
     },
     {
       "id": "F10",
       "name": "無形物の追加手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "無形物の取扱条件が違うので額も違う。額が未取得で、取れたら総額へ。"
     },
     {
       "id": "F11",
       "name": "価格交渉手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が代行に値下げ交渉を依頼したときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F12",
       "name": "プラン費",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "Buyee は推奨の Standard を前提に総額へ（オーナー決定 2026-09-11）。Lite ¥0 も選べる。FJ の ¥500 が F02 と1費目か2費目かは未決。"
     },
     {
       "id": "F13",
       "name": "国内送料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "誤差の第3位。出品ページにあれば実費、無ければ推定。"
     },
     {
       "id": "F13b",
       "name": "「送料無料」でも国内送料が出る（リスクフラグ）",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "warning_only",
+      "display_reason": "発生率を持っていない。全件に足せば過大になるので、金額は動かさず警告だけ出す（オーナー決定 2026-09-11、T-F10）。区間化が入ったら上端への算入を再検討する。"
     },
     {
       "id": "F14",
       "name": "初回梱包・まとめ梱包",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "倉庫で箱に詰める費用。"
     },
     {
       "id": "F15",
       "name": "補強・保護梱包",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F16",
       "name": "梱包後の変更・再梱包",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F17",
       "name": "開梱",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F18",
       "name": "写真",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F19",
       "name": "検品",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけで、額も未取得（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F20",
       "name": "保管無料期間",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "engine_only",
+      "display_reason": "F21 の判定パラメータ。無料期間が Buyee 30日 / Neokyo 45日 / 他3社 60日と社で2倍違う。独立行にはしない。"
     },
     {
       "id": "F21",
       "name": "保管超過",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "まとめ買いでは既定で発生し、全社に等しく乗らないので順位を動かす——FJ は有料延長が存在せず、Buyee は無料期間が他社の半分。日数の入力欄を作って総額へ（オーナー決定 2026-09-11）。現在 optionalLines にあるのは誤配置。"
     },
     {
       "id": "F22",
       "name": "購入後キャンセル",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "E_unpredictable",
+      "display": "hidden",
+      "display_reason": "落札後はキャンセル不可。発生すれば全損に近いが予測できない（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F23",
       "name": "廃棄",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "hidden",
+      "display_reason": "保管期限超過で廃棄される。額が未取得（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F24",
       "name": "特殊処理",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F25",
       "name": "国際送料",
       "in_fees_master": false,
       "kind": "actual_cost",
-      "excluded_reason": "重量・容積・便の関数。料金表は EMS 表（src/data.js）と各社計算機の管轄で、費目マスタには置かない"
+      "excluded_reason": "重量・容積・便の関数。料金表は EMS 表（src/data.js）と各社計算機の管轄で、費目マスタには置かない",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "単一で最大の費目。現在は日本郵便5方式のみで、宅配便に1円も出していない。"
     },
     {
       "id": "F26",
       "name": "輸出通関手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "¥200,000 超でだけ発生し、条件は完全に分かっている。代行の費目ではなく日本郵便の費目なので5社に同額。0b（2026-09-11）で optionalLines から総額の行（compare.ts exportClearanceLine）へ移した。個口の数では倍にしない（日本郵便の原文「同じ受取人あてに2個以上は全ての梱包を合わせて1件」）。"
     },
     {
       "id": "F27",
       "name": "配送業者サーチャージ",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "住所で決まる（FJ の FedEx 直配エリア外 ¥2,710）。carrier=FedEx（宅配便は未価格化）と住所（入力に無い）のどちらの条件もこの計算機では成立しないため、0c（2026-09-11）でも画面には出さない。存在・額・出典は services.ts の dormantFees として繋ぎ、master-sync.test.ts で見張る（P2で宅配便を価格化するまで寝かせる）。"
     },
     {
       "id": "F28",
       "name": "燃油・遠隔地サーチャージ",
       "in_fees_master": false,
-      "excluded_reason": "全社で未取得（C）。マスタに入れない"
+      "excluded_reason": "全社で未取得（C）。マスタに入れない",
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "送料の 2〜3 割に達する。宅配便を価格化した瞬間に必須になる。未取得。"
     },
     {
       "id": "F29",
       "name": "輸送保険",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "方式に含まれる保険は総額（ZenMarket は F02 に内包）。Jauce は標準の郵便保険を3段で持つ：基本補償¥20,000までは無料（確定）／¥20,000超過分は日本郵便の増額表があるが Jauce が自動付保・請求するかは未確定（開いた問い）／Premium 1.9% は利用者が選ぶもので、かつ課税ベースが原文から読めないため額を出さない。"
     },
     {
       "id": "F30",
       "name": "配送方法の可否制限",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "engine_only",
+      "display_reason": "「送れない便に値段を付けない」ための制約。行ではなく、どの方式に価格を出すかを決める。0c（2026-09-11）で、この計算機が価格化している方式のうち Small_Packet（charge1_jpy_max ¥30,000）だけを PostageRate.priceCapJpy として接続した。ePacket_Light / ePacket / IPA / PMI はこの計算機が価格化していない方式なので繋がない。"
     },
     {
       "id": "F31",
       "name": "関税（買主負担）",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の duty に持つ"
+      "excluded_reason": "master/customs.json の duty に持つ",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "宛先×原産国×品目×価格×日付。閾値超の率は WTO 単純平均の推定で、実際の幅は 0〜12%。"
     },
     {
       "id": "F32",
       "name": "VAT / GST / Sales tax（買主負担）",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の vat に持つ"
+      "excluded_reason": "master/customs.json の vat に持つ",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "国ごとの税率と課税ベース。米国に連邦売上税は無いので `—` が正しい。"
     },
     {
       "id": "F33",
       "name": "州・地方税",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の provincial_tax に持つ（CA のみ確認）"
+      "excluded_reason": "master/customs.json の provincial_tax に持つ（CA のみ確認）",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "カナダの実請求では税額の 56% がこれ。州で 0〜9.975%。"
     },
     {
       "id": "F34",
       "name": "通関手数料（配送業者）",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の clearance に持つ。国×業者×利用者の操作で決まる"
+      "excluded_reason": "master/customs.json の clearance に持つ。国×業者×利用者の操作で決まる",
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "税が実際に発生するときだけ課される（5カ国の原文で確認）。免税帯で無条件に足すと必ず過大。経路により €1.56〜€70（45倍）。"
     },
     {
       "id": "F35",
       "name": "立替・DDP 手数料",
       "in_fees_master": false,
-      "excluded_reason": "gastos suplidos として実請求に存在（ES €4.33/€5.32）が、算定式が不明（C）"
+      "excluded_reason": "gastos suplidos として実請求に存在（ES €4.33/€5.32）が、算定式が不明（C）",
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "ES の実請求に `gastos suplidos` €4.33/€5.32 が実在するが算定式が不明。"
     },
     {
       "id": "F36",
       "name": "会社が輸入税を代理徴収",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "同じ国でも社で割れる。豪・星は制度が全社に課すが、EU の IOSS と UK の低額 VAT は任意なので社で割れる。"
     },
     {
       "id": "F37",
       "name": "カード・PayPal の外貨換算上乗せ",
       "in_fees_master": false,
-      "excluded_reason": "モデルの管轄外（D）。判定は円で行う"
+      "excluded_reason": "モデルの管轄外（D）。判定は円で行う",
+      "occurrence": "E_unpredictable",
+      "display": "hidden",
+      "display_reason": "公表された率が存在せず、手数料 0% のカードもあるので発生すら確実でない。判定は円で行う（決定済み）。"
     },
     {
       "id": "F38",
       "name": "通関手数料にかかる VAT",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の clearance_fee_vat に持つ。ES・DE・CA の実請求3件で確認"
+      "excluded_reason": "master/customs.json の clearance_fee_vat に持つ。ES・DE・CA の実請求3件で確認",
+      "occurrence": "A_always",
+      "display": "engine_only",
+      "display_reason": "通関手数料そのものに乗る税。`clearance` の行に内包して出す。"
     },
     {
       "id": "F39",
       "name": "会社の申告額ポリシー（CN22/インボイスに何を書くか）",
       "in_fees_master": false,
       "kind": "company_attribute",
-      "excluded_reason": "**未取得（C）。輸入側の全ルール（免税閾値・VAT・通関手数料）の入力になるのに、5社とも公表していない。**商品代のみか手数料込みか、Buyee の注文別送ではパーセルごとにいくら申告するか。これが無いと輸入側の計算は開始できない"
+      "excluded_reason": "**未取得（C）。輸入側の全ルール（免税閾値・VAT・通関手数料）の入力になるのに、5社とも公表していない。**商品代のみか手数料込みか、Buyee の注文別送ではパーセルごとにいくら申告するか。これが無いと輸入側の計算は開始できない",
+      "occurrence": "C_conditional_no_input",
+      "display": "engine_only",
+      "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。5社とも非公表。"
     },
     {
       "id": "F40",
       "name": "燃油・遠隔地サーチャージ（配送業者の公表率）",
       "in_fees_master": false,
       "kind": "carrier_attribute",
-      "excluded_reason": "FedEx/DHL は週次で率を公表しており、送料の2〜3割に達する。各社の公表送料が燃油込みかどうかを会社属性として調べる必要がある。現状は全社未取得（C）"
+      "excluded_reason": "FedEx/DHL は週次で率を公表しており、送料の2〜3割に達する。各社の公表送料が燃油込みかどうかを会社属性として調べる必要がある。現状は全社未取得（C）",
+      "occurrence": "C_conditional_no_input",
+      "display": "engine_only",
+      "display_reason": "F28 を会社属性として持つための行。各社の公表送料が燃油込みかどうかを調べる必要がある。"
     }
   ],
   "schema": {
     "tier": "発生の確からしさ（A_confirmed / B_inferred）",
     "amount_tier": "金額の確からしさ。rule に unknown を含む行は C_unknown を必須とする",
+    "rule.inferred_marketplaces": "行全体は A_confirmed でも、特定のマーケットプレイス区分だけ我々の推論で埋めた額であることを示す。キーはそのマーケットプレイス名（rule.amounts のキーと対応）、値は { tier: 'B_inferred', mapped_to?: 対応付けた原文の区分名, sources: [{lang, source, checked_on, quote}, ...], inference_basis: 推論の根拠（文字列） } を必須とする。amounts の当該区分に置いた額は一次情報がその区分を名指ししたものではなく推論値であることの機械可読な印",
     "rule_type_vocabulary": [
       "actual_cost_per_order",
       "choice_per_order",
@@ -1600,6 +1857,7 @@
       "per_hour",
       "per_kg",
       "per_kg_over_threshold",
+      "per_month_variable_by_size_value",
       "rate_of_item_price",
       "rate_of_total",
       "rate_of_transaction_by_method",
@@ -1607,7 +1865,22 @@
       "threshold_fixed",
       "tiered_by_weight_per_box",
       "zero"
-    ]
+    ],
+    "occurrence_vocabulary": {
+      "A_always": "必ず発生する",
+      "B_conditional_known": "条件で決まり、その条件を持っている",
+      "C_conditional_no_input": "条件で決まるが、入力（日数・寸法・申告額など）が無くて額を出せない",
+      "D_user_choice": "利用者が選んだときだけ発生する",
+      "E_unpredictable": "原理的に予測できない、またはモデルの管轄外",
+      "nonexistent": "存在しない費目だと判定した記録"
+    },
+    "display_vocabulary": {
+      "total": "総額に算入して画面に出す",
+      "engine_only": "計算には効くが、独立した行としては画面に出さない（他の費目の中で分岐する・他の費目の判定パラメータになる・内包される）",
+      "optional": "任意欄に並べる（総額外）",
+      "warning_only": "金額は動かさず、警告文だけ出す",
+      "hidden": "載せない"
+    }
   },
   "eu_uk_prepaid_vat": {
     "fee_id": "F36",

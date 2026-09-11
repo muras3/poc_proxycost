@@ -914,6 +914,42 @@ describe('domestic shipping is charged by every service, and taxed where the bas
   });
 });
 
+// ───────────────────────────────────────────────────────────────────────────────────
+// T-F10: 「送料無料」の￥0を確定値として出さない。金額は1円も動かさない。
+// master/fees.json F13b（company: buyee）だけにある識だしで、対象は Buyee の行だけ。
+// ───────────────────────────────────────────────────────────────────────────────────
+describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at zero (T-F10)', () => {
+  test('Buyee\'s domestic-shipping line stays at \u00a50 but is no longer `fixed`', () => {
+    const withFree = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const buyee = byId(withFree, 'buyee');
+    expect(line(buyee, 'domestic-shipping').amount).toBe(0);
+    expect(line(buyee, 'domestic-shipping').tier).not.toBe('fixed');
+    expect(line(buyee, 'domestic-shipping').sourceUrl).toBeTruthy();
+  });
+
+  test('other services keep the confirmed \u00a50 for the same free-shipping item', () => {
+    const withFree = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    for (const id of ['zenmarket', 'neokyo', 'fromjapan', 'jauce']) {
+      const row = byId(withFree, id);
+      expect(line(row, 'domestic-shipping').amount, id).toBe(0);
+      expect(line(row, 'domestic-shipping').tier, id).toBe('fixed');
+    }
+  });
+
+  test('**the total does not move** \u2014 only the tier and note change', () => {
+    // freeShipping: true と domesticShippingYen: 0 は、domestic-shipping の金額として
+    // どちらも 0。T-F10 が変えたのは確度（tier）と note だけなので、totalは全行一致するはず
+    // ——一致しなければ金額が動いたということ。
+    const free = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const confirmedZero = compare(
+      { items: [item({ id: 'a', domesticShippingYen: 0 })], country: 'US' }).rows;
+    expect(free.length).toBeGreaterThan(0);
+    for (const row of free) {
+      expect(row.total, row.id).toBe(byId(confirmedZero, row.id).total);
+    }
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Buyee だけが既定で注文ごとに別送する。同梱は申請しないと得られない。
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1603,5 +1639,70 @@ describe('edges', () => {
     const rows = compare({ items: items(2, 600), country: 'US' }).rows;
     expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
     for (const r of rows) expect(r.outboundUrl).toMatch(/^https:\/\//);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ロードマップ 0b / 0c ── F26 輸出通関手数料（総額）と F30 小形包装物の価格上限。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('F26 export clearance fee is a total line with a per-row threshold', () => {
+  test('¥200,000 exactly is under the threshold: ¥0', () => {
+    const rows = compare({ items: [item({ id: 'a', priceYen: 200000 })], country: 'US' }).rows;
+    for (const r of rows) expect(line(r, 'export-clearance').amount, r.serviceId).toBe(0);
+  });
+
+  test('¥200,001 is over the threshold: ¥2,800', () => {
+    const rows = compare({ items: [item({ id: 'a', priceYen: 200001 })], country: 'US' }).rows;
+    for (const r of rows) expect(line(r, 'export-clearance').amount, r.serviceId).toBe(2800);
+  });
+
+  test('multiple parcels still charge the fee once per row, not once per parcel', () => {
+    // Buyee は既定で注文ごとに別送する（複数個口）。それでも輸出通関は行につき1回。
+    const rows = compare({
+      items: [
+        item({ id: 'a', priceYen: 200001 }),
+        item({ id: 'b', priceYen: 1 }),
+        item({ id: 'c', priceYen: 1 }),
+      ],
+      country: 'US',
+    }).rows;
+    const buyee = rows.find((r) => r.id === 'buyee:default')!;
+    expect(buyee.parcels).toBeGreaterThan(1);
+    expect(line(buyee, 'export-clearance').amount).toBe(2800);
+  });
+});
+
+describe('F30 FROM JAPAN small packet is only selectable at or under ¥30,000 declared value', () => {
+  test('¥30,000 exactly is still eligible', () => {
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 30000, weightG: 100 })],
+      country: 'DE',
+      method: 'small-packet-air',
+    }).rows;
+    const fj = rows.find((r) => r.id === 'fromjapan')!;
+    expect(fj.comparable).toBe(true);
+    expect(line(fj, 'intl-shipping').amount).not.toBeNull();
+  });
+
+  test('¥30,001 is no longer eligible for small packet — a different reason than weight or country', () => {
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 30001, weightG: 100 })],
+      country: 'DE',
+      method: 'small-packet-air',
+    }).rows;
+    const fj = rows.find((r) => r.id === 'fromjapan')!;
+    expect(fj.comparable).toBe(false);
+    expect(fj.notComparableReason).toContain('declared value');
+    expect(line(fj, 'intl-shipping').amount).toBeNull();
+  });
+
+  test('the price cap does not affect other companies without that limit', () => {
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 30001, weightG: 100 })],
+      country: 'DE',
+      method: 'small-packet-air',
+    }).rows;
+    const buyee = rows.find((r) => r.id === 'buyee')!;
+    expect(buyee.comparable).toBe(true);
   });
 });

@@ -237,43 +237,46 @@ describe('the optional extras match what each company publishes', () => {
     ?? (() => { throw new Error(`no optional ${key} for ${serviceId}`); })();
 
   test('each service offers exactly the extras its own page lists', () => {
-    expect(keysOf('neokyo')).toEqual(['export-clearance', 'konbini', 'storage', 'unpacking']);
-    expect(keysOf('zenmarket')).toEqual(['export-clearance', 'photos', 'repack', 'storage']);
+    // 0b: 輸出通関手数料は任意欄から総額（`lines`）へ移した。もう optionalLines には無い。
+    expect(keysOf('neokyo')).toEqual(['konbini', 'storage', 'unpacking']);
+    expect(keysOf('zenmarket')).toEqual(['photos', 'repack', 'storage']);
     expect(keysOf('fromjapan')).toEqual([
-      'export-clearance', 'konbini', 'outsourced-packing', 'photos', 'repack', 'storage',
+      'konbini', 'outsourced-packing', 'photos', 'repack', 'storage',
     ]);
     expect(keysOf('buyee')).toEqual([
-      'export-clearance', 'photos', 'protective-packing', 'special-packing', 'storage',
+      'photos', 'protective-packing', 'special-packing', 'storage',
     ]);
     expect(keysOf('jauce')).toEqual([
-      'customized-processing', 'expedited', 'export-clearance', 'fragile-packing',
+      'customized-processing', 'expedited', 'fragile-packing',
       'photos', 'premium-insurance', 'storage',
     ]);
   });
 
-  test('the ¥200,000 export clearance fee is on every service that ships by Japan Post', () => {
-    // 以前は FROM JAPAN と Buyee にしか無かった。同じ EMS を使う5社で費目の在り無しが
-    // 分かれていたら、それは料金差ではなく我々の調査量の差である。
+  test('the ¥200,000 export clearance fee is a total line on every service that ships by Japan Post', () => {
+    // 0b: 以前は任意欄で FROM JAPAN と Buyee にしか無かった。同じ EMS を使う5社で
+    // 費目の在り無しが分かれていたら、それは料金差ではなく我々の調査量の差である。
+    // いまは総額の行（`lines`）として5社すべてに条件判定つきで出る。
     // 額は日本郵便の「輸出申告代行手数料 2,800円／件」＝一次情報なので5社とも fixed。
     expect(EXPORT_DECLARATION_FEE_YEN).toBe(2800);
-    for (const s of SERVICES) {
-      const l = optional(s.id, 'export-clearance');
-      expect(l.amount, s.id).toBe(EXPORT_DECLARATION_FEE_YEN);
-      expect(l.note, s.id).toContain('200,000');
-      expect(l.tier, s.id).toBe('fixed');
+    // ¥200,000 ちょうどの商品代 → ¥0（超えていない）
+    const at = rowsFor([item({ id: 'a', priceYen: 200000 })]);
+    for (const r of at) {
+      expect(line(r, 'export-clearance').amount, r.serviceId).toBe(0);
+      expect(line(r, 'export-clearance').tier, r.serviceId).toBe('fixed');
+    }
+    // ¥200,001 → ¥2,800（超えた）
+    const over = rowsFor([item({ id: 'a', priceYen: 200001 })]);
+    for (const r of over) {
+      expect(line(r, 'export-clearance').amount, r.serviceId).toBe(EXPORT_DECLARATION_FEE_YEN);
+      expect(line(r, 'export-clearance').sourceUrl, r.serviceId).toBe(EXPORT_DECLARATION_FEE_SOURCE);
     }
     // 申告1件あたりで、個口あたりではない（原文「全ての梱包を合わせて1件となります」）。
-    // Buyee は注文ごとに別個口なので、ここを取り違えると3点で ¥8,400 になる。
-    const threeParcels = rowsFor([item({ id: 'a' }), item({ id: 'b' }), item({ id: 'c' })])
-      .find((r) => r.id === 'buyee:default')!;
+    // Buyee は注文ごとに別送で個口が複数になるが、ここを取り違えると3点で ¥8,400 になる。
+    const threeParcels = rowsFor([
+      item({ id: 'a', priceYen: 200001 }), item({ id: 'b', priceYen: 1 }), item({ id: 'c', priceYen: 1 }),
+    ]).find((r) => r.id === 'buyee:default')!;
     expect(threeParcels.parcels).toBe(3);
-    expect(threeParcels.optionalLines.find((l) => l.key === 'export-clearance')!.amount)
-      .toBe(2800);
-    // 額を書いていない2社は、書いていないことを画面の note で明かす。
-    for (const id of ['neokyo', 'zenmarket']) {
-      expect(optional(id, 'export-clearance').note, id).toMatch(/does not? (print|.*print)/);
-      expect(optional(id, 'export-clearance').note, id).toContain('Japan Post');
-    }
+    expect(line(threeParcels, 'export-clearance').amount).toBe(2800);
   });
 
   test('Neokyo unpacking is ¥1,000 plus that parcel packing fee, not a flat ¥1,000', () => {
@@ -486,7 +489,24 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
   test('a mixed basket names both rates instead of hiding one', () => {
     const row = byService(rowsFor([item({ id: 'a', site: 'rakuten' }), item({ id: 'b' })]), 'zenmarket');
     expect(amount(row, 'service-fee')).toBe(1300);
-    expect(line(row, 'service-fee').note).toBe('¥500 / ¥800 by shop, 2 charged');
+    // 'b' はデフォルトの yahoo-auctions なので、行には推論の根拠が付く（T-F11a）
+    expect(line(row, 'service-fee').note).toBe(
+      '¥500 / ¥800 by shop, 2 charged'
+      + " — ZenMarket's fee page prices Mercari and JDirectItems Auction at ¥800 and"
+      + ' never names Yahoo Auctions; we read JDirectItems Auction as Yahoo Auctions',
+    );
+    // ヤフオクの item が混じっているので行全体の確度は estimate に落ちる
+    expect(line(row, 'service-fee').tier).toBe('estimate');
+  });
+
+  test('a Mercari-only basket keeps the service-fee line fixed', () => {
+    const row = byService(rowsFor([item({ id: 'a', site: 'mercari' })]), 'zenmarket');
+    expect(line(row, 'service-fee').tier).toBe('fixed');
+  });
+
+  test('a Yahoo!-Auctions-only basket marks the service-fee line as estimate', () => {
+    const row = byService(rowsFor([item({ id: 'a', site: 'yahoo-auctions' })]), 'zenmarket');
+    expect(line(row, 'service-fee').tier).toBe('estimate');
   });
 
   // 3.5% は「送金合計に対する率」なので gross-up。base × r / (1 - r) であって base × r ではない。
@@ -757,18 +777,19 @@ describe('Jauce — ¥400 + 8% on the auction site, ¥1,000 + 8% off it', () => 
 // 社のページを出典に立てると、額を社が決めているように読める。
 // ─────────────────────────────────────────────────────────────────────────────
 describe('an optional fee points at whoever sets the amount', () => {
-  test('the export declaration fee cites Japan Post at every service that lists it', () => {
-    let seen = 0;
-    for (const svc of SERVICES) {
-      const fee = svc.optional.find((o) => o.key === 'export-clearance');
-      if (!fee) continue;
-      seen += 1;
-      expect(fee.amountYen, svc.id).toBe(EXPORT_DECLARATION_FEE_YEN);
-      expect(fee.sourceUrl, `${svc.id}: the amount is Japan Post's, not the service's`)
+  // 0b: 輸出通関手数料は任意欄から総額の行へ移った。「誰の額か」の検査はいまも
+  // 生きているが、対象は `optional` ではなく `lines`（`services.test.ts` の他所で
+  // 総額側は 'the ¥200,000 export clearance fee is a total line...' が見る）。
+  test('the export declaration fee cites Japan Post on every row, not the service page', () => {
+    const rows = rowsFor([item({ id: 'a', priceYen: 200001 })]);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      const l = line(r, 'export-clearance');
+      expect(l.sourceUrl, `${r.serviceId}: the amount is Japan Post's, not the service's`)
         .toBe(EXPORT_DECLARATION_FEE_SOURCE);
-      expect(fee.sourceUrl, svc.id).not.toBe(svc.sourceUrl);
+      const svcDef = SERVICE_BY_ID.get(r.serviceId)!;
+      expect(l.sourceUrl, r.serviceId).not.toBe(svcDef.sourceUrl);
     }
-    expect(seen, 'no service lists the export declaration fee').toBeGreaterThan(0);
   });
 
   test("Neokyo's storage fee cites the storage page it was read from", () => {

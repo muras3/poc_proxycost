@@ -10,6 +10,7 @@ import { ConsolidationCallout } from './ConsolidationCallout';
 import { CostTable } from './CostTable';
 import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
+import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
 import { ItemList, type ItemListHandle } from './ItemList';
 import { OptionalExtras } from './OptionalExtras';
 import { MethodPicker } from './MethodPicker';
@@ -148,6 +149,9 @@ export function Calculator() {
             {/* 長さで方式が絞られうる品。**寸法は入力にすら無い**ので、
                 どの方式が落ちるかは書けない——見ていないことだけ言う。 */}
             <LongItemsInCartNote result={result} items={items} />
+            {/* Buyee だけの話（他4社は材料が無い）。「送料無料」の出品が1点でも
+                あるときだけ、金額は動かさず出す（T-F10、docs/FEE-ITEMS.md §5 R1）。 */}
+            <FreeShippingDomesticNote result={result} items={items} />
           </div>
 
           <div className="mt-4">
