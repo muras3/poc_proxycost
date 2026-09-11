@@ -641,13 +641,17 @@ describe('MAPPED ── マスタとコードが一致しなければならな�
   }
 });
 
-describe('CONFLICT ── 既知の食い違い。まだ食い違っていることを assert する', () => {
-  for (const e of CONFLICT) {
-    it(`[${e.task}] ${e.id}/${e.company} ${e.name}`, () => {
-      e.assertStillConflicting();
-    });
-  }
-});
+// 既知の食い違いは現在ゼロ件（#25 で4件・T-F11a で1件を解消）。
+// 空の describe は vitest で失敗するので、CONFLICT が空でない場合だけ this describe を作る。
+if (CONFLICT.length > 0) {
+  describe('CONFLICT ── 既知の食い違い。まだ食い違っていることを assert する', () => {
+    for (const e of CONFLICT) {
+      it(`[${e.task}] ${e.id}/${e.company} ${e.name}`, () => {
+        e.assertStillConflicting();
+      });
+    }
+  });
+}
 
 describe('NOT_IN_CODE ── 意図的にコードに繋いでいない行', () => {
   for (const e of NOT_IN_CODE) {
