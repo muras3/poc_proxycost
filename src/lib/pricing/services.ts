@@ -327,6 +327,16 @@ export interface Service {
    */
   unpricedFees?: UnpricedFee[];
   /**
+   * `display: total` だが額を公表していない、**同梱（consolidation）を申請した
+   * ときだけ**発生しうる費目（F14）。`unpricedFees` は毎行（default/consolidated
+   * どちらにも）無条件で足すが、これは `consolidationOnRequest` の社で
+   * `variant === 'consolidated'` の行にだけ足す——外部レビュー2回目 A-3。
+   * いま該当するのは Buyee のまとめ梱包1件のみ（`master/fees.json` F14/buyee、
+   * `amount: "unknown"` / `amount_tier: C_unknown`。無料であることの引用が
+   * 取れておらず、額も未取得）。
+   */
+  consolidationUnpricedFee?: UnpricedFee;
+  /**
    * **条件がこの計算機では成立しない、既知の費目。**マスタに `A_confirmed` で値が
    * あるが、画面にも総額にも出さない（F27。理由は `DormantCourierFee` のコメント参照）。
    */
@@ -826,6 +836,15 @@ export const SERVICES: Service[] = [
     parcelDefault: 'per-order',
     parcelVerified: true,
     consolidationOnRequest: true,
+    // F14。`master/fees.json` F14/buyee: amount "unknown" / amount_tier C_unknown。
+    // 「申請制の同梱サービス」だと公式は明記しているが、無料であることの引用が
+    // 取れておらず額も未取得。外部レビュー2回目 A-3: consolidated 変種にだけ
+    // 発生しうる（default 変種は同梱を申請していないので出さない）。
+    consolidationUnpricedFee: {
+      key: 'consolidation-packing', label: 'Package consolidation',
+      note: 'optional, requested after arrival at the warehouse — the amount (if any) is'
+        + ' not published; we could not confirm it is free',
+    },
     // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
     // EMS に Recommended バッジが付くが、既定では選択されていない。SAL は小形・小包とも Shipping not available
     postage: {

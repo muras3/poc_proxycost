@@ -308,7 +308,13 @@ function taxLines(
         : 'no duty on this category',
       'fixed', c.sourceUrl));
   } else if (c.dutyRate != null) {
-    dutyYen = baseYen * c.dutyRate;
+    // **カナダだけ base を GST/州税と揃える**（外部レビュー2回目 A-6）。CBSA の
+    // value for duty は関税・GST・州税で共通の1つのベース（D13-3-3/D13-3-4。
+    // 上の GST 分岐の `vatBase` コメント参照）——国際送料は除くが国内送料
+    // （出品者→代行業者の倉庫）は含む。以前は関税だけ `itemsYen` のみで計算して
+    // おり、GST のベース（`itemsYen + domYen + dutyYen`）と食い違っていた。
+    const dutyBaseYen = cc === 'CA' ? a.itemsYen + a.domYen : baseYen;
+    dutyYen = dutyBaseYen * c.dutyRate;
     // **米国だけは、重量表のカテゴリから HTS を引き直して 12.5% の意味を言える**（T24）。
     // 12.5% は Section 301 が日本産品に置いた**下限**で、MFN がそれを超える品目
     // （靴・鞄・衣類）では税率ではない。額は変えない——見出しを1つに決めるのは推測で、
@@ -795,6 +801,14 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const parcelGross = split
     ? grouping.groups.map((g) => grossG(g.reduce((a, idx) => a + netPerItem[idx]!, 0)))
     : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
+  // 保管（F21）だけは常に**注文単位**の個口重量で計算する。まとめ発送
+  // （consolidated）は発送時にまとめるだけで、保管中（無料期間〜まとめ発送まで）は
+  // 注文ごとに別々の個口として倉庫にある（Buyee 原文「we process each order
+  // respectively … separate domestic shipment fees for each order」と同じ理由）。
+  // `parcelGross` は発送方式の選択・送料計算のための「発送時の個口」で、
+  // consolidated 変種では `parcels=1` に潰れてしまうため、保管の計算にはそのまま
+  // 使えない（外部レビュー2回目 A-2）。
+  const orderGross = grouping.groups.map((g) => grossG(g.reduce((a, idx) => a + netPerItem[idx]!, 0)));
 
   // **国際配送の方式を決める。**利用者が指定していなければ、この行の荷物を
   // **実際に運べる**方式のうち最安を選ぶ（`method: 'cheapest'`）。
@@ -934,12 +948,20 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   if (pack) lines.push(pack);
 
   // F21。既定45日では無料期間30日のBuyeeだけに課金が乗る（他4社は無料期間の内側）。
-  lines.push(storageLine(svc, ctx.storageDays, orders, parcels, parcelGross, units));
+  // 保管は注文単位（orderGross）で計算する。A-2参照。
+  lines.push(storageLine(svc, ctx.storageDays, orders, parcels, orderGross, units));
 
   // **`display: total` だが額を公表していない費目。**マスタに「任意欄」は存在しない
   // （0e、docs/FEE-ITEMS.md §1）ので、額が出せなくても行そのものは消さない——
   // `amount: null`（画面「—」）で毎行に足し、`excluded` に名前を載せる。
   for (const u of svc.unpricedFees ?? []) {
+    lines.push(L(u.key, u.label, null, u.note, 'none', u.sourceUrl ?? svc.sourceUrl));
+  }
+  // F14（consolidation）。同梱を実際に申請した行（consolidated）にだけ足す
+  // ——default 変種は同梱を申請していないので、この未確定の費目を負わせない
+  // （外部レビュー2回目 A-3）。
+  if (variant === 'consolidated' && svc.consolidationUnpricedFee) {
+    const u = svc.consolidationUnpricedFee;
     lines.push(L(u.key, u.label, null, u.note, 'none', u.sourceUrl ?? svc.sourceUrl));
   }
 
@@ -1018,8 +1040,11 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // VAT/GST（`prepaidImportTaxLine` の実額）は、利用者がこの社に払う総額の
   // 一部なのでベースに含める。**以前はこのブロックが税の行より前（`sum(lines)`）
   // にあったため、決済時に徴収する VAT/GST が入金手数料の対象から漏れていた**
-  // （ZenMarket DE ¥12,800 の IOSS VAT、Jauce AU の GST など。
-  // `master/validate.py` の実請求書再現で確認済み）。
+  // （ZenMarket DE ¥12,800 の IOSS VAT、Jauce AU の GST など）。
+  // **裏付けは F07 の引用のみ**（ZenMarket「3.5% of the total transaction amount」・
+  // Jauce「3.9% over the deposit amount」）——`master/validate.py` は入金手数料を
+  // 一切評価していない（通関・VAT の4 fixture のみ。ZenMarket の唯一の実請求書
+  // fixture `au-zenmarket-ems` は SKIP）。実請求での裏付けは無い（外部レビュー2回目 A-5）。
   //
   // **`preTaxYen` に足すだけで `sum(lines)` は使わない。**関税（`duty`）・
   // 通関手数料（決済で 0 にならない場合の `clearance`）・州税（CA）・酒税

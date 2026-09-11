@@ -148,6 +148,46 @@
       "amount_tier": "C_unknown"
     },
     {
+      "id": "F20",
+      "company": "buyee",
+      "name": "保管無料期間",
+      "stage": "warehouse",
+      "rule": {
+        "type": "free_days",
+        "days": 30,
+        "max_days": 90,
+        "after_max": "the maximum storage period is 90 days"
+      },
+      "mandatory": true,
+      "tier": "A_confirmed",
+      "source": "https://buyee.jp/helpcenter/guide/storage?lang=en",
+      "checked_on": "2026-09-07",
+      "quote": "free for the first 30 days … Maximum storage period is 90 days",
+      "note": "外部レビュー（2026-09-11、A-1）で判明: この行が無いまま services.ts の storage（無料30日・以後重量帯別/日/個口）がコード側だけに実装されていた。quote・source・checked_on は services.ts の該当コメントに既にあった、2026-09-07 取得の一次引用をそのままマスタへ転記したもの（他の Buyee 行 F13/F14 と同じ取得日）。この作業自体では Buyee に新規到達できていない（この環境から Buyee は403で読めないことを docs/audit/o2-courier-2026-09-11.md で確認済み）——次にこの行を扱う作業者は、まだ現行ページで再確認されていないことに留意すること。"
+    },
+    {
+      "id": "F21",
+      "company": "buyee",
+      "name": "保管超過",
+      "stage": "warehouse",
+      "rule": {
+        "type": "per_day_per_parcel_by_weight",
+        "bands": [
+          { "max_g": 10000, "amount": 100 },
+          { "max_g": 20000, "amount": 200 },
+          { "max_g": null, "amount": 300 }
+        ],
+        "currency": "JPY",
+        "after_days": 30
+      },
+      "mandatory": false,
+      "tier": "A_confirmed",
+      "source": "https://buyee.jp/helpcenter/guide/storage?lang=en",
+      "checked_on": "2026-09-07",
+      "quote": "～10,000g JPY100 / 1 day、10,001g～20,000g JPY200 / 1 day、20,001g～ JPY300 / 1 day（重量帯は個口の重量で決まる）",
+      "note": "外部レビュー（2026-09-11、A-1）で判明: services.ts の storage.rate（per-day-per-parcel-by-weight）に対応するマスタ行が無かった。quote は services.ts のコメントにあった、2026-09-07 取得の一次引用をそのまま転記したもの。金額はコードから変更していない。この作業自体では Buyee に新規到達できていない（上の F20 と同じ理由）。"
+    },
+    {
       "id": "F02",
       "company": "zenmarket",
       "name": "サービス料",
@@ -1874,6 +1914,7 @@
       "method_eligibility",
       "not_included",
       "per_day_per_item",
+      "per_day_per_parcel_by_weight",
       "per_hour",
       "per_kg",
       "per_kg_over_threshold",

@@ -724,7 +724,10 @@
         },
         "tier": "C_unknown",
         "note": "郵便経由の de minimis は CA$20",
-        "base": "goods",
+        "base": "goods_plus_shipping",
+        "base_source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-3-3-eng.html （place of direct shipment の定義は https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-3-4-eng.html）",
+        "base_checked_on": "2026-09-11",
+        "base_note": "外部レビュー2回目 A-6（2026-09-11）で訂正。CBSA の value for duty は関税と GST/州税で共通の1つのベース（下の `vat.base_note` と同じ D13-3-3/D13-3-4 根拠）——国際送料（para.18）を除き、国内送料＝出品者から代行業者の倉庫までの運賃（para.19）を含む。以前この行は base を『goods（商品代のみ）』のままにしており、⑤-b で GST・州税のベースだけ `itemsYen + domYen` に直したのに関税だけ取り残していた（既定カートCAで duty が itemsYen×2%のみの ¥340 になり、正しくは (itemsYen+domYen)×2%=¥372）。コードは `src/lib/pricing/compare.ts` の `taxLines`（CA だけ dutyYen の base を `itemsYen + domYen` にする分岐）で修正済み。",
         "threshold_base": "goods",
         "above_threshold": {
           "type": "common_customs_tariff",
