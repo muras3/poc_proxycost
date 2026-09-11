@@ -70,7 +70,12 @@
 | 5点 | **1,625g** で Neokyo → FROM JAPAN。さらに **4,975g** で同梱行が EMS 公表表（30kg）を出て、比較可能な行が Buyee default だけになる |
 
 交差点は 1〜2kg という、代行で買う品物としてごく普通の重量帯にある。
-既定の推定値である 5点 × 600g では **7カ国すべてで `rankStable=false`**。
+既定の推定値である 5点 × 600g では **GB・DE・FR・CA の4カ国で `rankStable=false`**
+（US・AU・SG の3カ国は `true`——US は FROM JAPAN、AU と SG は Neokyo が最安のまま動かない。
+`src/app/sources/measured.ts` の `RANK_STABILITY` が7カ国分の実測で、`measured.test.ts` が縛る）。
+**ここには以前「7カ国すべてで `rankStable=false`」と書いていたが、これは間違いだった。**
+2026-09-06 の測定以降に費目の修正が重なって値が動いたのに、`rankStable` だけ測り直す
+仕掛けが無く誰も測り直していなかった。
 1,500g/点では1位と2位の差が **¥50**（Neokyo ¥52,886 / FROM JAPAN ¥52,936、0.1%）しかない。
 
 したがって画面は `rankStable` をそのまま出し、動く条件では「重量の推定が外れると
