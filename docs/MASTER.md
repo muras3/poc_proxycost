@@ -25,17 +25,17 @@
 <!-- generated:BEGIN counts -->
 | 数えたもの | 実数 |
 |---|---:|
-| `fees.json` の行 | **70** |
-| ├ A_confirmed | 58 |
-| ├ B_inferred | 11 |
+| `fees.json` の行 | **71** |
+| ├ A_confirmed | 60 |
+| ├ B_inferred | 10 |
 | ├ C_unknown | 1 |
-| └ うち `amount_tier: C_unknown`（額が未取得） | 8 |
+| └ うち `amount_tier: C_unknown`（額が未取得） | 5 |
 | `rule.type` の語彙 | 31 種 |
 | `catalog`（F01〜、欠番なし） | 41 |
 | `customs.json` の国 | 9 |
 | └ 通関経路 | 22 |
 
-会社ごとの行数：zenmarket 20 / fromjapan 17 / jauce 13 / buyee 12 / neokyo 8
+会社ごとの行数：zenmarket 20 / fromjapan 17 / jauce 13 / buyee 12 / neokyo 9
 <!-- generated:END counts -->
 
 ## サイトに載せるか（`display`、この節も生成）
@@ -253,7 +253,7 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
 <!-- generated:BEGIN validator -->
 ```
 == 1. スキーマ ==
-  費目 70 行 / rule.type 31 種 / catalog 41 / 国 9 / 通関経路 22
+  費目 71 行 / rule.type 31 種 / catalog 41 / 国 9 / 通関経路 22
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
 == 2. 実請求の再現（customs.json の rule を評価する） ==

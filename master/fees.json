@@ -478,23 +478,25 @@
     {
       "id": "F36",
       "company": "zenmarket",
-      "name": "EU VAT 前払い（任意）",
+      "name": "EU/UK VAT 前払い（2026-03-02から強制）",
       "stage": "import",
       "rule": {
         "type": "collects_destination_tax",
-        "region": "EU",
+        "region": "EU_UK",
         "scheme": "IOSS",
         "when": {
-          "item_value_eur_max": 150
+          "item_value_eur_max": 150,
+          "item_value_gbp_max": 135
         },
-        "mandatory": false
+        "mandatory": true,
+        "mandatory_from": "2026-03-02"
       },
-      "mandatory": false,
+      "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://zenmarket.jp/en/fees.aspx",
-      "checked_on": "2026-09-07",
-      "quote": "customers may optionally select to pay VAT in advance on any parcel sent to Europe with a total item value of 150 EUR or less",
-      "note": "DDU/DDP を利用者が選ぶ軸の実例"
+      "source": "https://zenmarket.jp/en/blog/post/16240/mandatory-vat-precharge-eu-norway",
+      "checked_on": "2026-09-11",
+      "quote": "Starting March 2, 2026, ZenMarket will make VAT pre-charge mandatory for eligible shipments to the European Union (EU), Norway and the UK. Customers will no longer be able to opt out of VAT pre-charge for applicable shipments.",
+      "note": "T-F6（コードが正）。services.ts のコメントが引く自社ブログ原文（2026-02-19付、2026-03-02施行）に合わせた。マスタが強制化前の記述のまま古くなっていた。"
     },
     {
       "id": "F02",
@@ -504,16 +506,14 @@
       "rule": {
         "type": "fixed_per_item",
         "amount": 350,
-        "currency": "JPY",
-        "includes": [
-          "domestic_shipping"
-        ]
+        "currency": "JPY"
       },
       "mandatory": true,
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "Order and domestic shipping price: 350 ¥JPY"
+      "checked_on": "2026-09-11",
+      "quote": "Service Cost : 350 yen per item / \"Order and domestic shipping price\" followed by \"350 ¥JPY\" then \"+\" then \"Order Price\"",
+      "note": "T-F4（2026-09-11 再取得）: ¥350に国内送料は含まれない。旧 note の判断を訂正（services.ts は変更なし、正しかった）。"
     },
     {
       "id": "F13",
@@ -521,16 +521,13 @@
       "name": "国内送料",
       "stage": "domestic",
       "rule": {
-        "type": "zero",
-        "reason": "included_in",
-        "fee_id": "F02"
+        "type": "actual_cost_per_order"
       },
       "mandatory": true,
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "the order fee covers Shipping towards Neokyo",
-      "note": "5社中 Neokyo だけ。src/data.js の domesticIncluded: true は正しい"
+      "checked_on": "2026-09-11",
+      "quote": "+ Order Price（Order and domestic shipping price の下に \"+\" を挟んで350¥とは別枠で計上される）"
     },
     {
       "id": "F14",
@@ -590,15 +587,35 @@
       "stage": "warehouse",
       "rule": {
         "type": "free_days",
-        "days": 45,
-        "after": "weekly_fee_amount_unknown"
+        "days": {
+          "items": 45,
+          "packages": 7
+        },
+        "after": {
+          "unit": "week",
+          "unpaid_weeks_limit": 6,
+          "amounts_by_size": {
+            "small": {
+              "order": 350,
+              "parcel": 210
+            },
+            "average": {
+              "order": 700,
+              "parcel": 490
+            },
+            "large": {
+              "order": 1400,
+              "parcel": 980
+            }
+          }
+        }
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "45 days of free storage per item",
-      "amount_tier": "C_unknown"
+      "source": "https://neokyo.com/en/storage",
+      "checked_on": "2026-09-11",
+      "quote": "Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost — Small 350 / 210 ・ Average 700 / 490 ・ Large 1400 / 980. 45 days for items and 7 days for packages. up to a limit of six unpaid weeks.",
+      "note": "T-F11b（コードが正）。「Neokyoは額が未取得」は誤りで、/en/fees と FAQ しか見ていなかった。/en/storage に週次の表があり、docs/COMPLETENESS.md にも記録済み。寸法最小段(small/order)の¥350をservices.tsに合わせた。"
     },
     {
       "id": "F36",
@@ -608,19 +625,17 @@
       "rule": {
         "type": "collects_destination_tax",
         "countries": [
-          "AU",
-          "EU27",
-          "US_territories"
+          "AU"
         ],
-        "rate": "unknown"
+        "rate": 0.1,
+        "base": "declared"
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://neokyo.com/en/fees",
-      "checked_on": "2026-09-07",
-      "quote": "Import/customs taxes … charged by destination country (not by Neokyo, except Australia, EU27, and US territories)",
-      "note": "徴収する国は公式。率は未取得（C）",
-      "amount_tier": "C_unknown"
+      "source": "https://neokyo.com/en/shipping",
+      "checked_on": "2026-09-11",
+      "quote": "effective March 24th, 2023, we will be charging 10% of the declared value for parcels containing Low-Value Goods (1000 AUD or less) bound for Australia as GST, in addition to international shipping and insurance fees",
+      "note": "T-F6（コードが正）。TODO-NEXT.md の一次情報（2026-09-06 取得、Japan Post 発送は Delivered Duty Unpaid で EU VAT は取らない）に合わせ、対象国をAUのみに絞った。EU27/US_territoriesの記載はマスタ側の古い記述だった。"
     },
     {
       "id": "F02",
@@ -636,7 +651,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "500 yen per item"
+      "quote": "500 yen per item",
+      "note": "この¥500はProduct Protection Plan（必須）と同一の費目。F12は内包（T-F5、2026-09-11）。"
     },
     {
       "id": "F04",
@@ -651,6 +667,20 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "If multiple units of the same item are paid together, handling fees will be the same as for one item."
+    },
+    {
+      "id": "F04",
+      "company": "neokyo",
+      "name": "同一商品の複数個",
+      "stage": "purchase",
+      "rule": {
+        "type": "fee_once_per_distinct_item"
+      },
+      "mandatory": true,
+      "tier": "A_confirmed",
+      "source": "https://neokyo.com/en/fees",
+      "checked_on": "2026-09-11",
+      "quote": "If you purchase multiples copies of the same item within the same Buy Request, this fee is only applied once."
     },
     {
       "id": "F06",
@@ -714,18 +744,16 @@
       "name": "Product Protection Plan",
       "stage": "purchase",
       "rule": {
-        "type": "fixed_per_item",
-        "amount": 500,
-        "currency": "JPY"
+        "type": "zero",
+        "reason": "included_in",
+        "fee_id": "F02"
       },
-      "mandatory": false,
-      "tier": "B_inferred",
+      "mandatory": true,
+      "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
-      "checked_on": "2026-09-07",
-      "quote": "Product Protection Plan: 500 yen per item",
-      "note": "別に Plan Fee があり年間 Charge1 実績で変動。額は未取得（C）",
-      "quote_status": "要再確認（原文の該当文を特定しきれていない）",
-      "inference_basis": "REQUIREMENTS.md §8.5 が一次配信ファイルから ¥500/点 を取得済み。今回の再取得で金額を含む文を特定できず"
+      "checked_on": "2026-09-11",
+      "quote": "help_fee_120: \"Handling Fees\" / help_fee_130: \"Product Protection Plan\" / help_fee_140: \"500 yen per item\" / help_fee_150: \"*If multiple units of the same item are paid together, handling fees will be the same as for one item.\" / title_serviceRule_670: \"Members agree that all purchased items will be covered by our Product Protection Plan. Use of the Product Protection Plan is mandatory for all items.\"",
+      "note": "T-F5（2026-09-11再取得、コードが正）。en_help.txt の並び (help_fee_120 Handling Fees > help_fee_130 Product Protection Plan > help_fee_140 500 yen per item) と help_fee_252/381/382 の対応から、Handling Fees / Plan Fee / Product Protection Plan は同じ¥500/点の呼び分けで、並立しない。必須なので任意欄には出さない。"
     },
     {
       "id": "F13",
@@ -1299,16 +1327,15 @@
         "countries": [
           "AU"
         ],
-        "rate": "unknown",
-        "base": "unknown"
+        "rate": 0.1,
+        "base": "before-shipping"
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "amount_tier": "C_unknown",
-      "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
-      "quote": "GST (Australia, New Zealand, Singapore)",
-      "note": "料金ページに AU の GST サブページへのリンクがあるが、そのページは取得できなかった（401）。徴収する事実は A、率と課税ベースは C",
-      "checked_on": "2026-09-07"
+      "source": "https://buyee.jp/helpcenter/guide/au-gst?lang=en",
+      "quote": "10% GST",
+      "note": "T-F6（コードが正）。以前は AU GST サブページが401で取得できず C_unknown だったが、services.ts のコメントにある通り後日 /helpcenter/guide/au-gst を取得し確定済み。",
+      "checked_on": "2026-09-11"
     },
     {
       "id": "F18",
