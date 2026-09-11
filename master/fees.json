@@ -1349,227 +1349,350 @@
       "name": "商品代（日本の消費税10%込み）",
       "in_fees_master": false,
       "kind": "actual_cost",
-      "excluded_reason": "入力値そのもの。5社共通で行にする意味が無い"
+      "excluded_reason": "入力値そのもの。5社共通で行にする意味が無い",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "総額の起点。代行が払う落札額・販売価格そのもの。"
     },
     {
       "id": "F02",
       "name": "代行・入札手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "代行会社の差が最も直接に出る費目。"
     },
     {
       "id": "F03",
       "name": "↑ 仕入先による分岐",
       "in_fees_master": false,
-      "excluded_reason": "F02 の rule 内（fixed_per_item_by_marketplace / conditions.marketplace）で表現。独立行にしない"
+      "excluded_reason": "F02 の rule 内（fixed_per_item_by_marketplace / conditions.marketplace）で表現。独立行にしない",
+      "occurrence": "B_conditional_known",
+      "display": "engine_only",
+      "display_reason": "F02 の rule 内で仕入先ごとに分岐させる。独立行にしない。"
     },
     {
       "id": "F04",
       "name": "↑ 同一商品の複数個",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "engine_only",
+      "display_reason": "F02 の課金回数を決めるパラメータ。間違えると qty>1 で必ず過大になる。"
     },
     {
       "id": "F05",
       "name": "国内配送サービス料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "nonexistent",
+      "display": "hidden",
+      "display_reason": "存在しない費目だと判定した記録。以前 ¥500 を注文ごとに過大計上していたので、記録を消すと同じ誤りが足し直される。画面には出さない。"
     },
     {
       "id": "F06",
       "name": "特定仕入先の支払手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "FJ のヤフオク落札ごと ¥200。順位を動かす——5点で ¥1,000 に対し基準ケースの1位2位差は ¥650。"
     },
     {
       "id": "F07",
       "name": "入金・決済手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "代行へ入金する段の手数料。カード前提で率を取り直す（オーナー決定 2026-09-11、T-F9）。現在の 3.5% は支払方法が不明な逆算値。"
     },
     {
       "id": "F08",
       "name": "コンビニ・郵便局払い",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "カード前提なので発生しない（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F09",
       "name": "出品者への国内銀行送金料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "代行が売り手へ振り込む実費。"
     },
     {
       "id": "F10",
       "name": "無形物の追加手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "無形物の取扱条件が違うので額も違う。額が未取得で、取れたら総額へ。"
     },
     {
       "id": "F11",
       "name": "価格交渉手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が代行に値下げ交渉を依頼したときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F12",
       "name": "プラン費",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "Buyee は推奨の Standard を前提に総額へ（オーナー決定 2026-09-11）。Lite ¥0 も選べる。FJ の ¥500 が F02 と1費目か2費目かは未決。"
     },
     {
       "id": "F13",
       "name": "国内送料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "誤差の第3位。出品ページにあれば実費、無ければ推定。"
     },
     {
       "id": "F13b",
       "name": "「送料無料」でも国内送料が出る（リスクフラグ）",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "warning_only",
+      "display_reason": "発生率を持っていない。全件に足せば過大になるので、金額は動かさず警告だけ出す（オーナー決定 2026-09-11、T-F10）。区間化が入ったら上端への算入を再検討する。"
     },
     {
       "id": "F14",
       "name": "初回梱包・まとめ梱包",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "倉庫で箱に詰める費用。"
     },
     {
       "id": "F15",
       "name": "補強・保護梱包",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F16",
       "name": "梱包後の変更・再梱包",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F17",
       "name": "開梱",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F18",
       "name": "写真",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F19",
       "name": "検品",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけで、額も未取得（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F20",
       "name": "保管無料期間",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "engine_only",
+      "display_reason": "F21 の判定パラメータ。無料期間が Buyee 30日 / Neokyo 45日 / 他3社 60日と社で2倍違う。独立行にはしない。"
     },
     {
       "id": "F21",
       "name": "保管超過",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "まとめ買いでは既定で発生し、全社に等しく乗らないので順位を動かす——FJ は有料延長が存在せず、Buyee は無料期間が他社の半分。日数の入力欄を作って総額へ（オーナー決定 2026-09-11）。現在 optionalLines にあるのは誤配置。"
     },
     {
       "id": "F22",
       "name": "購入後キャンセル",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "E_unpredictable",
+      "display": "hidden",
+      "display_reason": "落札後はキャンセル不可。発生すれば全損に近いが予測できない（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F23",
       "name": "廃棄",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "hidden",
+      "display_reason": "保管期限超過で廃棄される。額が未取得（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F24",
       "name": "特殊処理",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "D_user_choice",
+      "display": "hidden",
+      "display_reason": "利用者が選んだときだけ（オーナー決定 2026-09-11）。"
     },
     {
       "id": "F25",
       "name": "国際送料",
       "in_fees_master": false,
       "kind": "actual_cost",
-      "excluded_reason": "重量・容積・便の関数。料金表は EMS 表（src/data.js）と各社計算機の管轄で、費目マスタには置かない"
+      "excluded_reason": "重量・容積・便の関数。料金表は EMS 表（src/data.js）と各社計算機の管轄で、費目マスタには置かない",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "単一で最大の費目。現在は日本郵便5方式のみで、宅配便に1円も出していない。"
     },
     {
       "id": "F26",
       "name": "輸出通関手数料",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "¥200,000 超でだけ発生し、条件は完全に分かっている。代行の費目ではなく日本郵便の費目なので5社に同額。現在 optionalLines にあるのは誤配置。"
     },
     {
       "id": "F27",
       "name": "配送業者サーチャージ",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "住所で決まる（FJ の FedEx 直配エリア外 ¥2,710）。マスタに A_confirmed で値があるのにコードに接続されていない。"
     },
     {
       "id": "F28",
       "name": "燃油・遠隔地サーチャージ",
       "in_fees_master": false,
-      "excluded_reason": "全社で未取得（C）。マスタに入れない"
+      "excluded_reason": "全社で未取得（C）。マスタに入れない",
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "送料の 2〜3 割に達する。宅配便を価格化した瞬間に必須になる。未取得。"
     },
     {
       "id": "F29",
       "name": "輸送保険",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "方式に含まれる保険は総額（ZenMarket は F02 に内包）。Jauce の Premium 1.9% は利用者が選ぶもので、かつ課税ベースが原文から読めないため額を出さない。"
     },
     {
       "id": "F30",
       "name": "配送方法の可否制限",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "C_conditional_no_input",
+      "display": "engine_only",
+      "display_reason": "「送れない便に値段を付けない」ための制約。行ではなく、どの方式に価格を出すかを決める。FJ の価格別可否はマスタに A_confirmed で在るのに未接続。"
     },
     {
       "id": "F31",
       "name": "関税（買主負担）",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の duty に持つ"
+      "excluded_reason": "master/customs.json の duty に持つ",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "宛先×原産国×品目×価格×日付。閾値超の率は WTO 単純平均の推定で、実際の幅は 0〜12%。"
     },
     {
       "id": "F32",
       "name": "VAT / GST / Sales tax（買主負担）",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の vat に持つ"
+      "excluded_reason": "master/customs.json の vat に持つ",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "国ごとの税率と課税ベース。米国に連邦売上税は無いので `—` が正しい。"
     },
     {
       "id": "F33",
       "name": "州・地方税",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の provincial_tax に持つ（CA のみ確認）"
+      "excluded_reason": "master/customs.json の provincial_tax に持つ（CA のみ確認）",
+      "occurrence": "A_always",
+      "display": "total",
+      "display_reason": "カナダの実請求では税額の 56% がこれ。州で 0〜9.975%。"
     },
     {
       "id": "F34",
       "name": "通関手数料（配送業者）",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の clearance に持つ。国×業者×利用者の操作で決まる"
+      "excluded_reason": "master/customs.json の clearance に持つ。国×業者×利用者の操作で決まる",
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "税が実際に発生するときだけ課される（5カ国の原文で確認）。免税帯で無条件に足すと必ず過大。経路により €1.56〜€70（45倍）。"
     },
     {
       "id": "F35",
       "name": "立替・DDP 手数料",
       "in_fees_master": false,
-      "excluded_reason": "gastos suplidos として実請求に存在（ES €4.33/€5.32）が、算定式が不明（C）"
+      "excluded_reason": "gastos suplidos として実請求に存在（ES €4.33/€5.32）が、算定式が不明（C）",
+      "occurrence": "C_conditional_no_input",
+      "display": "total",
+      "display_reason": "ES の実請求に `gastos suplidos` €4.33/€5.32 が実在するが算定式が不明。"
     },
     {
       "id": "F36",
       "name": "会社が輸入税を代理徴収",
-      "in_fees_master": true
+      "in_fees_master": true,
+      "occurrence": "B_conditional_known",
+      "display": "total",
+      "display_reason": "同じ国でも社で割れる。豪・星は制度が全社に課すが、EU の IOSS と UK の低額 VAT は任意なので社で割れる。"
     },
     {
       "id": "F37",
       "name": "カード・PayPal の外貨換算上乗せ",
       "in_fees_master": false,
-      "excluded_reason": "モデルの管轄外（D）。判定は円で行う"
+      "excluded_reason": "モデルの管轄外（D）。判定は円で行う",
+      "occurrence": "E_unpredictable",
+      "display": "hidden",
+      "display_reason": "公表された率が存在せず、手数料 0% のカードもあるので発生すら確実でない。判定は円で行う（決定済み）。"
     },
     {
       "id": "F38",
       "name": "通関手数料にかかる VAT",
       "in_fees_master": false,
       "kind": "country_side",
-      "excluded_reason": "master/customs.json の clearance_fee_vat に持つ。ES・DE・CA の実請求3件で確認"
+      "excluded_reason": "master/customs.json の clearance_fee_vat に持つ。ES・DE・CA の実請求3件で確認",
+      "occurrence": "A_always",
+      "display": "engine_only",
+      "display_reason": "通関手数料そのものに乗る税。`clearance` の行に内包して出す。"
     },
     {
       "id": "F39",
       "name": "会社の申告額ポリシー（CN22/インボイスに何を書くか）",
       "in_fees_master": false,
       "kind": "company_attribute",
-      "excluded_reason": "**未取得（C）。輸入側の全ルール（免税閾値・VAT・通関手数料）の入力になるのに、5社とも公表していない。**商品代のみか手数料込みか、Buyee の注文別送ではパーセルごとにいくら申告するか。これが無いと輸入側の計算は開始できない"
+      "excluded_reason": "**未取得（C）。輸入側の全ルール（免税閾値・VAT・通関手数料）の入力になるのに、5社とも公表していない。**商品代のみか手数料込みか、Buyee の注文別送ではパーセルごとにいくら申告するか。これが無いと輸入側の計算は開始できない",
+      "occurrence": "C_conditional_no_input",
+      "display": "engine_only",
+      "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。5社とも非公表。"
     },
     {
       "id": "F40",
       "name": "燃油・遠隔地サーチャージ（配送業者の公表率）",
       "in_fees_master": false,
       "kind": "carrier_attribute",
-      "excluded_reason": "FedEx/DHL は週次で率を公表しており、送料の2〜3割に達する。各社の公表送料が燃油込みかどうかを会社属性として調べる必要がある。現状は全社未取得（C）"
+      "excluded_reason": "FedEx/DHL は週次で率を公表しており、送料の2〜3割に達する。各社の公表送料が燃油込みかどうかを会社属性として調べる必要がある。現状は全社未取得（C）",
+      "occurrence": "C_conditional_no_input",
+      "display": "engine_only",
+      "display_reason": "F28 を会社属性として持つための行。各社の公表送料が燃油込みかどうかを調べる必要がある。"
     }
   ],
   "schema": {
@@ -1607,7 +1730,22 @@
       "threshold_fixed",
       "tiered_by_weight_per_box",
       "zero"
-    ]
+    ],
+    "occurrence_vocabulary": {
+      "A_always": "必ず発生する",
+      "B_conditional_known": "条件で決まり、その条件を持っている",
+      "C_conditional_no_input": "条件で決まるが、入力（日数・寸法・申告額など）が無くて額を出せない",
+      "D_user_choice": "利用者が選んだときだけ発生する",
+      "E_unpredictable": "原理的に予測できない、またはモデルの管轄外",
+      "nonexistent": "存在しない費目だと判定した記録"
+    },
+    "display_vocabulary": {
+      "total": "総額に算入して画面に出す",
+      "engine_only": "計算には効くが、独立した行としては画面に出さない（他の費目の中で分岐する・他の費目の判定パラメータになる・内包される）",
+      "optional": "任意欄に並べる（総額外）",
+      "warning_only": "金額は動かさず、警告文だけ出す",
+      "hidden": "載せない"
+    }
   },
   "eu_uk_prepaid_vat": {
     "fee_id": "F36",
