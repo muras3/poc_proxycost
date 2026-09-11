@@ -102,7 +102,10 @@ export const CONFIDENCE_SPLIT_BY_COUNTRY: CountryConfidenceRow[] = [
   { country: 'DE', totalYen: 42735, fixedYen: 34649, estimateYen: 6724, unverifiedYen: 1362, publishedShare: '81%' },
   { country: 'FR', totalYen: 43152, fixedYen: 36428, estimateYen: 6724, unverifiedYen: 0, publishedShare: '84%' },
   { country: 'AU', totalYen: 33950, fixedYen: 29950, estimateYen: 4000, unverifiedYen: 0, publishedShare: '88%' },
-  { country: 'CA', totalYen: 37062, fixedYen: 30872, estimateYen: 6190, unverifiedYen: 0, publishedShare: '83%' },
+  // **外部レビュー⑤-b（2026-09-11）で CA の GST・州税ベースを直した**
+  // （国際送料を除き、CBSA の duty paid value に揃えた。`compare.ts` の
+  // `taxLines` 参照）ので、CA の総額が下がった。
+  { country: 'CA', totalYen: 35758, fixedYen: 30342, estimateYen: 5416, unverifiedYen: 0, publishedShare: '85%' },
   { country: 'SG', totalYen: 30836, fixedYen: 24500, estimateYen: 6336, unverifiedYen: 0, publishedShare: '79%' },
 ];
 
@@ -123,9 +126,10 @@ export interface ConfidenceTotal {
 }
 
 export const CONFIDENCE_TOTAL: ConfidenceTotal = {
-  totalYen: 264931,
-  fixedYen: 222029,
-  estimateYen: 37974,
+  // ⑤-b で CA が下がった分、7カ国合計も下がった（¥264,931 → ¥263,627）。
+  totalYen: 263627,
+  fixedYen: 221499,
+  estimateYen: 37200,
   unverifiedYen: 4928,
   fixedShare: '84%',
   estimateShare: '14%',
@@ -147,11 +151,13 @@ export interface WeightShiftRow {
   last: string;
 }
 
+// ⑤-b（外部レビュー、2026-09-11）で CA の GST・州税ベースを直したので、
+// 4つの重量すべてで総額が下がった（並び・交差重量は動いていない）。
 export const WEIGHT_SHIFT: WeightShiftRow[] = [
-  { weight: '200 g', perItemG: 200, totalYen: 30754, delta: '−17%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 37062, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', perItemG: 1500, totalYen: 52111, delta: '+41%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', perItemG: 3000, totalYen: 73385, delta: '+98%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
+  { weight: '200 g', perItemG: 200, totalYen: 30108, delta: '−16%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 35758, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '1,500 g', perItemG: 1500, totalYen: 49258, delta: '+38%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '3,000 g', perItemG: 3000, totalYen: 68208, delta: '+91%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
 ];
 
 /**

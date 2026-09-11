@@ -307,8 +307,17 @@ export interface CompareResult {
   rows: Row[];
   /** 重量不明のとき段ごとの結果。確定しているときは null。 */
   bands: Band[] | null;
-  /** 行ID → その行が取りうる総額の幅。bands があるときのみ。 */
-  rowTotalRange: Record<string, [number, number]> | null;
+  /**
+   * 行ID → その行が取りうる総額の幅。bands があるときのみ。
+   *
+   * **上端は `number | null`**（外部レビュー⑤-c、2026-09-11）。段のどれか1つでも
+   * その行の `total.high === null`（上限不明。例: FROM JAPAN の外注梱包費）なら、
+   * 全段を通じた上端も `null` のまま——`compare()` を直接呼ぶ利用者に閉区間の嘘を
+   * つかない。以前はここが常に `[low, low]`（段ごとの下端の最小・最大）で組まれて
+   * いたため、上限不明の行が段の切り替えで閉じた区間に化けていた（UI は必ず重量を
+   * 入れるのでこの経路に到達しないが、`compare()` を直接呼ぶ利用者には嘘だった）。
+   */
+  rowTotalRange: Record<string, [number, number | null]> | null;
   /** 行ID → 1位との差額の幅。bands があるときのみ。 */
   rowDiffRange: Record<string, [number, number]> | null;
   /**
