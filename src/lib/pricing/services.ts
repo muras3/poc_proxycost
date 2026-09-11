@@ -1,4 +1,4 @@
-import type { CountryCode, PostalMethod, SiteId, Tier } from './types';
+import type { CountryCode, CourierMethod, PostalMethod, SiteId, Tier } from './types';
 
 export interface FeeModel {
   /** 点あたりの定額手数料（既定）。 */
@@ -189,12 +189,11 @@ export type PostageMarkup =
    */
   | { kind: 'observed'; points: readonly (readonly [grams: number, addYen: number])[] };
 
-/** その社のその方式の料金。公表額に上乗せを足して出す。 */
-export interface PostageRate {
-  /** 全国共通の上乗せ。国で違うものは `byCountry` が上書きする。 */
-  markup: PostageMarkup;
-  /** 国ごとの上乗せ。**国で額が変わるものがある**（ZenMarket は US と SG が別）。 */
-  byCountry?: Partial<Record<CountryCode, PostageMarkup>>;
+/**
+ * `MarkupPostageRate` と `MeasuredPostageRate` に共通のフィールド。
+ * どちらも「その社がその方式・その国を売っているか」「額の確度」「出典」を持つ。
+ */
+interface PostageRateCommon {
   /**
    * **その社がその国へこの方式を出していない国。**「売っていない」であって
    * 「重すぎる」ではない。上限超と同じ扱い（額を付けず行を比較不能にする）だが、
@@ -215,6 +214,26 @@ export interface PostageRate {
    * ので画面の文言も分ける——選べないのは商品価格のせいであって、重量や国のせいではない。
    */
   priceCapJpy?: number;
+  tier: Tier;
+  sourceUrl: string;
+  checkedOn: string;
+  /** その社の画面での呼び方（原文）。訳さない。 */
+  labelRaw: string;
+}
+
+/**
+ * その社のその日本郵便方式の料金。**公表額に上乗せを足して出す。**
+ *
+ * `PostalMethod`（`postage.ts` 冒頭の3条件）専用。地帯別の公表料金表という
+ * 一次情報があるので、社の額は「公表額＋上乗せ」に分解できる——分解が成り立つのは
+ * この一次情報があるからで、`MeasuredPostageRate`（宅配便）には無い前提。
+ */
+export interface MarkupPostageRate extends PostageRateCommon {
+  kind: 'markup';
+  /** 全国共通の上乗せ。国で違うものは `byCountry` が上書きする。 */
+  markup: PostageMarkup;
+  /** 国ごとの上乗せ。**国で額が変わるものがある**（ZenMarket は US と SG が別）。 */
+  byCountry?: Partial<Record<CountryCode, PostageMarkup>>;
   /**
    * **上乗せの確度であって、重量の確度ではない。**料金表そのものは日本郵便の公表値
    * （一次情報）なので、この tier は「その社が公表額をそのまま転嫁しているか」だけを表す。
@@ -222,13 +241,43 @@ export interface PostageRate {
    *   estimate … 上乗せはあるが、観測が2点で形を決められない
    */
   tier: Tier;
-  sourceUrl: string;
-  checkedOn: string;
-  /** その社の画面での呼び方（原文）。訳さない。 */
-  labelRaw: string;
   /** 上乗せがある方式だけ、観測の中身を残す。 */
   observed?: string;
 }
+
+/**
+ * その社のその宅配便の料金。**最終価格を正とする。分解しない**
+ * （オーナー確定 2026-09-11、`docs/ROADMAP.md` P2）。
+ *
+ * 各社は FedEx 等と法人契約しており、割引・重量帯別契約・燃油・住宅地サーチャージ・
+ * 自社マージンが外から分離できない。「定価 × 上乗せ率」を逆算すると根拠のない構造を
+ * 発明することになるので、`MarkupPostageRate` の形は使わない——**帯（重量・容積重量）
+ * ごとの最終価格をそのまま持つ。**公式が「送料／手数料」を分けて表示している場合だけ、
+ * 呼び出し側でその2項目に分けて `Line` にする（このデータ自体は分けない）。
+ *
+ * **このPR時点でどの社にもデータを入れていない。**データは並行作業者が
+ * `master/courier-rates.json`（別ファイル）で取っている。ここは器だけ。
+ */
+export interface MeasuredPostageRate extends PostageRateCommon {
+  kind: 'measured';
+  /**
+   * 容積重量の除数（重量 kg = 縦×横×高さ[cm] ÷ この値）。**社ごとに違いうる**
+   * （`docs/audit/o2-courier-2026-09-08.md` §5。UPS 実効 ≈9.5、Nova ≈11.9 という
+   * 報告があるが、測り方に汚染があり除数そのものは未確定——5000 か 6000 かも次の
+   * 実測待ち）。値を入れる作業者が実測から決める。器はここに置くだけ。
+   */
+  volumetricDivisorCm3PerKg: number;
+  /**
+   * 国ごとの、請求重量帯（g、実重量と容積重量の重いほう）→最終価格（円）。
+   * **キーが無い国＝その社のその宅配便がまだ価格化されていない**（`unavailableIn`
+   * とは違う——「売っていない」ではなく「まだ調べていない・調べたが取れなかった」）。
+   * `postage.ts` の `courierPriceFor` がここを引く。表の外の重量は「送れない」。
+   */
+  bandsByCountry: Partial<Record<CountryCode, readonly { maxG: number; yen: number }[]>>;
+}
+
+/** 判別可能合併。`kind` で `markup`（日本郵便）／`measured`（宅配便）を取り違えない。 */
+export type PostageRate = MarkupPostageRate | MeasuredPostageRate;
 
 export interface Service {
   id: string;
@@ -262,7 +311,14 @@ export interface Service {
    *
    * **EMS は5社とも1円まで一致した**（全社 ¥3,400 = 公表額）ので、そこだけ `fixed`。
    */
-  postage: Partial<Record<PostalMethod, PostageRate>>;
+  postage: Partial<Record<PostalMethod, MarkupPostageRate>>;
+  /**
+   * **宅配便（P2）。**このPR時点ではどの社も空——並行作業者がデータを取っている
+   * 間、コード側は「器」だけを用意する。キーの無い方式・空のオブジェクトは
+   * 「値段が付かない」であって「0円」ではない（`compare.ts` の courier 選択ロジック
+   * 参照）。全社が空の間は、この計算機の挙動はこのPRの前後で1円も変わらない。
+   */
+  courier?: Partial<Record<CourierMethod, MeasuredPostageRate>>;
   /** F21。総額の行（`compare.ts` の `storageLine`）。5社とも持つ。 */
   storage: StorageFee;
   /**
@@ -371,6 +427,7 @@ export const SERVICES: Service[] = [
     // 小形包装物を出していない（国際小包のみ）。郵便番号と寸法が必須入力
     postage: {
       'parcel-surface': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         // **米国宛は出していない。**自社の計算機（`country_to=US`）が日本郵便の3方式
         // すべてに「Not available or suspended in your country.」と返す。
@@ -381,6 +438,7 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
       'ems': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         // **米国宛は出していない。**自社の計算機（`country_to=US`）が日本郵便の3方式
         // すべてに「Not available or suspended in your country.」と返す。
@@ -391,6 +449,7 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
       'parcel-air': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         // **米国宛は出していない。**自社の計算機（`country_to=US`）が日本郵便の3方式
         // すべてに「Not available or suspended in your country.」と返す。
@@ -486,6 +545,7 @@ export const SERVICES: Service[] = [
     // 船便の小形包装物は出していない。NOVA GLOBAL・ECMS EXPRESS は自社独自方式で未価格化
     postage: {
       'small-packet-air': {
+        kind: 'markup',
         // **形が決まっていない唯一の上乗せ。**小形包装物は上限 2kg なので、
         // 観測は 600g と 2,000g の2点しか取れない。kg段で割ると DE は 637 と 508 で
         // 一致しないので定額ではなく、2点は必ず直線で結べるので「直線」も発見ではない。
@@ -502,6 +562,7 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
       'parcel-surface': {
+        kind: 'markup',
         // US だけ 1kg 段ごとに ¥100。3点（+100/+200/+500）で一致。
         markup: { kind: 'none' },
         byCountry: { US: { kind: 'per-kg-step', yen: 100 } },
@@ -512,12 +573,14 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
       'ems': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'EMS Standard Parcel',
         sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
         checkedOn: '2026-09-07',
       },
       'parcel-air': {
+        kind: 'markup',
         // US だけ 1kg 段ごとに ¥350。3点（+350/+700/+1,750）で一致。
         markup: { kind: 'none' },
         byCountry: { US: { kind: 'per-kg-step', yen: 350 } },
@@ -627,6 +690,7 @@ export const SERVICES: Service[] = [
     // 価格化していない方式なので繋がない（master-sync.test.ts の NOT_IN_CODE に理由あり）。
     postage: {
       'small-packet-surface': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         // 上限の出典は料金表（estimate ページ）とは別（en_help.txt）。rate 本体の
         // sourceUrl/checkedOn は料金表のまま変えない。
@@ -636,6 +700,7 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
       'small-packet-air': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         priceCapJpy: 30000,
         labelRaw: 'AirMail (Small Packet)',
@@ -643,18 +708,21 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
       'parcel-surface': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'Surface',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
       },
       'ems': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'EMS',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
       },
       'parcel-air': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'AirMail',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
@@ -762,24 +830,28 @@ export const SERVICES: Service[] = [
     // EMS に Recommended バッジが付くが、既定では選択されていない。SAL は小形・小包とも Shipping not available
     postage: {
       'small-packet-air': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'Small Packet (AIR) / Airmail (without tracking)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
       },
       'parcel-surface': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'International Parcel Post (Surface Mail)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
       },
       'ems': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'EMS / Express Mail Service',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
       },
       'parcel-air': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'International Parcel Post (AIR)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
@@ -871,12 +943,14 @@ export const SERVICES: Service[] = [
     // **2方式しか出さない。**小形包装物・宅配便いずれも無い。SAL は行が残るが Not available
     postage: {
       'ems': {
+        kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         labelRaw: 'EMS',
         sourceUrl: 'https://www.jauce.com/price_check.php',
         checkedOn: '2026-09-07',
       },
       'parcel-surface': {
+        kind: 'markup',
         // **1kg 段ごとに ¥250。3点で一致したので形が決まっている。**
         // 率で見ると 10.0% → 16.1% → 25.5% と動くが、kg段で割ると全部 250。
         // 率で持っていた 10% は 600g でしか合わず、5kg で ¥760 の過少だった。
