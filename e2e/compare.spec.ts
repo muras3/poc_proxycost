@@ -1204,6 +1204,35 @@ test.describe('mobile layout', () => {
     await expect(cartItem(page, 'mobile hand-entry check')).toBeVisible();
   });
 
+  test('13c. a long "or more (upper bound unknown)" total does not crush the row into one word per line', async ({ page }) => {
+    // **P1-3 追修正で見つかった実際の崩れ。**`Ranking` セクションの y 座標
+    // だけを見る既存テストは検出できなかった——`RankBoard` の右列
+    // （差額・approx. total）が `shrink-0` のまま幅を持たなかったため、
+    // 「or more (upper bound unknown)」のような長い文字列が右列の内容幅を
+    // 押し広げ、`min-w-0 flex-1` の左列（社名・内訳）が単語ごとに折り返される
+    // ところまで潰れていた。既定カート（米国）は `rankIndeterminate` で
+    // 全行がこの文言を持つので、ここで直接そのレイアウトを縛る。
+    await gotoCompare(page);
+    await expect(page.getByText(/upper bound unknown/).first()).toBeVisible();
+
+    const rows = ranking(page).locator('li[data-row-id]');
+    const n = await rows.count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      const row = rows.nth(i);
+      const info = row.getByTestId('row-info');
+      const rowBox = (await row.boundingBox())!;
+      const infoBox = (await info.boundingBox())!;
+      // 単語ごとの折り返しに壊れると、左列の幅がほぼ0まで潰れ、行の高さが
+      // 行数ぶん異常に伸びる。**幅と高さの両方**を縛ることで、片方だけを
+      // 通す偶然の実装を防ぐ。
+      expect(infoBox.width, `row ${i}: 左列が潰れている（${Math.round(infoBox.width)}px）`)
+        .toBeGreaterThan(rowBox.width * 0.5);
+      expect(rowBox.height, `row ${i}: 行の高さが異常（${Math.round(rowBox.height)}px）`)
+        .toBeLessThan(260);
+    }
+  });
+
   test('14. no cost×company table on a phone', async ({ page }) => {
     await gotoCompare(page);
     await expect(breakdownTable(page)).toBeHidden();
@@ -1260,12 +1289,12 @@ test.describe('mobile layout', () => {
 // 実際に画面を操作して、出典名・参照日・転記したレートが出ることを見る。
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('the currency line under the winner cites the rate it actually used', () => {
-  // 見出しの1文。順位の直下の別の文（安定性の注記）と取り違えないよう2条件で絞る。
-  const summary = (page: Page) => page
-    .locator('p')
-    .filter({ hasText: /is cheapest/ })
-    .filter({ hasText: /approx\. total/ })
-    .first();
+  // 見出しの1文。**文言ではなく要素そのものを掴む**（P1-3 追修正）。
+  // 以前は `/is cheapest/` を含むかで絞っていたが、`rankIndeterminate` のとき
+  // Summary は「is cheapest」と断定しなくなった（判定不能で最安を言い切るのは
+  // 自己矛盾なので削った）——文言に依存したセレクタは表示の正しい変更のたびに
+  // 壊れる。`data-testid="summary"` で要素を直接掴む。
+  const summary = (page: Page) => page.getByTestId('summary');
 
   test('the default destination shows the transcribed USD rate and the ECB reference date',
     async ({ page }) => {
