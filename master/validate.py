@@ -38,6 +38,19 @@ for r in fees["rows"]:
     if "unknown" in json.dumps(r["rule"], ensure_ascii=False):
         check(r.get("amount_tier") == "C_unknown",
               f"{tag}: rule に unknown を含むのに amount_tier が C_unknown でない")
+    # rule.inferred_marketplaces は、行全体が A_confirmed でも
+    # マーケットプレイス単位で推論値であることを示す印。基準を必ず持たせる
+    for mk, info in r["rule"].get("inferred_marketplaces", {}).items():
+        itag = f"{tag}/{mk}"
+        check(info.get("tier") == "B_inferred",
+              f"{itag}: inferred_marketplaces の tier が B_inferred でない")
+        check(bool(info.get("inference_basis")),
+              f"{itag}: inferred_marketplaces に inference_basis が無い")
+        check(bool(info.get("sources")),
+              f"{itag}: inferred_marketplaces に sources が無い")
+        for s in info.get("sources", []):
+            check(bool(s.get("source")) and bool(s.get("quote")) and bool(s.get("checked_on")),
+                  f"{itag}: sources の1件に source/quote/checked_on のいずれかが無い")
     # A 行は rule 内の数値が quote に現れること（引用が主張を支えているか）
     if r["tier"] == "A_confirmed" and "quote" in r:
         nums = [v for v in json.loads(json.dumps(r["rule"])).values() if isinstance(v, (int, float))]
