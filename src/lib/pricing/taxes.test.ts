@@ -82,7 +82,7 @@ describe('the duty note says something a buyer can read', () => {
     const at = (cc: CountryCode, perItemYen: number) => {
       const rows = compare({ items: items(5, perItemYen, 600), country: cc }).rows;
       const row = rows.find((r) => r.comparable)!;
-      return { total: row.total, duty: line(row, 'duty') };
+      return { total: row.total.low, duty: line(row, 'duty') };
     };
     for (const cc of ['DE', 'FR'] as CountryCode[]) {
       const under = at(cc, 5400);   // 5点 ¥27,000 → €150 以下
@@ -141,7 +141,7 @@ describe('the US prepayment fee is disclosed as a cost we cannot price', () => {
   test('it never enters the total — the board stays comparable', () => {
     const rows = rowsFor('US', 15000);
     for (const row of rows) {
-      expect(row.total, row.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
+      expect(row.total.low, row.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
     }
     // **比較不能になる行があるとしても、理由は前払手数料ではない。**
     // 米国で落ちるのは Neokyo の1行だけで、その理由は日本郵便を売っていないこと。
@@ -214,7 +214,7 @@ describe('the GST the service collects at checkout is shown per service', () => 
       expect(l.tier, row.id).toBe('fixed');
       expect(l.sourceUrl, row.id).toMatch(/^https:\/\//);
       // 総額に入る。開示ではなく実費として積む。
-      expect(row.total, row.id).toBe(row.lines.reduce((a, x) => a + (x.amount ?? 0), 0));
+      expect(row.total.low, row.id).toBe(row.lines.reduce((a, x) => a + (x.amount ?? 0), 0));
       expect(row.excluded, row.id).not.toContain(l.label);
     }
   });
@@ -246,7 +246,7 @@ describe('the GST the service collects at checkout is shown per service', () => 
         expect(row.excluded, row.id).not.toContain(l.label);
       }
       // 額が在るなら総額と一致する。
-      expect(row.total, row.id).toBe(row.lines.reduce((x, y) => x + (y.amount ?? 0), 0));
+      expect(row.total.low, row.id).toBe(row.lines.reduce((x, y) => x + (y.amount ?? 0), 0));
     }
     // 確認できた社は fixed、それ以外は estimate。**両方が表に出ていること。**
     const fixed = rows.filter((r) => line(r, PREPAID).tier === 'fixed').map((r) => r.serviceId);

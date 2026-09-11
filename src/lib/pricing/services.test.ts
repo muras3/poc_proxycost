@@ -182,7 +182,7 @@ describe('the service table itself', () => {
     }).rows;
     expect(rows[0]!.serviceId).toBe('neokyo');
     expect(rows[0]!.paysUs).toBe(false);
-    expect(rows.map((r) => r.total)).toEqual([...rows.map((r) => r.total)].sort((a, b) => a - b));
+    expect(rows.map((r) => r.total.low)).toEqual([...rows.map((r) => r.total.low)].sort((a, b) => a - b));
   });
 
   test('Buyee alone ships per order, and nobody folds domestic shipping into their fee', () => {
@@ -351,7 +351,7 @@ describe('storage is a total line for every service (0d)', () => {
       const storage = storageOf(s.id);
       expect(storage.label, s.id).toMatch(/^Storage/);
       expect(storage.sourceUrl, s.id).toMatch(/^https:\/\//);
-      expect(row.total, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
+      expect(row.total.low, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
     }
   });
 
@@ -645,7 +645,7 @@ describe('FROM JAPAN — ¥500 per item, and ¥200 only on a Yahoo! Auctions win
     const row = one('fromjapan');
     expect(amount(row, 'service-fee')).toBe(500);
     expect(row.lines.some((l) => /protection/i.test(l.label))).toBe(false);
-    expect(row.total).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
+    expect(row.total.low).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
   });
 });
 
