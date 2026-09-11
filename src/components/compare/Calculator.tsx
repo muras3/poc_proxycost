@@ -12,7 +12,6 @@ import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
 import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
 import { ItemList, type ItemListHandle } from './ItemList';
-import { OptionalExtras } from './OptionalExtras';
 import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
 import { ProvincePicker } from './ProvincePicker';
@@ -187,7 +186,6 @@ export function Calculator() {
 
           <CostTable result={result} />
 
-          <OptionalExtras rows={result.rows} />
           <WhatCouldBeOff result={result} />
 
           {/* 広告はここだけ。比較の中・横には置かない。 */}

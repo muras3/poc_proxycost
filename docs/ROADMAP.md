@@ -23,7 +23,7 @@ PR の状態は持たない）。**手で書くので必ず腐る。PR がマー
 
 ## P0 ── 決定をコードに反映する（調査ゼロ・値の変更なし）
 
-**6項目中 ✅完了4／🔵走行中1／🟡判断待ち0／⚪未着手1**（2026-09-11 時点。数え直し済み）
+**6項目中 ✅完了5／🔵走行中1／🟡判断待ち0／⚪未着手0**（2026-09-11 時点。数え直し済み）
 
 | # | やること | 得られるもの | 状態 | 根拠 |
 |---|---|---|---|---|
@@ -31,11 +31,11 @@ PR の状態は持たない）。**手で書くので必ず腐る。PR がマー
 | 0b | F26 輸出通関を任意欄 → 総額（条件 ¥200,000 超） | 条件は既知なので調査ゼロ | ✅ 完了 | ブランチ `claude/export-clearance-and-method-eligibility` |
 | 0c | F27（FedEx 直配エリア外 ¥2,710）／ F30（価格別の方式可否）をマスタから接続（T-F8） | **取得漏れではなく接続漏れ**の解消 | ✅ 完了 | ブランチ `claude/export-clearance-and-method-eligibility`（F27 はデータのみ接続し画面には出さない。F30 は Small_Packet のみ接続） |
 | 0d | F21 保管を総額へ。日数欄・既定 45 日・tier `estimate` | Neokyo は商品 45 日で測り、荷物 7 日を note に（R3） | ✅ 完了 | ブランチ `claude/storage-into-total`（保管行そのものは tier `fixed`/`none`。`estimate` は日数入力欄の既定45日という**我々の仮定**を画面で示す色） |
-| 0e | 任意欄（`optionalLines`）の撤去。12項目を hidden 化 | 画面が軽くなる。**`display: optional` が 0 件になったので枠ごと不要** | ⚪ 未着手 | |
+| 0e | 任意欄（`optionalLines`）の撤去。`display` に従わせる | 画面が軽くなる。**`display: optional` が 0 件になったので枠ごと不要**。9件を hidden 化・2件（外注梱包・Premium insurance）は total の行として残した | ✅ 完了 | ブランチ `claude/display-driven-lines`（`Row.optionalLines`/`Service.optional`/`OptionalExtras.tsx` を撤去。`Service.unpricedFees` を新設し、額を公表していない `display: total` の2件を毎行の総額に amount: null で足す。`master-sync.test.ts` に `display` 突き合わせを追加） |
 | 0f | F13b の警告を画面に（金額は動かさない。T-F10） | R1 の開示 | 🔵 走行中（PR 未出） | |
 
-**`optionalLines` は枠ごと消すことを推奨する。**使われない枠を残すと、次の作業者が
-費目を戻す置き場になる。
+**`optionalLines` は枠ごと消した（0e）。**使われない枠を残すと、次の作業者が
+費目を戻す置き場になるため。
 
 ### 0a から派生した作業
 
