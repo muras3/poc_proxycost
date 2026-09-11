@@ -776,6 +776,26 @@ test('18b. the shipping method is a control, and picking one moves every total',
   }
 });
 
+test('18d. storage days shows the 45-day default and changing it recomputes every total (0d)', async ({ page }) => {
+  // **保管日数は既定 45 日で画面に見えていること**（隠して通さない）。既定45日では
+  // 無料期間30日の Buyee だけに課金が乗る（他4社は無料期間の内側で ¥0）。
+  await gotoCompare(page);
+  const days = page.getByLabel('Days kept in the warehouse before shipping');
+  await expect(days).toHaveCount(1);
+  await expect(days).toHaveValue('45');
+
+  const before = new Map(priced(await readRanking(page)).map((r) => [`${r.name}/${r.variant}`, r.total]));
+  expect(before.size).toBeGreaterThan(0);
+
+  // 30日に変えると、無料期間30日のBuyeeの保管料が消えて安くなる。
+  await days.fill('30');
+  await expect.poll(async () => {
+    const rows = priced(await readRanking(page));
+    const buyee = rows.find((r) => r.name === 'Buyee' && r.variant === 'default');
+    return buyee?.total;
+  }).toBeLessThan(before.get('Buyee/default')!);
+});
+
 test('18c. a method too small for the parcel marks every row not comparable, it does not make them cheap', async ({ page }) => {
   // 小形包装物は 2kg まで。**上限超を最上段の額で通すと、送れないものを最安に見せる。**
   await gotoCompare(page);
