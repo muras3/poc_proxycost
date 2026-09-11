@@ -788,6 +788,32 @@
       "quote": "Actual cost (Items which do not charge shipping fees inside Japan are charged 0 yen)"
     },
     {
+      "id": "F14",
+      "company": "fromjapan",
+      "name": "外注梱包（Outsourced Packing）",
+      "stage": "warehouse",
+      "rule": {
+        "type": "actual_cost_per_order",
+        "amount": "unknown",
+        "trigger_conditions_help": [
+          "50 kg or above",
+          "30 kg or above and 300,000 yen or above",
+          "Fragile, breakable and delicate items that require special handling"
+        ],
+        "trigger_conditions_terms_of_service": [
+          "50 kg or above",
+          "30 kg or above and 300,000 yen or above"
+        ]
+      },
+      "mandatory": false,
+      "tier": "A_confirmed",
+      "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
+      "checked_on": "2026-09-11",
+      "quote": "50 kg or above / 30 kg or above and 300,000 yen or above / Fragile, breakable and delicate items that require special handling",
+      "note": "F14（初回梱包・まとめ梱包）とは別種の追加費用として同じ id に置く（総額行 F14 の基本梱包費とは別。発生条件が立ったときだけの上乗せ）。条件は3つ：(1) 50kg以上 (2) 30kg以上かつ30万円以上 (3) 壊れ物等で特別な取扱いを要する。help_logistics_1622 は壊れ物を複数含む荷物も対象になりうるとする。**額は『Actual cost（実費）』としか書かれておらず、上限額・標準価格・価格レンジ・重量別料金表・過去の請求実例・外注業者の料金表はいずれも公表されていない（探して無かったことの記録）。**事前に額を知る手段も無い：help_logistics_1490/1621/1661/1731 は対象商品の Charge 2 が『梱包・計測後』に確定すると説明しており、title_serviceRule_1820 と help_logistics_1540 は利用者による梱包方法の指定・個別要求を原則認めていない。つまり見積提示・事前同意・外注梱包の拒否の仕組みは無い。**公式内の不一致：ヘルプ（en_help.txt の help_logistics_*）は条件を3つ列挙するが、利用規約（title_serviceRule_1870 直後の title_serviceRule_1880/1890）は50kg以上・30kg以上かつ30万円以上の2つしか列挙せず、条件3（壊れ物）が無い。ここではヘルプの3条件を採用する：理由は、ヘルプの方が詳しく、かつ包括条件『FROM JAPAN が梱包できないと判断した商品』（help_logistics_1730）を持つため、条件3はその具体化として整合するから。この不一致自体を消さずに残す。**この計算機にとっての意味：条件1・2はこの計算機では原理的に発生しない（EMS の上限が30kgなので50kgは表現できず、30kgは表の上端ぴったり）。残るのは条件3（壊れ物）だけで、これは FROM JAPAN の主観判断なので我々には検出できない。額は出せないままだが、『ほぼ起きない』と言える根拠が初めて得られた。**",
+      "amount_tier": "C_unknown"
+    },
+    {
       "id": "F16",
       "company": "fromjapan",
       "name": "再梱包",
@@ -1126,13 +1152,39 @@
       "rule": {
         "type": "free_days",
         "days": 60,
+        "max_days": 120,
+        "after_max": "disposal",
         "after": "monthly_fee_days_61_120_amount_unknown"
       },
       "mandatory": true,
       "tier": "A_confirmed",
-      "source": "https://www.jauce.com/japan_auction_detail",
-      "checked_on": "2026-09-07",
-      "quote": "Free for 60 days; monthly fee charged days 61-120",
+      "source": "https://www.jauce.com/japan_auction_detail#storage",
+      "checked_on": "2026-09-11",
+      "quote": "Storage fees depend on the item size and value. Very roughly, a music CD would cost around 200yen/month and a guitar around 700yen/month. / Maximum storage time in Jauce.com warehouses is 120 days. Unclaimed items are discarded at the end of 120 days.",
+      "note": "無料60日・最大保管120日（＝有料期間は最大60日≒約2か月）。月額は一律ではなく『サイズと価値で変わる』と公式が明記。参考額はCD約¥200/月・ギター約¥700/月の2点のみで料金表ではない（\"Very roughly\"と前置き）。金額そのもの（F21）とは別行に分ける。以前の checked_on 2026-09-07 の quote（Free for 60 days; monthly fee charged days 61-120／同じ https://www.jauce.com/japan_auction_detail ページ）は矛盾しないため rule.after にそのまま残す。",
+      "amount_tier": "C_unknown"
+    },
+    {
+      "id": "F21",
+      "company": "jauce",
+      "name": "保管超過",
+      "stage": "warehouse",
+      "rule": {
+        "type": "per_month_variable_by_size_value",
+        "amount": "unknown",
+        "max_days": 120,
+        "after_max": "disposal",
+        "reference_examples_jpy_per_month": {
+          "music_cd": 200,
+          "guitar": 700
+        }
+      },
+      "mandatory": false,
+      "tier": "A_confirmed",
+      "source": "https://www.jauce.com/help/knowledgebase.php?article=18",
+      "checked_on": "2026-09-11",
+      "quote": "Storage fees depend on the item size and value. Very roughly, a music CD would cost around 200yen/month and a guitar around 700yen/month. / Maximum storage time in Jauce.com warehouses is 120 days. / Unclaimed items are discarded at the end of 120 days.",
+      "note": "有料期間は F20 の無料60日を過ぎた61〜120日目（最大60日≒約2か月）。月額は一律ではなく、サイズと価値で決まると公式が明記。公表されている参考額は CD 約¥200/月・ギター約¥700/月の2点だけで、料金表ではない（\"Very roughly\"の前置き付き）。**¥700 はギターの一例であって上限ではない。大きい・高価な物はこれより高い可能性がある。¥700 を上限として扱ってはいけない。**計算式・最低額・金額の上限・未払い許容回数はいずれも公表されておらず、探しても見つからなかった（無かったことの記録）。120日を過ぎると未回収の荷物は放棄品とみなされ処分される。処分前に通知する旨が利用規約にある：User Agreement（https://www.jauce.com/terms#Storage）\"Items left in our warehouse for over 120 days without shipping directives or communication from the user will be considered abandoned. ... JAUCE reserves the right to dispose of them. JAUCE will notify users as the end of the complimentary storage period nears and again before taking any disposal actions.\"",
       "amount_tier": "C_unknown"
     },
     {
@@ -1157,7 +1209,43 @@
     {
       "id": "F29",
       "company": "jauce",
-      "name": "保険（Premium）",
+      "name": "保険（標準・基本補償 ¥20,000 まで）",
+      "stage": "export",
+      "rule": {
+        "type": "zero",
+        "reason": "free_up_to_threshold",
+        "threshold_jpy": 20000
+      },
+      "mandatory": true,
+      "tier": "A_confirmed",
+      "source": "https://www.post.japanpost.jp/service/send/oversea/list/delivery/ems/damage_en.html",
+      "checked_on": "2026-09-11",
+      "quote": "Claim amount under 20,000JPY is free of charge.",
+      "note": "Jauce は『全発送に郵便保険を付ける』とだけ案内している（https://www.jauce.com/help/knowledgebase.php?article=23 \"We ship all items with postal insurance\"、確認日2026-09-11。同ページに料金・補償額・計算式は無い）。Premium Insurance（1.9%、利用者が選ぶ任意）とは別物。額の出どころは Jauce ではなく日本郵便（EMS 損害賠償）なので、source は日本郵便のページに立てる（輸出通関¥2,800と同じ構造）。基準ケース（5点×¥3,000＝¥15,000）はこの¥20,000以内に収まるため、この行では追加費用は発生しない。"
+    },
+    {
+      "id": "F29",
+      "company": "jauce",
+      "name": "保険（標準・¥20,000 超過分。Jauce が自動付保・請求するかは未確定）",
+      "stage": "export",
+      "rule": {
+        "type": "risk_flag",
+        "reference_schedule_source": "japan_post_ems_damage_compensation",
+        "reference_per_20000_jpy_increment": 50,
+        "reference_cap_jpy": 2000000
+      },
+      "mandatory": false,
+      "tier": "B_inferred",
+      "source": "https://www.post.japanpost.jp/service/send/oversea/list/delivery/ems/damage_en.html",
+      "checked_on": "2026-09-11",
+      "inference_basis": "日本郵便 EMS 損害賠償ページの公表表（基本補償¥20,000までは無料、以降は補償額¥20,000増ごとに¥50、補償上限¥2,000,000）を rule に転記した。表全体を quote として引用していないため tier は B とする。Jauce 自身の料金・計算機（https://www.jauce.com/price_check.php、米国向け1,000g・20x20x20cmで確認、確認日2026-09-11）は EMS ¥5,300 / Smart Packing ¥420 / Postal Insurance『Available』とだけ表示し、標準保険の別料金行も商品価額の入力欄も無い。つまりこの日本郵便の増額保険料を Jauce が利用者に自動で付保・請求するかどうかを一次情報から確認できていない——これが残る問い。",
+      "amount_tier": "C_unknown",
+      "note": "我々の計算機での実害の見積もり：基準ケースは5点×¥3,000＝¥15,000で¥20,000の基本補償の内側に収まるため、この行の増額保険料は発生しない。影響が出るのは申告額が¥20,000を超えるカートから。"
+    },
+    {
+      "id": "F29",
+      "company": "jauce",
+      "name": "保険（Premium・任意）",
       "stage": "export",
       "rule": {
         "type": "rate_of_total",
@@ -1167,7 +1255,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Premium insurance: 1.9% over the total amount"
+      "quote": "Premium insurance: 1.9% over the total amount",
+      "note": "利用者が注文時に選ぶ任意のオプション（区分D）。標準の郵便保険（このIDの他の2行）とは別物。課税ベース（『total amount』が何を指すか）・最低額・補償上限は公表されていない。利用規約にある『過去12か月のサービス料累計または$200』はJauce全体の責任上限であり、Premium Insuranceの補償上限としては採らない。総額外・額は出さない（確定）。"
     },
     {
       "id": "F30",
@@ -1632,7 +1721,7 @@
       "in_fees_master": true,
       "occurrence": "A_always",
       "display": "total",
-      "display_reason": "方式に含まれる保険は総額（ZenMarket は F02 に内包）。Jauce の Premium 1.9% は利用者が選ぶもので、かつ課税ベースが原文から読めないため額を出さない。"
+      "display_reason": "方式に含まれる保険は総額（ZenMarket は F02 に内包）。Jauce は標準の郵便保険を3段で持つ：基本補償¥20,000までは無料（確定）／¥20,000超過分は日本郵便の増額表があるが Jauce が自動付保・請求するかは未確定（開いた問い）／Premium 1.9% は利用者が選ぶもので、かつ課税ベースが原文から読めないため額を出さない。"
     },
     {
       "id": "F30",
@@ -1768,6 +1857,7 @@
       "per_hour",
       "per_kg",
       "per_kg_over_threshold",
+      "per_month_variable_by_size_value",
       "rate_of_item_price",
       "rate_of_total",
       "rate_of_transaction_by_method",
