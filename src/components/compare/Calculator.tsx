@@ -71,18 +71,23 @@ export function Calculator() {
             value={country}
             onChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
           />
+          {/* **保管日数も行き先・方式と同じ格の入力**（F21、0d）。既定45日は我々の仮定
+              なので、`tier: estimate` と同じ琥珀色で示す（`StorageDaysInput` のコメント）。
+              **`MethodPicker` より前に置く。**`MethodPicker` の `<select>` は選択肢の文言が
+              長く、モバイル幅ではそれだけで1行を使い切る（`Ship to` の隣には並ばない）。
+              コンパクトな `StorageDaysInput` を先に置くことで `Ship to` と同じ行に収まり、
+              モバイルで折り返す行数が増えない（`e2e/parcel.spec.ts` の「箱がビューポートに
+              収まる」を保つ。並び順を変えただけで、新しいデザインは発明していない）。 */}
+          <StorageDaysInput
+            value={storageDays}
+            onChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
+          />
           {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
               （Neokyo 原文「please select ... as the shipment method」）。
               既定は EMS で、各社の既定が分かったら変える（`compare()` の `DEFAULT_METHOD`）。 */}
           <MethodPicker
             value={method}
             onChange={(m) => dispatch({ type: 'method', method: m })}
-          />
-          {/* **保管日数も行き先・方式と同じ格の入力**（F21、0d）。既定45日は我々の仮定
-              なので、`tier: estimate` と同じ琥珀色で示す（`StorageDaysInput` のコメント）。 */}
-          <StorageDaysInput
-            value={storageDays}
-            onChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
           />
           {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
               他国で常に出しておくと、選べない欄が画面に残る。 */}
