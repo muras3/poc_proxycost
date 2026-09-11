@@ -36,7 +36,12 @@ export const DEFAULT_STORAGE_DAYS = 45;
 const L = (
   key: string, label: string, amount: number | null, note: string,
   tier: Tier = 'fixed', sourceUrl: string | null = null,
-): Line => ({ key, label, amount, note, tier, sourceUrl });
+  /**
+   * P1-4: この行が輸入側（買主側）で発生する費目——「どの社を使っても同じように
+   * かかる」もの——のときだけ `'shared'` を渡す。`Line.scope` のコメント参照。
+   */
+  scope?: 'shared',
+): Line => ({ key, label, amount, note, tier, sourceUrl, ...(scope ? { scope } : {}) });
 
 // 確度の強さの順（弱い順）。複数サイトの行をまとめるとき、含まれる中で最も弱い確度を行の確度にする。
 const TIER_STRENGTH: Record<Tier, number> = { none: 0, unverified: 1, estimate: 2, fixed: 3 };
@@ -73,6 +78,36 @@ function totalRange(lines: Line[]): Row['total'] {
     high += l.unknownCapYen;
   }
   return { low, high };
+}
+
+/**
+ * `Row.rankHigh`（P1-4、外部レビュー、オーナー確定 2026-09-11）。**画面には出ない
+ * 内部専用の上端**——順位・おすすめ枠・`rankIndeterminate` の判定にだけ使う。
+ *
+ * `totalRange()` とほぼ同じだが、`Line.scope === 'shared'` な未取得行（社を問わず
+ * 輸入側でかかる未知——米国の Zonos 前払い利用料・連邦売上税の不在など）は
+ * **無視して 0 として畳む。**「どの社を使っても同じようにかかる未知」は、
+ * どの社が安いかという相対的な順位には効かない——全社の真の総額を同じだけ
+ * 押し上げるだけで、差を作りも消しもしない。社固有の未取得行（FROM JAPAN の
+ * 外注梱包など。`scope` 無し）は `totalRange()` と同じく `null` を返す。
+ *
+ * **`total.high`（画面表示）はこの関数の影響を受けない。**共通の未知があっても
+ * 総額の「以上（上限不明）」という表示は消さない——絶対値の不確かさは本物だから。
+ */
+function rankHighFor(lines: Line[]): number | null {
+  let high = sum(lines);
+  for (const l of lines) {
+    if (l.amount != null) {
+      if (l.amountKind === 'range' && l.amountHighYen != null) {
+        high += l.amountHighYen - l.amount;
+      }
+      continue;
+    }
+    if (l.scope === 'shared') continue; // 共通の未知は順位に効かせない（0 として畳む）
+    if (l.unknownCapYen == null) return null;
+    high += l.unknownCapYen;
+  }
+  return high;
 }
 
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
@@ -285,8 +320,11 @@ function taxLines(
       us?.knownFloor ? 'estimate' : c.dutyTier,
       us ? US_HTS_SOURCE_URL : (c.dutyRateSourceUrl ?? c.sourceUrl)));
   } else {
+    // P1-4: 税率が未公表であること自体は国の制度の話で、どの社を使っても同じ。
+    // 「輸入側でかかる共通の未知」として scope: 'shared' を付ける。
     out.push(L('duty', 'Duty', null,
-      `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`, 'none', c.sourceUrl));
+      `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`, 'none', c.sourceUrl,
+      'shared'));
   }
 
   const vatLabel = cc === 'US' ? 'Sales tax'
@@ -297,7 +335,9 @@ function taxLines(
   const sellerCollects = companyCollects
     || (c.sellerCollectsBelow != null && declaredPerParcel <= c.sellerCollectsBelow);
   if (c.vatRate == null) {
-    out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl));
+    // P1-4: 連邦売上税が無いこと自体は国の制度の話で、どの社を使っても同じ。
+    out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl,
+      'shared'));
   } else if (sellerCollects) {
     out.push(L('vat', vatLabel, 0,
       c.sellerCollectsBelow != null
@@ -336,7 +376,9 @@ function taxLines(
       + ' charged only on parcels the carrier has to collect tax on',
       c.clearanceTier, clearanceSrc));
   } else if (!band) {
-    out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl));
+    // P1-4: 帯そのものが無いことは国の制度の話で、どの社を使っても同じ。
+    out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl,
+      'shared'));
   } else if (band.amount === 0) {
     out.push(L('clearance', 'Customs clearance fee', 0, band.note, c.clearanceTier, clearanceSrc));
   } else {
@@ -355,11 +397,13 @@ function taxLines(
   // だから null 行にして、`excluded` に名前を載せる——「発生するのに額を知らない」を
   // 画面に出すための行（米国の Zonos 利用料と同じ形）。
   if (cc === 'GB' && alcoholItems(items).length > 0) {
+    // P1-4: 酒税がかかるかどうかはカートの中身（品目）で決まり、どの社を使っても
+    // 同じ——輸入側の話。scope: 'shared'。
     out.push(L('excise', 'UK excise duty on alcohol — rate depends on the ABV', null,
       'The UK charges excise duty on alcohol sent from abroad at any value — neither the £135'
       + ' nor the £39 threshold exempts it. The rate is per litre of pure alcohol and depends'
       + ' on the strength, which no listing tells us.',
-      'none', 'https://www.gov.uk/goods-sent-from-abroad/tax-and-duty'));
+      'none', 'https://www.gov.uk/goods-sent-from-abroad/tax-and-duty', 'shared'));
   }
 
   // 関税の事前納付（米国）。**「発生するが額を知らない」を画面に出すための行。**
@@ -369,7 +413,9 @@ function taxLines(
   // **費目を出す側に倒す**（持っている情報を隠すより、余分に開示するほうが安全）。
   const dp = c.dutyPrepayment;
   if (dp && declaredPerParcel <= dp.upTo) {
-    out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl));
+    // P1-4: Zonos の前払い利用料は日本郵便が米国宛に課す条件で、どの社を使っても
+    // 同じようにかかる——輸入側の話。scope: 'shared'。
+    out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl, 'shared'));
   }
   return out;
 }
@@ -871,6 +917,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   if (prepaid) lines.push(prepaid);
 
   const total = totalRange(lines);
+  const rankHigh = rankHighFor(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
   // **重量は費目ではないので、行の tier には現れない。** EMS 行が「公表料金」になった今、
   // 重量が推定であることをここで別に数えないと、推定の重量で引いた総額が確定値の顔をする。
@@ -898,6 +945,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     tag,
     lines,
     total,
+    rankHigh,
     excluded,
     parcels,
     rank: 0,
@@ -1031,9 +1079,19 @@ function computeBracket(ok: Row[]): { recommended: Set<string>; equivalent: Set<
   // 1位グループ自身が全員 `high === null`（例: US）なら `bound` は最後まで `null`
   // のままで、その場合だけ実務上 Infinity 相当（＝全員を通す）にフォールバックする
   // ――「本当に誰の上限も置けない」ときは、今までどおり安全側に倒す。
+  //
+  // **P1-4 で `total.high` ではなく `rankHigh` を見るようにした。** `total.high`
+  // は共通の未知（`Line.scope === 'shared'`。米国の Zonos・連邦売上税など、
+  // どの社を使っても同じようにかかる未取得行）が1件でもあれば `null` になる
+  // ――画面の「以上（上限不明）」表示はそれで正しい。だが順位判定にまで
+  // 同じ `null` を使うと、**社同士の差を作らない未知のせいで全社の順位が
+  // 判定不能になる**という別の巻き込みが起きる（米国で FROM JAPAN が1位でも、
+  // 他社の閉じた総額同士の差は本来判定できるはずだった）。`rankHigh` は
+  // 共通の未知を「差を生まない」ものとして無視し、社固有の未知（FROM JAPAN の
+  // 外注梱包など）だけを引き続き `null` として扱う。
   let bound: number | null = null;
   for (const r of leaders) {
-    if (r.total.high != null) bound = bound == null ? r.total.high : Math.max(bound, r.total.high);
+    if (r.rankHigh != null) bound = bound == null ? r.rankHigh : Math.max(bound, r.rankHigh);
   }
   const rest = ok.filter((r) => r.total.low > leadLow);
   let remainingSlots = Math.max(0, BRACKET_CAP - leadersInBracket.length);
@@ -1052,7 +1110,7 @@ function computeBracket(ok: Row[]): { recommended: Set<string>; equivalent: Set<
     }
     // 上限不明の行を通しても境界は伸ばさない――伸ばせば旧来の「1件の上限不明が
     // 全社を飲み込む」経路が別の場所（1位グループ以外）で復活してしまう。
-    if (r.total.high != null) bound = bound == null ? r.total.high : Math.max(bound, r.total.high);
+    if (r.rankHigh != null) bound = bound == null ? r.rankHigh : Math.max(bound, r.rankHigh);
   }
   return { recommended, equivalent };
 }
@@ -1103,10 +1161,15 @@ function bracketIds(rows: Row[]): string[] {
  * ¥9,061 ―― が両方 `equivalent` になり、「どこを選んでも総額はほぼ変わらない」
  * と表示していた）。
  *
- * **新定義:** 比較可能な社が2社以上あって、その**全員の上限が置けない
- * （`total.high === null`）**ときだけ真。「本当に全社の上端が置けない」
- * （米国 Zonos が全社の Jauce を除く行に乗るなど、閉区間の行が1つも残らない）
- * 場合のみ、確度をもって順位を言えないので判定不能とする。
+ * **新定義（P1-4 でさらに絞った）:** 比較可能な社が2社以上あって、その**全員の
+ * `rankHigh` が置けない**ときだけ真。`rankHigh` は `total.high` と違い、
+ * 「どの社を使っても同じようにかかる共通の未知」（`Line.scope === 'shared'`。
+ * 米国の Zonos 前払い利用料・連邦売上税の不在など）を無視する（`rankHighFor`
+ * 参照）。「本当に誰の順位も置けない」（米国: 全行が共通の未知しか無く、
+ * 社固有の未知も0件で、それでも `rankHigh` が全員 `null`……という状況は
+ * 実装上は起きない。米国は現状これに該当しないので `rankIndeterminate` は
+ * `false` になる。もし将来、社固有の未知しか無い社ばかりになれば、そのときは
+ * 真にこの定義が真になる）場合のみ、確度をもって順位を言えないので判定不能とする。
  *
  * **なぜこの絞り方か:** `computeBracket`／`overlapsLeader` は「上限不明を偽の
  * 上端で塞がない」という P1 の大原則を保つため、上限不明の1位を Infinity 扱い
@@ -1115,8 +1178,19 @@ function bracketIds(rows: Row[]): string[] {
  * `equivalent` だけを見て判定不能を測ると、上限不明の1位が絡むたびに「巻き込み」
  * が起きうる構造は残る。**閉区間同士に確定した差がある限り、それは判定不能では
  * ない**という一次の事実を、`recommended`／`equivalent` という派生した印を経由
- * せずに `total.high` から直接測ることで、①のような巻き込みが再発する経路そのもの
+ * せずに `rankHigh` から直接測ることで、①のような巻き込みが再発する経路そのもの
  * を断つ。
+ *
+ * **④（外部レビュー、オーナー確定 2026-09-11）:** `total.high` をそのまま使うと、
+ * 米国のように「全社に同じようにかかる共通の未知」（Zonos・連邦売上税）だけで
+ * 全社が `total.high === null` になる国が、閉区間同士の確定した差があっても
+ * 「判定不能」になってしまっていた。**共通の未知は総額の絶対値を本当に不確かに
+ * するが、社同士の相対順位には効かない**（全社を同じだけ押し上げるだけなので）。
+ * `rankHigh` を使うことでこれを区別する——`total.high`（画面表示）は共通の未知
+ * があるかぎり `null` のまま（「以上（上限不明）」は消えない）だが、順位判定は
+ * その未知を無視して進められる。社固有の未知（FROM JAPAN の外注梱包など）は
+ * `rankHigh` でも引き続き `null` を強制する——その社**自身**の順位は不確かな
+ * ままでよい、というのは変わらない。
  *
  * 一方で、上限不明の行が1件でも残っていれば、その行**自身の順位**は依然として
  * 「他社より高いかもしれない」という不確かさを持ち続ける（`comparable` から
@@ -1128,7 +1202,7 @@ function isIndeterminate(rows: Row[]): boolean {
   // **1社しか比較可能な社が無いときは「判別できない」ではない。**選べる社が1つしか
   // 無いだけで、区別すべき相手がいない——「唯一値段が付く社」（`outOfTable` と同じ
   // 状況）であって、複数社が不確かさの中で見分けられない状態とは違う。
-  return comparable.length > 1 && comparable.every((r) => r.total.high == null);
+  return comparable.length > 1 && comparable.every((r) => r.rankHigh == null);
 }
 
 /**

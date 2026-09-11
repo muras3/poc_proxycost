@@ -435,8 +435,9 @@ test.describe('desktop layout', () => {
 
     // **答えが画面の外に出ていない。**箱を上へ持ってきた代償はここに出る。
     // Summary（総額・現地通貨換算）は丸ごと視界の中。**文言ではなく要素で掴む**
-    // ——判定不能では「is cheapest」と言い切らなくなった（P1-3 追修正）ので、
-    // 既定カート（米国・判定不能）でこの文言を探すと見つからない。
+    // ——判定不能では「is cheapest」と言い切らなくなる（P1-3 追修正）ので、
+    // その状態の文言を当てにできない（既定カートは P1-4 で判定不能ではなく
+    // なったが、要素で掴むこの検査自体はどちらの状態でも成り立つ）。
     await expect(page.getByTestId('summary')).toBeInViewport({ ratio: 1 });
     // 順位表そのものも、最初の画面のうちに始まっている。
     const rank = (await page.getByRole('region', { name: 'Ranking' }).boundingBox())!;

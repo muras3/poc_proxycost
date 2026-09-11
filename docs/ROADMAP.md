@@ -309,6 +309,96 @@ US 以外で元々 `rankIndeterminate: false` だったため無変化。`measur
   （3件目に数えるのは時期尚早）。F35 を接続するかどうかは別途、算定式が判明し
   次第の課題として残す。
 
+### P1-4 追記 ──「全社共通の未知」が米国の順位判定そのものを殺していた（外部レビュー、オーナー確定 2026-09-11）
+
+**①の修正後も米国だけは `rankIndeterminate: true` のままだった。**当初これを
+「全行の上端が置けないので正しい」と説明したが、**プロダクトとして誤りだった。**
+
+**何が起きていたか**: 米国で上端が置けない費目を実際に見ると、ZenMarket・Buyee・
+Jauce の3社（FROM JAPAN 以外）は `Sales tax / VAT`（連邦売上税が無いこと）と
+`US import prepayment (Zonos) fee`（前払い利用料。額が非公表）の2件だけが未取得で、
+どちらも**輸入側（買主側）でかかるもので、どの社を使っても同じようにかかる。**
+FROM JAPAN だけがそれに加えて `Outsourced packing`（外注梱包。社固有・偶発的）を
+持つ。つまり米国で本当に分からないのは**総額の絶対値**であって、**どの社が安いか
+ではない**——Zonos・連邦売上税は全社の総額を同じだけ押し上げるだけで、社同士の
+差には一切効かない。だが `isIndeterminate`（P1-4 の①修正版）は `total.high` を
+そのまま見ていたので、この「差を生まない共通の未知」のせいで比較可能な全社の
+`total.high` が `null` になり、**最大の市場である米国だけ、閉区間同士の確定した
+差があっても「どこを選んでも総額はほぼ変わりません」としか出せなかった。**
+
+**直した内容:** 未取得の費目を2種類に分けた。
+
+1. **共通の未知**（`Line.scope === 'shared'`）── 比較可能な全社に同じようにかかる
+   もの。**輸入側の判定だけを行う `taxLines()` がこの行を作るときにだけ**
+   `'shared'` を付ける——`taxLines()` は国・カート（品目・価格・重量）だけで
+   決まり、**社の識別子を一切見ない関数**なので、そこが作る null 行は構造的に
+   「差を生まない」と言える。対象は現状4行: 米国の `vat`（連邦売上税が無いこと）・
+   `duty-prepayment`（Zonos）・`duty`（税率非公表、条件が立てば）・`excise`
+   （英国の酒税、ABV 不明で額を出せない場合）。
+2. **社固有の未知**（`scope` 無し、既定）── その社だけにかかるもの
+   （FROM JAPAN の外注梱包・`prepaid-import-tax` の「確認できていない社」など）。
+   従来どおり、その社の順位を不確かにする。
+
+**判定方法の根拠**: マスタ（`master/fees.json`）の `kind: country_side`
+（F31〜F34・F38）はこの区別に近いが、F35（Zonos 相当）に付いていない・
+`taxLines()` の行と1対1に対応しないため、そのままは使えなかった。代わりに
+**「どの関数がその行を作るか」という構造的な事実**で判定した——`taxLines()`
+はシグネチャに社の識別子を持たず、国・カート情報だけで呼ばれる。これは
+「実際の行を見て、たまたま全社に出ているかどうかで判定する」方式（コーディネーター
+が懸念した「社固有の費目をたまたま全社に出ているからと誤って共通と見なす」危険）
+とは違う——**費目がどの関数から来たかという出自**で判定するので、たまたま今の
+カートで全社に出ているかどうかに左右されない。`services.ts` の `unpricedFees`
+（社ごとの catalog）から来る行は、たとえ将来複数社に同じキーが現れても
+`scope: 'shared'` を明示的に付けない限り社固有のまま扱われる。
+
+**具体的な実装**:
+- `Line.scope?: 'shared'` を型に追加（`src/lib/pricing/types.ts`）。`L()` ヘルパー
+  に7番目の引数として追加し、`taxLines()` 内の4つの null 分岐にだけ付けた。
+- `Row.rankHigh: number | null` を追加——画面には出ない内部専用の上端。
+  `rankHighFor(lines)`（`totalRange()` とほぼ同じだが `scope === 'shared'` な
+  null 行を 0 として畳む）で `buildRow()` が計算する。
+- `computeBracket`／`isIndeterminate` は `total.high` の代わりに `rankHigh` を見る
+  よう変更。**`total.high`（画面表示）は一切変えていない**——共通の未知がある
+  かぎり「以上（上限不明）」の表示はそのまま残る。
+
+**なぜ両立するか（①を壊さない理由）**: ①の修正（境界は既知の上限を持つ行からのみ
+伸ばす）と④の修正（共通の未知を無視する）は直交する。①は「1件の上限不明が
+枠の外の全員を飲み込む経路」を塞ぎ、④は「上限不明の**発生源**を区別して、
+差を生まないものを判定から除く」——同じ `rankHigh`/`total.high` の分離に両方が
+乗っている。社固有の未知（FROM JAPAN の外注梱包）はどちらの修正後も
+`rankHigh === null` のままで、その社**自身**の順位を不確かにし続ける
+（コーディネーター確認事項「FJ の順位の不確かさには引き続き効く」を満たす）。
+
+**実測（UI の既定カート、EMS・45日、7カ国。①④の修正後）**:
+
+| 国 | `rankIndeterminate` | 枠（`recommended`） | `low` | `total.high`（画面） |
+|---|---|---|---|---|
+| US | **false** | FROM JAPAN, ZenMarket | 32,225 / 33,731 | 両方とも null（or more は消えない） |
+| GB | false | FROM JAPAN, Neokyo | 35,771 / 35,921 | null / 35,921 |
+| DE | false | FROM JAPAN, Neokyo | 36,465 / 36,615 | null / 36,615 |
+| FR | false | FROM JAPAN, Neokyo | 36,841 / 36,991 | null / 36,991 |
+| CA | false | FROM JAPAN, Neokyo | 33,239 / 33,389 | null / 33,389 |
+| SG | false | FROM JAPAN, Neokyo | 27,850 / 27,892 | null / 27,892 |
+| AU | false | Neokyo | 30,450 | 30,450（変化なし） |
+
+米国の下端順は FROM JAPAN(32,225) → ZenMarket(33,731) → Buyee consolidated(34,525)
+→ Jauce(35,798) → Buyee default(39,845)——オーナーが求めた並びと一致する。
+
+重量（軽い・重い・9,000 g単品）・個数・保管日数を変えても、米国は一貫して
+`rankIndeterminate: false` になり、GB/DE/FR/CA/SG/AU は①の修正後の値のまま
+変わらないことを確認した（`src/lib/pricing/compare.test.ts` の該当テスト群）。
+
+**`rankStable`／`RANK_STABILITY` への影響**: 米国の基準カート（5点・600g）は
+`rankStable` も `false → true` に変わった（枠 {FROM JAPAN, ZenMarket} が
+×⅓〜×3 で動かないため）。`measured.ts` の `RANK_STABILITY` と README を
+`render-docs.py` で再生成した。
+
+**止まらなかった理由**: ①と④は同じ `total.high`/`rankHigh` の分離という1つの
+仕組みの中で両立し、「共通の未知」の判定（`taxLines()` の出自で判定）は
+社固有の費目を誤って拾わないことをテストで縛れた
+（`src/lib/pricing/compare.test.ts` の「genuine closed-interval overlap still
+marks a 3rd company "equivalent"」節ほか）。
+
 ---
 
 ## P2 ── 宅配便を価格化する（金額の効きが最大）
