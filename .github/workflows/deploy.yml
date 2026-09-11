@@ -12,12 +12,82 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# **古い実行を殺さない。** 以前は cancel-in-progress: true だった。
+# 検証が直列で約7分かかる一方、main への push はそれより短い間隔で来るので、
+# **実行25回のうち Deploy 段に到達したのは数えるほどで、あとは全部 e2e の途中で
+# 殺されていた**（run 23・24 はどちらも cancelled）。「最新が勝つ」つもりの設定が
+# 「一度もデプロイされない」を作っていた。
+#
+# false にすると、走っている実行は最後まで走り、次の1本だけが待ち行列に残る
+# （待っている古いものは GitHub が捨てる）。**古い順に完了するので最後に勝つのは
+# 最新のコミット**で、狙いは変わらないまま、必ずどれか1本はデプロイまで届く。
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
+# 検証は ci.yml と同じ分け方にする。**main への直接 push は ci.yml を通らない**
+# ので、ここで検証を省くことはできない。省く代わりに、同じだけ速くする
+# （直列 約6分 → 4シャード 約3分）。分け方の根拠は ci.yml の注記を見ろ。
 jobs:
+  fast:
+    name: lint / types / unit / master
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: python3 master/validate.py
+      - run: python3 master/render-docs.py --check
+
+  e2e:
+    name: e2e ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Resolve Playwright version
+        id: pw
+        run: |
+          v=$(node -p "require('./node_modules/@playwright/test/package.json').version")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        id: pw-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - run: npx playwright install --with-deps chromium
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+      - run: npx playwright install-deps chromium
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+      - run: npx playwright test --shard=${{ matrix.shard }}/4
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
   deploy:
+    needs: [fast, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -39,11 +109,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
       - run: npx opennextjs-cloudflare build
       # Secrets が未設定なだけで main が赤く見えると、ビルドが壊れているのと
       # 区別がつかない。未設定のときは落とさず、何が足りないかを出して飛ばす。
@@ -53,6 +118,18 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      # **デプロイしたときも黙らない。** 飛ばしたときだけ Summary を書いていたので、
+      # 「実行が緑」と「本番が新しい」の区別が Actions の画面から付かなかった。
+      - name: Deployed
+        if: env.HAS_CLOUDFLARE == 'true'
+        run: |
+          {
+            echo "### デプロイした"
+            echo
+            echo "- コミット: \`${GITHUB_SHA}\`"
+            echo "- 実行: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deploy skipped — secrets not set
         if: env.HAS_CLOUDFLARE != 'true'
