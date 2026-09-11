@@ -1545,17 +1545,18 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 入れ替わる2社は Neokyo と FROM JAPAN で、Neokyo は米国宛に日本郵便を
     // 売っていない。米国では 600 g / 1,500 g / 3,000 g のどこでも
     // FROM JAPAN → Buyee(同梱) の並びが動かない（＝入れ替わりが観測できない）。
-    // **外部レビュー⑤-b で CA の GST・州税ベースを直した**（`taxLines`。
-    // CBSA の value for duty は国際送料を含まない——`master/customs.json` の
-    // CA.vat.base: "duty_paid_value" どおりに揃えた）ので、CA の総額が下がった。
+    // **外部レビュー⑤-b で CA の GST・州税ベースを直した**（`taxLines`。CBSA
+    // Memorandum D13-3-3/D13-3-4 の value for duty は国際送料を含まないが
+    // 国内送料は含む——`master/customs.json` の CA.vat.base_note どおりに
+    // 揃えた）ので、CA の総額が下がった。
     const top2 = (w: number) => board('CA', 5, w).slice(0, 2).map((r) => [r.id, r.total.low]);
-    expect(top2(600)).toEqual([['neokyo', 35758], ['fromjapan', 36708]]);
+    expect(top2(600)).toEqual([['neokyo', 36250], ['fromjapan', 37200]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
-    expect(top2(1500)).toEqual([['neokyo', 49258], ['fromjapan', 49308]]);
-    expect(top2(3000)).toEqual([['fromjapan', 68208], ['neokyo', 69508]]);
+    expect(top2(1500)).toEqual([['neokyo', 49750], ['fromjapan', 49800]]);
+    expect(top2(3000)).toEqual([['fromjapan', 68700], ['neokyo', 70000]]);
     // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
-    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 64314 } });
+    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 64806 } });
     // 米国では上位2社が3つの重量で1度も入れ替わらない。
     // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
     // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
@@ -1623,15 +1624,15 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **外部レビュー⑤-a（入金手数料の課税ベース）・⑤-b（CA の課税ベース）で
     // 数字が動いた。**⑤-a は決済時に徴収する VAT/GST を入金手数料の対象に含めた
     // ので ZenMarket・Jauce の総額を持つ国がわずかに上がり（GB/DE/FR の ¥1 単位の
-    // ずれ）、⑤-b は CA の GST・州税ベースから国際送料を抜いたので CA が大きく
-    // 下がった。
+    // ずれ）、⑤-b は CA の GST・州税ベースから国際送料だけを抜いた（国内送料は
+    // 含める、コーディネーター指摘で訂正済み）ので CA が下がった。
     expect(totals).toEqual({
       US: [37075, 38870, 40075, 40605, 63325],
       GB: [40121, 41071, 42155, 44071, 44528, 73756],
       DE: [42735, 43685, 44528, 46685, 47142, 74912],
       FR: [43152, 44102, 44879, 47102, 47559, 75833],
       AU: [33950, 36684, 36740, 38550, 40539, 59250],
-      CA: [35758, 36708, 38438, 39708, 40165, 64314],
+      CA: [36250, 37200, 38930, 40200, 40657, 64806],
       SG: [30836, 32101, 33457, 35178, 35371, 53410],
     });
   });
