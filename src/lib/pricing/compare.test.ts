@@ -914,6 +914,42 @@ describe('domestic shipping is charged by every service, and taxed where the bas
   });
 });
 
+// ───────────────────────────────────────────────────────────────────────────────────
+// T-F10: 「送料無料」の￥0を確定値として出さない。金額は1円も動かさない。
+// master/fees.json F13b（company: buyee）だけにある識だしで、対象は Buyee の行だけ。
+// ───────────────────────────────────────────────────────────────────────────────────
+describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at zero (T-F10)', () => {
+  test('Buyee\'s domestic-shipping line stays at \u00a50 but is no longer `fixed`', () => {
+    const withFree = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const buyee = byId(withFree, 'buyee');
+    expect(line(buyee, 'domestic-shipping').amount).toBe(0);
+    expect(line(buyee, 'domestic-shipping').tier).not.toBe('fixed');
+    expect(line(buyee, 'domestic-shipping').sourceUrl).toBeTruthy();
+  });
+
+  test('other services keep the confirmed \u00a50 for the same free-shipping item', () => {
+    const withFree = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    for (const id of ['zenmarket', 'neokyo', 'fromjapan', 'jauce']) {
+      const row = byId(withFree, id);
+      expect(line(row, 'domestic-shipping').amount, id).toBe(0);
+      expect(line(row, 'domestic-shipping').tier, id).toBe('fixed');
+    }
+  });
+
+  test('**the total does not move** \u2014 only the tier and note change', () => {
+    // freeShipping: true と domesticShippingYen: 0 は、domestic-shipping の金額として
+    // どちらも 0。T-F10 が変えたのは確度（tier）と note だけなので、totalは全行一致するはず
+    // ——一致しなければ金額が動いたということ。
+    const free = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const confirmedZero = compare(
+      { items: [item({ id: 'a', domesticShippingYen: 0 })], country: 'US' }).rows;
+    expect(free.length).toBeGreaterThan(0);
+    for (const row of free) {
+      expect(row.total, row.id).toBe(byId(confirmedZero, row.id).total);
+    }
+  });
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Buyee だけが既定で注文ごとに別送する。同梱は申請しないと得られない。
 // ─────────────────────────────────────────────────────────────────────────────
