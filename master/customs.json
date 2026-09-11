@@ -749,10 +749,10 @@
         },
         "tier": "A_confirmed",
         "base": "duty_paid_value",
-        "base_source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-3-3-eng.html",
+        "base_source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-3-3-eng.html （place of direct shipment の定義は https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-3-4-eng.html）",
         "base_checked_on": "2026-09-11",
-        "base_quote": "Transportation costs from the place of direct shipment to Canada are not included in a calculation of value for duty. (para. 18) ... All transportation costs paid by the purchaser must be added to the price paid or payable when they are for the transportation of the goods to the place of direct shipment to Canada. (para. 19)",
-        "base_note": "外部レビュー⑤-b（2026-09-11）で確認。日本から発送する郵便小包の「place of direct shipment」は日本国内（発送地）なので、国際送料（日本→カナダの運賃）は D13-3-3 の言う『from the place of direct shipment to Canada』の輸送費に当たり、value for duty に含まれない。GST は value for duty（関税込み＝duty paid value）に掛かるので、国際送料を課税ベースに含めていた実装は誤りだった。コードは `src/lib/pricing/compare.ts` の `taxLines`（CA だけ `itemsYen + dutyYen` を使うよう分離）で修正済み。",
+        "base_quote": "para.18: \"Transportation costs from the place of direct shipment to Canada are not included in a calculation of value for duty.\" / para.19: \"All transportation costs paid by the purchaser must be added to the price paid or payable when they are for the transportation of the goods to the place of direct shipment to Canada.\" / D13-3-4: \"the physical location of the goods ... at the point in time when the goods begin their direct and uninterrupted journey to a specific destination in Canada\"",
+        "base_note": "外部レビュー⑤-b（2026-09-11、コーディネーター指摘で1点訂正）。value for duty は**国際送料（日本→カナダの運賃、para.18）を含まないが、国内送料（出品者→代行業者の倉庫までの送料、para.19）は含む**——2つは別の輸送区間で、D13-3-3 が明示的に分けている。para.19 の『price paid or payable に足す輸送費』の起点は D13-3-4 が定義する『place of direct shipment（貨物がカナダへ向けて直接・継続の輸送を開始する地点）』——代行業者が複数の出品者から集めた荷物をまとめて国際発送する日本国内の倉庫がこれに当たる（D13-3-4 は花の例で、複数の仕入先の貨物が中継倉庫でカナダ向けに確定するまでその倉庫が place of direct shipment になる、という同じ構造を扱っている）。したがって出品者→倉庫の国内送料は para.19 の対象で課税ベースに含め、倉庫→カナダの国際送料だけを para.18 で除く。**最初の修正（PR #44 初版）は para.18 しか見ておらず、国内送料まで一緒に除いてしまう過剰修正だった**——コーディネーターの指摘で気づき、この note で訂正した。コードは `src/lib/pricing/compare.ts` の `taxLines`（CA だけ `itemsYen + domYen + dutyYen` を使うよう分離）で修正済み。実請求 `ca-canadapost-forum` は申告額を独立入力として持つだけで国内送料の内訳が無いため、この点の決め手にはならない（決め手は D13-3-3/D13-3-4 の原文）。",
         "threshold_base": "goods",
         "threshold_unit": "mail_item",
         "threshold_unit_tier": "A_confirmed",
@@ -775,7 +775,7 @@
         },
         "impact": "現行 src/calc.js は null で総額から脱落。実請求では総額の56%",
         "base": "duty_paid_value",
-        "base_note": "外部レビュー⑤-b（2026-09-11）。州税（GST/HST の州分・QST）は連邦 GST と同じ課税ベース（value for duty、国際送料を含まない）で計算される——`vat.base_source`（CBSA Memorandum D13-3-3）と同じ根拠。実請求 `ca-canadapost-forum`（この JSON の CA.real_invoice）の GST 99.44・PST 139.21 が同じ申告額 CAD 1,988.7 に対する率で一致することでも確認できる。"
+        "base_note": "外部レビュー⑤-b（2026-09-11、上の `vat.base_note` と同じ訂正）。州税（GST/HST の州分・QST）は連邦 GST と同じ課税ベース（value for duty＝国内送料を含み国際送料を除く）で計算される——`vat.base_source`（CBSA Memorandum D13-3-3/D13-3-4）と同じ根拠。実請求 `ca-canadapost-forum`（この JSON の CA.real_invoice）の GST 99.44・PST 139.21 が同じ申告額 CAD 1,988.7 に対する率で一致することは確認できるが、その申告額が国内送料を含むかどうかまでは実請求からは分からない（フィクスチャが申告額を分解せず独立入力として持つため）。"
       },
       "clearance": [
         {

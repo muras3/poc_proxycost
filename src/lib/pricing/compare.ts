@@ -350,14 +350,32 @@ function taxLines(
   } else if (c.vatFreeLimit && declaredPerParcel <= c.vatFreeLimit) {
     out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold${per}`, 'fixed', c.sourceUrl));
   } else {
-    // **カナダの GST ベースは「関税込みの申告額」（duty paid value）で、国際送料を
-    // 含まない**（外部レビュー⑤-b、`master/customs.json` CA.vat.base:
-    // "duty_paid_value"。CBSA の value for duty は輸入運賃を含まない）。
+    // **カナダの GST ベースは「関税込みの申告額」（duty paid value）で、
+    // 国際送料（日本→カナダの運賃）を含まないが、国内送料（出品者→代行業者の
+    // 倉庫までの送料）は含む**（外部レビュー⑤-b、コーディネーター指摘で
+    // 2026-09-11 に再確認・訂正）。CBSA Memorandum D13-3-3 は2つを分けて
+    // 言っている——
+    //   para.18「Transportation costs **from** the place of direct shipment
+    //     to Canada are not included in a calculation of value for duty」
+    //     （国際運賃は除く。ここは元の修正のとおり）
+    //   para.19「All transportation costs ... must be added to the price
+    //     paid or payable when they are for the transportation of the
+    //     goods **to** the place of direct shipment to Canada」
+    //     （発送地までの運賃は「price paid or payable」に足す）
+    // D13-3-4「Place of Direct Shipment」の定義（"the physical location of
+    // the goods ... at the point in time when the goods begin their direct
+    // and uninterrupted journey to a specific destination in Canada"）に
+    // 当てはめると、代行業者が国際発送する地点＝**日本国内の代行業者の倉庫**が
+    // place of direct shipment になる。`a.domYen`（`domesticFor()`）は
+    // まさに「出品者から各社へ」の国内送料（note「from each listing」）——
+    // 倉庫までの運賃なので para.19 の対象で、課税ベースに含める。
+    // 最初の修正（PR #44 初版）は para.18 しか見ておらず、para.19 を見落として
+    // 国内送料まで一緒に外していた（過剰修正）。
     // FOB の他国（豪・米）は根拠が未確認（豪は `base: "varies_by_collector"` で
     // A$1,000 超の課税ベースを記録していない）なので、**カナダだけ**を分けて直す
     // ——一次情報の無い国のベースを一緒に動かさない。
     const vatBase = c.base === 'CIF' ? cif + dutyYen
-      : cc === 'CA' ? a.itemsYen + dutyYen
+      : cc === 'CA' ? a.itemsYen + a.domYen + dutyYen
       : a.itemsYen + a.emsYen;
     out.push(L('vat', vatLabel, Math.round(vatBase * c.vatRate),
       `${(c.vatRate * 100).toFixed(0)}%`, 'fixed', c.sourceUrl));
@@ -365,12 +383,15 @@ function taxLines(
 
   // **カナダの州税は連邦 GST とは別の行。**合計（HST 13% など）ではなく州の取り分だけを
   // 出す——GST 5% の行が既に在るので、合計を出すと二重に積む。
-  // **ベースは GST と同じ duty paid value**（外部レビュー⑤-b。CBSA は GST・州税を
-  // 同じ value for duty から計算する——実請求 `ca-canadapost-forum` の GST/PST が
-  // 同じ申告額 CAD 1,988.7 に対する率で一致することでも確認できる）。
+  // **ベースは GST と同じ duty paid value**（国内送料を含み、国際送料を除く。
+  // 上の GST の分岐のコメント参照）。CBSA は GST・州税を同じ value for duty
+  // から計算する——実請求 `ca-canadapost-forum` の GST/PST が同じ申告額
+  // CAD 1,988.7 に対する率で一致することでも確認できる（このフィクスチャは
+  // 申告額を独立入力として持つだけで、国内送料の内訳を持たないので、
+  // 国内送料を含めるかどうかの決め手にはならない——決め手は D13-3-3/D13-3-4）。
   const caTaxed = c.vatFreeLimit == null || declaredPerParcel > c.vatFreeLimit;
   if (cc === 'CA') {
-    out.push(provincialTaxLine(province, a.itemsYen + dutyYen, caTaxed));
+    out.push(provincialTaxLine(province, a.itemsYen + a.domYen + dutyYen, caTaxed));
   }
 
   // 通関手数料。**帯は郵便物1個ぶんの内容品価格で選ぶ**（手数料は郵便物ごとに課される）。
