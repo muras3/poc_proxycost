@@ -44,6 +44,17 @@ export function Calculator() {
     if (target) cart.current?.focusWeight(target.id);
   }
 
+  // 判定不能（P1-3）→「配送方法の選択へ誘導する」（docs/ROADMAP.md P1 確定仕様）。
+  // 総額に効くのは方式（2.3倍）であって会社ではない。**StabilityNote の1行には
+  // 足さない**——デスクトップで既に折り返しの余白が無く（e2e/parcel.spec.ts の
+  // 「順位表が最初の画面から押し出されている」が実測 908 > 900 で落ちた）、
+  // 1文字でも足せば2行目に溢れて順位表を画面外へ押し出す。`RankBoard` の
+  // 「Ranking」領域の**内側**（`<ol>` の直前）に出す——領域そのものの開始位置は
+  // 動かないので、この制約を満たしたまま誘導文を置ける。
+  function focusMethod() {
+    document.getElementById('ship-by-select')?.focus();
+  }
+
   function onAdd(draft: Draft) {
     if (draft.priceTier === 'fixed') {
       // useCompare が次に振る id は `i${seq}`。
@@ -168,7 +179,7 @@ export function Calculator() {
           </div>
 
           <div className="mt-4">
-            <RankBoard result={result} />
+            <RankBoard result={result} onFocusMethod={focusMethod} />
             <TierLegend className="mt-3" />
           </div>
 

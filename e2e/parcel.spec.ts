@@ -434,9 +434,10 @@ test.describe('desktop layout', () => {
     expect(Math.abs(p.y - c.y), '箱とカートの上端が揃っていない').toBeLessThan(2);
 
     // **答えが画面の外に出ていない。**箱を上へ持ってきた代償はここに出る。
-    // 「どこが最安でいくらか」の1文（Summary）は丸ごと視界の中。
-    await expect(page.locator('p').filter({ hasText: /is cheapest\.|are tied cheapest/ }).first())
-      .toBeInViewport({ ratio: 1 });
+    // Summary（総額・現地通貨換算）は丸ごと視界の中。**文言ではなく要素で掴む**
+    // ——判定不能では「is cheapest」と言い切らなくなった（P1-3 追修正）ので、
+    // 既定カート（米国・判定不能）でこの文言を探すと見つからない。
+    await expect(page.getByTestId('summary')).toBeInViewport({ ratio: 1 });
     // 順位表そのものも、最初の画面のうちに始まっている。
     const rank = (await page.getByRole('region', { name: 'Ranking' }).boundingBox())!;
     const vh = await page.evaluate(() => window.innerHeight);

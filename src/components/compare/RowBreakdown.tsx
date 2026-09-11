@@ -1,5 +1,5 @@
-import { Amount } from '@/lib/ui/tiers';
-import { yen } from '@/lib/ui/format';
+import { Amount, tierClass } from '@/lib/ui/tiers';
+import { totalIntervalText, yen } from '@/lib/ui/format';
 import type { Row } from '@/lib/pricing/types';
 
 /**
@@ -27,11 +27,22 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
         {row.lines.map((l) => {
           const other = byKey.get(l.key);
           const d = (l.amount ?? 0) - (other?.amount ?? 0);
+          // **上限不明の理由をここで辿れるようにする**（P1-3、確定仕様5）。
+          // 額が未取得（`amount: null`）かつ「額×期間」等の推定上限も置けていない
+          // （`unknownCapYen` が無い）行が、この行の総額を「¥X or more」にしている当人。
+          // `l.note` はどの行でも常に出しているので、そこに一言足すだけで
+          // 「なぜ上限が不明か」に辿り着けない状態を作らない。
+          const isUncapped = l.amount == null && l.unknownCapYen == null;
           return (
             <tr key={l.key}>
               <td className="py-1 pr-2 align-top">
                 <span className="block">{l.label}</span>
-                <span className="block text-[11px] text-neutral-500">{l.note}</span>
+                <span className="block text-[11px] text-neutral-500">
+                  {l.note}
+                  {isUncapped && (
+                    <span className={`ml-1 ${tierClass.none}`}>— no upper bound</span>
+                  )}
+                </span>
               </td>
               <td className="py-1 text-right align-top num">
                 <Amount amount={l.amount} tier={l.tier} />
@@ -54,11 +65,27 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
         <tr className="border-t border-neutral-300 font-medium dark:border-neutral-700">
           <td className="py-1">approx. total</td>
           <td className="py-1 text-right num">
-            <Amount amount={row.total.low} tier={row.approximate ? 'estimate' : 'fixed'} round />
+            {/* **区間で出す。**`high === null`（上限不明）に偽の上端を書かない
+                （P1-3、確定仕様5）——「¥X 〜 ¥Y」ではなく「¥X or more」。 */}
+            <span className={row.approximate ? tierClass.estimate : tierClass.fixed}>
+              {totalIntervalText(row.total, true)}
+            </span>
+            {row.total.high === null && (
+              <span className={`block text-[11px] font-normal ${tierClass.none}`}>
+                upper bound unknown — see “no upper bound” rows above
+              </span>
+            )}
           </td>
           {!isCheapest && (
             <td className="py-1 text-right num text-neutral-500">
-              <Amount amount={cheapest.total.low} tier={cheapest.approximate ? 'estimate' : 'fixed'} round />
+              <span className={cheapest.approximate ? tierClass.estimate : tierClass.fixed}>
+                {totalIntervalText(cheapest.total, true)}
+              </span>
+              {cheapest.total.high === null && (
+                <span className={`block text-[11px] font-normal ${tierClass.none}`}>
+                  upper bound unknown
+                </span>
+              )}
             </td>
           )}
           {!isCheapest && (

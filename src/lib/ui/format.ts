@@ -36,3 +36,19 @@ export function yenRange([lo, hi]: [number, number], round = false): string {
 export function rangeIsPoint([lo, hi]: [number, number]): boolean {
   return lo === hi;
 }
+
+/**
+ * `Row.total` の区間表示（P1-3）。**`high === null`（上限不明）に偽の上端を書かない**
+ * ──「¥X 〜 ¥Y」は絶対に書かず「¥X or more」にする。`high === low`（幅ゼロ）は
+ * 区間に見せず1つの数字に畳む。`high > low` のときだけ「¥X – Y」の区間を出す。
+ */
+export function totalIntervalText(
+  total: { low: number; high: number | null },
+  round = false,
+): string {
+  const f = round ? yenRounded : yen;
+  if (total.high === null) return `${f(total.low)} or more`;
+  if (total.high === total.low) return f(total.low);
+  const hiText = f(total.high).replace('¥', '');
+  return `${f(total.low)} – ${hiText}`;
+}
