@@ -454,9 +454,11 @@ describe('every destination has a duty rate above its threshold', () => {
   });
 
   test('the dash that remains is always a dash on purpose', () => {
-    // **総額から漏れている費目は米国の3つだけ**で、3つとも「取れていない」ではなく
-    // 「そこには無い／額が公表されていない／その社が売っていない」。
-    // ここが増えたら、それは新しい穴が開いたということ。
+    // **総額から漏れている費目は米国の3つ＋7カ国 × 2つ（0e）だけ**で、全部「取れていない」
+    // ではなく「そこには無い／額が公表されていない／その社が売っていない」。
+    // 0e（`display: total` の2件——FROM JAPAN の外注梱包・Jauce の Premium insurance）で、
+    // 額を公表していない費目も総額の行になった（`excluded` に名前が載る）ので、
+    // 7カ国すべてに常時この2件が加わる。ここがそれ以上増えたら、新しい穴が開いたということ。
     const seen = new Set<string>();
     for (const cc of COUNTRY_CODES) {
       for (const priceYen of [3000, 15_000, 40_000, 200_000]) {
@@ -465,10 +467,13 @@ describe('every destination has a duty rate above its threshold', () => {
         }
       }
     }
-    expect([...seen].sort()).toEqual([
+    const expected = COUNTRY_CODES.flatMap((cc) => [
+      `${cc}: Outsourced packing`, `${cc}: Premium insurance`,
+    ]).concat([
       'US: EMS to United States',                       // Neokyo は米国宛に日本郵便を売っていない
       'US: Sales tax / VAT',                            // 米国に連邦売上税は無い
       'US: US import prepayment (Zonos) fee — not published',  // 額が公表されていない
-    ]);
+    ]).sort();
+    expect([...seen].sort()).toEqual(expected);
   });
 });

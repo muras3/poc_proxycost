@@ -78,7 +78,11 @@ describe('the breakdown explains the total', () => {
     expect(duty.note).toContain('2.0%');
     expect(line(row, 'province-tax').amount).toBeGreaterThan(0);
     expect(line(row, 'clearance').amount).toBeGreaterThan(0);
-    expect(row.excluded).toEqual([]);
+    // 0e: `display: total` の2件（外注梱包・Premium insurance）は額を公表していない社に
+    // 常時 excluded として現れる。それ以外は excluded に残らないことを見る
+    // （duty・province-tax・clearance の3つが埋まった、というこのテストの主張は変わらない）。
+    expect(row.excluded.filter((e) => e !== 'Outsourced packing' && e !== 'Premium insurance'))
+      .toEqual([]);
   });
 
   test('a fetched zero stays a zero: under-threshold duty is 0 with its reason', () => {
@@ -158,11 +162,17 @@ describe('the breakdown explains the total', () => {
     expect(tiny.note).toContain('nothing is charged for collecting it');
   });
 
-  test('optional extras are offered but kept out of the total', () => {
-    const row = byId(compare({ items: items(1, 600), country: 'US' }).rows, 'neokyo');
-    expect(row.optionalLines.length).toBeGreaterThan(0);
-    expect(row.optionalLines.every((l) => !row.lines.some((x) => x.key === l.key))).toBe(true);
-    expect(row.total).toBe(sumLines(row));
+  test('a display:total fee we cannot price is still a line, not a dropped feature', () => {
+    // 0e: 「任意欄」はマスタに存在しない（`optionalLines` は撤去した）。額を公表していない
+    // 費目（FROM JAPAN の外注梱包・Jauce の Premium insurance）も総額の行として現れ、
+    // amount: null（画面「—」）で excluded に名前が載る。行ごと消えたら「そんな費目は
+    // 無い」という嘘になる。
+    const fj = byId(compare({ items: items(1, 600), country: 'US' }).rows, 'fromjapan');
+    const outsourced = fj.lines.find((l) => l.key === 'outsourced-packing');
+    expect(outsourced).toBeDefined();
+    expect(outsourced!.amount).toBeNull();
+    expect(fj.excluded).toContain(outsourced!.label);
+    expect(fj.total).toBe(sumLines(fj));
   });
 });
 
@@ -419,7 +429,10 @@ describe('Canada: the province decides the bill, and not choosing one is not an 
       expect(l.tier, key).toBe('fixed');
       expect(l.note, key).toMatch(/CAD 20|threshold/);
     }
-    expect(row.excluded).toEqual([]);
+    // 0e: `display: total` の2件（外注梱包・Premium insurance）は額を公表していない社に
+    // 常時 excluded として現れる。それ以外は残らないことを見る。
+    expect(row.excluded.filter((e) => e !== 'Outsourced packing' && e !== 'Premium insurance'))
+      .toEqual([]);
   });
 
   test('the province is ignored outside Canada, and an unknown one is rejected', () => {
