@@ -661,13 +661,13 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   // 米国では反転が起きないので、この導線を米国では実演できない。
   await page.getByLabel('Ship to').selectOption('DE');
 
-  // **P1-2 でここの前提が変わった。** おすすめ枠は「1位の下端」だけでなく重なる社まで
-  // 見るので、既定の2点でもドイツでは枠の顔ぶれが ×1/3〜×3 で変わる（FROM JAPAN・
-  // Neokyo・ZenMarket が拮抗し、軽い側では Buyee, consolidated も枠に入る）——
-  // これは実在する不確かさで、隠すべきものではない（`docs/ROADMAP.md` P1、判断1・2）。
-  // ただしこの時点ではどの1点の重量が原因かはまだ言えない（`decisive` はまだ無し）
+  // **P1-2 でここの前提が変わった。** ドイツの既定2点では FROM JAPAN が1位で
+  // 総額が上限不明（Zonos 相当の uncappable な費目は無いが、FROM JAPAN の
+  // 外注梱包が uncappable）——+Infinity 扱いの重なり判定（判断1）により
+  // 比較可能な全社が枠か同等に収まり、「安定」ではなく「判定不能」（判断3）。
+  // この時点ではどの1点の重量が原因かはまだ言えない（`decisive` はまだ無し）
   // ので、個別の品には何も印が付かない。
-  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
+  await expect(page.getByText(/sit within the same uncertainty/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
   await expect(page.getByText(DECIDES)).toHaveCount(0);
 
@@ -705,20 +705,24 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   await expect(cartItem(page, title).getByText(DECIDES)).toBeVisible();
 });
 
-test('18. a single item: the winner never changes, but the recommended range still does', async ({ page }) => {
+test('18. a single item: the winner never changes, and the US total is indeterminate (not weight-driven)', async ({ page }) => {
   await gotoCompare(page);
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
   await openCart(page);
 
-  // 仮置きは入るし、仮置きだと名乗る。500 g〜10 kg で**1位（FROM JAPAN）は動かない**
-  // が、**おすすめ枠の顔ぶれは動く**（軽い側は Jauce、重い側は Buyee が枠に入る）——
-  // P1-2 では「1位が動くか」ではなく「枠が動くか」で見るので、これは正しく nag する
-  // （`docs/ROADMAP.md` P1、判断2）。
+  // 仮置きは入るし、仮置きだと名乗る。500 g〜10 kg で**1位（FROM JAPAN）は動かず、
+  // おすすめ枠（FROM JAPAN・ZenMarket、枠は最大2社）も動かない**——`decisive` は
+  // false。それでも米国の総額は不安定側に出る: FROM JAPAN の総額が上限不明
+  // （Zonos 前払い利用料）で、比較可能な全社が枠か同等に収まる「判定不能」
+  // （判断3）。**これは「重量を確かめれば解決する」話ではない**ので、個別の品には
+  // 何も印が付かない——ボタンは出るが、押しても「これを直せば直る」品を指せない
+  // （`Calculator` は decisive な品が無ければ先頭の品にフォーカスする、
+  // という既存のフォールバックのまま。UI の見直しは P1-3）。
   await expect(weightBox(page, PLUSH)).toHaveValue('1000');
   await expect(cartItem(page, PLUSH).getByText(/assumed/).first()).toBeVisible();
-  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
-  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toBeVisible();
+  await expect(page.getByText(/sit within the same uncertainty/)).toBeVisible();
+  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
 
   // それでも直せる。直せば総額は動く（1位は動かない）。

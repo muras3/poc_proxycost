@@ -246,8 +246,24 @@ export interface CompareResult {
   rowTotalRange: Record<string, [number, number]> | null;
   /** 行ID → 1位との差額の幅。bands があるときのみ。 */
   rowDiffRange: Record<string, [number, number]> | null;
-  /** 段や重量をずらしても1位が動かないか。 */
+  /**
+   * 段や重量をずらしてもおすすめ枠が動かないか。**`rankIndeterminate` が true の
+   * ときは常に false。**「安定」と「そもそも判別できない」を同じ `true` に潰さない
+   * ため（P1-2、コーディネーター判断3、2026-09-11）——比較可能な全社が
+   * おすすめ枠＋同等に収まっている（誰か1位の総額が上限不明で、全社が
+   * その不確かさに埋もれている）状態は、重量を動かしても枠の集合が変わりようが
+   * ないので機械的に「安定」と判定されてしまうが、中身は「どの社が安いか
+   * 一切判別できていない」であって「重量が変わっても薦める社が変わらない」
+   * という意味の安定ではない。この区別は `rankIndeterminate` を見て付ける。
+   */
   rankStable: boolean;
+  /**
+   * 比較可能な社が1社でも在るのに、その全員がおすすめ枠か同等の印に収まっていて
+   * 「どの社が安いか」を区別できない状態か（P1-2、判断3）。**このとき `rankStable`
+   * は必ず `false`**——`rankIndeterminate` を「安定」側に寄せない。
+   * 画面・`measured.ts`・README はこのフラグで「安定」と「判定不能」を描き分ける。
+   */
+  rankIndeterminate: boolean;
   /** 英語で1行。画面にそのまま出す。 */
   rankStabilityNote: string;
   /** bands があるときの総額全体の幅。 */
