@@ -29,7 +29,7 @@
 | ├ A_confirmed | 58 |
 | ├ B_inferred | 11 |
 | ├ C_unknown | 1 |
-| └ うち `amount_tier: C_unknown`（額が未取得） | 8 |
+| └ うち `amount_tier: C_unknown`（額が未取得） | 7 |
 | `rule.type` の語彙 | 31 種 |
 | `catalog`（F01〜、欠番なし） | 41 |
 | `customs.json` の国 | 9 |

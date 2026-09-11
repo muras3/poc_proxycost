@@ -161,21 +161,38 @@
           "other_shops": 500,
           "mercari": 800,
           "jdirectitems_auction": 800,
-          "yahoo_auction": null
+          "yahoo_auction": 800
         },
         "default": 500,
         "currency": "JPY",
-        "unknown_marketplaces": [
-          "yahoo_auction"
-        ]
+        "inferred_marketplaces": {
+          "yahoo_auction": {
+            "tier": "B_inferred",
+            "mapped_to": "jdirectitems_auction",
+            "sources": [
+              {
+                "lang": "en",
+                "source": "https://zenmarket.jp/en/fees.aspx",
+                "checked_on": "2026-09-11",
+                "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids."
+              },
+              {
+                "lang": "ja",
+                "source": "https://zenmarket.jp/ja/fees.aspx",
+                "checked_on": "2026-09-11",
+                "quote": "メルカリ全商品、JDirectItems Auction：商品1点につき800円 / 楽天市場やAmazon、その他一般的な通販サイト：商品1点につき500円"
+              }
+            ],
+            "inference_basis": "料金ページは Mercari と JDirectItems Auction を¥800とする。原文（英日とも）に Yahoo の語は無い。ZenMarket はトップページで JDirectItems Auction と JDirectItems Shopping を別項目として並べており、ヤフオク／Yahoo!ショッピングの対応として解釈した。未確定"
+          }
+        }
       },
       "mandatory": true,
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
       "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids.",
-      "amount_tier": "C_unknown",
-      "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。最大の仕入先である Yahoo オークションが ¥500 か ¥800 か公式から読めない。default で埋めない"
+      "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。Yahoo オークションの語は原文に出てこない。yahoo_auction: 800 は rule.inferred_marketplaces に印を付けた推論値（JDirectItems Auction = Yahoo Auctions と解釈）であり、他の区分のような一次情報の確定値ではない"
     },
     {
       "id": "F04",
@@ -1698,6 +1715,7 @@
   "schema": {
     "tier": "発生の確からしさ（A_confirmed / B_inferred）",
     "amount_tier": "金額の確からしさ。rule に unknown を含む行は C_unknown を必須とする",
+    "rule.inferred_marketplaces": "行全体は A_confirmed でも、特定のマーケットプレイス区分だけ我々の推論で埋めた額であることを示す。キーはそのマーケットプレイス名（rule.amounts のキーと対応）、値は { tier: 'B_inferred', mapped_to?: 対応付けた原文の区分名, sources: [{lang, source, checked_on, quote}, ...], inference_basis: 推論の根拠（文字列） } を必須とする。amounts の当該区分に置いた額は一次情報がその区分を名指ししたものではなく推論値であることの機械可読な印",
     "rule_type_vocabulary": [
       "actual_cost_per_order",
       "choice_per_order",
