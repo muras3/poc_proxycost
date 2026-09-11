@@ -171,15 +171,24 @@ export function RankBoard({
               data-row-id={row.id}
               className={inBracket ? 'border-l-2 border-emerald-500 dark:border-emerald-400' : ''}
             >
+              {/* **412px で右列（差額・総額）の長い文字列が左列を1語幅まで潰していた**
+                  （コーディネーター指摘、P1-3 追修正）。上限不明の
+                  「or more (upper bound unknown)」が右列の内容幅を押し広げ、
+                  `shrink-0` の右列がそれを保とうとして、`min-w-0 flex-1` の
+                  左列に負の残り幅を強い、単語ごとの折り返しに壊れていた
+                  （e2e は Ranking セクションの y 座標しか見ていないので検出できず、
+                  実測スクリーンショットで見つかった）。**`sm` 未満では縦積みにする**
+                  ——右列が横幅いっぱいで自然に折り返せるようにし、左列を潰さない。 */}
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : row.id)}
                 aria-expanded={isOpen}
-                className={`flex w-full items-start gap-3 py-3 text-left ${inBracket ? 'pl-2' : ''}`}
+                className={`flex w-full flex-col gap-1 py-3 text-left sm:flex-row sm:items-start sm:gap-3 ${inBracket ? 'pl-2' : ''}`}
               >
+                <span className="flex w-full items-start gap-3 sm:contents">
                 <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-500 dark:text-neutral-400 num">{row.rank}</span>
 
-                <span className="min-w-0 flex-1">
+                <span className="min-w-0 flex-1" data-testid="row-info">
                   <span className="flex flex-wrap items-baseline gap-x-2">
                     <span className="font-medium">{row.serviceName}</span>
                     {row.variant && (
@@ -225,9 +234,12 @@ export function RankBoard({
                     </span>
                   )}
                 </span>
+                </span>
 
-                {/* 差額が主役。総額はその下に小さく添える。 */}
-                <span className="shrink-0 text-right">
+                {/* 差額が主役。総額はその下に小さく添える。
+                    **412px 未満は横幅いっぱい・左寄せで折り返す。**`shrink-0` のまま
+                    幅を持たせなかったのが崩れの原因だった（上のコメント）。 */}
+                <span className="w-full text-left sm:w-auto sm:shrink-0 sm:text-right">
                   <span
                     className={`block font-semibold num ${
                       !row.comparable
@@ -345,7 +357,20 @@ export function Summary({ result }: { result: CompareResult }) {
       ))}{' '}
       <span className="text-neutral-500">
         approx. total{' '}
-        <Amount amount={first.total.low} tier={first.approximate ? 'estimate' : 'fixed'} round />
+        {/* **一番目立つ数字が上限不明を隠していた**（コーディネーター指摘、
+            P1-3 追修正）。各行には「or more (upper bound unknown)」を付けているのに、
+            要約のこの1数字だけ確定した額に見えていた——ページで最も目立つ数字が
+            一番強く嘘をついている状態。`Amount` は単一の数値しか表せないので、
+            `first.total.high === null` のときは `Amount` を使わず、区間テキスト
+            （`totalIntervalText`）に「or more」を含めて出す。閉じている国（DE等）は
+            従来どおり `Amount` の単一値のまま。 */}
+        {first.total.high === null ? (
+          <span className={first.approximate ? tierClass.estimate : tierClass.fixed}>
+            {totalIntervalText(first.total, true)}
+          </span>
+        ) : (
+          <Amount amount={first.total.low} tier={first.approximate ? 'estimate' : 'fixed'} round />
+        )}
         {' · '}
         {/* 「fixed <日付>」とだけ出していた頃は、実装日を出典日として名乗る嘘だった。
             出典名と参照日を出し、詳細は Sources の #fx に送る。 */}
