@@ -21,7 +21,7 @@ import {
 import { TierLegend, tierClass, tierTitle } from '@/lib/ui/tiers';
 // **この節の数字は手で書かない。**measured.test.ts が compare() で測り直して縛る。
 import {
-  CONFIDENCE_SPLIT, CROSSOVER_G, GB_SPLIT, MEASURED_BASKET, WEIGHT_SHIFT, yen,
+  CONFIDENCE_SPLIT, CONFIDENCE_SPLIT_BY_COUNTRY, CROSSOVER_G, MEASURED_BASKET, WEIGHT_SHIFT, yen,
 } from './measured';
 
 export const metadata: Metadata = {
@@ -410,8 +410,12 @@ export default function SourcesPage() {
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           Most of a total is printed somewhere — but the biggest printed line, EMS, is picked by a
           weight we estimated, so the share above is not a promise about the total. For the United
-          Kingdom the split is {GB_SPLIT.publishedShare} published against{' '}
-          {GB_SPLIT.inferredShare} inferred — a published VAT rate moves more onto the known side. A tool that printed{' '}
+          Kingdom the split is{' '}
+          {CONFIDENCE_SPLIT_BY_COUNTRY.find((r) => r.country === 'GB')!.publishedShare} published
+          against{' '}
+          {100 - Number.parseInt(
+            CONFIDENCE_SPLIT_BY_COUNTRY.find((r) => r.country === 'GB')!.publishedShare, 10,
+          )}% inferred — a published VAT rate moves more onto the known side. A tool that printed{' '}
           {yen(WEIGHT_SHIFT.find((r) => r.perItemG === MEASURED_BASKET.weightG)!.totalYen)} in
           large type would be claiming a precision it does not have, so the calculator rounds
           totals to ¥100 and prints the gap between companies to the yen instead.
