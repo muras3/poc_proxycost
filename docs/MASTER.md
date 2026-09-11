@@ -25,17 +25,17 @@
 <!-- generated:BEGIN counts -->
 | 数えたもの | 実数 |
 |---|---:|
-| `fees.json` の行 | **71** |
-| ├ A_confirmed | 60 |
-| ├ B_inferred | 10 |
+| `fees.json` の行 | **75** |
+| ├ A_confirmed | 63 |
+| ├ B_inferred | 11 |
 | ├ C_unknown | 1 |
-| └ うち `amount_tier: C_unknown`（額が未取得） | 4 |
-| `rule.type` の語彙 | 31 種 |
+| └ うち `amount_tier: C_unknown`（額が未取得） | 7 |
+| `rule.type` の語彙 | 32 種 |
 | `catalog`（F01〜、欠番なし） | 41 |
 | `customs.json` の国 | 9 |
 | └ 通関経路 | 22 |
 
-会社ごとの行数：zenmarket 20 / fromjapan 17 / jauce 13 / buyee 12 / neokyo 9
+会社ごとの行数：zenmarket 20 / fromjapan 18 / jauce 16 / buyee 12 / neokyo 9
 <!-- generated:END counts -->
 
 ## サイトに載せるか（`display`、この節も生成）
@@ -185,7 +185,9 @@ Handling       $9.95
 
 | 費目 | 対象 |
 |---|---|
-| 保管超過の額 | Neokyo（週ごと）／FROM JAPAN／Jauce（61〜120日の月額） |
+| 保管超過の額 | Neokyo（週ごと）／FROM JAPAN／Jauce（61〜120日の月額。参考額 CD 約¥200/月・ギター約¥700/月は公表されているが料金表ではなく、¥700 は上限ではない） |
+| FROM JAPAN の外注梱包（50kg以上／30kg以上かつ30万円以上／壊れ物） | 額は実費のみで上限・料金表は無い。うち2条件はこの計算機では原理的に発生せず、残る1条件（壊れ物）は同社の主観判断で検出不能 |
+| Jauce の標準郵便保険・¥20,000超過分 | 日本郵便の増額表はあるが、Jauce が自動付保・請求するかは未確定 |
 | FROM JAPAN の Plan Fee | 年間 Charge1 実績で変動。額の表が未取得 |
 | Buyee の保護梱包・特殊梱包・写真・保管 | 二次情報しか無い |
 | 補強梱包 | Neokyo・Jauce |
@@ -253,7 +255,7 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
 <!-- generated:BEGIN validator -->
 ```
 == 1. スキーマ ==
-  費目 71 行 / rule.type 31 種 / catalog 41 / 国 9 / 通関経路 22
+  費目 75 行 / rule.type 32 種 / catalog 41 / 国 9 / 通関経路 22
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
 == 2. 実請求の再現（customs.json の rule を評価する） ==
