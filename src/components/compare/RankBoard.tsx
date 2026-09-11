@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Amount, tierClass } from '@/lib/ui/tiers';
-import { foreign, yen, yenRange, yenRounded } from '@/lib/ui/format';
+import { foreign, totalIntervalText, yen, yenRange } from '@/lib/ui/format';
 import { andList } from '@/lib/pricing/compare';
 import { rateLabel } from '@/lib/pricing/rates';
 import type { CompareResult, Row } from '@/lib/pricing/types';
@@ -47,7 +47,12 @@ function totalText(row: Row, result: CompareResult): string {
     const r = result.rowTotalRange[row.id];
     if (r) return `${row.approximate ? '~' : ''}${yenRange(r, true)}`;
   }
-  return `${row.approximate ? '~' : ''}${yenRounded(row.total.low)}`;
+  // **`high === null`（上限不明）に偽の上端を書かない**（P1-3、確定仕様5）。
+  // 「¥X 〜 ¥Y」ではなく「¥X or more」——なぜ上限が不明かは行を開いた内訳
+  // （RowBreakdown）の各行の note で辿れる。
+  const interval = totalIntervalText(row.total, true);
+  return `${row.approximate ? '~' : ''}${interval}`
+    + (row.total.high === null ? ' (upper bound unknown)' : '');
 }
 
 /**
@@ -89,7 +94,13 @@ function useRankSlide(listRef: React.RefObject<HTMLOListElement | null>, key: st
   }, [key, listRef]);
 }
 
-export function RankBoard({ result }: { result: CompareResult }) {
+export function RankBoard({
+  result, onFocusMethod,
+}: {
+  result: CompareResult;
+  /** 判定不能のときだけ使う。配送方法の選択欄へ誘導する（下の注参照）。 */
+  onFocusMethod?: (() => void) | null;
+}) {
   const [open, setOpen] = useState<string | null>(null);
   const listRef = useRef<HTMLOListElement | null>(null);
   const rows = result.rows;
@@ -98,19 +109,63 @@ export function RankBoard({ result }: { result: CompareResult }) {
   if (!rows.length) return null;
   const cheapest = rows[0]!;
   const maxDiff = Math.max(0, ...rows.filter((r) => r.comparable).map((r) => r.diff));
+  // **判定不能のときはバッジを出さない。**比較可能な全社がおすすめ枠＋同等に
+  // 収まっている状態でそれぞれに「Recommended」「Equivalent」を付けると、
+  // すぐ上の StabilityNote が「どこを選んでも大差ない・判別できない」と言っている
+  // のと矛盾して見える（docs/ROADMAP.md P1「全社が重なったときの表示」）。
+  // 判定不能の専用文言だけに語らせる。
+  const showBracket = !result.rankIndeterminate;
+  const recommendedCount = rows.filter((r) => r.recommended).length;
 
   return (
     <section aria-label="Ranking">
+      {/* **配送方法の選択へ誘導する**（docs/ROADMAP.md P1 確定仕様、判定不能時）。
+          `StabilityNote` の1行にこの文を足すと、デスクトップで既に折り返しの余白が
+          無く（実測: 892px、900px 中）、1文字でも足せば2行目に溢れて Ranking
+          セクションの開始位置ごと画面外へ押し出す（e2e/parcel.spec.ts の
+          「順位表が最初の画面から押し出されている」が実測 908 > 900 で落ちた）。
+          `rankStabilityNote` は既に「差が不確かさに収まっている・◯◯が最有力」を
+          言っている（compare.ts の `indeterminateNote`）ので重複させず、ここでは
+          `StabilityNote` の**外**（Ranking セクションの内側・一覧の直前）に
+          「配送方法が効く」の1行だけを足す——セクションの開始位置は動かないので
+          上の実測の制約を破らない。
+          **`<button>` にしない。** `e2e/helpers.ts` の `rankButtons()` は
+          「Ranking」領域の中の `role=button` を**行の数だけ**と決め打って
+          `readRanking()` を組み立てている（`getByRole('button')`）。ここに
+          ボタンを足すと1個多く数えて「row 0 has no approx. total」で全テストが
+          落ちる（実測）。`role=link` の `<a>` は数えられないので、リンクにする。 */}
+      {result.rankIndeterminate && (
+        <p className="pb-2 text-xs text-amber-700 dark:text-amber-400">
+          Shipping method moves the total more than company choice does.
+          {onFocusMethod && (
+            <>
+              {' '}
+              <a
+                href="#ship-by-select"
+                onClick={(e) => { e.preventDefault(); onFocusMethod(); }}
+                className="underline"
+              >
+                Change shipping method
+              </a>
+            </>
+          )}
+        </p>
+      )}
       <ol ref={listRef} className="divide-y divide-neutral-200 dark:divide-neutral-800">
         {rows.map((row) => {
           const isOpen = open === row.id;
+          const inBracket = showBracket && row.recommended;
           return (
-            <li key={row.id} data-row-id={row.id}>
+            <li
+              key={row.id}
+              data-row-id={row.id}
+              className={inBracket ? 'border-l-2 border-emerald-500 dark:border-emerald-400' : ''}
+            >
               <button
                 type="button"
                 onClick={() => setOpen(isOpen ? null : row.id)}
                 aria-expanded={isOpen}
-                className="flex w-full items-start gap-3 py-3 text-left"
+                className={`flex w-full items-start gap-3 py-3 text-left ${inBracket ? 'pl-2' : ''}`}
               >
                 <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-500 dark:text-neutral-400 num">{row.rank}</span>
 
@@ -119,6 +174,23 @@ export function RankBoard({ result }: { result: CompareResult }) {
                     <span className="font-medium">{row.serviceName}</span>
                     {row.variant && (
                       <span className="text-xs text-neutral-500">{row.variant}</span>
+                    )}
+                    {/* おすすめ枠（P1-2 の recommended/equivalent を初めて画面に出す、P1-3）。
+                        1社だけなら「単独1位」、2社なら「どちらでもよい」と分かる文言にする
+                        （docs/ROADMAP.md P1 確定仕様2）。枠には最大2社しか入らない。 */}
+                    {inBracket && (
+                      <span className="inline-flex items-center gap-1 rounded border border-emerald-600 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:border-emerald-500 dark:text-emerald-400">
+                        ★ Recommended
+                        {recommendedCount === 1 ? ' — sole top pick' : ' — either works'}
+                      </span>
+                    )}
+                    {showBracket && row.equivalent && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded border border-neutral-400 px-1.5 py-0.5 text-[10px] text-neutral-600 dark:border-neutral-600 dark:text-neutral-400"
+                        title="Within the top pick's range, but the recommended box already holds two companies"
+                      >
+                        Equivalent
+                      </span>
                     )}
                   </span>
                   <span className="mt-0.5 block text-xs text-neutral-500">{row.tag}</span>
