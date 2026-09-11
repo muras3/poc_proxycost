@@ -350,16 +350,48 @@ function taxLines(
   } else if (c.vatFreeLimit && declaredPerParcel <= c.vatFreeLimit) {
     out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold${per}`, 'fixed', c.sourceUrl));
   } else {
-    const vatBase = c.base === 'CIF' ? cif + dutyYen : a.itemsYen + a.emsYen;
+    // **カナダの GST ベースは「関税込みの申告額」（duty paid value）で、
+    // 国際送料（日本→カナダの運賃）を含まないが、国内送料（出品者→代行業者の
+    // 倉庫までの送料）は含む**（外部レビュー⑤-b、コーディネーター指摘で
+    // 2026-09-11 に再確認・訂正）。CBSA Memorandum D13-3-3 は2つを分けて
+    // 言っている——
+    //   para.18「Transportation costs **from** the place of direct shipment
+    //     to Canada are not included in a calculation of value for duty」
+    //     （国際運賃は除く。ここは元の修正のとおり）
+    //   para.19「All transportation costs ... must be added to the price
+    //     paid or payable when they are for the transportation of the
+    //     goods **to** the place of direct shipment to Canada」
+    //     （発送地までの運賃は「price paid or payable」に足す）
+    // D13-3-4「Place of Direct Shipment」の定義（"the physical location of
+    // the goods ... at the point in time when the goods begin their direct
+    // and uninterrupted journey to a specific destination in Canada"）に
+    // 当てはめると、代行業者が国際発送する地点＝**日本国内の代行業者の倉庫**が
+    // place of direct shipment になる。`a.domYen`（`domesticFor()`）は
+    // まさに「出品者から各社へ」の国内送料（note「from each listing」）——
+    // 倉庫までの運賃なので para.19 の対象で、課税ベースに含める。
+    // 最初の修正（PR #44 初版）は para.18 しか見ておらず、para.19 を見落として
+    // 国内送料まで一緒に外していた（過剰修正）。
+    // FOB の他国（豪・米）は根拠が未確認（豪は `base: "varies_by_collector"` で
+    // A$1,000 超の課税ベースを記録していない）なので、**カナダだけ**を分けて直す
+    // ——一次情報の無い国のベースを一緒に動かさない。
+    const vatBase = c.base === 'CIF' ? cif + dutyYen
+      : cc === 'CA' ? a.itemsYen + a.domYen + dutyYen
+      : a.itemsYen + a.emsYen;
     out.push(L('vat', vatLabel, Math.round(vatBase * c.vatRate),
       `${(c.vatRate * 100).toFixed(0)}%`, 'fixed', c.sourceUrl));
   }
 
   // **カナダの州税は連邦 GST とは別の行。**合計（HST 13% など）ではなく州の取り分だけを
   // 出す——GST 5% の行が既に在るので、合計を出すと二重に積む。
+  // **ベースは GST と同じ duty paid value**（国内送料を含み、国際送料を除く。
+  // 上の GST の分岐のコメント参照）。CBSA は GST・州税を同じ value for duty
+  // から計算する——実請求 `ca-canadapost-forum` の GST/PST が同じ申告額
+  // CAD 1,988.7 に対する率で一致することでも確認できる（このフィクスチャは
+  // 申告額を独立入力として持つだけで、国内送料の内訳を持たないので、
+  // 国内送料を含めるかどうかの決め手にはならない——決め手は D13-3-3/D13-3-4）。
   const caTaxed = c.vatFreeLimit == null || declaredPerParcel > c.vatFreeLimit;
   if (cc === 'CA') {
-    out.push(provincialTaxLine(province, c.base === 'CIF' ? cif : a.itemsYen + a.emsYen, caTaxed));
+    out.push(provincialTaxLine(province, a.itemsYen + a.domYen + dutyYen, caTaxed));
   }
 
   // 通関手数料。**帯は郵便物1個ぶんの内容品価格で選ぶ**（手数料は郵便物ごとに課される）。
@@ -945,15 +977,6 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
   lines.push(exportClearanceLine(itemsYen));
 
-  // 入金手数料は送金合計額に対する率なので gross-up。
-  // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
-  if (svc.deposit) {
-    const base = sum(lines) + svc.deposit.flatYen;
-    const fee = svc.deposit.flatYen + (base / (1 - svc.deposit.rate) - base);
-    lines.push(L('deposit', 'Deposit fee', Math.round(fee), svc.deposit.note,
-      svc.deposit.tier, svc.sourceUrl));
-  }
-
   // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
   // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
   const domCharged = svc.domesticIncluded ? 0 : domYen;
@@ -984,6 +1007,34 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     shippingKnown: shipYen != null,
   });
   if (prepaid) lines.push(prepaid);
+
+  // 入金手数料は送金合計額に対する率なので gross-up（外部レビュー⑤-a、2026-09-11）。
+  // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
+  //
+  // **ベースは「この社の決済を通る額」。**マスタ F07（`master/fees.json`）は
+  // どちらの社も「決済時に支払う総額」をベースにすると書いている——ZenMarket
+  // 「3.5% of the **total transaction amount**」、Jauce「3.9% over the **deposit
+  // amount**」（口座に入金する額＝決済時に払う全額）。この社が決済時に徴収する
+  // VAT/GST（`prepaidImportTaxLine` の実額）は、利用者がこの社に払う総額の
+  // 一部なのでベースに含める。**以前はこのブロックが税の行より前（`sum(lines)`）
+  // にあったため、決済時に徴収する VAT/GST が入金手数料の対象から漏れていた**
+  // （ZenMarket DE ¥12,800 の IOSS VAT、Jauce AU の GST など。
+  // `master/validate.py` の実請求書再現で確認済み）。
+  //
+  // **`preTaxYen` に足すだけで `sum(lines)` は使わない。**関税（`duty`）・
+  // 通関手数料（決済で 0 にならない場合の `clearance`）・州税（CA）・酒税
+  // （GB excise）は、この社が決済で集めるのではなく**国境・配達時に別途
+  // 徴収される**額（`taxLines` のコメント参照）——この社の送金合計には含まれない
+  // ので、それらを足すと逆に過大請求になる。決済時に集める税は
+  // `prepaidImportTaxLine` が1本にまとめて持っている（`prepaid`）ので、
+  // それだけを `preTaxYen` に足せば「決済を通る額」が過不足なく揃う。
+  if (svc.deposit) {
+    const depositBase = preTaxYen + (prepaid?.amount ?? 0);
+    const base = depositBase + svc.deposit.flatYen;
+    const fee = svc.deposit.flatYen + (base / (1 - svc.deposit.rate) - base);
+    lines.push(L('deposit', 'Deposit fee', Math.round(fee), svc.deposit.note,
+      svc.deposit.tier, svc.sourceUrl));
+  }
 
   const total = totalRange(lines);
   const rankHigh = rankHighFor(lines);
@@ -1344,6 +1395,21 @@ export function andList(names: string[]): string {
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
+/**
+ * この総額は「確定した点」か（外部レビュー④、2026-09-11）。
+ *
+ * `high === low`（幅ゼロ）かつ `high !== null`（上限不明ではない）のときだけ真。
+ * **差額（`Row.diff`）は常に下端どうしの差でしかない。**片方の総額がこの意味で
+ * 確定していない（`high === null` で上限不明、または `high > low` で幅を持つ）
+ * 限り、その社の実際の総額は表示している下端より高くなりうる——つまり
+ * 「ちょうどこれだけ違う」とは言えず、「少なくともこれだけ違う」としか言えない。
+ * 呼び出し側（`RankBoard`／`RowBreakdown`／`Summary`）はこれで1位（下端最小の
+ * 行、同額なら全員）の総額を調べ、真でなければ差額の文言に「少なくとも」を足す。
+ */
+export function totalIsCertain(total: { low: number; high: number | null }): boolean {
+  return total.high !== null && total.high === total.low;
+}
+
 function rowsFor(ctx: Ctx): Row[] {
   const out: Row[] = [];
   for (const svc of SERVICES) {
@@ -1549,7 +1615,17 @@ export function compare(
       // **判定不能（判断3）は独立の分岐**——「動くか動かないか」の問いの前に、
       // そもそも1位が区別できていないことを言う。
       rankStabilityNote: !first
-        ? 'No published EMS rate covers this parcel, so we cannot compare these totals.'
+        // **選んでいる方式の名前を言う**（外部レビュー⑤-d）。以前はここが常に
+        // 「EMS」と決め打っていたため、小形包装物など EMS 以外の方式を選んで
+        // 全社が重量上限を超えたときも「No published EMS rate」と出ていた——
+        // 実際には EMS を選んでいないのに、選んでいない方式の名前を注記に出す
+        // 誤り。`ctx.method` が `'cheapest'`（利用者が方式を指定していない）
+        // ときは特定の1方式を名指しできないので、方式を問わない言い方にする。
+        ? `No published rate covers this parcel for ${
+            method === 'cheapest'
+              ? 'any shipping method we price'
+              : (POSTAL_METHODS.find((s) => s.id === method)?.label ?? method)
+          }, so we cannot compare these totals.`
         : indeterminate
           ? indeterminateNote(base.filter((r) => r.comparable))
         : stable
@@ -1601,14 +1677,19 @@ export function compare(
   }
   if (!bands.length) return empty;
 
-  const rowTotalRange: Record<string, [number, number]> = {};
+  const rowTotalRange: Record<string, [number, number | null]> = {};
   const rowDiffRange: Record<string, [number, number]> = {};
   for (const band of bands) {
     for (const r of band.rows) {
       const t = rowTotalRange[r.id];
+      // **上端不明（`total.high === null`）はどの段でも1回でも出たら伝染させる**
+      // （外部レビュー⑤-c）。以前はここが `r.total.low` だけで組まれていたので、
+      // 段ごとに閉じているように見えても、この行自身の上限が不明という事実が
+      // `rowTotalRange` を経由すると消えていた（`totalText` がそこから閉区間を
+      // 描いていた）。
       rowTotalRange[r.id] = t
-        ? [Math.min(t[0], r.total.low), Math.max(t[1], r.total.low)]
-        : [r.total.low, r.total.low];
+        ? [Math.min(t[0], r.total.low), (t[1] === null || r.total.high === null) ? null : Math.max(t[1], r.total.high)]
+        : [r.total.low, r.total.high];
       const d = rowDiffRange[r.id];
       rowDiffRange[r.id] = d ? [Math.min(d[0], r.diff), Math.max(d[1], r.diff)] : [r.diff, r.diff];
     }
