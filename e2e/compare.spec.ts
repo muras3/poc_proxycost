@@ -1260,12 +1260,12 @@ test.describe('mobile layout', () => {
 // 実際に画面を操作して、出典名・参照日・転記したレートが出ることを見る。
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('the currency line under the winner cites the rate it actually used', () => {
-  // 見出しの1文。順位の直下の別の文（安定性の注記）と取り違えないよう2条件で絞る。
-  const summary = (page: Page) => page
-    .locator('p')
-    .filter({ hasText: /is cheapest/ })
-    .filter({ hasText: /approx\. total/ })
-    .first();
+  // 見出しの1文。**文言ではなく要素そのものを掴む**（P1-3 追修正）。
+  // 以前は `/is cheapest/` を含むかで絞っていたが、`rankIndeterminate` のとき
+  // Summary は「is cheapest」と断定しなくなった（判定不能で最安を言い切るのは
+  // 自己矛盾なので削った）——文言に依存したセレクタは表示の正しい変更のたびに
+  // 壊れる。`data-testid="summary"` で要素を直接掴む。
+  const summary = (page: Page) => page.getByTestId('summary');
 
   test('the default destination shows the transcribed USD rate and the ECB reference date',
     async ({ page }) => {
