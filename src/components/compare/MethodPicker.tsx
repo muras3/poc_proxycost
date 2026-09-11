@@ -30,6 +30,7 @@ export function MethodPicker({
     <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
       Ship by
       <select
+        id="ship-by-select"
         value={value}
         onChange={(e) => onChange(e.target.value as PostalMethod | 'cheapest')}
         className="rounded border border-neutral-300 bg-transparent px-2 py-1 text-xs dark:border-neutral-700"
