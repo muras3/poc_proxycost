@@ -313,6 +313,46 @@ const MAPPED: MappedEntry[] = [
     read: () => svc('fromjapan').optional.find((o) => o.key === 'photos')!.amountYen,
     expect: () => findRow('F18', 'fromjapan', '写真サービス').rule.amount,
   },
+  // ── T-F4（解消）: Neokyo の ¥350 に国内送料が含まれるか ───────────────
+  // 2026-09-11 に https://neokyo.com/en/fees・https://neokyo.com/en/how-to-buy を再取得。
+  // ORDER PAYMENT 節は (商品代+国内送料) + ¥350 という足し算の図で、¥350 の説明
+  // （purchasing / support / 45日保管）にも国内送料は入っていない。**¥350 に国内送料は
+  // 含まれない。マスタの includes:["domestic_shipping"] と F13 の included_in が誤りで、
+  // services.ts の domesticIncluded: false が正しかった。** マスタ側を直した。
+  {
+    id: 'F02', company: 'neokyo', name: '注文手数料（国内送料込み）',
+    read: () => svc('neokyo').domesticIncluded,
+    expect: () => Boolean(findRow('F02', 'neokyo', '注文手数料（国内送料込み）').rule.includes?.includes('domestic_shipping')),
+  },
+  // 「同一商品の複数個は同一 Buy Request 内なら1回だけ」（quote 参照）。F04/neokyo を新規に
+  // マスタへ追加し、コードの chargedPerDistinctItem と対応させる。
+  {
+    id: 'F04', company: 'neokyo', name: '同一商品の複数個',
+    read: () => svc('neokyo').fee.chargedPerDistinctItem,
+    expect: () => findRow('F04', 'neokyo', '同一商品の複数個').rule.type === 'fee_once_per_distinct_item',
+  },
+  // ── T-F6（解消）: 前徴収税(F36) で C だった3行をコードに合わせてマスタを更新 ──
+  {
+    id: 'F36', company: 'zenmarket', name: 'EU/UK VAT 前払い（2026-03-02から強制）',
+    read: () => svc('zenmarket').prepaidImportTax?.DE !== undefined,
+    expect: () => findRow('F36', 'zenmarket', 'EU/UK VAT 前払い（2026-03-02から強制）').rule.mandatory,
+  },
+  {
+    id: 'F36', company: 'neokyo', name: '着地国の税を代理徴収',
+    read: () => Object.keys(svc('neokyo').prepaidImportTax ?? {}),
+    expect: () => findRow('F36', 'neokyo', '着地国の税を代理徴収').rule.countries,
+  },
+  {
+    id: 'F36', company: 'buyee', name: 'AU GST 代理徴収',
+    read: () => svc('buyee').prepaidImportTax?.AU?.rate,
+    expect: () => findRow('F36', 'buyee', 'AU GST 代理徴収').rule.rate,
+  },
+  // ── T-F11b（解消）: F20/neokyo は /en/storage の表で額が判明済み ──────────
+  {
+    id: 'F20', company: 'neokyo', name: '保管無料期間',
+    read: () => svc('neokyo').optional.find((o) => o.key === 'storage')!.amountYen,
+    expect: () => findRow('F20', 'neokyo', '保管無料期間').rule.after.amounts_by_size.small.order,
+  },
 ];
 
 // ============================================================================
@@ -329,95 +369,6 @@ interface ConflictEntry extends RowKeyParts {
 }
 
 const CONFLICT: ConflictEntry[] = [
-  // ── T-F4: Neokyo の ¥350 に国内送料が含まれるか ──────────────────────
-  {
-    id: 'F02', company: 'neokyo', name: '注文手数料（国内送料込み）',
-    master: 'rule.includes = ["domestic_shipping"]（¥350 に国内送料を含む。tier A_confirmed）',
-    code: 'domesticIncluded: false（¥350 に国内送料を含まない）',
-    reason: '同じ URL・同じ確認日(2026-09-07)を出典にしながら逆のことを言っている。マスタの note は'
-      + '「src/data.js の domesticIncluded: true は正しい」とコードを直す方向を指示しているが、'
-      + 'コードは逆に直されている。一次情報の再取得が必要（docs/FIT-GAP.md §4①）。',
-    task: 'T-F4',
-    assertStillConflicting: () => {
-      const rule = findRow('F02', 'neokyo', '注文手数料（国内送料込み）').rule;
-      expect(rule.includes).toContain('domestic_shipping');
-      expect(svc('neokyo').domesticIncluded).toBe(false);
-    },
-  },
-  {
-    id: 'F13', company: 'neokyo', name: '国内送料',
-    master: 'rule.type "zero" / reason "included_in" / fee_id "F02"（国内送料はゼロ、¥350 に内包）',
-    code: 'domesticIncluded: false（F02/neokyo と同一の争点の裏表）',
-    reason: 'F02/neokyo と同じ争点（domesticIncluded）。片方だけ直しても解決しないので同じタスクにまとめる。',
-    task: 'T-F4',
-    assertStillConflicting: () => {
-      const rule = findRow('F13', 'neokyo', '国内送料').rule;
-      expect(rule.type).toBe('zero');
-      expect(rule.reason).toBe('included_in');
-      expect(svc('neokyo').domesticIncluded).toBe(false);
-    },
-  },
-  // ── T-F5: FROM JAPAN の ¥500 は1つか2つか ────────────────────────────
-  {
-    id: 'F12', company: 'fromjapan', name: 'Product Protection Plan',
-    master: 'F02（取扱手数料 ¥500/点）とは別行。F12 は Product Protection Plan ¥500/点（B_inferred）。'
-      + '合計 ¥1,000/点 のはず',
-    code: 'perItemYen: 500 のみ。コメントで「Protection Plan の ¥500/点 は既に service-fee として'
-      + '総額に入っている」と明記し、F02 と1つに統合している',
-    reason: '取扱手数料と Product Protection Plan が別費目か1費目かを、原文'
-      + '（help_fee_140 / help_fee_252 / title_serviceRule_670）で確定できていない。',
-    task: 'T-F5',
-    assertStillConflicting: () => {
-      const rule = findRow('F12', 'fromjapan', 'Product Protection Plan').rule;
-      expect(rule.amount).toBe(500);
-      // コードは F02 と F12 を合算せず、F02 の¥500だけを総額に積んでいる
-      expect(svc('fromjapan').fee.perItemYen).toBe(500);
-    },
-  },
-  // ── T-F6: 前徴収税(F36)で C が古い3行 ────────────────────────────────
-  {
-    id: 'F36', company: 'zenmarket', name: 'EU VAT 前払い（任意）',
-    master: 'rule.mandatory === false（任意・IOSS を利用者が選ぶ）',
-    code: 'prepaidImportTax.DE/FR/GB は無条件・tier "fixed" で課税額を積む（強制扱い）。'
-      + '2026-03-02 からの強制化告知（ZENMARKET_VAT_PRECHARGE_URL）に基づく',
-    reason: 'マスタの F36 行が2026-02-19の強制化告知（コード側が根拠にしている一次情報）より古いまま'
-      + '更新されていない。コードのほうが新しい。',
-    task: 'T-F6',
-    assertStillConflicting: () => {
-      const rule = findRow('F36', 'zenmarket', 'EU VAT 前払い（任意）').rule;
-      expect(rule.mandatory).toBe(false);
-      expect(svc('zenmarket').prepaidImportTax?.DE).toBeDefined();
-    },
-  },
-  {
-    id: 'F36', company: 'neokyo', name: '着地国の税を代理徴収',
-    master: 'rule.countries = ["AU","EU27","US_territories"]、rate: "unknown"',
-    code: 'prepaidImportTax は AU のみ（rate 0.10, base declared, tier fixed）。'
-      + 'TODO-NEXT.md は「Neokyo は EU VAT を取らない（日本郵便は DDU）」と明記',
-    reason: '対象国のスコープも税率も食い違っている。コードのほうが新しい一次情報（2026-09-06）に基づく。',
-    task: 'T-F6',
-    assertStillConflicting: () => {
-      const rule = findRow('F36', 'neokyo', '着地国の税を代理徴収').rule;
-      expect(rule.countries).toContain('EU27');
-      expect(Object.keys(svc('neokyo').prepaidImportTax ?? {})).toEqual(['AU']);
-    },
-  },
-  {
-    id: 'F36', company: 'buyee', name: 'AU GST 代理徴収',
-    master: 'rate: "unknown", base: "unknown"（AU GST サブページが401で取得できず、率と課税ベースは'
-      + 'C_unknown。note に「率と課税ベースは C」と明記）',
-    code: "prepaidImportTax.AU = { rate: 0.10, base: 'before-shipping', tier: 'fixed' }（別途 au-gst"
-      + ' ページを取得し確定済み、確認日 2026-09-06）',
-    reason: 'コード側は後日 au-gst サブページを取得して確定できたが、fees.json のこの行はまだ'
-      + '更新されていない。',
-    task: 'T-F6',
-    assertStillConflicting: () => {
-      const rule = findRow('F36', 'buyee', 'AU GST 代理徴収').rule;
-      expect(rule.rate).toBe('unknown');
-      expect(rule.base).toBe('unknown');
-      expect(svc('buyee').prepaidImportTax?.AU?.rate).toBe(0.10);
-    },
-  },
   // ── T-F11: マスタが unknown/null（C_unknown）と言っている値に、
   //           コードが確定値を置いている（一次情報から読めない数字を確定値にしている）
   {
@@ -443,23 +394,6 @@ const CONFLICT: ConflictEntry[] = [
       expect(rule.amounts.yahoo_auction).toBeNull();
       expect(rule.unknown_marketplaces).toContain('yahoo_auction');
       expect(svc('zenmarket').fee.perItemBySite?.['yahoo-auctions']).toBe(800);
-    },
-  },
-  {
-    id: 'F20', company: 'neokyo', name: '保管無料期間',
-    master: 'rule.after === "weekly_fee_amount_unknown"（45日超過後の週額は未取得。amount_tier '
-      + 'C_unknown）',
-    code: "optional 'storage' で amountYen: 350（tier: 'fixed'）。別ソース"
-      + ' https://neokyo.com/en/storage を2026-09-07に取得し金額を確定済み',
-    reason: '一次情報の再取得が別途行われ額が判明した（コード側のコメントに出典あり）が、'
-      + 'fees.json のこの行はまだ更新されていない。マスタが unknown と言っている値にコードが'
-      + '確定値を置いている、という T-F11 と同型の欠陥。',
-    task: 'T-F11',
-    assertStillConflicting: () => {
-      const rule = findRow('F20', 'neokyo', '保管無料期間').rule;
-      expect(rule.after).toBe('weekly_fee_amount_unknown');
-      const storage = svc('neokyo').optional.find((o) => o.key === 'storage')!;
-      expect(storage.amountYen).toBe(350);
     },
   },
 ];
@@ -489,6 +423,15 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + ' services.ts の SERVICES には対応する数値フィールドが無い。',
     assertNotInCode: () => {
       expect((svc('buyee').fee as unknown as Record<string, unknown>).domesticShippingYen).toBeUndefined();
+    },
+  },
+  // ── T-F4（解消）: F13/neokyo は実費（他4社と同型）に直した ─────────────────
+  {
+    id: 'F13', company: 'neokyo', name: '国内送料',
+    reason: 'rule.type が actual_cost_per_order（実費）で確定額を持たない。理由は F13/buyee と同じ。'
+      + '旧マスタの zero/included_in（¥350に内包）は誤りだった（T-F4、2026-09-11再取得）。',
+    assertNotInCode: () => {
+      expect((svc('neokyo').fee as unknown as Record<string, unknown>).domesticShippingYen).toBeUndefined();
     },
   },
   {
@@ -570,6 +513,23 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     assertNotInCode: () => {
       // PayPal専用の flatYen 40 が反映されていれば非0になるはずだが、単一推定値のまま
       expect(svc('zenmarket').deposit!.flatYen).toBe(0);
+    },
+  },
+  // ── T-F5（解消）: F02とF12は別の¥500×2ではなく同一の¥500 ─────────────────
+  // 2026-09-11 に https://www.fromjapan.co.jp/translate/en_help.txt を再取得。
+  // help_fee_120「Handling Fees」→ help_fee_130「Product Protection Plan」→
+  // help_fee_140「500 yen per item」という並びと help_fee_252/381/382 の対応から、
+  // Handling Fees / Plan Fee / Product Protection Plan は同じ¥500/点の呼び分けで
+  // 並立しないと判明。マスタ側を rule.type "zero"/"included_in" に直した
+  // （services.ts のコメントが指摘していた統合の向きが正しかった）。
+  {
+    id: 'F12', company: 'fromjapan', name: 'Product Protection Plan',
+    reason: 'T-F5: help_fee_120/130/140/150 と title_serviceRule_670 から、F02（取扱手数料）と'
+      + '同一の¥500を指す1行と判明。独立費目として合計に加えない（services.ts の comment と一致）。',
+    assertNotInCode: () => {
+      const rule = findRow('F12', 'fromjapan', 'Product Protection Plan').rule;
+      expect(rule.type).toBe('zero');
+      expect(rule.fee_id).toBe('F02');
     },
   },
   {

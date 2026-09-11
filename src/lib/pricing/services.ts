@@ -257,9 +257,15 @@ export const SERVICES: Service[] = [
     url: 'https://neokyo.com/',
     sourceUrl: 'https://neokyo.com/en/fees',
     primarySource: true,
-    // 公式の ORDER PAYMENT は「Order and domestic shipping price」の下にプラス記号を置き、
-    // その下が ¥350。つまり（商品代＋国内送料）＋¥350 で、**¥350 に国内送料は含まれない。**
-    // 「同一商品の複数個は1回だけ」も同ページに明記。
+    // T-F4（2026-09-11 再取得、https://neokyo.com/en/fees・https://neokyo.com/en/how-to-buy
+    // を自分で読んだ）。ORDER PAYMENT 節は見出し「Order and domestic shipping price」の下に
+    // まず（商品代＋国内送料）に当たる要素があり、その後にプラス記号、さらに ¥350 が続く
+    // ── つまり (商品代 + 国内送料) + ¥350 という足し算の図で、**¥350 に国内送料は
+    // 含まれない**。「What does this price cover?」の説明にも国内送料は入っていない
+    // （purchasing the item / support / storage for up to 45 days のみ）。
+    // タイトル・OG説明「350 yen per item」、計算例「Service fee (350¥ x 3)」から
+    // **商品ごと**課金であることも確認。「If you purchase multiples copies of the same
+    // item within the same Buy Request, this fee is only applied once.」も明記。
     fee: { perItemYen: 350, chargedPerDistinctItem: true, tier: 'fixed' },
     domesticIncluded: false,
     deposit: null,
