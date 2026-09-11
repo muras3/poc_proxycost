@@ -2,17 +2,18 @@
   "category": "music",
   "labelJa": "レコード・CD",
   "labelEn": "Records and CDs",
-  "checkedOn": "2026-09-06",
-  "method": "published-range",
+  "checkedOn": "2026-09-08",
+  "method": "shopify-products-json",
   "measured": false,
   "sources": [
     {
       "domain": "snowrecords.com",
-      "url": "https://snowrecords.com/",
-      "products": 0,
-      "variantsWithGrams": 0,
+      "url": "https://snowrecords.com/products.json?limit=250&page=1",
+      "products": 10000,
+      "variantsWithGrams": 10000,
       "verdict": "suspect",
-      "reason": "Recorded as a range only; the sample count was not kept"
+      "reason": "distinct ratio 1.0%, multiples of 100: 12%. Suspect, and adopted with that on the record, because the shop weighs in 20 g steps: 100 distinct values over 10,000 rows, every one of them a multiple of 10 and nearly all of them a multiple of 20. The steps are small enough to separate a CD from an LP, which is what the lines need. Until 2026-09-08 this row said products 0 and the two lines carried n=0, because only the shop's published range had been read and the catalogue behind it never had been. product_type='CD' is n=2,907, median 120 g, p25 120 / p75 140, spread 1.17. product_type='Vinyl Records' is n=7,075 and bimodal: 1,840 rows at 80 g or below, then a trough of about 150 rows across 90-180 g, then 5,235 rows at 200 g and above with median 280 g, p25 250 / p75 300, spread 1.20. The light mode is the 7-inch single, which this shop does not type separately; the split above is by that gap in the distribution and not by anything in the titles.",
+      "reasonJa": "distinct比 1.0%, 100の倍数 12%。判定は suspect で、それを記録したうえで採用。この店は 20g 刻みで量っている（10,000行に対して distinct は 100通り、ほぼ全部が 20 の倍数）。刻みは CD と LP を分けるには十分細かく、ラインが要るのはそこだけ。2026-09-08 まで、この行は products 0 で、2本のラインは n=0 だった — 店が公開しているレンジしか読んでおらず、その裏のカタログを読んでいなかったため。product_type='CD' が 2,907件で中央値 120g（p25 120 / p75 140、spread 1.17）。product_type='Vinyl Records' は 7,075件で二山: 80g 以下が 1,840件、90〜180g の谷が約150件、200g 以上が 5,235件で中央値 280g（p25 250 / p75 300、spread 1.20）。軽い山は7インチのシングル盤で、この店は別の product_type にしていない。上の分け方は分布の谷であって、タイトルから読んだものではない"
     }
   ],
   "lines": [
@@ -23,11 +24,11 @@
         "cd",
         "compact disc"
       ],
-      "medianG": 100,
-      "p25": 80,
-      "p75": 120,
-      "n": 0,
-      "spread": 1.5,
+      "medianG": 120,
+      "p25": 120,
+      "p75": 140,
+      "n": 2907,
+      "spread": 1.17,
       "tier": "estimate"
     },
     {
@@ -38,15 +39,34 @@
         "vinyl",
         "レコード"
       ],
-      "medianG": 270,
-      "p25": 240,
+      "medianG": 280,
+      "p25": 250,
       "p75": 300,
-      "n": 0,
-      "spread": 1.25,
+      "n": 5235,
+      "spread": 1.2,
+      "tier": "estimate"
+    },
+    {
+      "id": "vinyl-7inch",
+      "labelEn": "7-inch single",
+      "match": [
+        "7インチ",
+        "ep盤",
+        "シングル盤",
+        "ドーナツ盤",
+        "7 inch",
+        "7inch"
+      ],
+      "medianG": 80,
+      "p25": 80,
+      "p75": 80,
+      "n": 1840,
+      "spread": 1.0,
       "tier": "estimate"
     }
   ],
   "fallbackG": 200,
   "fallbackTier": "estimate",
-  "notes": "Ranges published by Snow Records (CD 80-120 g, LP 240-300 g). We did not keep the sample count, so n is 0 here. Needs re-fetching."
+  "notes": "The two lines were read from the Snow Records catalogue on 2026-09-08: 10,000 products, every one carrying grams. Until then they came from the range the shop publishes on its own site (CD 80-120 g, LP 240-300 g) with no sample count, and the table printed \"sample size not recorded\" beside them. The catalogue agrees with the published range for vinyl (250-300 g against 240-300 g) and puts a CD 20 g heavier than the middle of its published range.\n\nThe verdict on the catalogue is suspect: the shop weighs in 20 g steps, so the values are rounded rather than measured. The steps are far smaller than the difference between the formats, which is all these lines have to carry.\n\nThe 7-inch line is the light half of a two-peaked vinyl distribution — 1,840 rows sit at 80 g, then almost nothing until 200 g, then 5,235 rows make the LP peak. The shop does not type the two separately, so the sample was split at that gap and not by anything a title says. What a listing does say is EP or 7-inch, and those are the words the line matches.\n\nNot obtained: box sets and heavyweight or double LPs (they are inside the LP peak and nothing separates them), and the cases, sleeves and storage the live search returns alongside the discs.",
+  "notesJa": "2本のラインは 2026-09-08 に Snow Records のカタログから読み直した（10,000商品、全部に grams がある）。それまでは店が自サイトに載せているレンジ（CD 80〜120g、LP 240〜300g）だけが根拠で件数が無く、表には「件数を記録していない」と出ていた。カタログはレコードについて公開レンジとほぼ一致し（250〜300g 対 240〜300g）、CD は公開レンジの真ん中より 20g 重い。\n\nカタログの判定は suspect。この店は 20g 刻みで量っていて、値は丸められている。ただし刻みはフォーマット間の差よりずっと小さく、このラインが担うのはその差だけ。\n\n7インチのラインは、二山になっているレコードの分布の軽いほう — 1,840件が 80g に立ち、200g までほとんど何も無く、そこから 5,235件の LP の山になる。店は両者を別の product_type にしていないので、サンプルはこの谷で分けた。タイトルから読んだのではない。出品のほうは「EP盤」「7インチ」と書くので、ラインはその語で当てる。\n\n取れなかったもの: ボックスセットと重量盤・2枚組（LP の山の中にいて分ける手掛かりが無い）、そして実検索がディスクと一緒に返してくるケース・スリーブ・収納用品"
 }
