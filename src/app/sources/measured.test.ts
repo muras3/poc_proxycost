@@ -127,6 +127,7 @@ describe('the numbers /sources calls measured are what compare() actually return
     for (const row of RANK_STABILITY) {
       const result = compare({ items: basket(MEASURED_BASKET.weightG), country: row.country });
       expect(result.rankStable, `${row.country} rankStable`).toBe(row.rankStable);
+      expect(result.rankIndeterminate, `${row.country} rankIndeterminate`).toBe(row.rankIndeterminate);
       if (row.staysCheapest) {
         expect(result.rankStabilityNote, `${row.country} rankStabilityNote`)
           .toContain(row.staysCheapest);

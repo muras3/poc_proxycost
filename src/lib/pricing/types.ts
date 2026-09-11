@@ -181,6 +181,21 @@ export interface Row {
   comparable: boolean;
   /** comparable が false の理由（英語、画面にそのまま出す）。 */
   notComparableReason: string | null;
+  /**
+   * 「おすすめ」枠に入るか（P1-2）。**下端で並べたとき1位の幅と重なる社**を、
+   * 1位自身を含めて最大3社（1位 + 重なる社2社まで）まで囲う。
+   * 重なる社が無ければ1位だけが true（単独1位）。`comparable` が false の行は常に false。
+   * 判定方法は `docs/ROADMAP.md` P1「『重なる』の定義」、実装は `compare.ts` の
+   * `computeBracket()` を参照。
+   */
+  recommended: boolean;
+  /**
+   * 「同等」の印（P1-2）。おすすめ枠には入らない（3社目以降）が、
+   * 1位の幅とは重なっている社。**枠には入れない**——おすすめは最大2社という上限を
+   * 動かさないための印であって、資格の有無ではない。`recommended` と同時に true には
+   * ならない。`comparable` が false の行は常に false。
+   */
+  equivalent: boolean;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */
@@ -231,8 +246,24 @@ export interface CompareResult {
   rowTotalRange: Record<string, [number, number]> | null;
   /** 行ID → 1位との差額の幅。bands があるときのみ。 */
   rowDiffRange: Record<string, [number, number]> | null;
-  /** 段や重量をずらしても1位が動かないか。 */
+  /**
+   * 段や重量をずらしてもおすすめ枠が動かないか。**`rankIndeterminate` が true の
+   * ときは常に false。**「安定」と「そもそも判別できない」を同じ `true` に潰さない
+   * ため（P1-2、コーディネーター判断3、2026-09-11）——比較可能な全社が
+   * おすすめ枠＋同等に収まっている（誰か1位の総額が上限不明で、全社が
+   * その不確かさに埋もれている）状態は、重量を動かしても枠の集合が変わりようが
+   * ないので機械的に「安定」と判定されてしまうが、中身は「どの社が安いか
+   * 一切判別できていない」であって「重量が変わっても薦める社が変わらない」
+   * という意味の安定ではない。この区別は `rankIndeterminate` を見て付ける。
+   */
   rankStable: boolean;
+  /**
+   * 比較可能な社が1社でも在るのに、その全員がおすすめ枠か同等の印に収まっていて
+   * 「どの社が安いか」を区別できない状態か（P1-2、判断3）。**このとき `rankStable`
+   * は必ず `false`**——`rankIndeterminate` を「安定」側に寄せない。
+   * 画面・`measured.ts`・README はこのフラグで「安定」と「判定不能」を描き分ける。
+   */
+  rankIndeterminate: boolean;
   /** 英語で1行。画面にそのまま出す。 */
   rankStabilityNote: string;
   /** bands があるときの総額全体の幅。 */

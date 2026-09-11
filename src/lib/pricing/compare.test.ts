@@ -529,21 +529,23 @@ describe('equal totals get equal rank', () => {
     }
   });
 
-  test('a tie at the top is not a rank change: stability is judged on the whole tied set', () => {
-    // 1位が {Neokyo, ZenMarket} で、片端で ZenMarket、他端で Neokyo になる。
-    // **どちらを選んでも両端で最安のままにはならない**ので不安定。
+  test('a tie at the top is not a rank change: stability is judged on the whole bracket', () => {
+    // 1位が {Neokyo, ZenMarket} で、おすすめ枠もその2社。片端では枠が
+    // {ZenMarket, Neokyo（overlapping 3社目に別が入りうる）}、他端で入れ替わる
+    // ——枠の**集合**が変わるので不安定（P1-2、判断2: 枠の集合の完全一致で判定する）。
     const r = compare({
       items: items(1, 450, 4200, { site: 'rakuten', weightOrigin: 'user' }), country: 'AU',
     });
     expect(r.rows.filter((x) => x.cheapest).map((x) => x.serviceId).sort())
       .toEqual(['neokyo', 'zenmarket']);
     expect(r.rankStable).toBe(false);
-    expect(r.rankStabilityNote).toContain('Neokyo is cheapest');
-    expect(r.rankStabilityNote).toContain('ZenMarket is cheapest');
+    expect(r.rankStabilityNote).toContain('is the recommended range');
+    expect(r.rankStabilityNote).toContain('ZenMarket');
+    expect(r.rankStabilityNote).toContain('Neokyo');
   });
 
   test('a tie below the top never makes the ranking look unstable', () => {
-    // 2位が同額なだけ。1位（FROM JAPAN）は両端で1位のままなので安定。
+    // 2位が同額なだけ。1位（ZenMarket, タイなので枠は1社）は両端で枠のままなので安定。
     // 旧実装は `rows[0]` を比べていたので、同額の中で先頭が入れ替わっただけでも
     // 「1位が替わった」と読む余地があった。集合で見ることでそれを塞ぐ。
     // storageDays: 30 の理由は midTie() のコメントと同じ。
@@ -551,7 +553,7 @@ describe('equal totals get equal rank', () => {
     expect(r.rows.filter((x) => x.tied).length).toBe(2);
     expect(r.rankStable).toBe(true);
     expect(r.rankStabilityNote)
-      .toBe('ZenMarket stays cheapest even if we are off by 3x on weight.');
+      .toBe('ZenMarket stays in the recommended range even if we are off by 3x on weight.');
   });
 
   test('rank never has a hole: every rank from 1 up to the last is either used or skipped by a tie', () => {
@@ -667,15 +669,16 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // FROM JAPAN だけで、残る3社の行には税が乗っていない（その3社の総額は税のぶん低い）。
     // 確認できる社が増えれば、ここは不安定に転じうる。
     //
-    // **US がこの帯で安定側に移ったのは、モデルが良くなったからではない。**
-    // 不安定の片側は必ず Neokyo だったが、Neokyo は米国宛に日本郵便を売っていない
-    // （自社の計算機が3方式すべてに "Not available or suspended in your country."）。
-    // 比べる相手が1社減って動く余地が消えただけなので、AU・SG の安定とは意味が違う。
-    // それが下で US だけ注記の主語が違う理由。
-    const stable: CountryCode[] = ['AU', 'SG', 'US'];
-    for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c))) {
+    // **US はこの帯では「安定」ではなく「判定不能」**（下で別に検査する）。
+    // 1位（FROM JAPAN）の総額が上限不明（Zonos 前払い利用料）で、比較可能な
+    // 全社がおすすめ枠か同等に収まる——判断3。かつての「US はモデルの改善では
+    // なく Neokyo が居ないから安定に見えていただけ」という注記は、実は
+    // 「安定」ですらなく「判別できていない」だったことがここで分かる。
+    const stable: CountryCode[] = ['AU', 'SG'];
+    for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c) && c !== 'US')) {
       const r = compare({ items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(false);
+      expect(r.rankIndeterminate, cc).toBe(false);
       // **不安定だと言うだけでは足りない。誰に替わるかを名指しすること。**
       // 以前この文言は 'see the weight steps' と書いていたが、重量が分かって
       // いるときは段の表を出していない。画面に無いものを指していた。
@@ -689,42 +692,56 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     for (const cc of stable) {
       const r = compare({ items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(true);
+      expect(r.rankIndeterminate, cc).toBe(false);
       expect(r.rankStabilityNote, cc).toBe(
-        `${cc === 'US' ? 'FROM JAPAN' : 'Neokyo'} stays cheapest`
-        + ' even if we are off by 3x on weight.');
+        'Neokyo stays in the recommended range even if we are off by 3x on weight.');
     }
+    const us = compare({ items: items(5, 600), country: 'US' });
+    expect(us.rankStable).toBe(false);
+    expect(us.rankIndeterminate).toBe(true);
+    expect(us.rankStabilityNote).toContain('sit within the same uncertainty');
   });
 
   test('**「唯一値段が付く社」を「最安」と書かない**', () => {
     // 3,000 g/点。×3 すると同梱する社が EMS 公表表（30kg）を出て脱落し、
     // 注文ごとに分ける Buyee default だけが残る。安いのではなく、値段が付く
-    // 唯一の社というだけ。ここを取り違えると、費目が欠けた行を薦めることになる。
+    // 唯一の社というだけ——ここを取り違えると、費目が欠けた行を薦めることになる。
+    // **この基準重量（3,000 g）自体は米国で判定不能**（FROM JAPAN が1位で総額が
+    // 上限不明。判断3）なので、トップレベルの `rankStabilityNote` はいまその文言に
+    // なる。「唯一値段が付く社≠最安」という主張そのものは per-item の
+    // `weightSensitivity`（`onlyPricedAtLow`/`onlyPricedAtHigh`）で別に縛っている
+    // （`when the heavy end leaves the EMS table, ...` テスト）。
     const r = compare({ items: items(5, 3000), country: 'US' });
     expect(r.rankStable).toBe(false);
-    expect(r.rankStabilityNote).toContain('is the only one we can still price');
+    expect(r.rankIndeterminate).toBe(true);
     expect(r.rankStabilityNote).not.toContain('Buyee, default is cheapest');
   });
 
-  test('200 g per item is stable, and the note names the winner and the 3x span', () => {
-    for (const cc of COUNTRIES_ALL) {
+  test('200 g per item is stable in six of the seven countries — the US total is indeterminate', () => {
+    // **US だけ違う。**FROM JAPAN が1位で総額が上限不明なので、比較可能な全社が
+    // おすすめ枠か同等に収まり「判定不能」（判断3）。
+    for (const cc of COUNTRIES_ALL.filter((c) => c !== 'US')) {
       const r = compare({ items: items(5, 200), country: cc });
       expect(r.rankStable, cc).toBe(true);
-      // 米国だけ主語が違う。Neokyo が米国宛に日本郵便を売っていないので、
-      // 6カ国で最安の社がそこには居ない。
+      expect(r.rankIndeterminate, cc).toBe(false);
       expect(r.rankStabilityNote, cc).toBe(
-        `${cc === 'US' ? 'FROM JAPAN' : 'Neokyo'} stays cheapest`
-        + ' even if we are off by 3x on weight.');
+        'Neokyo stays in the recommended range even if we are off by 3x on weight.');
     }
+    const us = compare({ items: items(5, 200), country: 'US' });
+    expect(us.rankStable).toBe(false);
+    expect(us.rankIndeterminate).toBe(true);
+    expect(us.rankStabilityNote).toContain('sit within the same uncertainty');
   });
 
-  test('stability is judged at x1/3 and x3 — no wider, or the parcel leaves the table', () => {
-    // 1点 9,000g は表の中だが、3倍にすると梱包後 32.7kg で公表料金が消える。
-    // 「順位が動いた」ではなく「判定できない」として扱い、そう書く。
+  test('a 9,000 g single item in the US is indeterminate, not stable', () => {
+    // 1位（FROM JAPAN）自身が上限不明（`total.high === null`）なので、判断1どおり
+    // 重なり判定は +∞ として扱う。比較可能な4社（FROM JAPAN・ZenMarket・Buyee・
+    // Jauce）全員がその不確かさの中で区別できない——「安定」ではなく
+    // 「判定不能」（判断3）。
     const r = compare({ items: items(1, 9000), country: 'US' });
-    expect(r.rankStable).toBe(true);
-    expect(r.rankStabilityNote).toBe(
-      'FROM JAPAN stays cheapest even if we are off by 3x on weight.'
-      + ' Beyond that the parcel leaves the published EMS table.');
+    expect(r.rankStable).toBe(false);
+    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
   });
 
   test('the cheapest service flips at 1,150 g / 1,325 g / 1,625 g by basket size', () => {
@@ -1190,9 +1207,14 @@ describe('one item at a time: whose weight decides the winner', () => {
     table('i1', 439, [380, 600], { priceYen: 4200, site: 'mercari' }),
   ];
 
-  test('the example cart: FROM JAPAN wins, and the Nendoroid range does not move it', () => {
+  test('the example cart: FROM JAPAN wins, but the US total is indeterminate (P1-2)', () => {
+    // **FROM JAPAN の総額は米国では常に上限不明**（Zonos 前払い利用料が uncappable）。
+    // FROM JAPAN が1位（下端最小）なので +Infinity 扱いの重なり判定（判断1）が
+    // 効き、比較可能な全社がおすすめ枠か同等に収まる——「安定」ではなく
+    // 「判定不能」（判断3）。1位そのものは動かない。
     const r = compare({ items: EXAMPLE, country: 'US' });
-    expect(r.rankStable).toBe(true);
+    expect(r.rankStable).toBe(false);
+    expect(r.rankIndeterminate).toBe(true);
     expect(r.rows[0]!.id).toBe('fromjapan');
     // 幅の無いライン（P25=P75）は動かしても同じなので、見ない。
     expect(r.weightSensitivity['i0']).toBeUndefined();
@@ -1224,9 +1246,16 @@ describe('one item at a time: whose weight decides the winner', () => {
     });
   });
 
-  test('a single item off the table: the weight does not matter, and we say so instead of nagging', () => {
+  test('a single item off the table: FROM JAPAN always wins, and the US total is indeterminate', () => {
+    // FROM JAPAN は500g〜10kgの全域で1位のまま（winnerAtLow/High とも FROM JAPAN）で、
+    // **枠は{FROM JAPAN, ZenMarket}の2社のまま動かない**（枠の上限が2社に直った
+    // ことで、以前3社のときに枠へ出入りしていた Jauce/Buyee は枠に入らなくなった
+    // ——`decisive` は false）。それでも米国の rankStable は false: FROM JAPAN の
+    // 総額が上限不明なので比較可能な全社がおすすめ枠か同等に収まり、判定不能
+    // （判断3）。
     const r = compare({ items: [assumed('i2')], country: 'US' });
-    expect(r.rankStable).toBe(true);
+    expect(r.rankStable).toBe(false);
+    expect(r.rankIndeterminate).toBe(true);
     expect(r.weightSensitivity['i2']).toMatchObject({
       lowG: 500, highG: 10000, winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN', decisive: false,
     });
@@ -1246,9 +1275,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     }
   });
 
-  test('kendo armour: no single item flips it within its quartiles, but the cart as a whole is unstable', () => {
-    // 胴 1,500–7,500 g（spread 5.0）ですら、他の2点を固定すると1位は FROM JAPAN のまま。
-    // 一方 ×1/3 では Neokyo に替わる。2つの判定は別の問いに答えている。
+  test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is indeterminate', () => {
     const r = compare({
       items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
       // **国が米国からドイツに変わった。**×1/3 側の勝者が Neokyo で、Neokyo は
@@ -1256,12 +1283,16 @@ describe('one item at a time: whose weight decides the winner', () => {
       country: 'DE',
     });
     expect(r.rows[0]!.id).toBe('fromjapan');
-    expect(r.weightSensitivity['do']!.decisive).toBe(false);
+    // 胴の spread（1,500–7,500 g）はそれだけで枠（FROM JAPAN・ZenMarket・Buyee
+    // consolidated 系の入れ替わり）を動かすほど広い。袴（1,500–2,500 g）は動かさない。
+    expect(r.weightSensitivity['do']!.decisive).toBe(true);
     expect(r.weightSensitivity['hakama']!.decisive).toBe(false);
     expect(r.weightSensitivity['tare']).toBeUndefined();
+    // 基準の重量（1x）では FROM JAPAN が1位で総額が上限不明——比較可能な全社が
+    // おすすめ枠か同等に収まり、「安定」ではなく「判定不能」（判断3）。
     expect(r.rankStable).toBe(false);
-    // 表から引いた重量を「あなたがくれた重量」とは呼ばない。
-    expect(r.rankStabilityNote).toContain('at a third of our weight estimate, Neokyo is cheapest');
+    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
     expect(r.rankStabilityNote).not.toContain('you gave us');
   });
 
@@ -1337,34 +1368,42 @@ describe('unknown weight falls back to EMS steps', () => {
     const r = unknown(2);
     expect(r.bands!.map((b) => b.cheapestRowIds))
       .toEqual([['neokyo'], ['neokyo'], ['fromjapan'], ['fromjapan'], ['fromjapan'], ['fromjapan']]);
+    // 代表段（3kg）は FROM JAPAN が1位で総額が上限不明——比較可能な全社が
+    // おすすめ枠か同等に収まり「判定不能」（判断3）。1位が段で入れ替わること自体は
+    // 変わっていない（上の cheapestRowIds の並びがそれを示す）。
     expect(r.rankStable).toBe(false);
-    expect(r.rankStabilityNote).toContain('changes with weight');
-    expect(r.rankStabilityNote).toContain('500 g: Neokyo');
-    expect(r.rankStabilityNote).toContain('10 kg: FROM JAPAN');
+    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
   });
 
-  test('in the US the bands agree, because the service that wins the light bands is not there', () => {
-    // **この安定は良い知らせではない。**上の反転は軽い帯の Neokyo が作っていて、
-    // 米国にはその Neokyo が居ない（日本郵便を売っていない）。
-    // 「米国なら重量が分からなくても1位が言える」のは選択肢が減った結果。
+  test('in the US every band is indeterminate — FROM JAPAN always leads with an unbounded total', () => {
+    // 米国には Neokyo が居ない（日本郵便を売っていない）ので、どの帯でも1位は
+    // FROM JAPAN のまま。だが FROM JAPAN の総額は米国では常に上限不明
+    // （Zonos 前払い利用料）なので、代表段では比較可能な全社が枠か同等に収まり
+    // 「判定不能」（判断3）——「1位が変わらない」＝安定、ではない。
     const r = compare({
       items: Array.from({ length: 2 }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
       country: 'US',
     });
     expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
-    expect(r.rankStable).toBe(true);
+    expect(r.rankStable).toBe(false);
+    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
     // どの帯でも Neokyo は値段を持たない。
     for (const band of r.bands!) {
       expect(band.rows.find((x) => x.id === 'neokyo')!.comparable).toBe(false);
     }
   });
 
-  test('one unknown item keeps the same winner in every band', () => {
+  test('one unknown item: FROM JAPAN leads every band, but the CA total is indeterminate', () => {
     const r = unknown(1);
     expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
-    expect(r.rankStable).toBe(true);
-    expect(r.rankStabilityNote).toBe(
-      'Cheapest at every step from 500 g to 10 kg: FROM JAPAN.');
+    // 代表段（3kg）は FROM JAPAN が1位（総額は上限不明）で、比較可能な全社が
+    // おすすめ枠（FROM JAPAN・Neokyo、枠は最大2社）か同等（ZenMarket・Jauce・Buyee）
+    // に収まる——「安定」ではなく「判定不能」（判断3）。
+    expect(r.rankStable).toBe(false);
+    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
   });
 
   test('each band is itself a ranked board and totals grow with the step', () => {
@@ -1891,5 +1930,166 @@ describe('the total is an interval, not a point (P1)', () => {
         }
       }
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P1-2: 区間に基づく順位づけ。「重なる」の定義、おすすめ枠、同等の印、
+// おすすめ枠に基づく rankStable。
+//
+// **「重なる」の定義**（`docs/ROADMAP.md` P1）: 候補行が1位（同額タイを含む）の
+// 区間 `[low, high ?? +Infinity]` と重なるかを、**候補行自身の下端 `low` だけ**で
+// 判定する（候補行自身の `high` は一切見ない——確定仕様6「下端のみで比較する」）。
+// `high === null`（上限不明）は「上端が無い」ではなく「上端が分からない」ので
+// **+Infinity として扱う**——これはコーディネーター判断1（2026-09-11）で
+// 「不確かさを隠さない」ために明示的に維持されている。1位自身が上限不明なら
+// 誰でも重なりうる（1位がどこまで高くなるか分からない以上、他社が1位より
+// 確実に高いとは言えない）。ただし枠には最大2社という上限があるので、
+// それだけで枠が全社を飲み込むことはない（3社目以降は「同等」に落ちる）。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the recommended bracket and the equivalent mark (P1-2)', () => {
+  test('no overlap: the leader stands alone (recommended solo, nobody else marked)', () => {
+    // ドイツ・英・仏・豪・加・星は5点600gの既定でNeokyoが単独で閉じた区間の1位を取り、
+    // 他社はどれも重ならない（実測、docs/ROADMAP.md P1 の全社重なりの反例でもある）。
+    const rows = compare({ items: items(5, 600), country: 'DE' }).rows.filter((r) => r.comparable);
+    const neokyo = byId(rows, 'neokyo');
+    expect(neokyo.recommended).toBe(true);
+    expect(neokyo.equivalent).toBe(false);
+    for (const row of rows.filter((r) => r.id !== 'neokyo')) {
+      expect(row.recommended, row.id).toBe(false);
+      expect(row.equivalent, row.id).toBe(false);
+    }
+  });
+
+  test('the bracket holds at most 1 more company beyond the leader (2 total), even when more overlap', () => {
+    // 米国・5点600gでは FROM JAPAN が1位（total.high===null、上限不明）。
+    // 上限不明は +Infinity として扱う（判断1）ので、下端で並ぶ他社は全員重なりうる
+    // ——それでも枠に入れるのは**1位を含めて最大2社**（確定仕様2。最初の実装は
+    // 誤って3社まで入れていた——コーディネーター指摘、2026-09-11）。
+    // 5社中3社（Buyee consolidated・Jauce・Buyee default）は重なっていても枠の外
+    // ——「同等」の印だけが付く（確定仕様4）。
+    const rows = compare({ items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
+    const recommended = rows.filter((r) => r.recommended);
+    const equivalent = rows.filter((r) => r.equivalent);
+    expect(recommended.map((r) => r.id).sort()).toEqual(['fromjapan', 'zenmarket']);
+    expect(recommended.length).toBeLessThanOrEqual(2); // 1位 + 最大1社 = 2社
+    expect(equivalent.map((r) => r.id).sort())
+      .toEqual(['buyee:consolidated', 'buyee:default', 'jauce']);
+    // 枠と同等は互いに排他。
+    for (const row of rows) expect(row.recommended && row.equivalent, row.id).toBe(false);
+  });
+
+  test('a candidate row\'s own high === null never enters the overlap test (low only, per spec 6)', () => {
+    // 判定は「候補行の下端 vs 1位側の上端」だけで行う。候補行自身が上限不明でも、
+    // 下端が1位の上端以下なら重なる——上限不明であることが枠入りを妨げも
+    // 助けもしない。US の ZenMarket (total.high===null、枠の2社目) が枠に入って
+    // いることが、候補側の high を見ていないことの直接の証拠。
+    const rows = compare({ items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
+    const zenmarket = byId(rows, 'zenmarket');
+    expect(zenmarket.total.high).toBeNull();
+    expect(zenmarket.recommended).toBe(true);
+  });
+
+  test('an unbounded leader (leader.total.high === null) does not swallow everyone — the 2-company cap still holds', () => {
+    // 1点9,000g・米国: FROM JAPAN が1位で上限不明。全社が「重なりうる」状態でも、
+    // 枠は依然として最大2社（1位を含む）に収まる。
+    const rows = compare({ items: items(1, 9000), country: 'US' }).rows.filter((r) => r.comparable);
+    expect(byId(rows, 'fromjapan').total.high).toBeNull();
+    const recommended = rows.filter((r) => r.recommended);
+    expect(recommended.length).toBeLessThanOrEqual(2);
+    expect(recommended.map((r) => r.id).sort()).toEqual(['fromjapan', 'zenmarket']);
+  });
+
+  test('a tie for 1st exactly at the 2-company cap: both tied companies go in the bracket', () => {
+    // 1位のタイが2社ちょうどなら両方とも枠に入ってよい（枠の定員を使い切るだけ）。
+    // **3社以上の同額タイは実カートに存在しない**（走査済み）ので、「タイが2社を
+    // 超えたら先頭2社だけ枠、残りは同等」という分岐（`computeBracket` の
+    // `leadersOverflow`）はコードの構造上保証されるが、実カートのフィクスチャでは
+    // 直接は踏めない——`leaders.slice(2)` は2社ちょうどのときと3社のときで
+    // 同じコードパスを通るので、ここでの検証は目的に対して十分な代理になる。
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 4200, weightG: 450, site: 'rakuten' })], country: 'AU',
+    }).rows.filter((r) => r.comparable);
+    const tiedLow = Math.min(...rows.map((r) => r.total.low));
+    const tied = rows.filter((r) => r.total.low === tiedLow);
+    expect(tied.length).toBe(2);
+    for (const r of tied) expect(r.recommended, r.id).toBe(true);
+    expect(rows.filter((r) => r.recommended).length).toBeLessThanOrEqual(2);
+  });
+
+  test('comparable: false rows are never recommended or equivalent', () => {
+    // 米国では Neokyo が comparable: false（日本郵便を売っていない）。
+    // おすすめ枠の判定は比較可能な行だけを対象にする。
+    const rows = compare({ items: items(5, 600), country: 'US' }).rows;
+    const neokyo = byId(rows, 'neokyo');
+    expect(neokyo.comparable).toBe(false);
+    expect(neokyo.recommended).toBe(false);
+    expect(neokyo.equivalent).toBe(false);
+  });
+});
+
+describe('rankStable is judged on the recommended bracket as a set (P1-2, coordinator judgment 2)', () => {
+  /**
+   * **旧い実装**（本 PR の最初の版）は「基準の枠のうち1社でも両端の枠に残れば安定」
+   * だった。枠は最大3社なので、5社中3社が枠に入る局面ではこれがほぼ自明に成立し、
+   * 判定として機能しなかった——実測で7カ国すべて `rankStable=true` になった。
+   *
+   * **新しい定義**: 枠の**集合**が ×⅓・×3 の両端で基準と完全に一致するかどうか。
+   * 集合なので枠の中の順序（誰が下端最小か）が入れ替わっても「動いた」に数えない。
+   * だが枠に出入りする社が1社でもあれば `false`。
+   */
+  test('the bracket set changing at even one extreme makes rankStable false', () => {
+    // ドイツ・5点600g: 基準の枠は {Neokyo}（単独、重なる社なし）。×3 では
+    // FROM JAPAN が枠に加わり {FROM JAPAN, Neokyo} になる——集合が変わるので false。
+    // （米国の例を避けたのは、米国は FROM JAPAN の上限不明のせいでほぼ常に
+    // `rankIndeterminate` になり、この describe の主張——安定 vs 「枠の顔ぶれが
+    // 変わる」不安定——を混ぜてしまうため。）
+    const r = compare({ items: items(5, 600), country: 'DE' });
+    const base = r.rows.filter((row) => row.recommended).map((row) => row.id);
+    expect(base).toEqual(['neokyo']);
+    expect(r.rankStable).toBe(false);
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).toContain('Neokyo is the recommended range');
+    expect(r.rankStabilityNote).toContain('FROM JAPAN and Neokyo are the recommended range');
+  });
+
+  // **「枠の中の順序が入れ替わっても『動いた』に数えない」という主張は
+  // `bracketChanged` が `Set` で比較する実装（コード参照）で保証されているが、
+  // ×⅓・×3 の走査（7カ国 × 1〜5点 × 100g〜10,000g 刻み、値も複数試した）では
+  // **「同じ2社の枠のまま、下端最小の順序だけが入れ替わる」実カートが1件も
+  // 見つからなかった。**この規則は「枠の集合が変わらなければ安定」という
+  // `bracketChanged` の実装そのものでカバーされており（上のテストが逆側＝
+  // 集合が変わるケースを縛っている）、実カートでの正例が無いことは欠陥ではない
+  // ——2社という枠が小さいので、下端が入れ替わる局面はほぼ必ず3社目の出入りを
+  // 伴う、というのがこのデータセットの実際の形だった。
+
+  test('a lone-leader bracket (no overlap) is the simplest stable case', () => {
+    // AU: Neokyo が単独1位（重なる社なし）で、×1/3・×3 でも同じ単独枠が保たれる。
+    const r = compare({ items: items(5, 600), country: 'AU' });
+    expect(r.rows.filter((row) => row.recommended).map((row) => row.id)).toEqual(['neokyo']);
+    expect(r.rankStable).toBe(true);
+    expect(r.rankIndeterminate).toBe(false);
+  });
+
+  test('weightSensitivity.decisive follows the same set-equality rule as rankStable', () => {
+    // ドイツ・胴（1,500–7,500 g）: 基準重量では1位が FROM JAPAN で枠は
+    // {FROM JAPAN, Neokyo}。この品の重量だけを両端に振ると枠の顔ぶれが変わる
+    // ——「1位が動くか」なら FROM JAPAN が全域で1位のままなので decisive=false
+    // だが、「枠の集合が動くか」では decisive=true になる（旧実装からの回帰の
+    // 直接検査。`kendo armour` テストと同じ入力で、ここでは decisive の規則
+    // そのものに焦点を当てる）。
+    const table = (id: string, weightG: number, range: [number, number]) =>
+      item({ id, weightG, weightOrigin: 'table', weightRangeG: range });
+    const r = compare({
+      items: [
+        table('do', 2000, [1500, 7500]),
+        table('hakama', 1500, [1500, 2500]),
+        table('tare', 1500, [1500, 1500]),
+      ],
+      country: 'DE',
+    });
+    expect(r.weightSensitivity['do']!.winnerAtLow).toBe('FROM JAPAN');
+    expect(r.weightSensitivity['do']!.winnerAtHigh).toBe('FROM JAPAN');
+    expect(r.weightSensitivity['do']!.decisive).toBe(true);
   });
 });

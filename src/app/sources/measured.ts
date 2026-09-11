@@ -172,18 +172,26 @@ export const CROSSOVER_G: Record<number, number> = { 2: 1150, 3: 1325, 5: 1625 }
 export interface RankStabilityRow {
   country: CountryCode;
   rankStable: boolean;
+  /**
+   * P1-2（コーディネーター判断3、2026-09-11）: 比較可能な全社がおすすめ枠か同等の
+   * 印に収まっていて、どの社が安いか区別できない状態か。**このとき `rankStable`
+   * は必ず false**——「安定」と「判定不能」を同じ `true` に潰さない。
+   */
+  rankIndeterminate: boolean;
   /** true の国だけ埋まる。compare() の rankStabilityNote から、社名の分かる文だけ転記。 */
   staysCheapest: string | null;
 }
 
 export const RANK_STABILITY: RankStabilityRow[] = [
-  { country: 'US', rankStable: true, staysCheapest: 'FROM JAPAN' },
-  { country: 'GB', rankStable: false, staysCheapest: null },
-  { country: 'DE', rankStable: false, staysCheapest: null },
-  { country: 'FR', rankStable: false, staysCheapest: null },
-  { country: 'AU', rankStable: true, staysCheapest: 'Neokyo' },
-  { country: 'CA', rankStable: false, staysCheapest: null },
-  { country: 'SG', rankStable: true, staysCheapest: 'Neokyo' },
+  // US: 1位（FROM JAPAN）の総額が上限不明（Zonos 前払い利用料）で、他4社も
+  // その不確かさの中に収まる——「安定」ではなく「判定不能」（判断3）。
+  { country: 'US', rankStable: false, rankIndeterminate: true, staysCheapest: null },
+  { country: 'GB', rankStable: false, rankIndeterminate: false, staysCheapest: null },
+  { country: 'DE', rankStable: false, rankIndeterminate: false, staysCheapest: null },
+  { country: 'FR', rankStable: false, rankIndeterminate: false, staysCheapest: null },
+  { country: 'AU', rankStable: true, rankIndeterminate: false, staysCheapest: 'Neokyo' },
+  { country: 'CA', rankStable: false, rankIndeterminate: false, staysCheapest: null },
+  { country: 'SG', rankStable: true, rankIndeterminate: false, staysCheapest: 'Neokyo' },
 ];
 
 export const yen = (n: number) => `¥${n.toLocaleString('en-US')}`;
