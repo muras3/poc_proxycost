@@ -24,6 +24,13 @@ jobs:
       # **secrets はステップの if では参照できない**（式の検証で弾かれ、
       # ワークフロー全体が invalid になる）。job の env なら参照できるので、
       # ここで真偽値に落としてから if で見る。
+      #
+      # **2つを別々に落とすのは、どちらが欠けているかを言うため。**
+      # 以前は合成した1つしか持っておらず、飛ばしたときに「2つとも未設定」としか
+      # 言えなかった。**片方だけ設定した人には、その警告が嘘に見える。**
+      # 真偽値そのものは秘密ではない（値は出さない）ので、出して構わない。
+      HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+      HAS_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
       HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
     steps:
       - uses: actions/checkout@v4
@@ -50,16 +57,29 @@ jobs:
       - name: Deploy skipped — secrets not set
         if: env.HAS_CLOUDFLARE != 'true'
         run: |
+          # **どちらが見えていないかを名指しする。**値は出さない——出すのは
+          # 「空かどうか」だけで、それは秘密ではない。
+          tok=$([ "$HAS_TOKEN" = 'true' ]   && echo '見えている' || echo '**見えていない**')
+          acc=$([ "$HAS_ACCOUNT" = 'true' ] && echo '見えている' || echo '**見えていない**')
           {
             echo "### デプロイを飛ばした"
             echo
-            echo "ビルドとテストは通っている。以下が未設定なのでデプロイだけ行っていない。"
+            echo "ビルドとテストは通っている。デプロイだけ行っていない。"
             echo
-            echo '- `CLOUDFLARE_API_TOKEN`（Workers Scripts:Edit / Workers KV Storage:Edit / Account Settings:Read）'
-            echo '- `CLOUDFLARE_ACCOUNT_ID`'
+            echo "| Secret | この実行から |"
+            echo "|---|---|"
+            echo "| \`CLOUDFLARE_API_TOKEN\` | $tok |"
+            echo "| \`CLOUDFLARE_ACCOUNT_ID\` | $acc |"
             echo
-            echo "Settings → Secrets and variables → Actions で登録する。"
-            echo 'あわせて `npx wrangler kv namespace create CACHE` で KV を作り、'
-            echo 'wrangler.jsonc の `PLACEHOLDER_REPLACE_ME` と差し替えること。'
+            echo "登録する場所は **Settings → Secrets and variables → Actions → Repository secrets**。"
+            echo
+            echo "**設定したつもりで見えていないときは、置き場所が違う可能性が高い。**"
+            echo "この実行から見えるのは Repository secrets（と、リポジトリに許可された"
+            echo "Organization secrets）だけで、次のものは名前が同じでも見えない:"
+            echo
+            echo "- **Environment secrets** … ジョブが \`environment:\` を宣言していないと読めない。このワークフローは宣言していない"
+            echo "- **Dependabot secrets** … Dependabot の実行でしか読めない"
+            echo "- **Codespaces secrets** … Actions とは別の入れ物"
+            echo "- 名前の綴り違い・前後の空白"
           } >> "$GITHUB_STEP_SUMMARY"
-          echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID が未設定のためデプロイを飛ばした"
+          echo "::warning::デプロイを飛ばした（API_TOKEN: $HAS_TOKEN / ACCOUNT_ID: $HAS_ACCOUNT）。詳細はこの実行の Summary を見ろ"
