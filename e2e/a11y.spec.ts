@@ -87,3 +87,32 @@ test('the placeholder-weight state has no WCAG A/AA violations either', async ({
   const dark = await audit(new AxeBuilder({ page }).include('[data-testid="assumed-weights"]'));
   expect(dark, `dark（注記の中）の違反:\n${dark.join('\n')}`).toEqual([]);
 });
+
+/**
+ * T-F10: 「送料無料」の出品を1点入れたときだけ出る Buyee 限定の注記
+ * （`FreeShippingDomesticNote`）。既定のカートには出ない状態なので、
+ * 上の `/` の監査はこれを一度も測っていない。出した状態で別に測る
+ * （`assumed-weights` と同じ理由・同じ作法）。
+ */
+test('the free-shipping-domestic note has no WCAG A/AA violations either', async ({ page }) => {
+  await page.addInitScript(() => {
+    try { window.localStorage.setItem('proxycost.consent.v1', 'denied'); } catch { /* 無くてよい */ }
+  });
+  await page.goto('/');
+  await expect(page.getByRole('contentinfo')).toBeVisible();
+
+  const box = page.getByRole('checkbox', { name: 'shipping included by seller' }).first();
+  if (!(await box.isVisible())) {
+    await page.getByRole('button', { name: /^Cart \(/ }).click();
+  }
+  await box.check();
+  await expect(page.getByText(/domestic shipping fees may occur/i)).toBeVisible();
+
+  const { violations } = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+  const summary = violations.map(
+    (v) => `${v.impact} ${v.id} (${v.nodes.length}) — ${v.nodes[0]?.html.slice(0, 90)}`,
+  );
+  expect(summary, `違反:\n${summary.join('\n')}`).toEqual([]);
+});

@@ -34,6 +34,11 @@ const weakestTier = (tiers: Tier[]): Tier =>
   tiers.reduce((worst, t) => (TIER_STRENGTH[t] < TIER_STRENGTH[worst] ? t : worst), 'fixed' as Tier);
 
 const sum = (lines: Line[]) => lines.reduce((a, l) => a + (l.amount ?? 0), 0);
+
+// 確度の強さの順（弱い順）。複数の item をまとめるとき、含まれる中で最も弱い確度を行の確度にする。
+const TIER_STRENGTH: Record<Tier, number> = { none: 0, unverified: 1, estimate: 2, fixed: 3 };
+const weakestTier = (tiers: Tier[]): Tier =>
+  tiers.reduce((worst, t) => (TIER_STRENGTH[t] < TIER_STRENGTH[worst] ? t : worst), 'fixed' as Tier);
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 /** 梱包後の重量。仮定であって実測ではない。 */
@@ -101,10 +106,33 @@ function itemWeightG(item: Item, ctx: Ctx): number | null {
   return Math.max(1, Math.round(item.weightG * ctx.weightScale));
 }
 
-function domesticFor(item: Item): { yen: number; estimated: boolean } {
-  if (item.freeShipping) return { yen: 0, estimated: false };
-  if (item.domesticShippingYen != null) return { yen: item.domesticShippingYen, estimated: false };
-  return { yen: ASSUMED_DOMESTIC_SHIPPING_YEN, estimated: true };
+/**
+ * Buyee 自身の料金ページ（`master/fees.json` F13b、tier A_confirmed）:
+ * 「出品ページに "Free shipping" とあっても、配送方法の変更で国内送料が発生しうる」。
+ * ￥0 は出品ページの記載どおりの値であって未取得ではないが、Buyee 自身が確定を
+ * 否定している以上 `fixed` は描けない。発生率は公表されていないので額は動かさず、
+ * 確度だけ `estimate` に落とす（オーナー決定 2026-09-11、T-F10。docs/FEE-ITEMS.md §5 R1）。
+ *
+ * **対象は Buyee だけ。**この記載を公表しているのは Buyee のみで、他4社については
+ * 何も持っていない。他社の freeShipping ￥0 を今回変えないのは「発生しない」と
+ * 判定したからではなく、材料が無いから（確認できていない社を有利に描かない一方、
+ * 確認できていない主張を確認済みとして広げもしない。`master/fees.json` の rows でも
+ * F13b は company: buyee にしか無い）。
+ */
+export const BUYEE_FREE_SHIPPING_SOURCE_URL = 'https://buyee.jp/helpcenter/guide/fees?lang=en';
+
+function domesticFor(
+  item: Item, isBuyee: boolean,
+): { yen: number; tier: Tier; freeShippingRisk: boolean } {
+  if (item.freeShipping) {
+    return isBuyee
+      ? { yen: 0, tier: 'estimate', freeShippingRisk: true }
+      : { yen: 0, tier: 'fixed', freeShippingRisk: false };
+  }
+  if (item.domesticShippingYen != null) {
+    return { yen: item.domesticShippingYen, tier: 'fixed', freeShippingRisk: false };
+  }
+  return { yen: ASSUMED_DOMESTIC_SHIPPING_YEN, tier: 'estimate', freeShippingRisk: false };
 }
 
 /**
@@ -502,9 +530,11 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   if (weights.some((w) => w == null)) return null; // 重量が決まらない。呼び出し側が段に落とす。
   const netPerItem = items.map((i, idx) => (weights[idx] as number) * i.qty);
 
-  const dom = items.map(domesticFor);
+  const isBuyee = svc.id === 'buyee';
+  const dom = items.map((i) => domesticFor(i, isBuyee));
   const domYen = dom.reduce((a, d) => a + d.yen, 0);
-  const domEstimated = dom.some((d) => d.estimated);
+  const domTier = weakestTier(dom.map((d) => d.tier));
+  const domFreeShippingRisk = dom.some((d) => d.freeShippingRisk);
 
   const split = variant === 'default' && svc.parcelDefault === 'per-order';
   const parcels = split ? orders : 1;
@@ -577,8 +607,14 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   lines.push(svc.domesticIncluded
     ? L('domestic-shipping', 'Domestic shipping', 0, 'included in the service fee', 'fixed', svc.sourceUrl)
     : L('domestic-shipping', 'Domestic shipping', domYen,
-        domEstimated ? `~¥${ASSUMED_DOMESTIC_SHIPPING_YEN} each, paste the URL to know` : 'from each listing',
-        domEstimated ? 'estimate' : 'fixed'));
+        domFreeShippingRisk
+          ? 'listing says free shipping; Buyee notes this can still be charged'
+            + ' if the shipping method changes'
+          : domTier === 'estimate'
+            ? `~¥${ASSUMED_DOMESTIC_SHIPPING_YEN} each, paste the URL to know`
+            : 'from each listing',
+        domTier,
+        domFreeShippingRisk ? BUYEE_FREE_SHIPPING_SOURCE_URL : null));
 
   const pack = packingLine(svc, parcelGross);
   if (pack) lines.push(pack);
