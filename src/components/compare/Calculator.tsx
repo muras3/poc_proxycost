@@ -17,6 +17,7 @@ import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
 import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
+import { StorageDaysInput } from './StorageDaysInput';
 import {
   AlcoholInCartNote, LongItemsInCartNote, RestrictedGoodsNote,
 } from './RestrictedGoodsNote';
@@ -29,7 +30,9 @@ import { useCompare, type Draft } from './useCompare';
  * 順位 → 凡例 → 内訳 → 弱点 → 広告の順で、確かな情報ほど上に置く。
  */
 export function Calculator() {
-  const { items, country, province, method, seq, unpriced, result, dispatch } = useCompare();
+  const {
+    items, country, province, method, storageDays, seq, unpriced, result, dispatch,
+  } = useCompare();
   // URL 取得で確定値になった項目の取得日。Item に日付欄が無いのでここで持つ。
   // 追加は必ずクライアント側の操作なので、SSR と食い違わない。
   const [readOn, setReadOn] = useState<Record<string, string>>({});
@@ -74,6 +77,12 @@ export function Calculator() {
           <MethodPicker
             value={method}
             onChange={(m) => dispatch({ type: 'method', method: m })}
+          />
+          {/* **保管日数も行き先・方式と同じ格の入力**（F21、0d）。既定45日は我々の仮定
+              なので、`tier: estimate` と同じ琥珀色で示す（`StorageDaysInput` のコメント）。 */}
+          <StorageDaysInput
+            value={storageDays}
+            onChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
           />
           {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
               他国で常に出しておくと、選べない欄が画面に残る。 */}

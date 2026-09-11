@@ -454,8 +454,13 @@ describe('equal totals get equal rank', () => {
    * "Not available or suspended in your country." を返す）。米国では Neokyo が
    * 盤面から落ちるので、この同額は米国では起きない。ドイツでは同じ 1,450 g で
    * 同じ2社が同額になる。
+   *
+   * **`storageDays: 30` を明示する。**0d で保管が総額に入り、既定45日では
+   * 無料期間30日の Buyee だけに課金が乗るので、既定のままだとこの同額が崩れる。
+   * ここで検査しているのは同額・同順位の仕組みであって保管日数の効きではないので、
+   * 両社とも無料期間の内側（Buyee ¥0・Neokyo ¥0）になる日数に固定する。
    */
-  const midTie = () => compare({ items: items(1, 1450), country: 'DE' }).rows;
+  const midTie = () => compare({ items: items(1, 1450), country: 'DE', storageDays: 30 }).rows;
   /** 1点 450 g・¥4,200・楽天・AU。Neokyo と ZenMarket が**1位で**同額になる実在の入力。 */
   const topTie = () => compare({
     items: items(1, 450, 4200, { site: 'rakuten' }), country: 'AU',
@@ -528,7 +533,8 @@ describe('equal totals get equal rank', () => {
     // 2位が同額なだけ。1位（FROM JAPAN）は両端で1位のままなので安定。
     // 旧実装は `rows[0]` を比べていたので、同額の中で先頭が入れ替わっただけでも
     // 「1位が替わった」と読む余地があった。集合で見ることでそれを塞ぐ。
-    const r = compare({ items: items(1, 1450), country: 'DE' });
+    // storageDays: 30 の理由は midTie() のコメントと同じ。
+    const r = compare({ items: items(1, 1450), country: 'DE', storageDays: 30 });
     expect(r.rows.filter((x) => x.tied).length).toBe(2);
     expect(r.rankStable).toBe(true);
     expect(r.rankStabilityNote)
@@ -894,8 +900,12 @@ describe('domestic shipping is charged by every service, and taxed where the bas
   test('free shipping does not change the winner, but it can swap rows below it', () => {
     // 送料は全社に同額で乗るので1位は動かない。動くのは送金額に率で乗る社
     // （ZenMarket の 3.5%）だけで、そこは順位が入れ替わりうる。
-    const paid = compare({ items: items(5, 200), country: 'US' }).rows;
-    const free = compare({ items: items(5, 200, 3000, { freeShipping: true }), country: 'US' }).rows;
+    // storageDays: 30 で保管を無料期間の内側に固定する（0d、全社¥0）——
+    // ここで検査しているのは送料無料の効きであって保管日数の効きではない。
+    const paid = compare({ items: items(5, 200), country: 'US', storageDays: 30 }).rows;
+    const free = compare({
+      items: items(5, 200, 3000, { freeShipping: true }), country: 'US', storageDays: 30,
+    }).rows;
     expect(free[0]!.id).toBe(paid[0]!.id);
     // **順位が 4→3 から 3→2 に下がったのは Neokyo が米国の盤面から抜けたから。**
     // 動いた幅（1つ繰り上がる）は同じで、それがこのテストの主張。
@@ -1408,12 +1418,15 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('5 items x ¥3,000, 200 g each, to the US', () => {
     // **Neokyo が消えたのは値段が高いからではなく、米国宛に日本郵便を売っていないから。**
     // 以前ここは Neokyo を ¥29,725 で1位に置いていた。
+    // 0d（2026-09-11）: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が
+    // 乗る（他4社は無料60日の内側で¥0）。Buyee の2行がその分だけ上がり、
+    // consolidated が zenmarket を上回るようになった（1個口 vs 5個口ぶんの差）。
     expect(board('US', 5, 200).map((r) => [r.id, r.total])).toEqual([
       ['fromjapan', 30975],
-      ['buyee:consolidated', 32475],
       ['zenmarket', 32549],
+      ['buyee:consolidated', 33975],
       ['jauce', 34008],
-      ['buyee:default', 46775],
+      ['buyee:default', 54275],
     ]);
     expect(dropped('US', 5, 200).map((r) => r.id)).toEqual(['neokyo']);
   });
@@ -1429,20 +1442,25 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
     expect(top2(1500)).toEqual([['neokyo', 52111], ['fromjapan', 52161]]);
     expect(top2(3000)).toEqual([['fromjapan', 73385], ['neokyo', 74685]]);
-    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: 59852 });
+    // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
+    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: 67352 });
     // 米国では上位2社が3つの重量で1度も入れ替わらない。
+    // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
+    // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
     for (const w of [600, 1500, 3000]) {
       expect(board('US', 5, w).slice(0, 2).map((r) => r.id), `${w}g`)
-        .toEqual(['fromjapan', 'buyee:consolidated']);
+        .toEqual(['fromjapan', 'zenmarket']);
     }
   });
 
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
+    // 0d: 1点・1個口なので Buyee の保管料は15日ぶん×1個口（¥1,500）だけ乗り、
+    // ZenMarket・Jauce を抜いて最後尾に落ちた（以前は2位）。
     expect(board('US', 1, 500, {}, 5000).map((r) => [r.serviceName, r.total])).toEqual([
       ['FROM JAPAN', 12145],
-      ['Buyee', 12445],
       ['ZenMarket', 12666],
       ['Jauce', 13507],
+      ['Buyee', 13945],
     ]);
     // 以前ここに ['Neokyo', 12295] が2位で入っていた。
     expect(dropped('US', 1, 500).map((r) => r.serviceName)).toEqual(['Neokyo']);
@@ -1450,13 +1468,14 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
 
   test('the same item on Rakuten reshuffles the middle — per-site fees are real', () => {
     // Jauce は楽天のサービス料がベータで無料、ZenMarket は楽天が ¥500（ヤフオクは ¥800）、
-    // FROM JAPAN はヤフオク限定の ¥200 が消える。
+    // FROM JAPAN はヤフオク限定の ¥200 が消える。0d: Buyee の保管料（既定45日、無料30日
+    // 超過15日ぶん）が乗って最後尾になった。
     const rows = board('US', 1, 500, { site: 'rakuten' }, 5000);
     expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
       ['FROM JAPAN', 11945],
       ['ZenMarket', 12356],
-      ['Buyee', 12445],
       ['Jauce', 12675],
+      ['Buyee', 13945],
     ]);
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(0);
     expect(line(byId(rows, 'jauce'), 'ad-valorem').amount).toBe(0);
@@ -1484,16 +1503,19 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **我々が独仏の手数料を1円も入れていなかったから。**
     // **SG はこの帯（5点×¥12,800＝CIF が S$400 超）で S$10.90 が乗る。**
     // **US から1行消えた。**Neokyo が米国宛に日本郵便を売っていないと確認できたため
-    // （以前ここは Neokyo を ¥36,125 で先頭に置いていた）。他の6カ国は1円も動いていない
-    // ——この変更が米国だけに効いていることの証拠。
+    // （以前ここは Neokyo を ¥36,125 で先頭に置いていた）。
+    // **0d（2026-09-11）で7カ国すべてが動いた。**既定45日の保管料が入り、無料期間
+    // 30日の Buyee だけに課金が乗る（他4社は無料60日／Neokyo無料45日の内側で¥0）。
+    // Buyee は2行（consolidated 1個口 / default 5個口）持つので、個口の数だけ額が違う
+    // 形で両方が上がった——これが「全社に等しく乗らない」ことの実例。
     expect(totals).toEqual({
-      US: [37075, 38575, 38870, 40605, 55825],
-      GB: [40121, 41071, 42156, 42571, 44528, 66256],
-      DE: [42735, 43685, 44529, 45185, 47142, 67412],
-      FR: [43152, 44102, 44880, 45602, 47559, 68333],
-      AU: [33950, 36630, 36740, 36900, 40543, 51000],
-      CA: [37062, 38012, 39512, 39742, 41469, 59852],
-      SG: [30836, 32101, 33372, 33736, 35083, 45235],
+      US: [37075, 38870, 40075, 40605, 63325],
+      GB: [40121, 41071, 42156, 44071, 44528, 73756],
+      DE: [42735, 43685, 44529, 46685, 47142, 74912],
+      FR: [43152, 44102, 44880, 47102, 47559, 75833],
+      AU: [33950, 36630, 36740, 38550, 40543, 59250],
+      CA: [37062, 38012, 39742, 41012, 41469, 67352],
+      SG: [30836, 32101, 33372, 35083, 35371, 53410],
     });
   });
 });
