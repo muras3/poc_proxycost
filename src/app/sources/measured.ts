@@ -71,8 +71,66 @@ export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
   },
 ];
 
-/** 同じカートを英国へ送ったときの「公表」対「推論」。米国より公表側に寄る（VAT が公表税率）。 */
-export const GB_SPLIT = { publishedShare: '86%', inferredShare: '14%' };
+/**
+ * 7 カ国それぞれの1位の行を確度(tier)ごとに合計したもの。**旧 README にあった
+ * 「7カ国合計 ¥263,981・公表側84%（¥221,079）」は、コードのどこからも
+ * 導けない手書きの値だった**（`src/` に `221079` 等の数字は存在しない）。
+ * `CONFIDENCE_SPLIT`（米国1カ国の内訳）は `measured.test.ts` で縛られていたが、
+ * 7カ国の集計は縛られておらず、`CONFIDENCE_SPLIT` と同じ形の事故
+ * （為替を直し忘れて古い総額を「実測」と名乗った、というくだり参照）を
+ * 集計の側で静かに起こしていた。ここに export してテストで縛ったので、
+ * 以後は費目・為替を直せば自動で値が動く。
+ *
+ * **`GB_SPLIT`（旧: GB単体の公表/推定の割合）はここに統合し、独立した export
+ * としては廃止した。**同じ「GBの公表側の割合」を2箇所に export すると、
+ * この集計そのものが防ごうとしている「同じ数字が2箇所にあってずれる」を
+ * 自分で再現するため。GBの割合は下の配列から `country === 'GB'` で引く。
+ */
+export interface CountryConfidenceRow {
+  country: CountryCode;
+  totalYen: number;
+  fixedYen: number;
+  estimateYen: number;
+  unverifiedYen: number;
+  /** fixedYen / totalYen を四捨五入した表示用の割合。 */
+  publishedShare: string;
+}
+
+export const CONFIDENCE_SPLIT_BY_COUNTRY: CountryConfidenceRow[] = [
+  { country: 'US', totalYen: 37075, fixedYen: 31200, estimateYen: 4000, unverifiedYen: 1875, publishedShare: '84%' },
+  { country: 'GB', totalYen: 40121, fixedYen: 34430, estimateYen: 4000, unverifiedYen: 1691, publishedShare: '86%' },
+  { country: 'DE', totalYen: 42735, fixedYen: 34649, estimateYen: 6724, unverifiedYen: 1362, publishedShare: '81%' },
+  { country: 'FR', totalYen: 43152, fixedYen: 36428, estimateYen: 6724, unverifiedYen: 0, publishedShare: '84%' },
+  { country: 'AU', totalYen: 33950, fixedYen: 29950, estimateYen: 4000, unverifiedYen: 0, publishedShare: '88%' },
+  { country: 'CA', totalYen: 37062, fixedYen: 30872, estimateYen: 6190, unverifiedYen: 0, publishedShare: '83%' },
+  { country: 'SG', totalYen: 30836, fixedYen: 24500, estimateYen: 6336, unverifiedYen: 0, publishedShare: '79%' },
+];
+
+/**
+ * `CONFIDENCE_SPLIT_BY_COUNTRY` の7カ国合計。**旧 README の ¥263,981 / 84% に
+ * 相当するが、値をそこに合わせにいっていない。**いま測ればこの値になる、というだけ。
+ * 今回の再測定でも当時と違う値が出た（輸出通関の総額化・保管料の追加・ZenMarket の
+ * 確度変更など、この間に入った費目修正の積み重ねのため）。
+ */
+export interface ConfidenceTotal {
+  totalYen: number;
+  fixedYen: number;
+  estimateYen: number;
+  unverifiedYen: number;
+  fixedShare: string;
+  estimateShare: string;
+  unverifiedShare: string;
+}
+
+export const CONFIDENCE_TOTAL: ConfidenceTotal = {
+  totalYen: 264931,
+  fixedYen: 222029,
+  estimateYen: 37974,
+  unverifiedYen: 4928,
+  fixedShare: '84%',
+  estimateShare: '14%',
+  unverifiedShare: '2%',
+};
 
 /**
  * 1点あたりの重量だけを動かしたときの1位と総額（**カナダ**。理由は
