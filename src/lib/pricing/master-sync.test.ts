@@ -35,8 +35,10 @@
 import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVICE_BY_ID } from './services';
+import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVICE_BY_ID, SERVICES } from './services';
 import type { Service } from './services';
+import { compare } from './compare';
+import type { Item } from './types';
 
 // ── マスタ読み込み ──────────────────────────────────────────────
 const FEES_JSON_PATH = path.join(__dirname, '../../../master/fees.json');
@@ -45,8 +47,14 @@ const master = JSON.parse(fs.readFileSync(FEES_JSON_PATH, 'utf8')) as {
   // 各エントリの expect() 側で個別のフィールドに絞り込む。
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   rows: Array<{ id: string; company: string; name: string; rule: any; tier: string }>;
+  catalog: Array<{
+    id: string; name: string;
+    display: 'total' | 'hidden' | 'engine_only' | 'warning_only' | 'optional';
+    display_reason?: string;
+  }>;
 };
 const rows = master.rows;
+const catalog = master.catalog;
 
 interface RowKeyParts { id: string; company: string; name: string }
 
@@ -68,9 +76,6 @@ function svc(id: string): Service {
   if (!s) throw new Error(`service not found in SERVICES: ${id}`);
   return s;
 }
-
-/** 個口1kg・1点の共通コンテキスト。amountFor() を使う行の比較に使う。 */
-const CTX_1KG = { parcels: 1, parcelGrossG: [1000], units: 1, packingYen: 0 };
 
 // ============================================================================
 // ① MAPPED ── コードに対応する値があり、一致しなければならない
@@ -149,18 +154,6 @@ const MAPPED: MappedEntry[] = [
     expect: () => null,
   },
   {
-    id: 'F16', company: 'zenmarket', name: '梱包後の変更・キャンセル',
-    // マスタ tiers の最初の段（〜4,999g）= ¥1,000。code の optional 'repack' の
-    // base 額（note に「from ¥1,000 to ¥4,000」とある最小額）と一致するはず
-    read: () => svc('zenmarket').optional.find((o) => o.key === 'repack')!.amountYen,
-    expect: () => findRow('F16', 'zenmarket', '梱包後の変更・キャンセル').rule.tiers[0][1],
-  },
-  {
-    id: 'F18', company: 'zenmarket', name: '写真サービス',
-    read: () => svc('zenmarket').optional.find((o) => o.key === 'photos')!.amountYen,
-    expect: () => findRow('F18', 'zenmarket', '写真サービス').rule.amount,
-  },
-  {
     id: 'F20', company: 'zenmarket', name: '保管無料期間',
     // 0d（2026-09-11）: 保管が総額の行になり、無料期間・上限日数が
     // services.ts の StorageFee として独立フィールドを持つようになった。
@@ -180,9 +173,9 @@ const MAPPED: MappedEntry[] = [
   },
   {
     id: 'F29', company: 'zenmarket', name: '輸送保険',
-    // rule.type "zero" (included_in F02) → zenmarket の optional に
-    // 保険関連キーが独立して存在しないこと
-    read: () => svc('zenmarket').optional.some((o) => o.key.includes('insurance')),
+    // rule.type "zero" (included_in F02) → zenmarket に
+    // 保険関連の unpricedFees が独立して存在しないこと
+    read: () => (svc('zenmarket').unpricedFees ?? []).some((o) => o.key.includes('insurance')),
     expect: () => false,
   },
   {
@@ -203,16 +196,6 @@ const MAPPED: MappedEntry[] = [
     },
   },
   {
-    id: 'F17', company: 'neokyo', name: '開梱',
-    read: () => svc('neokyo').optional.find((o) => o.key === 'unpacking')!.amountYen,
-    expect: () => findRow('F17', 'neokyo', '開梱').rule.amount,
-  },
-  {
-    id: 'F08', company: 'neokyo', name: 'コンビニ払い',
-    read: () => svc('neokyo').optional.find((o) => o.key === 'konbini')!.amountYen,
-    expect: () => findRow('F08', 'neokyo', 'コンビニ払い').rule.amount,
-  },
-  {
     id: 'F02', company: 'fromjapan', name: '取扱手数料',
     read: () => svc('fromjapan').fee.perItemYen,
     expect: () => findRow('F02', 'fromjapan', '取扱手数料').rule.amount,
@@ -226,16 +209,6 @@ const MAPPED: MappedEntry[] = [
     id: 'F06', company: 'fromjapan', name: '支払手数料（JDirectItems のみ）',
     read: () => svc('fromjapan').fee.paymentInsideJapanYen,
     expect: () => findRow('F06', 'fromjapan', '支払手数料（JDirectItems のみ）').rule.amount,
-  },
-  {
-    id: 'F08', company: 'fromjapan', name: 'コンビニ・郵便局払い',
-    read: () => svc('fromjapan').optional.find((o) => o.key === 'konbini')!.amountYen,
-    expect: () => findRow('F08', 'fromjapan', 'コンビニ・郵便局払い').rule.amount,
-  },
-  {
-    id: 'F16', company: 'fromjapan', name: '再梱包',
-    read: () => svc('fromjapan').optional.find((o) => o.key === 'repack')!.amountYen,
-    expect: () => findRow('F16', 'fromjapan', '再梱包').rule.amount,
   },
   {
     id: 'F26', company: 'fromjapan', name: '輸出通関手数料',
@@ -298,31 +271,9 @@ const MAPPED: MappedEntry[] = [
     },
   },
   {
-    id: 'F14', company: 'jauce', name: '梱包（Fragile）',
-    // amountFor() は個口重量から実額を作る関数なので、1kg で実行して比較する
-    read: () => svc('jauce').optional.find((o) => o.key === 'fragile-packing')!.amountFor!(CTX_1KG),
-    expect: () => {
-      const rule = findRow('F14', 'jauce', '梱包（Fragile）').rule;
-      return rule.fixed + rule.per_kg * Math.ceil(CTX_1KG.parcelGrossG[0]! / 1000);
-    },
-  },
-  {
-    id: 'F24', company: 'jauce', name: '特殊処理',
-    read: () => svc('jauce').optional.find((o) => o.key === 'customized-processing')!.amountYen,
-    expect: () => findRow('F24', 'jauce', '特殊処理').rule.amount,
-  },
-  {
     id: 'F26', company: 'jauce', name: '追加通関手数料',
     read: () => EXPORT_DECLARATION_FEE_YEN,
     expect: () => findRow('F26', 'jauce', '追加通関手数料').rule.amount,
-  },
-  {
-    id: 'F30', company: 'jauce', name: '速達処理',
-    read: () => svc('jauce').optional.find((o) => o.key === 'expedited')!.amountFor!(CTX_1KG),
-    expect: () => {
-      const rule = findRow('F30', 'jauce', '速達処理').rule;
-      return rule.fixed + rule.per_kg * Math.ceil(CTX_1KG.parcelGrossG[0]! / 1000);
-    },
   },
   {
     id: 'F26', company: 'zenmarket', name: '輸出通関手数料',
@@ -345,11 +296,6 @@ const MAPPED: MappedEntry[] = [
     id: 'F36', company: 'buyee', name: 'SG GST 代理徴収',
     read: () => svc('buyee').prepaidImportTax!.SG!.rate,
     expect: () => findRow('F36', 'buyee', 'SG GST 代理徴収').rule.rate,
-  },
-  {
-    id: 'F18', company: 'fromjapan', name: '写真サービス',
-    read: () => svc('fromjapan').optional.find((o) => o.key === 'photos')!.amountYen,
-    expect: () => findRow('F18', 'fromjapan', '写真サービス').rule.amount,
   },
   // ── T-F4（解消）: Neokyo の ¥350 に国内送料が含まれるか ───────────────
   // 2026-09-11 に https://neokyo.com/en/fees・https://neokyo.com/en/how-to-buy を再取得。
@@ -448,6 +394,19 @@ const MAPPED: MappedEntry[] = [
       return { air: cap, surface: cap };
     },
   },
+  // ── 0e: catalog F14 は display: total。マスタ側の rule.amount は unknown（実費のみで
+  // 上限・料金表が無い）なので額そのものは繋げないが、**額が出せないことは「行を作らない
+  // 理由」にはならない**（docs/FEE-ITEMS.md §1、オーナー決定 2026-09-11 で「任意欄」は
+  // 廃止された）。`services.ts` の `unpricedFees` として毎行の総額に amount: null
+  // （画面「—」）で足し、excluded に名前を載せる（`compare.ts` の `buildRow`）。
+  // 発生条件（50kg以上／30kg以上かつ30万円以上／壊れ物）はこの計算機では条件1・2が
+  // 原理的に発生せず、条件3（壊れ物）は FROM JAPAN の主観判断で検出不能——だから
+  // 条件判定そのものは繋がない。繋いだのは「行の存在」であって「条件」ではない。
+  {
+    id: 'F14', company: 'fromjapan', name: '外注梱包（Outsourced Packing）',
+    read: () => (svc('fromjapan').unpricedFees ?? []).some((o) => o.key === 'outsourced-packing'),
+    expect: () => true,
+  },
 ];
 
 // ============================================================================
@@ -477,6 +436,85 @@ interface NotInCodeEntry extends RowKeyParts {
 }
 
 const NOT_IN_CODE: NotInCodeEntry[] = [
+  // ── 0e: catalog display: hidden の9費目。「任意欄」の枠ごと撤去した（オーナー決定
+  // 2026-09-11、docs/FEE-ITEMS.md §1・§2）。利用者が選んだときだけ発生し、総額の精度に
+  // 効かない。行を作らないことが正しい実装で、「未接続」ではなく「意図的に繋がない」。
+  {
+    id: 'F16', company: 'zenmarket', name: '梱包後の変更・キャンセル',
+    reason: 'catalog F16 の変種（補強・保護梱包の再梱包。docs/FEE-ITEMS.md の表では F16）は'
+      + ' display: hidden——利用者が選んだときだけ（オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key === 'repack')).toBe(false);
+    },
+  },
+  {
+    id: 'F18', company: 'zenmarket', name: '写真サービス',
+    reason: 'catalog F18: display hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key === 'photos')).toBe(false);
+    },
+  },
+  {
+    id: 'F17', company: 'neokyo', name: '開梱',
+    reason: 'catalog F17: display hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('neokyo').unpricedFees ?? []).some((o) => o.key === 'unpacking')).toBe(false);
+    },
+  },
+  {
+    id: 'F08', company: 'neokyo', name: 'コンビニ払い',
+    reason: 'catalog F08: display hidden（カード前提なので発生しない。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('neokyo').unpricedFees ?? []).some((o) => o.key === 'konbini')).toBe(false);
+    },
+  },
+  {
+    id: 'F08', company: 'fromjapan', name: 'コンビニ・郵便局払い',
+    reason: 'catalog F08: display hidden（カード前提なので発生しない。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('fromjapan').unpricedFees ?? []).some((o) => o.key === 'konbini')).toBe(false);
+    },
+  },
+  {
+    id: 'F16', company: 'fromjapan', name: '再梱包',
+    reason: 'catalog F16: display hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('fromjapan').unpricedFees ?? []).some((o) => o.key === 'repack')).toBe(false);
+    },
+  },
+  {
+    id: 'F18', company: 'fromjapan', name: '写真サービス',
+    reason: 'catalog F18: display hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('fromjapan').unpricedFees ?? []).some((o) => o.key === 'photos')).toBe(false);
+    },
+  },
+  {
+    id: 'F14', company: 'jauce', name: '梱包（Fragile）',
+    reason: 'catalog の変種（補強梱包。docs/FEE-ITEMS.md の表では F15）は display: hidden'
+      + '（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去——F14 自体は基本梱包'
+      + '（display: total）として `packing` に残っているが、この Fragile 変種は繋がない。',
+    assertNotInCode: () => {
+      expect((svc('jauce').unpricedFees ?? []).some((o) => o.key === 'fragile-packing')).toBe(false);
+    },
+  },
+  {
+    id: 'F24', company: 'jauce', name: '特殊処理',
+    reason: 'catalog F24: display hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。',
+    assertNotInCode: () => {
+      expect((svc('jauce').unpricedFees ?? []).some((o) => o.key === 'customized-processing')).toBe(false);
+    },
+  },
+  {
+    id: 'F30', company: 'jauce', name: '速達処理',
+    reason: 'catalog の変種（F24 と同じ「特殊処理」の枠。docs/FEE-ITEMS.md の表では F24）は'
+      + ' display: hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去——'
+      + 'F30 自体は配送方法の可否制約（engine_only）として別に接続されている（MAPPED の'
+      + '「配送方法の可否（商品代に依存）」）。',
+    assertNotInCode: () => {
+      expect((svc('jauce').unpricedFees ?? []).some((o) => o.key === 'expedited')).toBe(false);
+    },
+  },
   {
     id: 'F02', company: 'buyee', name: '購入手数料（台湾）',
     reason: '対象国を7カ国に確定した（オーナー決定 2026-09-11）。TW はスコープ外なので繋がない。',
@@ -508,7 +546,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + '「発生率を持っていない。全件に足せば過大になるので、金額は動かさず警告だけ出す'
       + '（オーナー決定 2026-09-11、T-F10）」。まだ実装されていない。',
     assertNotInCode: () => {
-      expect(svc('buyee').optional.some((o) => o.key.includes('free-shipping'))).toBe(false);
+      expect((svc('buyee').unpricedFees ?? []).some((o) => o.key.includes('free-shipping'))).toBe(false);
     },
   },
   {
@@ -516,14 +554,14 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'amount_tier C_unknown。額そのものが未取得（quote 未取得。code は'
       + ' consolidationOnRequest: true という真偽値だけを持ち、金額は持たない）。',
     assertNotInCode: () => {
-      expect(svc('buyee').optional.some((o) => o.key.includes('consolidat'))).toBe(false);
+      expect((svc('buyee').unpricedFees ?? []).some((o) => o.key.includes('consolidat'))).toBe(false);
     },
   },
   {
     id: 'F10', company: 'zenmarket', name: '無形物の追加手数料',
     reason: 'catalog F10:「無形物の取扱条件が違うので額も違う。額が未取得で、取れたら総額へ。」',
     assertNotInCode: () => {
-      expect(svc('zenmarket').optional.some((o) => o.key.includes('intangible'))).toBe(false);
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key.includes('intangible'))).toBe(false);
     },
   },
   {
@@ -538,7 +576,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'catalog F15: display hidden, occurrence D_user_choice「利用者が選んだときだけ'
       + '（オーナー決定 2026-09-11）」。',
     assertNotInCode: () => {
-      expect(svc('zenmarket').optional.some((o) => o.key.includes('reinforce'))).toBe(false);
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key.includes('reinforce'))).toBe(false);
     },
   },
   {
@@ -546,7 +584,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'catalog F19: display hidden, occurrence D_user_choice「利用者が選んだときだけで、'
       + '額も未取得（オーナー決定 2026-09-11）」。',
     assertNotInCode: () => {
-      expect(svc('zenmarket').optional.some((o) => o.key.includes('inspect'))).toBe(false);
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key.includes('inspect'))).toBe(false);
     },
   },
   {
@@ -554,7 +592,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'catalog F22: display hidden, occurrence E_unpredictable「落札後はキャンセル不可。'
       + '発生すれば全損に近いが予測できない（オーナー決定 2026-09-11）」。',
     assertNotInCode: () => {
-      expect(svc('zenmarket').optional.some((o) => o.key.includes('cancel'))).toBe(false);
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key.includes('cancel'))).toBe(false);
     },
   },
   {
@@ -562,7 +600,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'catalog F23: display hidden「保管期限超過で廃棄される。額が未取得'
       + '（オーナー決定 2026-09-11）」。',
     assertNotInCode: () => {
-      expect(svc('zenmarket').optional.some((o) => o.key.includes('dispos'))).toBe(false);
+      expect((svc('zenmarket').unpricedFees ?? []).some((o) => o.key.includes('dispos'))).toBe(false);
     },
   },
   {
@@ -597,7 +635,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'catalog F11: display hidden, occurrence D_user_choice「利用者が代行に値下げ交渉を'
       + '依頼したときだけ（オーナー決定 2026-09-11）」。',
     assertNotInCode: () => {
-      expect(svc('fromjapan').optional.some((o) => o.key.includes('negotiat'))).toBe(false);
+      expect((svc('fromjapan').unpricedFees ?? []).some((o) => o.key.includes('negotiat'))).toBe(false);
     },
   },
   {
@@ -613,7 +651,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     reason: 'catalog F23: display hidden「保管期限超過で廃棄される。額が未取得'
       + '（オーナー決定 2026-09-11）」。',
     assertNotInCode: () => {
-      expect(svc('fromjapan').optional.some((o) => o.key.includes('dispos'))).toBe(false);
+      expect((svc('fromjapan').unpricedFees ?? []).some((o) => o.key.includes('dispos'))).toBe(false);
     },
   },
   // ── 0c（解消）: F27・F30 はマスタに A_confirmed で在ったのに未接続だった行。
@@ -650,7 +688,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + '無料（日本郵便の公表）。基準ケース（5点×¥3,000＝¥15,000）はこの範囲内で影響が無いため、'
       + 'コードには未接続のまま（額は0で確定しているが行として繋いでいない）。',
     assertNotInCode: () => {
-      const ins = svc('jauce').optional.find((o) => o.key === 'premium-insurance');
+      const ins = (svc('jauce').unpricedFees ?? []).find((o) => o.key === 'premium-insurance');
       expect(ins).toBeDefined();
     },
   },
@@ -660,17 +698,20 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + 'あるが、Jauce がそれを利用者に自動で付保・請求するかどうかを一次情報から確認できていない'
       + '（開いた問い）。amount_tier C_unknown。基準ケースは¥20,000以内のため実害は無い。',
     assertNotInCode: () => {
-      const ins = svc('jauce').optional.find((o) => o.key === 'premium-insurance');
+      const ins = (svc('jauce').unpricedFees ?? []).find((o) => o.key === 'premium-insurance');
       expect(ins).toBeDefined();
     },
   },
   {
     id: 'F29', company: 'jauce', name: '保険（Premium・任意）',
     reason: 'catalog F29:「Jauce の Premium 1.9% は利用者が選ぶもので、かつ課税ベースが'
-      + '原文から読めない」ため額を出さない（2026-09-11 に標準の郵便保険2行と区別するため改名）。',
+      + '原文から読めない」ため額を出さない（2026-09-11 に標準の郵便保険2行と区別するため改名）。'
+      + '0e で display: total に従わせた——`unpricedFees` として毎行の総額に amount: null'
+      + '（画面「—」）で載り、excluded に名前が出る。',
     assertNotInCode: () => {
-      const ins = svc('jauce').optional.find((o) => o.key === 'premium-insurance')!;
-      expect(ins.amountYen).toBeNull();
+      const ins = (svc('jauce').unpricedFees ?? []).find((o) => o.key === 'premium-insurance')!;
+      expect(ins).toBeDefined();
+      expect(ins.note).toContain('1.9%');
     },
   },
   {
@@ -700,18 +741,6 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + 'を返し、参考値を点推定に使わない。',
     assertNotInCode: () => {
       expect(svc('jauce').storage.rate.kind).toBe('unpublished');
-    },
-  },
-  {
-    id: 'F14', company: 'fromjapan', name: '外注梱包（Outsourced Packing）',
-    reason: '2026-09-11 に記録②として追加。50kg以上／30kg以上かつ30万円以上／壊れ物、の3条件'
-      + '（ヘルプが3条件、利用規約は2条件のみで壊れ物が無い不一致を確認のうえヘルプの3条件を採用）。'
-      + '額は実費のみで上限・料金表が無い（rule.amount は unknown・amount_tier C_unknown）。'
-      + 'このうち条件1・2はこの計算機では原理的に発生せず（EMSの上限が30kgなので50kgは表現できず、'
-      + '30kgは表の上端ぴったり）、残る条件3（壊れ物）は FROM JAPAN の主観判断で検出不能なので、'
-      + 'コードには接続していない。',
-    assertNotInCode: () => {
-      expect((svc('fromjapan').fee as unknown as Record<string, unknown>).outsourcedPackingYen).toBeUndefined();
     },
   },
 ];
@@ -807,5 +836,107 @@ describe('網羅性 ── 70行すべてがちょうど1つのバケットに�
 
     // マスタの行で、どのバケットにも入っていないものが無いこと（双方向一致）
     expect(new Set(bucketKeys)).toEqual(new Set(allKeys));
+  });
+});
+
+// ============================================================================
+// 0e ── `master/fees.json` の catalog（41項目）が持つ `display` を、コードに
+// 効かせていることを突き合わせる。**これが本体。**
+//
+// 以前は T-F0 が「金額」しか突き合わせていなかった。そのせいで「マスタが
+// `total`（載せる）と言っている費目が、コードでは `optionalLines`（任意欄）に
+// 居る」というずれが誰にも気づかれなかった（0d の直前まで、F14 外注梱包・F29
+// Premium insurance が任意欄のまま総額に入っていなかった）。**同じ事故を
+// 二度と静かに起こさせないため、`display` もここで縛る。**
+//
+// 期待値はハードコードしない。`master/fees.json` の catalog から動的に読む。
+// ============================================================================
+describe('display ── マスタの `display` 分類がコードに効いていること（0e）', () => {
+  const displayOf = (id: string): string =>
+    catalog.find((c) => c.id === id)?.display
+    ?? (() => { throw new Error(`catalog に id ${id} が無い`); })();
+
+  // 総額行を1行だけ作る最小入力。全社・全国で同じ形を使う（`compare.test.ts` の `item`/`items` と同じ流儀）。
+  const testItem: Item = {
+    id: 'a', title: 'a', priceYen: 3000, priceTier: 'fixed', site: 'yahoo-auctions',
+    weightG: 600, weightTier: 'estimate', qty: 1,
+  };
+  const rowsOf = (storageDays?: number) =>
+    compare({ items: [testItem], country: 'US', storageDays }).rows;
+  const allLineKeys = () => new Set(rowsOf().flatMap((r) => r.lines.map((l) => l.key)));
+
+  it('catalog の display に `optional` は0件 ── 「任意欄」はマスタに存在しない', () => {
+    // 将来1件でも `optional` が現れたら、ここが落ちて「どう扱うか」を決めることを強制する
+    // （前回の指示・今回のコーディネーター指示のどちらにも明記されている、いま決めなくてよい話）。
+    const optionalItems = catalog.filter((c) => c.display === 'optional');
+    expect(optionalItems.map((c) => c.id)).toEqual([]);
+  });
+
+  it('display: total の2件（F14外注梱包・F29 Premium insurance）は、額が無くても総額の行になる', () => {
+    // catalog 側の分類そのものが total であること（マスタを直接読む。ハードコードしない）。
+    expect(displayOf('F14')).toBe('total');
+    expect(displayOf('F29')).toBe('total');
+    // コード側 ── `unpricedFees` として `compare.ts` の `buildRow` が毎行の `lines[]` に足す。
+    // 額は公表されていないので amount: null（画面「—」）で、`excluded` に名前が載る。
+    const fj = rowsOf().find((r) => r.serviceId === 'fromjapan')!;
+    const outsourced = fj.lines.find((l) => l.key === 'outsourced-packing');
+    expect(outsourced, 'F14 outsourced-packing must be a total line, not dropped').toBeDefined();
+    expect(outsourced!.amount).toBeNull();
+    expect(fj.excluded).toContain(outsourced!.label);
+
+    const jauce = rowsOf().find((r) => r.serviceId === 'jauce')!;
+    const premium = jauce.lines.find((l) => l.key === 'premium-insurance');
+    expect(premium, 'F29 premium-insurance must be a total line, not dropped').toBeDefined();
+    expect(premium!.amount).toBeNull();
+    expect(jauce.excluded).toContain(premium!.label);
+  });
+
+  it('display: hidden の9件は、どのサービスの `unpricedFees` にも、どの行の key にも現れない', () => {
+    // docs/FEE-ITEMS.md §2 の対応表 ── F08/F15/F16/F17/F18/F24 の変種として
+    // 旧 `optional` に居た9キー。catalog 側がすべて hidden であることも突き合わせる。
+    const HIDDEN_KEY_TO_ID: Record<string, string> = {
+      photos: 'F18', repack: 'F16', konbini: 'F08', unpacking: 'F17',
+      'special-packing': 'F15', 'protective-packing': 'F15', 'fragile-packing': 'F15',
+      expedited: 'F24', 'customized-processing': 'F24',
+    };
+    for (const [key, id] of Object.entries(HIDDEN_KEY_TO_ID)) {
+      expect(displayOf(id), `catalog ${id} (${key})`).toBe('hidden');
+    }
+    // コード側 ── `Service.optional` という枠そのものが無い。あるのは
+    // `unpricedFees`（display: total の2件専用）だけなので、hidden の9キーは
+    // どのサービスの `unpricedFees` にも、実際に組み立てた行の `lines[]` にも出ない。
+    const keys = allLineKeys();
+    for (const s of SERVICES) {
+      expect(s as unknown as Record<string, unknown>).not.toHaveProperty('optional');
+      for (const key of Object.keys(HIDDEN_KEY_TO_ID)) {
+        expect((s.unpricedFees ?? []).some((u) => u.key === key), `${s.id}/${key}`).toBe(false);
+        expect(keys.has(key), key).toBe(false);
+      }
+    }
+  });
+
+  it('display: engine_only の費目は独立した行にならない ── F04・F20・F30 で確認', () => {
+    // F04（同一商品の複数個）: F02（service-fee）の課金回数に効くだけで、独立行にしない。
+    expect(displayOf('F04')).toBe('engine_only');
+    expect(allLineKeys().has('f04')).toBe(false);
+    expect(allLineKeys().has('same-item')).toBe(false);
+    // F20（保管無料期間）: F21（storage 行）の判定パラメータで、無料期間そのものの行は無い。
+    expect(displayOf('F20')).toBe('engine_only');
+    expect(allLineKeys().has('f20')).toBe(false);
+    expect(allLineKeys().has('free-days')).toBe(false);
+    expect(allLineKeys().has('storage')).toBe(true); // F21（total）の行はある
+    // F30（配送方法の可否）: どの方式に価格を出すかを決めるだけで、行そのものは作らない。
+    expect(displayOf('F30')).toBe('engine_only');
+    expect(allLineKeys().has('f30')).toBe(false);
+    expect(allLineKeys().has('method-eligibility')).toBe(false);
+  });
+
+  it('display: warning_only の F13b は、実装されても金額を一切動かさない（#29 を壊さない）', () => {
+    expect(displayOf('F13b')).toBe('warning_only');
+    // 「送料無料」の item でも国内送料は ¥0 のまま（Buyee は確度だけ estimate に落ちる）。
+    const free: Item = { ...testItem, id: 'b', freeShipping: true };
+    const buyee = compare({ items: [free], country: 'US' }).rows.find((r) => r.serviceId === 'buyee')!;
+    const dom = buyee.lines.find((l) => l.key === 'domestic-shipping')!;
+    expect(dom.amount).toBe(0);
   });
 });

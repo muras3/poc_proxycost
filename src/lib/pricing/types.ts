@@ -53,8 +53,6 @@ export interface Line {
   note: string;
   tier: Tier;
   sourceUrl?: string | null;
-  /** 「これを選ぶと +¥1,500」型。総額には入れない。 */
-  optional?: boolean;
 }
 
 export type WeightOrigin = 'table' | 'assumed' | 'user';
@@ -99,8 +97,6 @@ export interface Row {
   tag: string;
   lines: Line[];
   total: number;
-  /** 総額に入っていない任意費目。 */
-  optionalLines: Line[];
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;

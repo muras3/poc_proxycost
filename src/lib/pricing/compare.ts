@@ -10,7 +10,7 @@ import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rate
 import { outboundFor } from './deeplink';
 import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
-  EXPORT_DECLARATION_FEE_YEN, SERVICES, type OptionalFeeContext, type Service,
+  EXPORT_DECLARATION_FEE_YEN, SERVICES, type Service,
 } from './services';
 import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
@@ -738,6 +738,13 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // F21。既定45日では無料期間30日のBuyeeだけに課金が乗る（他4社は無料期間の内側）。
   lines.push(storageLine(svc, ctx.storageDays, orders, parcels, parcelGross, units));
 
+  // **`display: total` だが額を公表していない費目。**マスタに「任意欄」は存在しない
+  // （0e、docs/FEE-ITEMS.md §1）ので、額が出せなくても行そのものは消さない——
+  // `amount: null`（画面「—」）で毎行に足し、`excluded` に名前を載せる。
+  for (const u of svc.unpricedFees ?? []) {
+    lines.push(L(u.key, u.label, null, u.note, 'none', u.sourceUrl ?? svc.sourceUrl));
+  }
+
   // **EMS 行の tier は「料金の出どころ」だけを表す。**
   // 料金表は日本郵便の公表値（一次情報）で、そこに入れる重量は我々の推定である。
   // 2つを1つの tier に潰していたので `approximate` が常に true になり、画面の `~` が
@@ -811,13 +818,6 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const weightEstimated = items.some((i) => i.weightTier !== 'fixed');
   const approximate = priceEstimated || weightEstimated || lines.some((l) => l.tier === 'estimate');
 
-  const optionalCtx: OptionalFeeContext = {
-    parcels,
-    parcelGrossG: parcelGross,
-    units,
-    packingYen: pack?.amount ?? 0,
-  };
-
   const label = variant === 'consolidated' ? `${svc.name}, consolidated`
     : variant === 'default' ? `${svc.name}, default`
     : svc.name;
@@ -837,16 +837,6 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     tag,
     lines,
     total,
-    // 任意費目。**総額には入れない。** 個口・重量・点数で決まる費目は、この行の実際の
-    // 姿から実額にする（「per parcel」と書いてあるものを1個口ぶんだけ出したら、
-    // 個口が分かれる行で嘘になる）。額が公表されていない費目は null のまま。
-    optionalLines: svc.optional.map((o) => L(
-      o.key, o.label,
-      o.amountFor ? o.amountFor(optionalCtx) : o.amountYen,
-      // **額の出どころが社のページでない費目は、そちらを指す。**
-      // 輸出申告代行手数料は日本郵便の額で、社は取次いでいるだけ。
-      o.note, o.tier, o.sourceUrl ?? svc.sourceUrl,
-    )),
     excluded,
     parcels,
     rank: 0,

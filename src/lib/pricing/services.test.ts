@@ -227,32 +227,80 @@ describe('the service table itself', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T21: 任意欄が、各社の原文一覧（docs/audit/fees.md）と一致すること。
-// 任意欄は総額に入らないので静かに腐る。**費目の在り／無しを社ごとに固定する。**
+// 0e: マスタの catalog に「任意欄」は0件（オーナー決定 2026-09-11）。
+// `Row.optionalLines` / `Service.optional` を撤去し、`display` に従わせた:
+//   - display: hidden の9費目（photos/repack/konbini/unpacking/special-packing/
+//     protective-packing/fragile-packing/expedited/customized-processing）は
+//     行そのものを作らない
+//   - display: total の2費目（outsourced-packing・premium-insurance）は
+//     額が無くても総額の行にする（`Service.unpricedFees`）
 // ─────────────────────────────────────────────────────────────────────────────
-describe('the optional extras match what each company publishes', () => {
-  const keysOf = (serviceId: string) => one(serviceId).optionalLines.map((l) => l.key).sort();
-  const optional = (serviceId: string, key: string, over: Partial<Item> = {}): Line =>
-    one(serviceId, over).optionalLines.find((l) => l.key === key)
-    ?? (() => { throw new Error(`no optional ${key} for ${serviceId}`); })();
-
-  test('each service offers exactly the extras its own page lists', () => {
-    // 0b: 輸出通関手数料は任意欄から総額（`lines`）へ移した。もう optionalLines には無い。
-    // 0d: 保管料（storage）も同じ理由で任意欄から総額（`lines`）へ移した。
-    expect(keysOf('neokyo')).toEqual(['konbini', 'unpacking']);
-    expect(keysOf('zenmarket')).toEqual(['photos', 'repack']);
-    expect(keysOf('fromjapan')).toEqual([
-      'konbini', 'outsourced-packing', 'photos', 'repack',
-    ]);
-    expect(keysOf('buyee')).toEqual([
-      'photos', 'protective-packing', 'special-packing',
-    ]);
-    expect(keysOf('jauce')).toEqual([
-      'customized-processing', 'expedited', 'fragile-packing',
-      'photos', 'premium-insurance',
-    ]);
+describe('display: hidden fees never produce a row anywhere', () => {
+  test('none of the nine hidden keys appear in any line, on any service', () => {
+    const hiddenKeys = [
+      'photos', 'repack', 'konbini', 'unpacking', 'special-packing',
+      'protective-packing', 'fragile-packing', 'expedited', 'customized-processing',
+    ];
+    for (const s of SERVICES) {
+      const row = one(s.id);
+      for (const key of hiddenKeys) {
+        expect(row.lines.some((l) => l.key === key), `${s.id} ${key}`).toBe(false);
+      }
+    }
   });
 
+  test('no service carries an `optional` field any more', () => {
+    for (const s of SERVICES) {
+      expect(s as unknown as Record<string, unknown>).not.toHaveProperty('optional');
+    }
+  });
+});
+
+describe('display: total fees without a published amount are still total lines', () => {
+  const unpriced = (serviceId: string, key: string, over: Partial<Item> = {}): Line =>
+    line(one(serviceId, over), key);
+
+  test('only FROM JAPAN (outsourced-packing) and Jauce (premium-insurance) carry unpricedFees', () => {
+    const keysOf = (id: string) => (SERVICES.find((s) => s.id === id)!.unpricedFees ?? [])
+      .map((u) => u.key).sort();
+    expect(keysOf('neokyo')).toEqual([]);
+    expect(keysOf('zenmarket')).toEqual([]);
+    expect(keysOf('buyee')).toEqual([]);
+    expect(keysOf('fromjapan')).toEqual(['outsourced-packing']);
+    expect(keysOf('jauce')).toEqual(['premium-insurance']);
+  });
+
+  test('outsourced packing is a total line, amount null, and named in excluded', () => {
+    const row = one('fromjapan');
+    const l = unpriced('fromjapan', 'outsourced-packing');
+    expect(l.amount).toBeNull();
+    expect(l.tier).toBe('none');
+    expect(l.note).toContain('actual cost');
+    expect(row.excluded).toContain(l.label);
+  });
+
+  test('Jauce premium insurance is a total line without a number, because the base is not published', () => {
+    const row = one('jauce');
+    const l = unpriced('jauce', 'premium-insurance');
+    expect(l.amount).toBeNull();
+    expect(l.tier).toBe('none');
+    expect(l.note).toContain('1.9%');
+    expect(row.excluded).toContain(l.label);
+  });
+
+  test('an unpriced total line is never ¥0', () => {
+    for (const s of SERVICES) {
+      for (const u of s.unpricedFees ?? []) {
+        const l = line(one(s.id), u.key);
+        expect(l.amount, `${s.id} ${u.key}`).toBeNull();
+        expect(l.tier, `${s.id} ${u.key}`).toBe('none');
+        expect(l.note.length, `${s.id} ${u.key}`).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+describe('the ¥200,000 export clearance fee matches company pages', () => {
   test('the ¥200,000 export clearance fee is a total line on every service that ships by Japan Post', () => {
     // 0b: 以前は任意欄で FROM JAPAN と Buyee にしか無かった。同じ EMS を使う5社で
     // 費目の在り無しが分かれていたら、それは料金差ではなく我々の調査量の差である。
@@ -279,64 +327,6 @@ describe('the optional extras match what each company publishes', () => {
     expect(threeParcels.parcels).toBe(3);
     expect(line(threeParcels, 'export-clearance').amount).toBe(2800);
   });
-
-  test('Neokyo unpacking is ¥1,000 plus that parcel packing fee, not a flat ¥1,000', () => {
-    // 原文の例:「500¥ Packing Fee, 1500¥ Unpacking Fee」。
-    expect(optional('neokyo', 'unpacking', { weightG: 200 }).amount).toBe(1500);  // packing 500
-    expect(optional('neokyo', 'unpacking', { weightG: 3000 }).amount).toBe(1800); // packing 800
-    expect(optional('neokyo', 'unpacking').note).toContain('plus the packing fee');
-  });
-
-  test('Jauce fragile packing is ¥600 per package + ¥240/kg, and says what it replaces', () => {
-    // 梱包後 1,020 g → 2 kg 開始 → 600 + 480。必須の Smart Packing は 300 + 240 = ¥540。
-    const l = optional('jauce', 'fragile-packing', { weightG: 600 });
-    expect(l.amount).toBe(1080);
-    expect(amount(one('jauce', { weightG: 600 }), 'packing')).toBe(540);
-    expect(l.note).toContain('instead of the Smart Packing already in the total');
-  });
-
-  test('Jauce premium insurance is offered without a number, because the base is not published', () => {
-    const l = optional('jauce', 'premium-insurance');
-    expect(l.amount).toBeNull();
-    expect(l.tier).toBe('none');
-    expect(l.note).toContain('1.9%');
-  });
-
-  test('Jauce expedited shipping follows the parcel weight', () => {
-    expect(optional('jauce', 'expedited', { weightG: 600 }).amount).toBe(360); // 200 + 80×2kg
-  });
-
-  test('Buyee photo service is per package, so a split order pays it twice', () => {
-    const split = rowsFor([item({ id: 'a' }), item({ id: 'b' })])
-      .find((r) => r.id === 'buyee:default')!;
-    expect(split.optionalLines.find((l) => l.key === 'photos')!.amount).toBe(600);
-    expect(optional('buyee', 'photos').amount).toBe(300);
-  });
-
-  test('an optional fee we do not have an amount for is — and never ¥0', () => {
-    // 総額の行と同じ規律を任意欄にも掛ける。「実費」「率の基数が不明」を 0 で埋めると、
-    // 掛かる社を掛からない社として見せることになる。
-    for (const s of SERVICES) {
-      for (const l of one(s.id).optionalLines) {
-        if (l.tier === 'none') expect(l.amount, `${s.id} ${l.key}`).toBeNull();
-        if (l.amount === null) expect(l.tier, `${s.id} ${l.key}`).toBe('none');
-        // 額が無い行は、なぜ無いかを note で言う。ラベルだけの「—」は読めない。
-        if (l.amount === null) expect(l.note.length, `${s.id} ${l.key}`).toBeGreaterThan(0);
-      }
-    }
-    expect(optional('fromjapan', 'outsourced-packing').amount).toBeNull();
-    expect(optional('fromjapan', 'outsourced-packing').note).toContain('actual cost');
-  });
-
-  test('no optional line repeats a fee that is already in the total', () => {
-    for (const s of SERVICES) {
-      const row = one(s.id);
-      const lineKeys = new Set(row.lines.map((l) => l.key));
-      for (const l of row.optionalLines) {
-        expect(lineKeys.has(l.key), `${s.id} ${l.key}`).toBe(false);
-      }
-    }
-  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -355,13 +345,12 @@ describe('storage is a total line for every service (0d)', () => {
       ?? (() => { throw new Error(`no storage line for ${serviceId}`); })();
   };
 
-  test('all five carry a storage line in the total, and none of it is in optionalLines', () => {
+  test('all five carry a storage line in the total', () => {
     for (const s of SERVICES) {
       const row = one(s.id);
       const storage = storageOf(s.id);
       expect(storage.label, s.id).toMatch(/^Storage/);
       expect(storage.sourceUrl, s.id).toMatch(/^https:\/\//);
-      expect(row.optionalLines.some((l) => l.key === 'storage'), s.id).toBe(false);
       expect(row.total, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
     }
   });
@@ -651,12 +640,11 @@ describe('FROM JAPAN — ¥500 per item, and ¥200 only on a Yahoo! Auctions win
 
   test('the product protection plan is mandatory, so it is charged once and never offered twice', () => {
     // 原文 title_serviceRule_670:「Use of the Product Protection Plan is mandatory for all
-    // items.」その ¥500/点 は service-fee として総額に入っている。任意欄にも同じ費目を
-    // 並べていたので、同じ ¥500 を二度見せていた（docs/audit/fees.md §3 の「幻」）。
+    // items.」その ¥500/点 は service-fee として総額に入っている。同じ費目を別行にも
+    // 並べていたら、同じ ¥500 を二度見せることになる（docs/audit/fees.md §3 の「幻」）。
     const row = one('fromjapan');
     expect(amount(row, 'service-fee')).toBe(500);
-    expect(row.optionalLines.map((l) => l.key)).not.toContain('protection');
-    expect(row.optionalLines.some((l) => /protection/i.test(l.label))).toBe(false);
+    expect(row.lines.some((l) => /protection/i.test(l.label))).toBe(false);
     expect(row.total).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
   });
 });
@@ -865,12 +853,11 @@ describe('an optional fee points at whoever sets the amount', () => {
       .toBe('https://neokyo.com/en/storage');
   });
 
-  test('an optional fee that names no source of its own falls back to the service page', () => {
-    // 大半の任意費目は社の料金ページが原文。**そこは上書きしない。**
+  test('an unpriced fee that names no source of its own falls back to the service page', () => {
     for (const svc of SERVICES) {
-      for (const o of svc.optional) {
-        if (o.sourceUrl == null) continue;
-        expect(o.sourceUrl, `${svc.id}/${o.key}`).toMatch(/^https:\/\//);
+      for (const u of svc.unpricedFees ?? []) {
+        if (u.sourceUrl == null) continue;
+        expect(u.sourceUrl, `${svc.id}/${u.key}`).toMatch(/^https:\/\//);
       }
     }
   });
