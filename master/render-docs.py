@@ -160,11 +160,16 @@ def weight_rank():
     for units, at in sorted(m["CROSSOVER_G"].items(), key=lambda kv: int(kv[0])):
         out.append(f"| {units} | {at:,} g |")
     out.append("")
-    out.append("| 国 | `rankStable` | 動かない1位 |")
-    out.append("|---|---|---|")
+    out.append("| 国 | `rankStable` | 状態 | 動かない1位 |")
+    out.append("|---|---|---|---|")
     for r in m["RANK_STABILITY"]:
+        # 判定不能（P1-2 判断3）は false の一種だが「安定」と区別して読めるよう
+        # 状態列で言葉にする——rankStable の真偽だけでは「判別できない」と
+        # 「重量で入れ替わる」が見分けられない。
+        state = ("判定不能（全社が不確かさの中）" if r["rankIndeterminate"]
+                 else "安定" if r["rankStable"] else "不安定（重量で変わる）")
         out.append(f"| {r['country']} | {'true' if r['rankStable'] else 'false'} | "
-                    f"{r['staysCheapest'] or '—'} |")
+                    f"{state} | {r['staysCheapest'] or '—'} |")
     return "\n".join(out)
 
 README_BLOCKS = {"measured-basket": measured_basket, "weight-rank": weight_rank}

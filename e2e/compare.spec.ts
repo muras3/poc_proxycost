@@ -661,14 +661,20 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   // 米国では反転が起きないので、この導線を米国では実演できない。
   await page.getByLabel('Ship to').selectOption('DE');
 
-  // 既定の2点は ×1/3〜×3 で安定。何も言わず、誰も名指ししない。
-  await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
+  // **P1-2 でここの前提が変わった。** ドイツの既定2点では FROM JAPAN が1位で
+  // 総額が上限不明（Zonos 相当の uncappable な費目は無いが、FROM JAPAN の
+  // 外注梱包が uncappable）——+Infinity 扱いの重なり判定（判断1）により
+  // 比較可能な全社が枠か同等に収まり、「安定」ではなく「判定不能」（判断3）。
+  // この時点ではどの1点の重量が原因かはまだ言えない（`decisive` はまだ無し）
+  // ので、個別の品には何も印が付かない。
+  await expect(page.getByText(/sit within the same uncertainty/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
   await expect(page.getByText(DECIDES)).toHaveCount(0);
 
-  // 表に無い品を1点足すと不安定になる。
+  // 表に無い品を1点足すと、**その品と Nendoroid の両方**が原因だと言えるようになる
+  // （枠の顔ぶれを動かす品が特定できる）。
   await addByHand(page, PLUSH, 3000);
-  const note = page.getByText(/The cheapest option changes with the weight/);
+  const note = page.getByText(/The recommended range changes with the weight/);
   await expect(note).toBeVisible();
   // 表の中央値と仮置きを「あなたがくれた重量」とは呼ばない。
   await expect(note).toContainText('our weight estimate');
@@ -699,18 +705,25 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   await expect(cartItem(page, title).getByText(DECIDES)).toBeVisible();
 });
 
-test('18. a single item: the weight does not decide anything, so we do not nag', async ({ page }) => {
+test('18. a single item: the winner never changes, and the US total is indeterminate (not weight-driven)', async ({ page }) => {
   await gotoCompare(page);
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
   await openCart(page);
 
-  // 仮置きは入るし、仮置きだと名乗る。だが 500 g〜10 kg で1位は動かない（実測）。
+  // 仮置きは入るし、仮置きだと名乗る。500 g〜10 kg で**1位（FROM JAPAN）は動かず、
+  // おすすめ枠（FROM JAPAN・ZenMarket、枠は最大2社）も動かない**——`decisive` は
+  // false。それでも米国の総額は不安定側に出る: FROM JAPAN の総額が上限不明
+  // （Zonos 前払い利用料）で、比較可能な全社が枠か同等に収まる「判定不能」
+  // （判断3）。**これは「重量を確かめれば解決する」話ではない**ので、個別の品には
+  // 何も印が付かない——ボタンは出るが、押しても「これを直せば直る」品を指せない
+  // （`Calculator` は decisive な品が無ければ先頭の品にフォーカスする、
+  // という既存のフォールバックのまま。UI の見直しは P1-3）。
   await expect(weightBox(page, PLUSH)).toHaveValue('1000');
   await expect(cartItem(page, PLUSH).getByText(/assumed/).first()).toBeVisible();
-  await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
-  await expect(page.getByText(DECIDES)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
+  await expect(page.getByText(/sit within the same uncertainty/)).toBeVisible();
+  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
 
   // それでも直せる。直せば総額は動く（1位は動かない）。
   const before = await readRanking(page);
