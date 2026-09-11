@@ -1250,3 +1250,40 @@ test.describe('the currency line under the winner cites the rate it actually use
       .toBeGreaterThan(1);
   });
 });
+
+test('27. a long item is named on the board, and naming it moves no total', async ({ page }) => {
+  // **寸法は入力にすら無い。**だから「どの方式が落ちるか」は言えず、
+  // 「見ていない」とだけ言う。ここで見るのは、出ること・鳴らし分けること・
+  // **総額が1円も動かないこと**の3つ。
+  await gotoCompare(page);
+
+  // 常時の開示は、カートの中身に関係なく最初から出ている。
+  await expect(page.getByText(/size is never checked/i)).toBeVisible();
+
+  // 長物が入っていないうちは、名指しの警告は出ない。
+  const named = page.getByText(/long rather than heavy/i);
+  await expect(named).toHaveCount(0);
+
+  await emptyCart(page);
+  await addByHand(page, 'ゼブラ サラサクリップ 0.5mm 黒 10本', 666);
+  await expect(named).toHaveCount(0);
+  const before = priced(await readRanking(page)).map((r) => r.total);
+
+  // 竿を足すと名指しが出る。**表が当てたラインの見出し**で名乗る（打った品名ではない）。
+  await addByHand(page, 'シマノ ロッド 1ピース', 8000);
+  await expect(named).toBeVisible();
+  await expect(named).toContainText('Rod, 1-piece');
+  await expect(named).toContainText(/we hold no size limits/i);
+
+  // **総額は動く（品が1点増えたので）。動いてはいけないのは「長物だから」の差。**
+  // 同じ重量の無名の品と入れ替えて、総額が一致することで確かめる。
+  const withRod = priced(await readRanking(page)).map((r) => r.total);
+  expect(withRod).not.toEqual(before);
+  await openCart(page);
+  await cart(page).getByRole('button', { name: /^Remove / }).last().click();
+  await addByHand(page, '無名の箱', 8000);
+  await openCart(page);
+  await weightBox(page, '無名の箱').fill('9780');
+  await expect(page.getByText(/long rather than heavy/i)).toHaveCount(0);
+  expect(priced(await readRanking(page)).map((r) => r.total)).toEqual(withRod);
+});

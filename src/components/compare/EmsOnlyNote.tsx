@@ -22,6 +22,19 @@ import type { CompareResult } from '@/lib/pricing/types';
  * **送料だけ差し替えると、送料は下がり通関は上がるという向きが逆の2つの誤りが
  * 総額に同居する。**だから「まだ出せない」であって「忘れている」ではない。
  *
+ * **範囲は方式の一覧だけではない。方式の選び方にも範囲がある。**
+ * 2026-09-08 の実測（`docs/audit/o2-courier-2026-09-08.md` §2）で、
+ * **大きい箱を指定すると見積画面から EMS・航空・船便が消える**ことが分かった。
+ * 寸法は額ではなく**可否**として効く。ところが我々が持っているのは重量の上限だけ
+ * （`postage.ts` の `maxGramsFor`）で、寸法は入力にすら無い。だから
+ * **「cheapest that fits」の fits は重量にしか当たっていない。**それをここで言う。
+ *
+ * **数値の寸法制限は書かない。**実測で EMS が消えたのは 45cm 立方だが、それは
+ * ZenMarket の画面の挙動であって、**日本郵便自身の EMS 制限は遥かに大きい**（長さ1.5m）。
+ * 他社の制限を日本郵便の名前で出すのが、このリポジトリが最も避けている誤り。
+ * **制限値は未取得**なので、`—` の規律どおり**持っていないことを書く**
+ * （docs/TODO-NEXT.md §0b、docs/COMPLETENESS.md §5）。
+ *
  * 畳まない・条件を付けない。順位が出ているときは常に出す。原文を読めていない社は
  * 点線で描く（`docs/UI-DESIGN.md` §6）。
  */
@@ -35,8 +48,10 @@ export function EmsOnlyNote({ result }: { result: CompareResult }) {
 
   return (
     <p className="text-xs text-neutral-600 dark:text-neutral-400">
-      Priced across {priced} Japan Post methods — pick one above, or let each service
-      use the cheapest that fits.{' '}
+      Priced across {priced} Japan Post methods — pick one above, or let each service use
+      the cheapest that fits{' '}
+      <span className="font-medium">by weight; a parcel&rsquo;s size is never checked</span>,
+      and an oversize one is refused however light.{' '}
       <span className="font-medium">Courier rates are not priced.</span> {verified}
       {secondHand && (
         <>
