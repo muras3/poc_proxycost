@@ -64,6 +64,8 @@ export interface Line {
   amountKind?: AmountKind;
   /** amountKind が 'range' のときの上端（円）。 */
   amountHighYen?: number | null;
+  /** amountKind が 'range' のときの、下端・上端それぞれの根拠（英語）。 */
+  rangeNote?: string | null;
   /**
    * amount が null（未取得）の理由（英語、構造化）。**`note` の散文とは別に機械可読で持つ。**
    * 画面・集計はこちらを読み、`note` は引き続き行の1行説明として残す。
@@ -128,11 +130,18 @@ export interface Row {
   /**
    * 総額は区間（P1）。**`low` は従来の総額と同じ計算式**
    * （未取得の費目は 0 として落ちる）── 順位・差額は P1 では `low` で測り、挙動を変えない。
-   * `high` は `low` に、未取得のうち上端が置ける費目の `unknownCapYen` を足した額。
-   * `highUnbounded` が true のとき、`high` は「置ける上端だけを足した額」であって
-   * 真の上限ではない（上端が置けない費目が残っている）。画面はそのとき「上限不明」と出す。
+   *
+   * `high` は **`null` = 上限不明**（docs/ROADMAP.md P1 確定仕様5「上端が置けない費目は
+   * 上限不明として別表示」）。上端が置けない未取得の費目（`unknownCapYen` が無い行）が
+   * 1件でも残っていれば、他がどれだけ確定していても `high` は必ず `null`。
+   * **`{ high: 数値, highUnbounded: true }` のような矛盾した状態を型で作れないようにする**
+   * ため、真偽値のフラグは持たない。
+   *
+   * 行のどの未取得費目にも上端が置け、かつ額に幅のある行（`amountKind: 'range'`）の上端も
+   * 出せているとき、`high` はそれらを足した具体的な数値になる。未取得の費目が1つも無い行
+   * （`excluded.length === 0`）では `high === low`（幅ゼロが正しい状態）。
    */
-  total: { low: number; high: number; highUnbounded: boolean };
+  total: { low: number; high: number | null };
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;

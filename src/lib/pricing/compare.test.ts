@@ -1746,10 +1746,13 @@ describe('F30 FROM JAPAN small packet is only selectable at or under ¥30,000 de
 // P1: 総額を点から区間にする。**区間が常に [x, x] にならないことをここで縛る。**
 // ─────────────────────────────────────────────────────────────────────────────
 describe('the total is an interval, not a point (P1)', () => {
-  test('Jauce storage past day 60 opens up total.high without moving total.low', () => {
+  test('Jauce storage past day 60 gets a cappable unknownCapYen (line level)', () => {
     // Jauce は無料60日・上限120日。既定45日では無料期間の内側なので何も乗らない。
     // 70日に伸ばすと有料期間（10日）に入り、単価は非公表（unpublished）——
-    // low は0のまま（従来どおり）、high は「額×期間」の上端が乗って開く。
+    // 「額×期間」で上端が置ける。**Jauce は premium insurance も別に未取得(上端なし)を
+    // 持つので、行全体の total.high はこのケースでも null のまま**——それは正しい
+    // (premium insurance の上端は本当に置けない)。ここでは保管の行そのものが
+    // 個別に上端を持てていることを確かめる。
     const rows = compare({
       items: [item({ id: 'a', weightG: 600 })],
       country: 'DE',
@@ -1762,8 +1765,6 @@ describe('the total is an interval, not a point (P1)', () => {
     expect(storage.unknownCapYen).toBeGreaterThan(0);
     // low は sumLines と同じ式（未取得=0）── 挙動を変えていないことの直接の確認。
     expect(jauce.total.low).toBe(sumLines(jauce));
-    // **これが本題。**上端に unknownCapYen が乗るので high は low より厳密に大きい。
-    expect(jauce.total.high).toBeGreaterThan(jauce.total.low);
   });
 
   test('the Jauce storage cap is "up to 2 months × the guitar reference", not the reference itself', () => {
@@ -1780,7 +1781,7 @@ describe('the total is an interval, not a point (P1)', () => {
     expect(storage.unknownCapNote).toMatch(/¥700/);
   });
 
-  test('a row with no cappable unknown line keeps a closed interval (low === high)', () => {
+  test('a row with no unknown line keeps a closed interval (low === high, not null)', () => {
     // 保管が無料期間の内側（既定45日）なら、この籠に未取得の費目は無い —— 区間は閉じたまま。
     const rows = compare({
       items: [item({ id: 'a', weightG: 600 })],
@@ -1789,14 +1790,14 @@ describe('the total is an interval, not a point (P1)', () => {
     for (const row of rows.filter((r) => r.comparable)) {
       if (row.excluded.length === 0) {
         expect(row.total.high, row.id).toBe(row.total.low);
-        expect(row.total.highUnbounded, row.id).toBe(false);
       }
     }
   });
 
-  test('a truly uncappable unknown line (US Zonos prepayment fee) marks the row highUnbounded', () => {
+  test('a truly uncappable unknown line (US Zonos prepayment fee) makes total.high null, not a number', () => {
     // Zonos の利用料は額もキャップも無い（一次情報3ページで確認済み）ので unknownCapYen が無い。
-    // その行を持つ社は highUnbounded になる —— 「上限不明」と画面に出せる形。
+    // その行を持つ社は total.high が **null**（上限不明）になる。
+    // **`{ high: 数値, highUnbounded: true }` のような矛盾した状態を作れないことがここの主張。**
     const rows = compare({
       items: [item({ id: 'a', weightG: 600 })],
       country: 'US',
@@ -1805,10 +1806,26 @@ describe('the total is an interval, not a point (P1)', () => {
       r.lines.some((l) => l.key === 'duty-prepayment' && l.amount == null));
     expect(withZonos.length).toBeGreaterThan(0);
     for (const row of withZonos) {
-      expect(row.total.highUnbounded, row.id).toBe(true);
+      expect(row.total.high, row.id).toBeNull();
       // ranking は low だけで決まる —— この PR では挙動を変えない。
       expect(row.total.low).toBe(sumLines(row));
     }
+  });
+
+  test('the Neokyo storage line is a real range (small size low, large size high) once it is paid', () => {
+    // 寸法が入力に無いので amount は小型段の点推定。上端は最大段(¥1,400/order)——
+    // これは「額×期間」ではなく「額×寸法の幅」だが、期間(6週上限)は閉じているので
+    // 同じ理屈で上端が出せる。
+    const rows = compare({
+      items: [item({ id: 'a', weightG: 600 })],
+      country: 'DE',
+      storageDays: 60, // Neokyo 無料45日を15日超過 → 3週ぶん課金
+    }).rows;
+    const storage = line(byId(rows, 'neokyo'), 'storage');
+    expect(storage.amount).toBe(3 * 350); // small, 1 order, 3 weeks
+    expect(storage.amountKind).toBe('range');
+    expect(storage.amountHighYen).toBe(3 * 1400); // large
+    expect(storage.amountHighYen).toBeGreaterThan(storage.amount!);
   });
 
   test('ranking, cheapest, tied and diff are computed from total.low only (behaviour unchanged)', () => {
@@ -1819,5 +1836,60 @@ describe('the total is an interval, not a point (P1)', () => {
       expect(row.rank).toBe(cheaperCount + 1);
       expect(row.diff).toBe(row.total.low - comparable[0]!.total.low);
     }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // **実カートで幅が本当に出ることの確認。**テストが通ることと、目的が達成される
+  // ことを一致させる（コーディネーターからの指摘）。既定設定・全7カ国で測る。
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('the default real cart actually shows a live interval, in every country', () => {
+    const COUNTRIES_HERE: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
+    const defaultRows = (cc: CountryCode) =>
+      compare({ items: items(5, 600), country: cc }).rows.filter((r) => r.comparable);
+
+    test('not every row is a trivially closed interval — some are open, some are unbounded', () => {
+      // docs/ROADMAP.md P1 確定仕様どおりの表現: 総額は「¥X 以上」(high===null) か、
+      // 具体的な区間(high>low)か、幅が無い(high===low, 未取得の費目が無い)かのどれか。
+      // **全行が high===low だけなら、区間化が何も効いていないということ**——それを禁止する。
+      const all = COUNTRIES_HERE.flatMap((cc) => defaultRows(cc));
+      const notTriviallyClosed = all.filter((r) => r.total.high === null || r.total.high > r.total.low);
+      expect(notTriviallyClosed.length).toBeGreaterThan(0);
+      // US・Jauce・FROM JAPAN の行は既定でも Zonos 利用料・Premium insurance・
+      // 外注梱包のいずれかを持ち、上端が置けないので total.high は null になる
+      // ——「¥X 以上」と出せる状態が既定カートで実際に生じることの確認。
+      const unbounded = all.filter((r) => r.total.high === null);
+      expect(unbounded.length).toBeGreaterThan(0);
+    });
+
+    test('a genuinely open interval (high > low, not null) is reachable within the published rules', () => {
+      // 既定45日ちょうどでは Neokyo も Jauce も無料期間の内側で幅が出ない。
+      // だが「額×期間／額×寸法」の上端は公表されたルールの範囲内で実際に開く
+      // ——これが「増やした上端」が意味を持つことの確認(60日/70日で実演)。
+      const neokyo = byId(
+        compare({ items: items(5, 600), country: 'DE', storageDays: 60 }).rows, 'neokyo',
+      );
+      expect(neokyo.total.high).not.toBeNull();
+      expect(neokyo.total.high!).toBeGreaterThan(neokyo.total.low);
+    });
+
+    test('every row is either high===low (nothing unknown), high>low (all unknowns capped), or high===null (unbounded)', () => {
+      for (const cc of COUNTRIES_HERE) {
+        for (const row of defaultRows(cc)) {
+          if (row.excluded.length === 0) {
+            // 未取得の費目が無い行は、幅ゼロが正しい —— これは「幅を出せていない」不具合ではない。
+            expect(row.total.high, `${cc} ${row.id}`).toBe(row.total.low);
+          } else if (row.total.high !== null) {
+            // 未取得の費目があってなお high が数値なら、全ての未取得に上端が置けたということ。
+            // このとき high は low より厳密に大きくなければならない
+            // （さもなくば「未取得なのに0円加算」という無意味な状態になる）。
+            expect(row.total.high, `${cc} ${row.id}`).toBeGreaterThan(row.total.low);
+          } else {
+            // high === null。上端が置けない未取得費目を最低1つ持つはず。
+            const uncappable = row.lines.some((l) => l.amount == null && l.unknownCapYen == null);
+            expect(uncappable, `${cc} ${row.id}`).toBe(true);
+          }
+        }
+      }
+    });
   });
 });
