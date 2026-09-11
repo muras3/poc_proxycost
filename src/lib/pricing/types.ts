@@ -228,4 +228,10 @@ export interface CompareInput {
    * カナダ以外では無視する。
    */
   province?: ProvinceCode | null;
+  /**
+   * 倉庫に置く日数。**既定 45 日**（オーナー決定 2026-09-11）。
+   * 「貯めてまとめ発送」の実態に寄せた**我々の仮定**で、一次情報ではない（docs/FEE-ITEMS.md §5 R2）。
+   * 利用者が変更でき、変えたら即座に再計算・再ランキングする。
+   */
+  storageDays?: number;
 }

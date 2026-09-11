@@ -161,8 +161,21 @@ const MAPPED: MappedEntry[] = [
     expect: () => findRow('F18', 'zenmarket', '写真サービス').rule.amount,
   },
   {
+    id: 'F20', company: 'zenmarket', name: '保管無料期間',
+    // 0d（2026-09-11）: 保管が総額の行になり、無料期間・上限日数が
+    // services.ts の StorageFee として独立フィールドを持つようになった。
+    read: () => ({ freeDays: svc('zenmarket').storage.freeDays, maxDays: svc('zenmarket').storage.maxDays }),
+    expect: () => {
+      const rule = findRow('F20', 'zenmarket', '保管無料期間').rule;
+      return { freeDays: rule.days, maxDays: rule.max_days };
+    },
+  },
+  {
     id: 'F21', company: 'zenmarket', name: '保管超過',
-    read: () => svc('zenmarket').optional.find((o) => o.key === 'storage')!.amountYen,
+    read: () => {
+      const r = svc('zenmarket').storage.rate;
+      return r.kind === 'per-day-per-item' ? r.yen : null;
+    },
     expect: () => findRow('F21', 'zenmarket', '保管超過').rule.amount,
   },
   {
@@ -373,10 +386,19 @@ const MAPPED: MappedEntry[] = [
     expect: () => findRow('F36', 'buyee', 'AU GST 代理徴収').rule.rate,
   },
   // ── T-F11b（解消）: F20/neokyo は /en/storage の表で額が判明済み ──────────
+  // 0d（2026-09-11）: 保管が総額の行になり、無料期間（商品45日・R3）と週次の最小段額が
+  // services.ts の StorageFee として独立フィールドを持つようになった。
   {
     id: 'F20', company: 'neokyo', name: '保管無料期間',
-    read: () => svc('neokyo').optional.find((o) => o.key === 'storage')!.amountYen,
-    expect: () => findRow('F20', 'neokyo', '保管無料期間').rule.after.amounts_by_size.small.order,
+    read: () => {
+      const st = svc('neokyo').storage;
+      const r = st.rate;
+      return { freeDays: st.freeDays, smallOrderYen: r.kind === 'per-week-per-order' ? r.yen : null };
+    },
+    expect: () => {
+      const rule = findRow('F20', 'neokyo', '保管無料期間').rule;
+      return { freeDays: rule.days.items, smallOrderYen: rule.after.amounts_by_size.small.order };
+    },
   },
   // ── 0c: F27・F30 の接続 ──────────────────────────────────────────────
   // F27 ── 条件（carrier: FedEx・直配エリア外の住所）がどちらもこの計算機では
@@ -399,6 +421,22 @@ const MAPPED: MappedEntry[] = [
   // 価格化していない方式（`postage` にキーが無い）なので繋ぐ対象が無い——
   // `services.ts` の postage コメントが「宅配便・容積重量課金の方式は入れない」と
   // 書いている条件と同じ理由で、そもそも売っている方式の集合に入っていない。
+  // 0d（2026-09-11）: F20/fromjapan（保管無料期間）と F20/jauce は、無料期間・上限日数が
+  // services.ts の StorageFee として独立フィールドを持つようになったので MAPPED へ移した
+  // （旧: optional storage の note 文字列にしか無かった時代の NOT_IN_CODE）。
+  {
+    id: 'F20', company: 'fromjapan', name: '保管無料期間',
+    read: () => svc('fromjapan').storage.freeDays,
+    expect: () => findRow('F20', 'fromjapan', '保管無料期間').rule.days,
+  },
+  {
+    id: 'F20', company: 'jauce', name: '保管無料期間',
+    read: () => ({ freeDays: svc('jauce').storage.freeDays, maxDays: svc('jauce').storage.maxDays }),
+    expect: () => {
+      const rule = findRow('F20', 'jauce', '保管無料期間').rule;
+      return { freeDays: rule.days, maxDays: rule.max_days };
+    },
+  },
   {
     id: 'F30', company: 'fromjapan', name: '配送方法の可否（商品代に依存）',
     read: () => ({
@@ -512,14 +550,6 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     },
   },
   {
-    id: 'F20', company: 'zenmarket', name: '保管無料期間',
-    reason: 'catalog F20:「F21 の判定パラメータ...独立行にはしない」。無料日数自体は optional'
-      + ' の note 文字列にのみ現れ、コードの独立した数値フィールドとしては存在しない。',
-    assertNotInCode: () => {
-      expect((svc('zenmarket') as unknown as Record<string, unknown>).freeStorageDays).toBeUndefined();
-    },
-  },
-  {
     id: 'F22', company: 'zenmarket', name: '倉庫到着後のキャンセル',
     reason: 'catalog F22: display hidden, occurrence E_unpredictable「落札後はキャンセル不可。'
       + '発生すれば全損に近いが予測できない（オーナー決定 2026-09-11）」。',
@@ -615,15 +645,6 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     },
   },
   {
-    id: 'F20', company: 'jauce', name: '保管無料期間',
-    reason: 'catalog F20 と同型（F21相当のパラメータで独立行にしない）。額自体も amount_tier'
-      + ' C_unknown で、コードの optional storage も amountYen: null のまま未取得で一致している。',
-    assertNotInCode: () => {
-      const storage = svc('jauce').optional.find((o) => o.key === 'storage')!;
-      expect(storage.amountYen).toBeNull();
-    },
-  },
-  {
     id: 'F29', company: 'jauce', name: '保険（標準・基本補償 ¥20,000 まで）',
     reason: '2026-09-11 に記録③として追加。標準の郵便保険（全発送に付く）の基本補償¥20,000までは'
       + '無料（日本郵便の公表）。基準ケース（5点×¥3,000＝¥15,000）はこの範囲内で影響が無いため、'
@@ -668,23 +689,17 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
     },
   },
   {
-    id: 'F20', company: 'fromjapan', name: '保管無料期間',
-    reason: 'catalog F20 と同型（F21相当のパラメータで独立行にしない）。60日の無料期間自体は'
-      + ' optional storage の note 文字列にしか無く、独立した数値フィールドとしては存在しない。',
-    assertNotInCode: () => {
-      expect((svc('fromjapan') as unknown as Record<string, unknown>).freeStorageDays).toBeUndefined();
-    },
-  },
-  {
     id: 'F21', company: 'jauce', name: '保管超過',
-    reason: '2026-09-11 に記録①として追加。無料60日・最大保管120日（有料期間は最大60日≒2か月）と'
-      + '公表されているが、月額はサイズ・価値で決まり一律ではない。公表されている参考額（CD約¥200/月・'
-      + 'ギター約¥700/月）は料金表ではなく、¥700 を上限として扱ってはいけない（rule.amount は'
-      + 'unknown・amount_tier C_unknown）。既存の optional storage は5社共通の日数入力欄のみで、'
-      + 'jauce 固有の月額・参考額はコードに未接続。',
+    reason: '0d（2026-09-11）で保管が総額の行になり、無料60日・最大保管120日は'
+      + ' svc(\'jauce\').storage の freeDays/maxDays として接続した（MAPPED の F20/jauce）。'
+      + 'だがこの行自体（F21 の月額）は依然未接続——月額はサイズ・価値で決まり一律ではないと'
+      + '公式が明記しており、公表されている参考額（CD約¥200/月・ギター約¥700/月）は'
+      + '「Very roughly」の前置き付きで料金表ではない。¥700 を上限として扱ってはいけない'
+      + '（rule.amount は unknown・amount_tier C_unknown）。だから61日目以降は'
+      + ' compare.ts の storageLine が amount:null / tier:none（画面は「—」、excluded に載る）'
+      + 'を返し、参考値を点推定に使わない。',
     assertNotInCode: () => {
-      const storage = svc('jauce').optional.find((o) => o.key === 'storage')!;
-      expect(storage.amountYen).toBeNull();
+      expect(svc('jauce').storage.rate.kind).toBe('unpublished');
     },
   },
   {
