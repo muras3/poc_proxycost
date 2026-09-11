@@ -38,7 +38,7 @@ describe('the breakdown explains the total', () => {
       for (const n of [1, 3, 5]) {
         for (const w of [200, 600, 3000]) {
           for (const row of compare({ items: items(n, w), country: cc }).rows) {
-            expect(row.total, `${cc} n=${n} w=${w} ${row.id}`).toBe(sumLines(row));
+            expect(row.total.low, `${cc} n=${n} w=${w} ${row.id}`).toBe(sumLines(row));
           }
         }
       }
@@ -52,7 +52,7 @@ describe('the breakdown explains the total', () => {
     expect(vat.amount).toBeNull();
     expect(vat.tier).toBe('none');
     expect(vat.label).toBe('Sales tax / VAT');
-    expect(row.total).toBe(sumLines(row));
+    expect(row.total.low).toBe(sumLines(row));
   });
 
   test('excluded names exactly the null lines, so the shortfall is visible', () => {
@@ -172,7 +172,7 @@ describe('the breakdown explains the total', () => {
     expect(outsourced).toBeDefined();
     expect(outsourced!.amount).toBeNull();
     expect(fj.excluded).toContain(outsourced!.label);
-    expect(fj.total).toBe(sumLines(fj));
+    expect(fj.total.low).toBe(sumLines(fj));
   });
 });
 
@@ -192,11 +192,11 @@ describe('ranking uses the total and nothing else', () => {
         // （n=1 では Buyee の同梱行が既定行と同じ姿になるので行数自体が1つ少ない。）
         expect(all.length - rows.length, `${cc} n=${n}`).toBe(cc === 'US' ? 1 : 0);
         // **総額だけが並べ替えの鍵。** 第2の鍵（社名の辞書順など）は無い。
-        const bySort = [...rows].sort((a, b) => a.total - b.total);
+        const bySort = [...rows].sort((a, b) => a.total.low - b.total.low);
         expect(rows.map((r) => r.id), `${cc} n=${n}`).toEqual(bySort.map((r) => r.id));
         // 順位は「自分より厳密に安い行の数 + 1」。同額が無い入力ではこれが 1..n になる。
         expect(rows.map((r) => r.rank), `${cc} n=${n}`)
-          .toEqual(rows.map((r) => rows.filter((o) => o.total < r.total).length + 1));
+          .toEqual(rows.map((r) => rows.filter((o) => o.total.low < r.total.low).length + 1));
         expect(rows.every((r) => !r.tied), `${cc} n=${n}`).toBe(true);
       }
     }
@@ -213,7 +213,7 @@ describe('ranking uses the total and nothing else', () => {
             .filter((r) => r.comparable);
           for (const a of rows) {
             for (const b of rows) {
-              if (a.id === b.id || a.total !== b.total) continue;
+              if (a.id === b.id || a.total.low !== b.total.low) continue;
               const where = `${cc} w=${w} ${site} ${a.id}/${b.id}`;
               expect(a.rank, where).toBe(b.rank);
               expect(a.diff, where).toBe(b.diff);
@@ -245,12 +245,12 @@ describe('ranking uses the total and nothing else', () => {
       // 検査に混ぜられない。順位が付いている行だけが並びの対象。
       const rows = compare({ items: items(5, w), country: 'US' }).rows
         .filter((r) => r.comparable);
-      const paying = rows.filter((r) => r.paysUs).map((r) => r.total);
-      const free = rows.filter((r) => !r.paysUs).map((r) => r.total);
+      const paying = rows.filter((r) => r.paysUs).map((r) => r.total.low);
+      const free = rows.filter((r) => !r.paysUs).map((r) => r.total.low);
       // 報酬を払う行だけを集めても総額の昇順のまま＝並びが報酬で歪んでいない。
       expect(paying, `w=${w}`).toEqual([...paying].sort((a, b) => a - b));
       expect(free, `w=${w}`).toEqual([...free].sort((a, b) => a - b));
-      expect(rows.map((r) => r.total)).toEqual([...rows.map((r) => r.total)].sort((a, b) => a - b));
+      expect(rows.map((r) => r.total.low)).toEqual([...rows.map((r) => r.total.low)].sort((a, b) => a - b));
     }
   });
 
@@ -258,8 +258,8 @@ describe('ranking uses the total and nothing else', () => {
     // diff は比較可能な行にしか無い（比較不能な行は diff=0・cheapest=false 固定）。
     const rows = compare({ items: items(5, 600), country: 'US' }).rows
       .filter((r) => r.comparable);
-    const low = rows[0]!.total;
-    for (const row of rows) expect(row.diff).toBe(row.total - low);
+    const low = rows[0]!.total.low;
+    for (const row of rows) expect(row.diff).toBe(row.total.low - low);
     expect(rows[0]!.diff).toBe(0);
     expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
   });
@@ -414,11 +414,11 @@ describe('Canada: the province decides the bill, and not choosing one is not an 
 
   test('Quebec costs more than Ontario, and Alberta costs less than both', () => {
     // 州が総額を動かすこと自体を、順位表の数字で見る。
-    expect(ca('QC').total).toBeGreaterThan(ca('ON').total);
-    expect(ca('ON').total).toBeGreaterThan(ca('AB').total);
+    expect(ca('QC').total.low).toBeGreaterThan(ca('ON').total.low);
+    expect(ca('ON').total.low).toBeGreaterThan(ca('AB').total.low);
     // 代表値はその間のどこか。
-    expect(ca(null).total).toBeGreaterThan(ca('AB').total);
-    expect(ca(null).total).toBeLessThan(ca('QC').total);
+    expect(ca(null).total.low).toBeGreaterThan(ca('AB').total.low);
+    expect(ca(null).total.low).toBeLessThan(ca('QC').total.low);
   });
 
   test('below CAD 20 nothing is charged — and that zero keeps its reason', () => {
@@ -439,7 +439,7 @@ describe('Canada: the province decides the bill, and not choosing one is not an 
     for (const cc of ['US', 'GB', 'DE', 'FR', 'AU', 'SG'] as const) {
       const withProvince = compare({ items: items(1, 600), country: cc, province: 'ON' }).rows;
       const without = compare({ items: items(1, 600), country: cc }).rows;
-      expect(withProvince.map((r) => r.total), cc).toEqual(without.map((r) => r.total));
+      expect(withProvince.map((r) => r.total.low), cc).toEqual(without.map((r) => r.total.low));
       // 州税の行はカナダにしか出ない。
       expect(without[0]!.lines.some((l) => l.key === 'province-tax'), cc).toBe(false);
     }
@@ -483,7 +483,7 @@ describe('equal totals get equal rank', () => {
     const rows = midTie();
     const a = byId(rows, 'neokyo');
     const b = byId(rows, 'buyee');
-    expect(a.total).toBe(b.total);
+    expect(a.total.low).toBe(b.total.low);
     expect(a.rank).toBe(b.rank);
     // 競技順位。同額が2つあれば次は2つ飛ぶ（3-3 のあと 5）。
     expect(rows.map((r) => r.rank)).toEqual([1, 2, 3, 3, 5]);
@@ -494,7 +494,7 @@ describe('equal totals get equal rank', () => {
   });
 
   test('**the alphabetical tiebreak used to hand first place to the service that pays us**', () => {
-    // 旧実装は `a.total - b.total || a.serviceName.localeCompare(b.serviceName)` だった。
+    // 旧実装は `a.total.low - b.total.low || a.serviceName.localeCompare(b.serviceName)` だった。
     // 'Buyee' < 'Neokyo' なので、同額のとき**報酬を払う Buyee が、報酬ゼロの Neokyo を
     // 常に押しのけて上に来ていた。**順位に報酬を使わないという約束を第2の鍵が破っていた。
     const rows = midTie();
@@ -502,7 +502,7 @@ describe('equal totals get equal rank', () => {
     const neokyo = byId(rows, 'neokyo');
     expect(buyee.paysUs).toBe(true);
     expect(neokyo.paysUs).toBe(false);
-    expect(buyee.total).toBe(neokyo.total);
+    expect(buyee.total.low).toBe(neokyo.total.low);
     // いまはどちらも同じ順位で、報酬を払う社が上の順位を取れない。
     expect(buyee.rank).toBe(neokyo.rank);
   });
@@ -513,7 +513,7 @@ describe('equal totals get equal rank', () => {
     expect(leaders.map((r) => r.serviceId).sort()).toEqual(['neokyo', 'zenmarket']);
     expect(leaders.map((r) => r.rank)).toEqual([1, 1]);
     expect(leaders.map((r) => r.diff)).toEqual([0, 0]);
-    expect(new Set(leaders.map((r) => r.total)).size).toBe(1);
+    expect(new Set(leaders.map((r) => r.total.low)).size).toBe(1);
     // 最安が2つあるとき、3位は2つ飛んで 3。
     expect(rows.map((r) => r.rank)).toEqual([1, 1, 3, 4, 5]);
   });
@@ -524,7 +524,7 @@ describe('equal totals get equal rank', () => {
       expect(tied.length).toBe(2);
       // 同額でない行は tied を立てない（全行に付けたら印として機能しない）。
       for (const r of rows.filter((x) => !x.tied)) {
-        expect(rows.filter((o) => o.id !== r.id && o.total === r.total), r.id).toEqual([]);
+        expect(rows.filter((o) => o.id !== r.id && o.total.low === r.total.low), r.id).toEqual([]);
       }
     }
   });
@@ -565,7 +565,7 @@ describe('equal totals get equal rank', () => {
           expect(Math.min(...ranks), `${cc} n=${n} w=${w}`).toBe(1);
           for (const r of rows) {
             expect(r.rank, `${cc} n=${n} w=${w} ${r.id}`)
-              .toBe(rows.filter((o) => o.total < r.total).length + 1);
+              .toBe(rows.filter((o) => o.total.low < r.total.low).length + 1);
           }
         }
       }
@@ -624,7 +624,7 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     expect(blocked).toHaveLength(5);
     for (const row of blocked) {
       // 国際送料を欠いた総額は 1位の 1/4 以下。安く見えるが順位には出さない。
-      expect(row.total, row.id).toBeLessThan(top.total);
+      expect(row.total.low, row.id).toBeLessThan(top.total.low);
       expect(row.rank, row.id).toBeGreaterThan(top.rank);
       expect(row.cheapest, row.id).toBe(false);
       expect(row.diff, row.id).toBe(0);
@@ -831,7 +831,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
     const one = byId(de, 'buyee:consolidated');
     const three = byId(de, 'buyee:default');
     expect(line(three, 'intl-shipping').amount!).toBeGreaterThan(line(one, 'intl-shipping').amount!);
-    expect(three.total).toBeGreaterThan(one.total);
+    expect(three.total.low).toBeGreaterThan(one.total.low);
   });
 
   test('SGD 400 likewise: GST stays 0 while CIF is over but the goods are not', () => {
@@ -968,7 +968,7 @@ describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at 
       { items: [item({ id: 'a', domesticShippingYen: 0 })], country: 'US' }).rows;
     expect(free.length).toBeGreaterThan(0);
     for (const row of free) {
-      expect(row.total, row.id).toBe(byId(confirmedZero, row.id).total);
+      expect(row.total.low, row.id).toBe(byId(confirmedZero, row.id).total.low);
     }
   });
 });
@@ -998,7 +998,7 @@ describe('the international method is an input, and the default is still EMS', (
     expect(shipOf(ems).amount).toBe(10900);
     expect(shipOf(surface).amount).toBe(4300);
     expect(shipOf(surface).label).toContain('International parcel (surface)');
-    expect(surface.total).toBeLessThan(ems.total);
+    expect(surface.total.low).toBeLessThan(ems.total.low);
     // **輸入側にも波及する。**ドイツは CIF 課税なので、送料が下がれば VAT も下がる。
     expect(line(surface, 'vat').amount!).toBeLessThan(line(ems, 'vat').amount!);
   });
@@ -1127,7 +1127,7 @@ describe('Buyee splits parcels by order', () => {
     // 個口を増やしても 0 のまま——**個口が効くのは手数料が立つ帯だけ**。
     expect(line(consolidated, 'clearance').amount).toBe(0);
     expect(line(dflt, 'clearance').amount).toBe(0);
-    expect(dflt.total).toBeGreaterThan(consolidated.total);
+    expect(dflt.total.low).toBeGreaterThan(consolidated.total.low);
   });
 
   test('above the $2,500 prepayment band the clearance fee is per parcel, so splitting triples it', () => {
@@ -1377,19 +1377,19 @@ describe('unknown weight falls back to EMS steps', () => {
       expect(band.cheapestRowIds).toEqual([band.rows[0]!.id]);
       expect(band.cheapestServiceNames).toEqual([band.rows[0]!.label]);
     }
-    const cheapestPerBand = r.bands!.map((b) => b.rows[0]!.total);
+    const cheapestPerBand = r.bands!.map((b) => b.rows[0]!.total.low);
     expect(cheapestPerBand).toEqual([...cheapestPerBand].sort((a, b) => a - b));
   });
 
   test('ranges cover every band, and the mid band is the representative board', () => {
     const r = unknown(2);
     for (const id of Object.keys(r.rowTotalRange!)) {
-      const totals = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.total));
+      const totals = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.total.low));
       expect(r.rowTotalRange![id]).toEqual([Math.min(...totals), Math.max(...totals)]);
       const diffs = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.diff));
       expect(r.rowDiffRange![id]).toEqual([Math.min(...diffs), Math.max(...diffs)]);
     }
-    const all = r.bands!.flatMap((b) => b.rows.map((x) => x.total));
+    const all = r.bands!.flatMap((b) => b.rows.map((x) => x.total.low));
     expect(r.totalRangeYen).toEqual([Math.min(...all), Math.max(...all)]);
     expect(r.rows).toEqual(r.bands![3]!.rows);
   });
@@ -1434,7 +1434,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 0d（2026-09-11）: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が
     // 乗る（他4社は無料60日の内側で¥0）。Buyee の2行がその分だけ上がり、
     // consolidated が zenmarket を上回るようになった（1個口 vs 5個口ぶんの差）。
-    expect(board('US', 5, 200).map((r) => [r.id, r.total])).toEqual([
+    expect(board('US', 5, 200).map((r) => [r.id, r.total.low])).toEqual([
       ['fromjapan', 30975],
       ['zenmarket', 32549],
       ['buyee:consolidated', 33975],
@@ -1449,14 +1449,14 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 入れ替わる2社は Neokyo と FROM JAPAN で、Neokyo は米国宛に日本郵便を
     // 売っていない。米国では 600 g / 1,500 g / 3,000 g のどこでも
     // FROM JAPAN → Buyee(同梱) の並びが動かない（＝入れ替わりが観測できない）。
-    const top2 = (w: number) => board('CA', 5, w).slice(0, 2).map((r) => [r.id, r.total]);
+    const top2 = (w: number) => board('CA', 5, w).slice(0, 2).map((r) => [r.id, r.total.low]);
     expect(top2(600)).toEqual([['neokyo', 37062], ['fromjapan', 38012]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
     expect(top2(1500)).toEqual([['neokyo', 52111], ['fromjapan', 52161]]);
     expect(top2(3000)).toEqual([['fromjapan', 73385], ['neokyo', 74685]]);
     // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
-    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: 67352 });
+    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 67352 } });
     // 米国では上位2社が3つの重量で1度も入れ替わらない。
     // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
     // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
@@ -1469,7 +1469,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
     // 0d: 1点・1個口なので Buyee の保管料は15日ぶん×1個口（¥1,500）だけ乗り、
     // ZenMarket・Jauce を抜いて最後尾に落ちた（以前は2位）。
-    expect(board('US', 1, 500, {}, 5000).map((r) => [r.serviceName, r.total])).toEqual([
+    expect(board('US', 1, 500, {}, 5000).map((r) => [r.serviceName, r.total.low])).toEqual([
       ['FROM JAPAN', 12145],
       ['ZenMarket', 12666],
       ['Jauce', 13507],
@@ -1484,7 +1484,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // FROM JAPAN はヤフオク限定の ¥200 が消える。0d: Buyee の保管料（既定45日、無料30日
     // 超過15日ぶん）が乗って最後尾になった。
     const rows = board('US', 1, 500, { site: 'rakuten' }, 5000);
-    expect(rows.map((r) => [r.serviceName, r.total])).toEqual([
+    expect(rows.map((r) => [r.serviceName, r.total.low])).toEqual([
       ['FROM JAPAN', 11945],
       ['ZenMarket', 12356],
       ['Jauce', 12675],
@@ -1497,7 +1497,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('5 items x 600 g in all seven countries', () => {
     // **比較可能な行だけを並べる。**米国は Neokyo が日本郵便を売っていないので5行。
     const totals = Object.fromEntries(COUNTRIES_ALL.map((cc) => [
-      cc, board(cc, 5, 600).map((r) => r.total),
+      cc, board(cc, 5, 600).map((r) => r.total.low),
     ]));
     // **CA は T23 で動いた**（州税の代表値 7.3% と Canada Post の C$9.95 が入った）。
     // 以前ここは「CA がびた一文動いていない」と書いてあり、それは州税も手数料も
@@ -1739,5 +1739,157 @@ describe('F30 FROM JAPAN small packet is only selectable at or under ¥30,000 de
     }).rows;
     const buyee = rows.find((r) => r.id === 'buyee')!;
     expect(buyee.comparable).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// P1: 総額を点から区間にする。**区間が常に [x, x] にならないことをここで縛る。**
+// ─────────────────────────────────────────────────────────────────────────────
+describe('the total is an interval, not a point (P1)', () => {
+  test('Jauce storage past day 60 gets a cappable unknownCapYen (line level)', () => {
+    // Jauce は無料60日・上限120日。既定45日では無料期間の内側なので何も乗らない。
+    // 70日に伸ばすと有料期間（10日）に入り、単価は非公表（unpublished）——
+    // 「額×期間」で上端が置ける。**Jauce は premium insurance も別に未取得(上端なし)を
+    // 持つので、行全体の total.high はこのケースでも null のまま**——それは正しい
+    // (premium insurance の上端は本当に置けない)。ここでは保管の行そのものが
+    // 個別に上端を持てていることを確かめる。
+    const rows = compare({
+      items: [item({ id: 'a', weightG: 600 })],
+      country: 'DE',
+      storageDays: 70,
+    }).rows;
+    const jauce = byId(rows, 'jauce');
+    const storage = line(jauce, 'storage');
+    expect(storage.amount).toBeNull();
+    expect(storage.unknownCapYen).not.toBeNull();
+    expect(storage.unknownCapYen).toBeGreaterThan(0);
+    // low は sumLines と同じ式（未取得=0）── 挙動を変えていないことの直接の確認。
+    expect(jauce.total.low).toBe(sumLines(jauce));
+  });
+
+  test('the Jauce storage cap is "up to 2 months × the guitar reference", not the reference itself', () => {
+    const rows = compare({
+      items: [item({ id: 'a', weightG: 600 })],
+      country: 'DE',
+      storageDays: 70,
+    }).rows;
+    const storage = line(byId(rows, 'jauce'), 'storage');
+    // 有料期間は maxDays(120) - freeDays(60) = 60日 = 2か月に閉じている。
+    // 参考額 ¥700/月（上限ではない）× 2か月 = ¥1,400。
+    expect(storage.unknownCapYen).toBe(1400);
+    expect(storage.unknownCapNote).toMatch(/not a published cap/);
+    expect(storage.unknownCapNote).toMatch(/¥700/);
+  });
+
+  test('a row with no unknown line keeps a closed interval (low === high, not null)', () => {
+    // 保管が無料期間の内側（既定45日）なら、この籠に未取得の費目は無い —— 区間は閉じたまま。
+    const rows = compare({
+      items: [item({ id: 'a', weightG: 600 })],
+      country: 'DE',
+    }).rows;
+    for (const row of rows.filter((r) => r.comparable)) {
+      if (row.excluded.length === 0) {
+        expect(row.total.high, row.id).toBe(row.total.low);
+      }
+    }
+  });
+
+  test('a truly uncappable unknown line (US Zonos prepayment fee) makes total.high null, not a number', () => {
+    // Zonos の利用料は額もキャップも無い（一次情報3ページで確認済み）ので unknownCapYen が無い。
+    // その行を持つ社は total.high が **null**（上限不明）になる。
+    // **`{ high: 数値, highUnbounded: true }` のような矛盾した状態を作れないことがここの主張。**
+    const rows = compare({
+      items: [item({ id: 'a', weightG: 600 })],
+      country: 'US',
+    }).rows;
+    const withZonos = rows.filter((r) =>
+      r.lines.some((l) => l.key === 'duty-prepayment' && l.amount == null));
+    expect(withZonos.length).toBeGreaterThan(0);
+    for (const row of withZonos) {
+      expect(row.total.high, row.id).toBeNull();
+      // ranking は low だけで決まる —— この PR では挙動を変えない。
+      expect(row.total.low).toBe(sumLines(row));
+    }
+  });
+
+  test('the Neokyo storage line is a real range (small size low, large size high) once it is paid', () => {
+    // 寸法が入力に無いので amount は小型段の点推定。上端は最大段(¥1,400/order)——
+    // これは「額×期間」ではなく「額×寸法の幅」だが、期間(6週上限)は閉じているので
+    // 同じ理屈で上端が出せる。
+    const rows = compare({
+      items: [item({ id: 'a', weightG: 600 })],
+      country: 'DE',
+      storageDays: 60, // Neokyo 無料45日を15日超過 → 3週ぶん課金
+    }).rows;
+    const storage = line(byId(rows, 'neokyo'), 'storage');
+    expect(storage.amount).toBe(3 * 350); // small, 1 order, 3 weeks
+    expect(storage.amountKind).toBe('range');
+    expect(storage.amountHighYen).toBe(3 * 1400); // large
+    expect(storage.amountHighYen).toBeGreaterThan(storage.amount!);
+  });
+
+  test('ranking, cheapest, tied and diff are computed from total.low only (behaviour unchanged)', () => {
+    const rows = compare({ items: items(3, 600), country: 'DE' }).rows;
+    const comparable = rows.filter((r) => r.comparable);
+    for (const row of comparable) {
+      const cheaperCount = comparable.filter((o) => o.total.low < row.total.low).length;
+      expect(row.rank).toBe(cheaperCount + 1);
+      expect(row.diff).toBe(row.total.low - comparable[0]!.total.low);
+    }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // **実カートで幅が本当に出ることの確認。**テストが通ることと、目的が達成される
+  // ことを一致させる（コーディネーターからの指摘）。既定設定・全7カ国で測る。
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('the default real cart actually shows a live interval, in every country', () => {
+    const COUNTRIES_HERE: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
+    const defaultRows = (cc: CountryCode) =>
+      compare({ items: items(5, 600), country: cc }).rows.filter((r) => r.comparable);
+
+    test('not every row is a trivially closed interval — some are open, some are unbounded', () => {
+      // docs/ROADMAP.md P1 確定仕様どおりの表現: 総額は「¥X 以上」(high===null) か、
+      // 具体的な区間(high>low)か、幅が無い(high===low, 未取得の費目が無い)かのどれか。
+      // **全行が high===low だけなら、区間化が何も効いていないということ**——それを禁止する。
+      const all = COUNTRIES_HERE.flatMap((cc) => defaultRows(cc));
+      const notTriviallyClosed = all.filter((r) => r.total.high === null || r.total.high > r.total.low);
+      expect(notTriviallyClosed.length).toBeGreaterThan(0);
+      // US・Jauce・FROM JAPAN の行は既定でも Zonos 利用料・Premium insurance・
+      // 外注梱包のいずれかを持ち、上端が置けないので total.high は null になる
+      // ——「¥X 以上」と出せる状態が既定カートで実際に生じることの確認。
+      const unbounded = all.filter((r) => r.total.high === null);
+      expect(unbounded.length).toBeGreaterThan(0);
+    });
+
+    test('a genuinely open interval (high > low, not null) is reachable within the published rules', () => {
+      // 既定45日ちょうどでは Neokyo も Jauce も無料期間の内側で幅が出ない。
+      // だが「額×期間／額×寸法」の上端は公表されたルールの範囲内で実際に開く
+      // ——これが「増やした上端」が意味を持つことの確認(60日/70日で実演)。
+      const neokyo = byId(
+        compare({ items: items(5, 600), country: 'DE', storageDays: 60 }).rows, 'neokyo',
+      );
+      expect(neokyo.total.high).not.toBeNull();
+      expect(neokyo.total.high!).toBeGreaterThan(neokyo.total.low);
+    });
+
+    test('every row is either high===low (nothing unknown), high>low (all unknowns capped), or high===null (unbounded)', () => {
+      for (const cc of COUNTRIES_HERE) {
+        for (const row of defaultRows(cc)) {
+          if (row.excluded.length === 0) {
+            // 未取得の費目が無い行は、幅ゼロが正しい —— これは「幅を出せていない」不具合ではない。
+            expect(row.total.high, `${cc} ${row.id}`).toBe(row.total.low);
+          } else if (row.total.high !== null) {
+            // 未取得の費目があってなお high が数値なら、全ての未取得に上端が置けたということ。
+            // このとき high は low より厳密に大きくなければならない
+            // （さもなくば「未取得なのに0円加算」という無意味な状態になる）。
+            expect(row.total.high, `${cc} ${row.id}`).toBeGreaterThan(row.total.low);
+          } else {
+            // high === null。上端が置けない未取得費目を最低1つ持つはず。
+            const uncappable = row.lines.some((l) => l.amount == null && l.unknownCapYen == null);
+            expect(uncappable, `${cc} ${row.id}`).toBe(true);
+          }
+        }
+      }
+    });
   });
 });

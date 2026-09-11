@@ -43,11 +43,11 @@ describe('the numbers /sources calls measured are what compare() actually return
   test('every weight row: total, cheapest, most expensive and the delta against 600 g', () => {
     // **この表だけ宛先がカナダ。**替わる2社の片方（Neokyo）が米国宛に日本郵便を
     // 売っていないので、米国では「重量で1位が替わる」を実演できない。
-    const base = winner(rank(MEASURED_BASKET.weightG, WEIGHT_SHIFT_COUNTRY)).total;
+    const base = winner(rank(MEASURED_BASKET.weightG, WEIGHT_SHIFT_COUNTRY)).total.low;
     for (const row of WEIGHT_SHIFT) {
       const rows = rank(row.perItemG, WEIGHT_SHIFT_COUNTRY);
       const top = winner(rows);
-      expect(top.total, `${row.perItemG}g total`).toBe(row.totalYen);
+      expect(top.total.low, `${row.perItemG}g total`).toBe(row.totalYen);
       expect(top.serviceName, `${row.perItemG}g cheapest`).toBe(row.cheapest);
       expect(dearest(rows).label, `${row.perItemG}g most expensive`).toBe(row.last);
 
@@ -68,11 +68,11 @@ describe('the numbers /sources calls measured are what compare() actually return
 
     for (const slice of CONFIDENCE_SPLIT) {
       expect(byTier[slice.tier] ?? 0, `${slice.tier} の金額`).toBe(slice.yen);
-      expect(`${Math.round((slice.yen / top.total) * 100)}%`, `${slice.tier} の割合`)
+      expect(`${Math.round((slice.yen / top.total.low) * 100)}%`, `${slice.tier} の割合`)
         .toBe(slice.share);
     }
     // 未取得（none）は 0 円なので、3つの確度で総額を説明しきれていること。
-    expect(CONFIDENCE_SPLIT.reduce((a, s) => a + s.yen, 0)).toBe(top.total);
+    expect(CONFIDENCE_SPLIT.reduce((a, s) => a + s.yen, 0)).toBe(top.total.low);
   });
 
   test('the seven-country confidence split and total are what compare() actually returns', () => {
@@ -87,11 +87,11 @@ describe('the numbers /sources calls measured are what compare() actually return
       const estimate = byTier['estimate'] ?? 0;
       const unverified = byTier['unverified'] ?? 0;
 
-      expect(top.total, `${row.country} total`).toBe(row.totalYen);
+      expect(top.total.low, `${row.country} total`).toBe(row.totalYen);
       expect(fixed, `${row.country} fixed`).toBe(row.fixedYen);
       expect(estimate, `${row.country} estimate`).toBe(row.estimateYen);
       expect(unverified, `${row.country} unverified`).toBe(row.unverifiedYen);
-      expect(`${Math.round((fixed / top.total) * 100)}%`, `${row.country} published share`)
+      expect(`${Math.round((fixed / top.total.low) * 100)}%`, `${row.country} published share`)
         .toBe(row.publishedShare);
 
       totals.fixed += fixed;

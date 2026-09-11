@@ -61,7 +61,7 @@ describe('compare() refuses input it cannot price', () => {
       const rows = r.bands ? r.bands.flatMap((b) => b.rows) : r.rows;
       expect(rows.length).toBeGreaterThan(0);
       for (const row of rows) {
-        expect(Number.isFinite(row.total), `${row.id} total`).toBe(true);
+        expect(Number.isFinite(row.total.low), `${row.id} total`).toBe(true);
         for (const l of row.lines) {
           expect(l.amount == null || Number.isFinite(l.amount), `${row.id} ${l.key}`).toBe(true);
         }

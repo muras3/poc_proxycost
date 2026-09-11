@@ -81,7 +81,7 @@ export function CostTable({ result }: { result: CompareResult }) {
               <td className="py-2 pr-3">approx. total</td>
               {rows.map((r) => (
                 <td key={r.id} className="py-2 pl-3 text-right num">
-                  <Amount amount={r.total} tier={r.approximate ? 'estimate' : 'fixed'} round />
+                  <Amount amount={r.total.low} tier={r.approximate ? 'estimate' : 'fixed'} round />
                 </td>
               ))}
             </tr>
