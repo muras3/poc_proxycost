@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Amount, tierClass } from '@/lib/ui/tiers';
 import { foreign, totalIntervalText, yen, yenRange } from '@/lib/ui/format';
-import { andList } from '@/lib/pricing/compare';
+import { andList, totalIsCertain } from '@/lib/pricing/compare';
 import { rateLabel } from '@/lib/pricing/rates';
 import type { CompareResult, Row } from '@/lib/pricing/types';
 import { DiffBar } from './DiffBar';
@@ -22,6 +22,19 @@ const rel = (paysUs: boolean) =>
  * ——下端が最小である事実（`row.cheapest`）自体は本当なので消さないが、
  * 「安いと確定した」ではなく「今のところ先頭」だと分かる言葉にする。
  */
+/**
+ * この結果の1位（下端最小、同額ならその全員）の総額が「確定した点」か
+ * （外部レビュー④）。確定していなければ、差額は下端どうしの差でしかなく
+ * 「少なくとも」でしか言えない——`diffText` が使う。
+ */
+function leaderDiffCertain(result: CompareResult): boolean {
+  const comparable = result.rows.filter((r) => r.comparable);
+  if (!comparable.length) return true;
+  const leadLow = comparable[0]!.total.low;
+  const leaders = comparable.filter((r) => r.total.low === leadLow);
+  return leaders.every((r) => totalIsCertain(r.total));
+}
+
 function diffText(row: Row, result: CompareResult): string {
   // 比較できない行に差額を出したら、比べられるかのように見える。
   if (!row.comparable) return 'NOT COMPARABLE';
@@ -30,7 +43,12 @@ function diffText(row: Row, result: CompareResult): string {
     const r = result.rowDiffRange[row.id];
     if (r) return r[0] === 0 && r[1] === 0 ? leadWord : `+${yenRange(r)}`;
   }
-  return row.diff === 0 ? leadWord : `+${yen(row.diff)}`;
+  if (row.diff === 0) return leadWord;
+  // **1位の総額が確定していなければ「少なくとも」**（外部レビュー④）。1位が
+  // 上限不明（`total.high === null`）か幅を持つ（`high > low`）とき、1位の実際の
+  // 総額はこの下端より高くなりうる——下端どうしの差はその分だけ縮む・逆転しうる。
+  // 「ちょうどこれだけ高い」とは言えないので、そう断言しない。
+  return leaderDiffCertain(result) ? `+${yen(row.diff)}` : `at least +${yen(row.diff)}`;
 }
 
 /**
@@ -55,7 +73,11 @@ function totalText(row: Row, result: CompareResult): string {
   if (!row.comparable) return '—';
   if (result.rowTotalRange) {
     const r = result.rowTotalRange[row.id];
-    if (r) return `${row.approximate ? '~' : ''}${yenRange(r, true)}`;
+    // **`r[1] === null`（上限不明）に偽の上端を書かない**（外部レビュー⑤-c）。
+    // 段（重量不明）を通じても `totalIntervalText` に一本化し、下の閉じた経路と
+    // 同じ「¥X or more」を出す。
+    if (r) return `${row.approximate ? '~' : ''}${totalIntervalText({ low: r[0], high: r[1] }, true)}`
+      + (r[1] === null ? ' (upper bound unknown)' : '');
   }
   // **`high === null`（上限不明）に偽の上端を書かない**（P1-3、確定仕様5）。
   // 「¥X 〜 ¥Y」ではなく「¥X or more」——なぜ上限が不明かは行を開いた内訳
@@ -328,6 +350,8 @@ export function Summary({ result }: { result: CompareResult }) {
   // 直下の StabilityNote が打ち消していても、一番大きい文が断定していたら嘘になる。
   const midBand = result.bands?.[Math.floor(result.bands.length / 2)];
   const qualify = !result.rankStable && midBand ? ` at ${midBand.label}` : '';
+  // **1位の総額が確定していなければ「少なくとも」**（外部レビュー④、`diffText` と同じ規則）。
+  const diffCertain = leaders.every((r) => totalIsCertain(r.total));
   // **判定不能では「is cheapest」「are tied cheapest」と言い切らない**
   // （コーディネーター指摘、P1-3 追修正）。すぐ下の `StabilityNote` が
   // 「we can't tell which one wins」と言っているのと同じ画面内で「最安」と
@@ -352,7 +376,7 @@ export function Summary({ result }: { result: CompareResult }) {
           {/* 重量が不明なときは差額も幅になる。1点に丸めて言い切らない。 */}
           {r.label} costs {result.rowDiffRange?.[r.id]
             ? yenRange(result.rowDiffRange[r.id]!)
-            : yen(r.diff)} more{i === rest.length - 1 ? '.' : ', '}
+            : diffCertain ? yen(r.diff) : `at least ${yen(r.diff)}`} more{i === rest.length - 1 ? '.' : ', '}
         </span>
       ))}{' '}
       <span className="text-neutral-500">
