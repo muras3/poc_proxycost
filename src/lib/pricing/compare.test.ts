@@ -474,9 +474,14 @@ describe('equal totals get equal rank', () => {
    * 両社とも無料期間の内側（Buyee ¥0・Neokyo ¥0）になる日数に固定する。
    */
   const midTie = () => compare({ items: items(1, 1450), country: 'DE', storageDays: 30 }).rows;
-  /** 1点 450 g・¥4,200・楽天・AU。Neokyo と ZenMarket が**1位で**同額になる実在の入力。 */
+  /**
+   * 1点 200 g・¥4,500・楽天・AU。Neokyo と ZenMarket が**1位で**同額になる入力。
+   *
+   * **外部レビュー⑤-a（入金手数料の課税ベース修正）で数値が動き、以前の
+   * 組み合わせ（450g・¥4,200）の同額が崩れたので、修正後の値で探し直した。**
+   */
   const topTie = () => compare({
-    items: items(1, 450, 4200, { site: 'rakuten' }), country: 'AU',
+    items: items(1, 200, 4500, { site: 'rakuten' }), country: 'AU',
   }).rows;
 
   test('two rows with the same total carry the same rank, and the next rank skips', () => {
@@ -534,7 +539,7 @@ describe('equal totals get equal rank', () => {
     // {ZenMarket, Neokyo（overlapping 3社目に別が入りうる）}、他端で入れ替わる
     // ——枠の**集合**が変わるので不安定（P1-2、判断2: 枠の集合の完全一致で判定する）。
     const r = compare({
-      items: items(1, 450, 4200, { site: 'rakuten', weightOrigin: 'user' }), country: 'AU',
+      items: items(1, 200, 4500, { site: 'rakuten', weightOrigin: 'user' }), country: 'AU',
     });
     expect(r.rows.filter((x) => x.cheapest).map((x) => x.serviceId).sort())
       .toEqual(['neokyo', 'zenmarket']);
@@ -641,7 +646,19 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     expect(r.rows.every((row) => !row.comparable)).toBe(true);
     expect(r.rows.every((row) => !row.cheapest)).toBe(true);
     expect(r.rankStabilityNote).toBe(
-      'No published EMS rate covers this parcel, so we cannot compare these totals.');
+      'No published rate covers this parcel for EMS, so we cannot compare these totals.');
+  });
+
+  /**
+   * ⑤-d（外部レビュー、2026-09-11）: 選んでいる方式の名前を注記に出す。
+   * 小形包装物を選んでいて全社が重量上限を超えたとき、以前は実際には
+   * 選んでいない「EMS」の名前が出ていた。
+   */
+  test('the note names the shipping method actually selected, not always "EMS"', () => {
+    const r = compare({ items: items(5, 25000), country: 'US', method: 'small-packet-air' });
+    expect(r.rows.every((row) => !row.comparable)).toBe(true);
+    expect(r.rankStabilityNote).toContain('Small packet (airmail)');
+    expect(r.rankStabilityNote).not.toContain('EMS');
   });
 
   test('every country stops at the same table edge', () => {
@@ -912,14 +929,14 @@ describe('domestic shipping is charged by every service, and taxed where the bas
         + (row.lines.find((l) => l.key === 'prepaid-import-tax')?.amount ?? 0);
       for (const row of paid) {
         const delta = taxOf(row) - taxOf(byId(free, row.id));
-        if (row.serviceId === 'zenmarket') {
-          // **IOSS の課税ベースは「代行が請求する全部」**なので、国内送料が増えると
-          // その社の入金手数料（3.5%）も増え、その増分にも VAT が乗る。
-          // 国境払い（課税ベース = CIF）にはこの連鎖が無い。**同じ 20% でも額が違う。**
-          expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n * 1.035));
-        } else {
-          expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n));
-        }
+        // **外部レビュー⑤-a で入金手数料の位置を直した**（`compare.ts` の deposit
+        // ブロック）。以前は入金手数料が VAT/GST の課税ベースより前で計算されて
+        // いたせいで、ZenMarket の IOSS 課税ベース（`preTaxYen`）に入金手数料の
+        // gross-up が混ざり、国内送料の増分がその分だけ余計に VAT へ乗っていた
+        // （国内送料 → 入金手数料 → 課税ベース、という存在してはいけない循環）。
+        // 入金手数料を税の行より後ろに移した今、この循環は無く、ZenMarket も
+        // 他社と同じ単純な式になる。
+        expect(delta, `${row.id} n=${n}`).toBe(Math.round(0.2 * 800 * n));
       }
     }
   });
@@ -1440,14 +1457,37 @@ describe('unknown weight falls back to EMS steps', () => {
   test('ranges cover every band, and the mid band is the representative board', () => {
     const r = unknown(2);
     for (const id of Object.keys(r.rowTotalRange!)) {
-      const totals = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.total.low));
-      expect(r.rowTotalRange![id]).toEqual([Math.min(...totals), Math.max(...totals)]);
+      const lows = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.total.low));
+      const highs = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.total.high));
+      // **上端が置けない行は `null` のまま**（外部レビュー⑤-c）——段のどれか1つでも
+      // `total.high === null` なら、全段を通じた上端も `null`。段ごとの下端の最大に
+      // 丸めて閉区間の顔をさせない。
+      const expectedHigh = highs.some((h) => h === null) ? null : Math.max(...(highs as number[]));
+      expect(r.rowTotalRange![id]).toEqual([Math.min(...lows), expectedHigh]);
       const diffs = r.bands!.flatMap((b) => b.rows.filter((x) => x.id === id).map((x) => x.diff));
       expect(r.rowDiffRange![id]).toEqual([Math.min(...diffs), Math.max(...diffs)]);
     }
     const all = r.bands!.flatMap((b) => b.rows.map((x) => x.total.low));
     expect(r.totalRangeYen).toEqual([Math.min(...all), Math.max(...all)]);
     expect(r.rows).toEqual(r.bands![3]!.rows);
+  });
+
+  /**
+   * ⑤-c（外部レビュー、2026-09-11）: `compare()` を直接呼ぶ利用者に、
+   * 「上限不明」を閉区間の嘘として渡さない。FROM JAPAN は全国・全段で
+   * 外注梱包費（`unpricedFees`）が未取得のまま——`total.high` は常に `null`。
+   * `rowTotalRange` にその事実が伝わらなければ、`totalText`（RankBoard）が
+   * 「¥23,700 – 54,500」のような**存在しない閉区間**を描いてしまう
+   * （UI は必ず重量を入れるのでこの経路に到達しないが、`compare()` を直接
+   * 呼ぶ利用者には嘘になる）。
+   */
+  test('an uncapped row (FROM JAPAN) keeps high: null across every band — no false closed interval', () => {
+    const r = unknown(2);
+    for (const band of r.bands!) {
+      const fj = band.rows.find((x) => x.id === 'fromjapan')!;
+      expect(fj.total.high).toBeNull();
+    }
+    expect(r.rowTotalRange!['fromjapan']![1]).toBeNull();
   });
 
   test('one unknown item among known ones still drops the whole board to bands', () => {
@@ -1505,14 +1545,18 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 入れ替わる2社は Neokyo と FROM JAPAN で、Neokyo は米国宛に日本郵便を
     // 売っていない。米国では 600 g / 1,500 g / 3,000 g のどこでも
     // FROM JAPAN → Buyee(同梱) の並びが動かない（＝入れ替わりが観測できない）。
+    // **外部レビュー⑤-b で CA の GST・州税ベースを直した**（`taxLines`。CBSA
+    // Memorandum D13-3-3/D13-3-4 の value for duty は国際送料を含まないが
+    // 国内送料は含む——`master/customs.json` の CA.vat.base_note どおりに
+    // 揃えた）ので、CA の総額が下がった。
     const top2 = (w: number) => board('CA', 5, w).slice(0, 2).map((r) => [r.id, r.total.low]);
-    expect(top2(600)).toEqual([['neokyo', 37062], ['fromjapan', 38012]]);
+    expect(top2(600)).toEqual([['neokyo', 36250], ['fromjapan', 37200]]);
     // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
     // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
-    expect(top2(1500)).toEqual([['neokyo', 52111], ['fromjapan', 52161]]);
-    expect(top2(3000)).toEqual([['fromjapan', 73385], ['neokyo', 74685]]);
+    expect(top2(1500)).toEqual([['neokyo', 49750], ['fromjapan', 49800]]);
+    expect(top2(3000)).toEqual([['fromjapan', 68700], ['neokyo', 70000]]);
     // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
-    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 67352 } });
+    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 64806 } });
     // 米国では上位2社が3つの重量で1度も入れ替わらない。
     // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
     // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
@@ -1577,14 +1621,19 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 30日の Buyee だけに課金が乗る（他4社は無料60日／Neokyo無料45日の内側で¥0）。
     // Buyee は2行（consolidated 1個口 / default 5個口）持つので、個口の数だけ額が違う
     // 形で両方が上がった——これが「全社に等しく乗らない」ことの実例。
+    // **外部レビュー⑤-a（入金手数料の課税ベース）・⑤-b（CA の課税ベース）で
+    // 数字が動いた。**⑤-a は決済時に徴収する VAT/GST を入金手数料の対象に含めた
+    // ので ZenMarket・Jauce の総額を持つ国がわずかに上がり（GB/DE/FR の ¥1 単位の
+    // ずれ）、⑤-b は CA の GST・州税ベースから国際送料だけを抜いた（国内送料は
+    // 含める、コーディネーター指摘で訂正済み）ので CA が下がった。
     expect(totals).toEqual({
       US: [37075, 38870, 40075, 40605, 63325],
-      GB: [40121, 41071, 42156, 44071, 44528, 73756],
-      DE: [42735, 43685, 44529, 46685, 47142, 74912],
-      FR: [43152, 44102, 44880, 47102, 47559, 75833],
-      AU: [33950, 36630, 36740, 38550, 40543, 59250],
-      CA: [37062, 38012, 39742, 41012, 41469, 67352],
-      SG: [30836, 32101, 33372, 35083, 35371, 53410],
+      GB: [40121, 41071, 42155, 44071, 44528, 73756],
+      DE: [42735, 43685, 44528, 46685, 47142, 74912],
+      FR: [43152, 44102, 44879, 47102, 47559, 75833],
+      AU: [33950, 36684, 36740, 38550, 40539, 59250],
+      CA: [36250, 37200, 38930, 40200, 40657, 64806],
+      SG: [30836, 32101, 33457, 35178, 35371, 53410],
     });
   });
 });
@@ -2046,8 +2095,10 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // `leadersOverflow`）はコードの構造上保証されるが、実カートのフィクスチャでは
     // 直接は踏めない——`leaders.slice(2)` は2社ちょうどのときと3社のときで
     // 同じコードパスを通るので、ここでの検証は目的に対して十分な代理になる。
+    // ⑤-a の修正で数値が動き、以前の組み合わせ（450g・¥4,200）の同額が崩れたので
+    // 修正後の値で探し直した（`topTie` と同じ入力、`equal totals get equal rank`）。
     const rows = compare({
-      items: [item({ id: 'a', priceYen: 4200, weightG: 450, site: 'rakuten' })], country: 'AU',
+      items: [item({ id: 'a', priceYen: 4500, weightG: 200, site: 'rakuten' })], country: 'AU',
     }).rows.filter((r) => r.comparable);
     const tiedLow = Math.min(...rows.map((r) => r.total.low));
     const tied = rows.filter((r) => r.total.low === tiedLow);

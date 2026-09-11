@@ -1,5 +1,6 @@
 import { Amount, tierClass } from '@/lib/ui/tiers';
 import { totalIntervalText, yen } from '@/lib/ui/format';
+import { totalIsCertain } from '@/lib/pricing/compare';
 import type { Row } from '@/lib/pricing/types';
 
 /**
@@ -89,7 +90,12 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
             </td>
           )}
           {!isCheapest && (
-            <td className="py-1 text-right num">+{yen(row.total.low - cheapest.total.low)}</td>
+            <td className="py-1 text-right num">
+              {/* 1位（cheapest）の総額が確定していなければ「少なくとも」
+                  （外部レビュー④、RankBoard の diffText と同じ規則）。 */}
+              {totalIsCertain(cheapest.total) ? '+' : 'at least +'}
+              {yen(row.total.low - cheapest.total.low)}
+            </td>
           )}
         </tr>
       </tfoot>

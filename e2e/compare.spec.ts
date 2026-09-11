@@ -317,9 +317,13 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
 
 /**
  * 同額（T26）。**手で作れる実在の入力**で、同順位になることを画面で見る。
- * 1点 ¥4,200・450 g・楽天・オーストラリア宛で Neokyo と ZenMarket がちょうど ¥10,420。
- * 走査では同額を含む組み合わせが 3,938 あり、うち 15 組が1位の同額
- * （docs/audit/ties-2026-09-07.md）。稀な事故ではないので画面で扱う。
+ * 1点 ¥4,500・200 g・楽天・オーストラリア宛で Neokyo と ZenMarket がちょうど ¥10,000。
+ * 走査では同額を含む組み合わせが多数あり、稀な事故ではないので画面で扱う。
+ *
+ * **外部レビュー⑤-a（入金手数料の課税ベース修正）で数値が動き、以前の組み合わせ
+ * （450g・¥4,200＝¥10,420）の同額が崩れた**（ZenMarket の入金手数料が決済時に
+ * 徴収する GST にも掛かるようになったため）ので、修正後の値で探し直した
+ * （`compare.test.ts` の `topTie` と同じ入力）。
  */
 const TIE = 'tie probe, no weight data';
 
@@ -327,9 +331,9 @@ test('22. two rows with the same total share the rank, and both are CHEAPEST', a
   await gotoCompare(page);
   await page.getByLabel('Ship to').selectOption('AU');
   await emptyCart(page);
-  await addByHand(page, TIE, 4200, 'rakuten');
+  await addByHand(page, TIE, 4500, 'rakuten');
   await openCart(page);
-  await weightBox(page, TIE).fill('450');
+  await weightBox(page, TIE).fill('200');
 
   await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
   const rows = await readRanking(page);
