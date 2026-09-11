@@ -181,6 +181,21 @@ export interface Row {
   comparable: boolean;
   /** comparable が false の理由（英語、画面にそのまま出す）。 */
   notComparableReason: string | null;
+  /**
+   * 「おすすめ」枠に入るか（P1-2）。**下端で並べたとき1位の幅と重なる社**を、
+   * 1位自身を含めて最大3社（1位 + 重なる社2社まで）まで囲う。
+   * 重なる社が無ければ1位だけが true（単独1位）。`comparable` が false の行は常に false。
+   * 判定方法は `docs/ROADMAP.md` P1「『重なる』の定義」、実装は `compare.ts` の
+   * `computeBracket()` を参照。
+   */
+  recommended: boolean;
+  /**
+   * 「同等」の印（P1-2）。おすすめ枠には入らない（3社目以降）が、
+   * 1位の幅とは重なっている社。**枠には入れない**——おすすめは最大2社という上限を
+   * 動かさないための印であって、資格の有無ではない。`recommended` と同時に true には
+   * ならない。`comparable` が false の行は常に false。
+   */
+  equivalent: boolean;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */

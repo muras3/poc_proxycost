@@ -661,14 +661,20 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   // 米国では反転が起きないので、この導線を米国では実演できない。
   await page.getByLabel('Ship to').selectOption('DE');
 
-  // 既定の2点は ×1/3〜×3 で安定。何も言わず、誰も名指ししない。
-  await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
+  // **P1-2 でここの前提が変わった。** おすすめ枠は「1位の下端」だけでなく重なる社まで
+  // 見るので、既定の2点でもドイツでは枠の顔ぶれが ×1/3〜×3 で変わる（FROM JAPAN・
+  // Neokyo・ZenMarket が拮抗し、軽い側では Buyee, consolidated も枠に入る）——
+  // これは実在する不確かさで、隠すべきものではない（`docs/ROADMAP.md` P1、判断1・2）。
+  // ただしこの時点ではどの1点の重量が原因かはまだ言えない（`decisive` はまだ無し）
+  // ので、個別の品には何も印が付かない。
+  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
   await expect(page.getByText(DECIDES)).toHaveCount(0);
 
-  // 表に無い品を1点足すと不安定になる。
+  // 表に無い品を1点足すと、**その品と Nendoroid の両方**が原因だと言えるようになる
+  // （枠の顔ぶれを動かす品が特定できる）。
   await addByHand(page, PLUSH, 3000);
-  const note = page.getByText(/The cheapest option changes with the weight/);
+  const note = page.getByText(/The recommended range changes with the weight/);
   await expect(note).toBeVisible();
   // 表の中央値と仮置きを「あなたがくれた重量」とは呼ばない。
   await expect(note).toContainText('our weight estimate');
@@ -699,18 +705,21 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   await expect(cartItem(page, title).getByText(DECIDES)).toBeVisible();
 });
 
-test('18. a single item: the weight does not decide anything, so we do not nag', async ({ page }) => {
+test('18. a single item: the winner never changes, but the recommended range still does', async ({ page }) => {
   await gotoCompare(page);
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
   await openCart(page);
 
-  // 仮置きは入るし、仮置きだと名乗る。だが 500 g〜10 kg で1位は動かない（実測）。
+  // 仮置きは入るし、仮置きだと名乗る。500 g〜10 kg で**1位（FROM JAPAN）は動かない**
+  // が、**おすすめ枠の顔ぶれは動く**（軽い側は Jauce、重い側は Buyee が枠に入る）——
+  // P1-2 では「1位が動くか」ではなく「枠が動くか」で見るので、これは正しく nag する
+  // （`docs/ROADMAP.md` P1、判断2）。
   await expect(weightBox(page, PLUSH)).toHaveValue('1000');
   await expect(cartItem(page, PLUSH).getByText(/assumed/).first()).toBeVisible();
-  await expect(page.getByText(/stays cheapest even if we are off by 3x on weight/)).toBeVisible();
-  await expect(page.getByText(DECIDES)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
+  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
+  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
 
   // それでも直せる。直せば総額は動く（1位は動かない）。
   const before = await readRanking(page);

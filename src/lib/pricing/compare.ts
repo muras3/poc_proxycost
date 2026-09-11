@@ -905,6 +905,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     cheapest: false,
     // rank() が総額を見てから付ける。ここでは何も主張しない。
     tied: false,
+    recommended: false,
+    equivalent: false,
     paysUs: svc.paysUs,
     referralNote: svc.referralNote,
     // 1点だけなら、その社でその出品を直接開く（検証済みの組み合わせのみ）。
@@ -963,6 +965,63 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
  * **同順位の行の縦の並び（＝ SERVICES の宣言順。安定ソートがそのまま残す）は
  * 何も意味しない。**だから `tied` を立て、画面がその場で `tied` と書いて打ち消す。
  */
+/**
+ * 「重なる」の定義（P1-2、`docs/ROADMAP.md` P1 確定仕様2・6）。
+ *
+ * 各行の区間を `[low, high ?? Infinity]` として扱う——`high === null`（上限不明）は
+ * 「上端が無い」ではなく「**上端が分からない**」なので、上端の候補を +Infinity に
+ * 開けておくのが安全側（そう置かないと、上限不明の行を「1位より確実に高い」と
+ * 決めつけることになり、実際には最安になりうる行を枠から締め出す）。
+ *
+ * **判定は候補行の下端 1点と、1位側の区間だけで行う**（確定仕様6「下端のみで比較」）。
+ * 候補行自身の上端は使わない——`row.total.low <= leaderHigh` の1本の不等式だけで、
+ * `row.total.high` を一切参照しない。だから候補行が上限不明でも判定は変わらない
+ * （`docs/ROADMAP.md` の論点「`high === null` の行はどう扱うか」への回答）。
+ *
+ * 1位側（`leaderHigh`）は「1位（同額タイを含む）のうちどれか1社でもその値まで
+ * 高くなりうるなら重なるとみなす」ため、タイの中の最大の上端を使う。**1位自身が
+ * 上限不明なら leaderHigh は Infinity になり、下端で1位に並ぶ・それより高い社は
+ * 全て重なる**——1位の総額がどこまで伸びるか分からない以上、「他社は1位より
+ * 確実に高い」とは言えないので、これは意図した挙動（総額に効くのは配送方法、
+ * という P1 の全社重なり表示につながる）。
+ */
+function overlapsLeader(rowLow: number, leaderHigh: number): boolean {
+  return rowLow <= leaderHigh;
+}
+
+/**
+ * おすすめ枠・同等の印（P1-2）。**下端の昇順に並んだ比較可能な行だけを見る。**
+ *
+ * 1位（下端が最小。同額なら全員が1位）はそのまま枠に入る。1位の区間と重なる社を
+ * 下端の昇順に見ていき、**枠に追加できるのは最大2社**（確定仕様2）。
+ * それでも重なる社（3社目以降）には枠を広げず、`equivalent` の印だけ付ける
+ * （確定仕様4「3社目以降で1位と幅が重なっている社には『同等』の印を付ける。
+ * 枠には入れない」）。重なる社が無ければ1位だけの単独枠になる（確定仕様3）。
+ */
+function computeBracket(ok: Row[]): { recommended: Set<string>; equivalent: Set<string> } {
+  const recommended = new Set<string>();
+  const equivalent = new Set<string>();
+  if (!ok.length) return { recommended, equivalent };
+  const leadLow = ok[0]!.total.low;
+  const leaders = ok.filter((r) => r.total.low === leadLow);
+  for (const r of leaders) recommended.add(r.id);
+  const leaderHigh = leaders.some((r) => r.total.high == null)
+    ? Infinity
+    : Math.max(...leaders.map((r) => r.total.high!));
+  const rest = ok.filter((r) => r.total.low > leadLow);
+  let added = 0;
+  for (const r of rest) {
+    if (!overlapsLeader(r.total.low, leaderHigh)) continue; // 下端の昇順なので以降も重ならない保証はないが、素直に全件見る
+    if (added < 2) {
+      recommended.add(r.id);
+      added += 1;
+    } else {
+      equivalent.add(r.id);
+    }
+  }
+  return { recommended, equivalent };
+}
+
 function rank(rows: Row[]): Row[] {
   // 第2キーを持たない。同額の並びは入力順（SERVICES の宣言順）のまま残る
   // ——Array#sort は安定なので。その並びに意味は無く、意味が無いことは画面が書く。
@@ -970,6 +1029,7 @@ function rank(rows: Row[]): Row[] {
   const ok = rows.filter((r) => r.comparable).sort(byTotal);
   const notOk = rows.filter((r) => !r.comparable).sort(byTotal);
   const low = ok[0]?.total.low ?? 0;
+  const { recommended, equivalent } = computeBracket(ok);
   return [
     ...ok.map((r) => ({
       ...r,
@@ -977,13 +1037,46 @@ function rank(rows: Row[]): Row[] {
       diff: r.total.low - low,
       cheapest: r.total.low === low,
       tied: ok.some((o) => o.id !== r.id && o.total.low === r.total.low),
+      recommended: recommended.has(r.id),
+      equivalent: equivalent.has(r.id),
     })),
     // 比べられない行の総額は最大の費目を欠いている。同額でも「並んだ」ことにならない
-    // ので tied は立てない（比べていないものを「同じ」と書かない）。
+    // ので tied は立てない（比べていないものを「同じ」と書かない）。おすすめ枠の
+    // 判定も比較可能な行だけが対象なので、ここは常に false。
     ...notOk.map((r, i) => ({
       ...r, rank: ok.length + i + 1, diff: 0, cheapest: false, tied: false,
+      recommended: false, equivalent: false,
     })),
   ];
+}
+
+/** おすすめ枠に入っている行の id（下端の昇順）。rankStable・weightSensitivity が使う。 */
+function bracketIds(rows: Row[]): string[] {
+  return rows.filter((r) => r.recommended).map((r) => r.id);
+}
+
+/**
+ * おすすめ枠の**集合**が変わったか（P1-2、コーディネーター判断2、2026-09-11）。
+ *
+ * 最初の実装は「基準の枠のうち1社でも両端の枠に残っていれば安定」だったが、
+ * **枠は最大3社（1位＋重なる社2社まで）なので、5社中3社が枠に入っていれば
+ * 「誰か1人残る」はほぼ自明に成立し、判定として機能しなかった**
+ * （7カ国すべて `rankStable=true` になった実測がその欠陥そのもの）。
+ *
+ * 新しい定義は**集合の完全一致**。枠の中で誰が下端最小か（内部の順序）が入れ替わる
+ * のは「動いた」に数えない——`Set` として比較するので中の並びは見ない。だが
+ * **枠に入る／出る顔ぶれが1社でも変われば、それは「重量次第で薦める会社が変わる」
+ * という事実そのものなので `false`。**
+ *
+ * 比較可能な行が両端で1つも残らない（`other` が空）ときは、以前と同じく
+ * 「判定できない」として `false`（変わった）扱いにしない——比べられなくなったことを
+ * 「不安定」と混同しない、という既存の規則を維持する。
+ */
+function bracketChanged(base: string[], other: string[]): boolean {
+  if (other.length === 0) return false;
+  if (base.length !== other.length) return true;
+  const b = new Set(base);
+  return other.some((id) => !b.has(id));
 }
 
 /**
@@ -1046,6 +1139,7 @@ function weightSensitivityFor(
   const baseIds = cheapestIds(base);
   if (!baseIds.length) return out;
   const baseComparable = base.filter((r) => r.comparable).length;
+  const baseBracket = bracketIds(base);
 
   for (const item of items) {
     const range = sensitivityRange(item);
@@ -1058,6 +1152,7 @@ function weightSensitivityFor(
       const ids = cheapestIds(rows);
       return {
         ids,
+        bracket: bracketIds(rows),
         // 同額なら全部並べる。1つだけ名指しすると、並びの偶然で選んだ社を
         // 「その重量での最安」と言い切ることになる。
         label: ids.length
@@ -1075,11 +1170,12 @@ function weightSensitivityFor(
       winnerAtHigh: hi.label,
       onlyPricedAtLow: lo.shrank,
       onlyPricedAtHigh: hi.shrank,
-      // 「比べられなくなった」端は「替わった」に数えない（rankStable と同じ）。
-      // **同額は「替わった」ではない。**基準の重量で最安だった行が1つでも
-      // その端で最安のままなら、選ぶべき社は変わっていない。
-      decisive: [lo, hi].some(
-        (w) => w.ids.length > 0 && !w.ids.some((id) => baseIds.includes(id))),
+      // **判定基準はおすすめ枠の集合が変わるかどうか**（`rankStable` と同じ規則、
+      // P1-2・判断2）。「1社でも重なれば動いていない」ではなく集合の完全一致を見る
+      // ——枠は最大3社なので前者はほぼ常に成立してしまい判定にならない
+      // （`bracketChanged` のコメント参照）。「比べられなくなった」端（枠が空）は
+      // 「替わった」に数えない。
+      decisive: [lo, hi].some((w) => bracketChanged(baseBracket, w.bracket)),
     };
   }
   return out;
@@ -1167,21 +1263,23 @@ export function compare(
       // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
       // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
       // 値段が付く唯一の社というだけ。そう書かないと嘘になる。
-      // 最安は**集合**で持つ（同額があるので）。
-      return { rows, ids: cheapestIds(rows), shrank: comparable.length < baseComparable };
+      // 最安は**集合**で持つ（同額があるので）。おすすめ枠も同じ規則で集合で持つ。
+      return { rows, ids: cheapestIds(rows), bracket: bracketIds(rows), shrank: comparable.length < baseComparable };
     });
-    const baseIds = cheapestIds(base);
-    // 「1位が動かない」＝ **基準の重量で最安だった社のうち、両端でも最安のままの社が
-    // 1つでも在る**こと。同額の中でどれが先頭に来たかは並びの偶然なので、
-    // それで判定すると動いていない順位が動いたことになる。
-    // 値段の付く行が消えた端（ids が空）は「判定できない」として飛ばす（従来どおり）。
-    const holds = winners.reduce(
-      (keep, w) => (w.ids.length === 0 ? keep : keep.filter((id) => w.ids.includes(id))),
-      baseIds);
+    const baseBracket = bracketIds(base);
+    // **「1位が動かないか」ではなく「おすすめ枠の集合が変わるか」で安定を判定する**
+    // （P1-2、コーディネーター判断2、2026-09-11）。
+    //
+    // 最初の実装は「基準の枠のうち1社でも両端に残れば安定」だったが、**枠は最大3社
+    // なので5社中3社が枠に入る局面では『誰か1人残る』がほぼ自明に成立し、判定として
+    // 機能しなかった**（7カ国すべて `rankStable=true` になった実測がそれ）。
+    // 集合の完全一致に変える——枠の中で誰が下端最小かの入れ替わりは見ないが
+    // （`bracketChanged` は `Set` で比べるので内部の順序は無視する）、
+    // **顔ぶれが1社でも変われば `false`。**値段の付く行が消えた端（枠が空）だけは
+    // 従来どおり「判定できない」として除外する。
     const first = base.find((r) => r.comparable);
-    const stable = holds.length > 0;
-    // 基準で同額だったのに片端で落ちた社は、黙って消さずに名指しする。
-    const dropped = baseIds.filter((id) => !holds.includes(id));
+    const changedAt = winners.filter((w) => bracketChanged(baseBracket, w.bracket));
+    const stable = changedAt.length === 0;
     const labelOf = (id: string) => base.find((r) => r.id === id)?.label ?? id;
     const outOfTable = winners.some((w) => w.ids.length === 0 || w.shrank);
     // 表の中央値や仮置きを「あなたがくれた重量」と呼ぶのは嘘。出どころを知らない
@@ -1192,24 +1290,23 @@ export function compare(
       ...empty,
       rows: base,
       rankStable: stable,
+      // **「1位が動くか」ではなく「おすすめ枠の集合が動くか」を言う**（P1-2、判断2）。
+      // `stable` はいま枠の完全一致で決まっているので、安定なら基準の枠がそのまま
+      // 両端でも枠だと言い切ってよい（`dropped` は不安定側でだけ使う）。
       rankStabilityNote: !first
         ? 'No published EMS rate covers this parcel, so we cannot compare these totals.'
         : stable
-          ? `${andList(holds.map(labelOf))} stay${holds.length === 1 ? 's' : ''} cheapest`
-            + ' even if we are off by 3x on weight.'
-            + (dropped.length
-              ? ` ${andList(dropped.map(labelOf))} ${dropped.length === 1 ? 'ties' : 'tie'}`
-                + ' with it at this weight but not at both ends.'
-              : '')
+          ? `${andList(baseBracket.map(labelOf))} stay${baseBracket.length === 1 ? 's' : ''} in the`
+            + ' recommended range even if we are off by 3x on weight.'
             + (outOfTable ? ' Beyond that the parcel leaves the published EMS table.' : '')
           // **不安定なときに「段の表を見ろ」と言ってはいけない。** 重量が分かって
           // いるときは段の表を出していないので、画面に無いものを指すことになる。
           // どの倍率で誰に替わるかは winners に持っているので、それを名指しする。
-          : `The cheapest option changes with the weight: ${
+          : `The recommended range changes with the weight: ${
             ['a third of', 'three times']
               .map((word, i) => {
                 const w = winners[i]!;
-                const names = w.ids.map((id) => w.rows.find((r) => r.id === id)?.label ?? id);
+                const names = w.bracket.map((id) => w.rows.find((r) => r.id === id)?.label ?? id);
                 const many = names.length > 1;
                 const label = names.length === 0
                   ? 'no published EMS rate covers the parcel'
@@ -1217,7 +1314,7 @@ export function compare(
                     // 「唯一値段が付く社」を「最安」と書かない。
                     ? `${andList(names)} ${many ? 'are' : 'is'} the only`
                       + ` ${many ? 'ones' : 'one'} we can still price`
-                    : `${andList(names)} ${many ? 'are tied cheapest' : 'is cheapest'}`;
+                    : `${andList(names)} ${many ? 'are the recommended range' : 'is the recommended range'}`;
                 return `at ${word} ${basis}, ${label}`;
               })
               .join('; ')
@@ -1261,11 +1358,11 @@ export function compare(
   }
 
   const first = bands[0]!;
-  // 全段で最安のままの行が1つでも在れば「動かない」。同額は「動いた」ではない。
-  const holdsAcrossBands = bands.reduce<string[]>(
-    (keep, b) => keep.filter((id) => b.cheapestRowIds.includes(id)),
-    first.cheapestRowIds);
-  const stable = holdsAcrossBands.length > 0;
+  // **おすすめ枠の集合が全段で変わらないか**（P1-2、判断2）で「動かない」を判定する。
+  // 「1社でも残れば安定」は枠が最大3社ある時点でほぼ自明に成立して判定として
+  // 機能しない（`bracketChanged` のコメント参照）ので、集合の完全一致を見る。
+  const firstBracket = bracketIds(first.rows);
+  const stable = bands.every((b) => !bracketChanged(firstBracket, bracketIds(b.rows)));
   const totals = bands.flatMap((b) => b.rows.map((r) => r.total.low));
   // 代表として真ん中の段を rows に据える。1つの数字を主役にはしないが、
   // 画面が何も出せないと困るので順序の代表は要る。
@@ -1278,10 +1375,10 @@ export function compare(
     rowDiffRange,
     rankStable: stable,
     rankStabilityNote: stable
-      ? `Cheapest at every step from ${first.label} to ${bands[bands.length - 1]!.label}: `
-        + `${andList(holdsAcrossBands.map((id) => first.rows.find((r) => r.id === id)?.label ?? id))}.`
-      : 'The cheapest option changes with weight — '
-        + `${bands.map((b) => `${b.label}: ${andList(b.cheapestServiceNames)}`).join(', ')}.`,
+      ? `In the recommended range at every step from ${first.label} to ${bands[bands.length - 1]!.label}: `
+        + `${andList(firstBracket.map((id) => first.rows.find((r) => r.id === id)?.label ?? id))}.`
+      : 'The recommended range changes with weight — '
+        + `${bands.map((b) => `${b.label}: ${andList(bracketIds(b.rows).map((id) => b.rows.find((r) => r.id === id)?.label ?? id))}`).join(', ')}.`,
     totalRangeYen: [Math.min(...totals), Math.max(...totals)],
     currency,
     hasUnknownWeight: true,
