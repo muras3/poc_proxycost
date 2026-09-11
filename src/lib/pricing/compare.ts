@@ -4,7 +4,9 @@ import {
 } from './countries';
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, markupYen, maxGramsFor, postageFor, zoneFor,
+  DEFAULT_PARCEL_DIMENSIONS_CM, DEFAULT_PARCEL_DIMENSIONS_NOTE, DEFAULT_PARCEL_DIMENSIONS_TIER,
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, courierPriceFor, dimensionsExceedCube,
+  markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -17,7 +19,7 @@ import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import { alcoholItems } from './restricted-goods';
 import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
 import type {
-  PostalMethod,
+  CourierMethod, PostalMethod,
   Band, CompareInput, CompareResult, Item, Line, ProvinceCode, Row, Tier, WeightSensitivity,
 } from './types';
 
@@ -770,6 +772,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // Buyee の既定は1個口が軽くなるので、同梱では上限を超える小形包装物が使えることがある
   // ——これは実在する差で、モデルから落とすと Buyee の既定が不当に高く出る。
   const wanted = ctx.method ?? 'cheapest';
+  // **箱は仮定する**（P2 2a）。日本郵便4方式は寸法に一切依存しないと実測済み
+  // （`docs/audit/o2-courier-2026-09-08.md` §2）なので額の計算には使わない。
+  // 使うのは (a) 寸法での「送れない」判定と (b) 宅配便の容積重量の2箇所だけ。
+  const parcelDims = DEFAULT_PARCEL_DIMENSIONS_CM;
   // **その社が売っていない方式は値段が付かない。**2026-09-07 の実測で品揃えが社で
   // 大きく違うことが分かった（FROM JAPAN 5方式 / Jauce 2方式、Neokyo は小形包装物なし）。
   // 売っていない方式に公表額を当てると、使えない選択肢を最安に見せることになる。
@@ -779,45 +785,98 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     if (rate.unavailableIn?.includes(ctx.cc)) return null;  // その国へは出していない
     // F30: 商品価格（Charge 1）がこの方式の上限を超えたら選べない。重量や国とは別の理由。
     if (rate.priceCapJpy != null && itemsYen > rate.priceCapJpy) return null;
+    // P2 3: 寸法による「送れない」（額ではなく可否）。既定の箱は全方式の上限を
+    // 下回るので、いまはここで常に false になる（`dimensionsExceedCube` のコメント）。
+    if (dimensionsExceedCube(m, parcelDims)) return null;
     const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
     if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
     // **上乗せは個口ごとに足す。**1kg 段の定額なので、個口を分ければその数だけ乗る。
     return parcelGross.reduce(
       (a, g, i) => a + each[i]!.yen + markupYen(rate, ctx.cc, g), 0);
   };
-  const method: PostalMethod = wanted === 'cheapest'
+  // **宅配便（P2）。**`svc.courier` は現時点でどの社も未設定——データが入るまで
+  // このループは常に空を返し、既存の挙動（0e）を1円も変えない。データが入っても
+  // 「値段が付かない国」は `courierPriceFor` が null を返すのでここで自然に落ちる
+  // （0円にしない。`courierPriceFor` のコメント参照）。
+  const priceCourier = (m: CourierMethod): number | null => {
+    const rate = svc.courier?.[m];
+    if (!rate) return null;
+    if (rate.unavailableIn?.includes(ctx.cc)) return null;
+    if (rate.priceCapJpy != null && itemsYen > rate.priceCapJpy) return null;
+    const each = parcelGross.map((g) => courierPriceFor(rate, ctx.cc, g, parcelDims));
+    if (each.some((e) => e == null)) return null;
+    return each.reduce((a: number, e) => a + (e as number), 0);
+  };
+  const COURIER_METHOD_IDS: readonly CourierMethod[] =
+    ['courier-fedex', 'courier-ups', 'courier-dhl', 'courier-sf-express', 'courier-ecms'];
+  const method: PostalMethod | CourierMethod = wanted === 'cheapest'
     // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
-    ? (POSTAL_METHODS
-        .map((s) => ({ id: s.id, yen: priceAll(s.id) }))
-        .filter((x): x is { id: PostalMethod; yen: number } => x.yen != null)
+    // **郵便と宅配便を同じ土俵で比べる**——「宅配便は最終価格を正とする」という
+    // オーナー決定（2026-09-11）により、宅配便も総額としては郵便の各方式と対等。
+    ? ([
+        ...POSTAL_METHODS.map((s) => ({ id: s.id as PostalMethod | CourierMethod, yen: priceAll(s.id) })),
+        ...COURIER_METHOD_IDS.map((id) => ({ id: id as PostalMethod | CourierMethod, yen: priceCourier(id) })),
+      ]
+        .filter((x): x is { id: PostalMethod | CourierMethod; yen: number } => x.yen != null)
         .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0]?.id ?? 'ems')
     : wanted;
-  const spec = POSTAL_METHODS.find((s) => s.id === method)!;
-  const rate = svc.postage[method];
+  const isCourier = COURIER_METHOD_IDS.includes(method as CourierMethod);
+  const courierRate = isCourier ? svc.courier?.[method as CourierMethod] : undefined;
+  const spec = isCourier
+    // 宅配便は `PostalMethodSpec` の表に無い。ラベルは料金データ自身の `labelRaw`
+    // から作る——各社が法人契約している宅配ブランド名は社ごとに違うので、
+    // 郵便のような共通の日数表は持たない（データが入るまで到達しない分岐）。
+    ? {
+        id: method, label: courierRate?.labelRaw ?? method, days: 'not yet modeled',
+        daysSourceUrl: courierRate?.sourceUrl ?? svc.sourceUrl ?? '', daysTier: 'none' as Tier,
+        tracked: true,
+      }
+    : POSTAL_METHODS.find((s) => s.id === method)!;
+  const rate = isCourier ? undefined : svc.postage[method as PostalMethod];
   // **方式ごとの地帯を使う。**EMS は米国が第4地帯で、他方式は第3地帯。
   // ここが `POSTAL_ZONE` 固定だったので、米国の EMS 行は第4地帯の額を出しながら
-  // 「zone 3」と書いていた。
-  const zone = zoneFor(method, ctx.cc);
+  // 「zone 3」と書いていた。**宅配便には地帯の概念が無い**（最終価格を国別に直接
+  // 持つので、地帯で束ねる必要がない）。
+  const zone = isCourier ? null : zoneFor(method as PostalMethod, ctx.cc);
 
   // **表の外の重量では料金を持っていない。丸めない。**
   // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
-  const each = parcelGross.map((g) => postageFor(method, ctx.cc, g));
-  const overMax = each.some((e) => e == null);
+  // 宅配便はここに当たらない（`courierPriceFor` が帯の外を自分で null にする）。
+  const each = isCourier ? [] : parcelGross.map((g) => postageFor(method as PostalMethod, ctx.cc, g));
+  const overMax = !isCourier && each.some((e) => e == null);
   // F30: 商品価格の上限超は「重すぎる」でも「売っていない」でもなく「選べない」。
-  const priceCapExceeded = !!rate?.priceCapJpy && itemsYen > rate.priceCapJpy;
-  const shipYen: number | null = priceAll(method);
+  const priceCapExceeded = !!(rate ?? courierRate)?.priceCapJpy
+    && itemsYen > (rate ?? courierRate)!.priceCapJpy!;
+  const shipYen: number | null = isCourier
+    ? priceCourier(method as CourierMethod)
+    : priceAll(method as PostalMethod);
   // **「その社が売っていない」「重すぎる」「商品価格が高すぎる」は違う理由なので、書き分ける。**
-  const stepLabel = !rate
-    ? `${svc.name} does not offer this method`
-    : rate.unavailableIn?.includes(ctx.cc)
-      ? `${svc.name} does not ship this method to ${COUNTRIES[ctx.cc].name}`
-    : priceCapExceeded
-      ? `not eligible above ¥${rate.priceCapJpy!.toLocaleString('en-US')} declared value`
-    : overMax
-      ? `over ${formatStep(maxGramsFor(method, ctx.cc))} — outside this method's table`
-      : split
-        ? `${plural(parcels, 'parcel')}`
-        : `1 parcel, ${formatStep(each[0]!.stepGrams)} step`;
+  const stepLabel = isCourier
+    ? (!courierRate
+      ? `${svc.name} does not offer this courier`
+      : courierRate.unavailableIn?.includes(ctx.cc)
+        ? `${svc.name} does not ship this courier to ${COUNTRIES[ctx.cc].name}`
+      : priceCapExceeded
+        ? `not eligible above ¥${courierRate.priceCapJpy!.toLocaleString('en-US')} declared value`
+      : shipYen == null
+        // **未価格。0円にしない。**「大きすぎる／重すぎる」ではなく「まだ調べていない」。
+        ? `${svc.name} has not priced this courier for ${COUNTRIES[ctx.cc].name} yet`
+        : split ? `${plural(parcels, 'parcel')}` : '1 parcel')
+    : (!rate
+      ? `${svc.name} does not offer this method`
+      : rate.unavailableIn?.includes(ctx.cc)
+        ? `${svc.name} does not ship this method to ${COUNTRIES[ctx.cc].name}`
+      : priceCapExceeded
+        ? `not eligible above ¥${rate.priceCapJpy!.toLocaleString('en-US')} declared value`
+      // P2 3: 寸法による「送れない」。額ではなく可否——理由が違うので文言も分ける。
+      : dimensionsExceedCube(method as PostalMethod, parcelDims)
+        ? `over our assumed ${Math.max(parcelDims.lengthCm, parcelDims.widthCm, parcelDims.heightCm)}cm`
+          + " box side — outside this method's size limit (estimate)"
+      : overMax
+        ? `over ${formatStep(maxGramsFor(method as PostalMethod, ctx.cc))} — outside this method's table`
+        : split
+          ? `${plural(parcels, 'parcel')}`
+          : `1 parcel, ${formatStep(each[0]!.stepGrams)} step`);
 
   const priceEstimated = items.some((i) => i.priceTier === 'estimate');
   const lines: Line[] = [
@@ -858,20 +917,30 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 何も言わなくなっていた（docs/audit/logic.md C4）。重量の確度は Items 行の重量 tier
   // と `Row.approximate` が持つ。**段に入れた重量が梱包後の仮定（×1.2 + 300 g）である
   // ことは、この行の note に必ず書く**（tier からは読めないので、文字で書く）。
-  const shipTier: Tier = shipYen == null ? 'none' : rate!.tier;
-  const markupNote = shipYen == null ? ''
-    : markupYen(rate!, ctx.cc, parcelGross[0]!) !== 0
-      ? `, +¥${markupYen(rate!, ctx.cc, parcelGross[0]!).toLocaleString('en-US')}`
-        + ` per parcel over the published rate`
-    : ', published rate, no markup';
+  const shipTier: Tier = shipYen == null ? 'none' : (rate ?? courierRate)!.tier;
+  // **宅配便は最終価格を正とする。分解しない**（オーナー確定 2026-09-11）——
+  // 公表額への上乗せという概念が無いので `markupYen` を呼ばない。
+  const markupNote = isCourier
+    ? (shipYen == null ? '' : ', carrier\'s final price, not broken into a published rate + markup')
+    : (shipYen == null ? ''
+      : markupYen(rate!, ctx.cc, parcelGross[0]!) !== 0
+        ? `, +¥${markupYen(rate!, ctx.cc, parcelGross[0]!).toLocaleString('en-US')}`
+          + ` per parcel over the published rate`
+      : ', published rate, no markup');
   // **速さと追跡を額と同じ行に出す。**船便は 3kg で EMS より ¥5,100 安いが 1〜3 か月かかる。
   // 額だけ出して日数を出さなければ、安いほうを選ばせる誤誘導になる。
+  const boxNote = isCourier && shipYen != null ? `, ${DEFAULT_PARCEL_DIMENSIONS_NOTE}` : '';
   lines.push(L('intl-shipping', `${spec.label} to ${COUNTRIES[ctx.cc].name}`, shipYen,
-    `zone ${zone}, ${stepLabel}`
+    (isCourier ? stepLabel : `zone ${zone}, ${stepLabel}`)
     + (shipYen == null ? '' : ' (weight after our packing allowance)')
     + markupNote
+    + boxNote
     + (shipYen == null ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
-    shipTier, method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL));
+    isCourier && shipYen != null
+      ? (TIER_STRENGTH[shipTier] < TIER_STRENGTH[DEFAULT_PARCEL_DIMENSIONS_TIER]
+        ? shipTier : DEFAULT_PARCEL_DIMENSIONS_TIER)
+      : shipTier,
+    isCourier ? (courierRate?.sourceUrl ?? svc.sourceUrl) : (method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL)));
 
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
   lines.push(exportClearanceLine(itemsYen));
@@ -970,6 +1039,13 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     // 国際送料が取れていない行は、取れている行と総額を比べられない。
     comparable: shipYen != null,
     notComparableReason: shipYen != null ? null
+      : isCourier
+        // **未価格の宅配便は「比較不能」として落とす。0円にも安く見せもしない**
+        // （P2 4、これが最重要）。データが無い間は `wanted: 'cheapest'` がこの方式を
+        // 選ばないので、この分岐は利用者が明示的に宅配便を指定したときだけ到達する
+        // （このPRではそのUIは無いので、今日は到達しない）。
+        ? `${svc.name} has not priced this courier for ${COUNTRIES[ctx.cc].name} yet`
+          + ' — we do not invent a price for it'
       : !rate
         ? `${svc.name} does not sell ${spec.label}, so there is no total to compare`
       : rate.unavailableIn?.includes(ctx.cc)
@@ -978,7 +1054,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : priceCapExceeded
         ? `${spec.label} can only be selected under ¥${rate.priceCapJpy!.toLocaleString('en-US')}`
           + ' declared value at this company, and this cart is over that'
-        : `${spec.label} has no published rate above ${formatStep(maxGramsFor(method, ctx.cc))}`
+      : dimensionsExceedCube(method as PostalMethod, parcelDims)
+        ? `${spec.label} has no published rate for our assumed box size — outside this method's`
+          + ' size limit (estimate)'
+        : `${spec.label} has no published rate above ${formatStep(maxGramsFor(method as PostalMethod, ctx.cc))}`
           + ' in our table, so this total is missing its largest line',
   };
 }
