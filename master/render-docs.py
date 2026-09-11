@@ -10,12 +10,31 @@
 差し替えるのは次のマーカーで挟まれた範囲だけ。それ以外の散文には触らない。
   <!-- generated:BEGIN <name> --> … <!-- generated:END <name> -->
 """
-import json, pathlib, re, sys
+import json, pathlib, re, subprocess, sys
 
 ROOT = pathlib.Path(__file__).resolve().parent
-DOC = ROOT.parent / "docs" / "MASTER.md"
+REPO = ROOT.parent
+DOC = REPO / "docs" / "MASTER.md"
+README = REPO / "README.md"
 fees = json.loads((ROOT / "fees.json").read_text(encoding="utf-8"))
 customs = json.loads((ROOT / "customs.json").read_text(encoding="utf-8"))
+
+_measured_cache = None
+
+def measured():
+    """`src/app/sources/measured.ts` の値を JSON で取る。**ここでは値を書き写さない**
+    ——`scripts/measured-dump.ts` が TypeScript 側の export をそのまま JSON にして
+    標準出力へ流すだけで、Python 側は受け取るだけ。書き写すと README がまた
+    静かにずれる（PR #34 で起きたのと同じ形）。"""
+    global _measured_cache
+    if _measured_cache is not None:
+        return _measured_cache
+    r = subprocess.run(["npx", "tsx", "scripts/measured-dump.ts"],
+                       cwd=REPO, capture_output=True, text=True)
+    if r.returncode != 0:
+        print("NG: scripts/measured-dump.ts が失敗した\n" + r.stdout + r.stderr); sys.exit(1)
+    _measured_cache = json.loads(r.stdout)
+    return _measured_cache
 
 def money(rule):
     a, cur = rule.get("amount"), rule.get("currency", "")
@@ -113,20 +132,61 @@ def validator_output():
 BLOCKS = {"counts": counts, "display": display_table, "countries": country_table,
           "findings": findings, "validator": validator_output}
 
-def main():
-    doc = DOC.read_text(encoding="utf-8")
+TIER_LABEL = {"fixed": "公表の料金表", "estimate": "推定", "unverified": "二次情報"}
+
+def measured_basket():
+    """README 冒頭の測定条件と確度別内訳。生成元は `measured()`（= measured.ts）。
+    `what`（英語の説明文、/sources の画面文言）はここでは出さない——README は
+    日本語の散文で説明を持つので、数字だけをここに置く。"""
+    m = measured()
+    b = m["MEASURED_BASKET"]
+    total = sum(s["yen"] for s in m["CONFIDENCE_SPLIT"])
+    out = [f"測定条件：{b['units']} 点 × ¥{b['priceYen']:,}・{b['weightG']} g/点・"
+           f"{b['site']}、宛先 {b['country']}。1 位の行の合計 ¥{total:,}。", "",
+           "| 確度 | 金額 | 割合 |", "|---|---:|---:|"]
+    for s in m["CONFIDENCE_SPLIT"]:
+        out.append(f"| {TIER_LABEL.get(s['tier'], s['tier'])} | ¥{s['yen']:,} | {s['share']} |")
+    gb = m["GB_SPLIT"]
+    out.append("")
+    out.append(f"同じ条件で宛先だけ GB にすると、公表側 {gb['publishedShare']} / 推定側 {gb['inferredShare']}。")
+    return "\n".join(out)
+
+def weight_rank():
+    """1 位が入れ替わる重量（`CROSSOVER_G`）と、既定の推定重量での国別 `rankStable`
+    （`RANK_STABILITY`）。どちらも measured.ts の値そのもの。"""
+    m = measured()
+    out = ["| 点数 | 1 位が入れ替わる重量 |", "|---:|---:|"]
+    for units, at in sorted(m["CROSSOVER_G"].items(), key=lambda kv: int(kv[0])):
+        out.append(f"| {units} | {at:,} g |")
+    out.append("")
+    out.append("| 国 | `rankStable` | 動かない1位 |")
+    out.append("|---|---|---|")
+    for r in m["RANK_STABILITY"]:
+        out.append(f"| {r['country']} | {'true' if r['rankStable'] else 'false'} | "
+                    f"{r['staysCheapest'] or '—'} |")
+    return "\n".join(out)
+
+README_BLOCKS = {"measured-basket": measured_basket, "weight-rank": weight_rank}
+
+def render(doc_path, blocks, doc_label):
+    doc = doc_path.read_text(encoding="utf-8")
     new = doc
-    for name, fn in BLOCKS.items():
+    for name, fn in blocks.items():
         pat = re.compile(rf"(<!-- generated:BEGIN {name} -->\n)(?:.*?\n)?(<!-- generated:END {name} -->)", re.S)
         if not pat.search(new):
-            print(f"NG: マーカー generated:{name} が {DOC} に無い"); sys.exit(1)
+            print(f"NG: マーカー generated:{name} が {doc_path} に無い"); sys.exit(1)
         new = pat.sub(lambda m: m.group(1) + fn() + "\n" + m.group(2), new)
     if "--check" in sys.argv:
         if new != doc:
-            print("NG: docs/MASTER.md が JSON からずれている。`python3 master/render-docs.py` を実行すること")
+            print(f"NG: {doc_label} がマスタ/実測からずれている。`python3 master/render-docs.py` を実行すること")
             sys.exit(1)
-        print("OK: docs/MASTER.md は JSON と一致している"); return
-    DOC.write_text(new, encoding="utf-8")
-    print(f"OK: {DOC.name} の生成節 {len(BLOCKS)} 個を書き戻した")
+        print(f"OK: {doc_label} はマスタ/実測と一致している")
+        return
+    doc_path.write_text(new, encoding="utf-8")
+    print(f"OK: {doc_path.name} の生成節 {len(blocks)} 個を書き戻した")
+
+def main():
+    render(DOC, BLOCKS, "docs/MASTER.md")
+    render(README, README_BLOCKS, "README.md")
 
 main()

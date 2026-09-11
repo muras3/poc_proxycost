@@ -13,19 +13,49 @@
 | 約束しない | **実請求と一致すること**／**重量を外しても順位が動かないこと** |
 
 **総額を可能な限り正確に出して順位づけする**、がこのプロダクトの定義。
-2026-09-07 実測（5 点 × ¥3,000・600 g/点・ヤフオク、7 カ国それぞれの 1 位の行、合計 ¥263,981）で、
-金額まで公表の料金表から来ているのは **84%**（¥221,079）。残りは推定 14%（¥37,974）と
-二次情報 2%（¥4,928）。国別の公表側の割合は US 84 / GB 86 / DE 81 / FR 84 / AU 88 / CA 83 / SG 79%。
+実測の条件と、金額のうちどこまでが公表の料金表から来ているかは次の通り
+（生成元は `src/app/sources/measured.ts`。手で数字を書かない——書くとまたずれる）。
+
+<!-- generated:BEGIN measured-basket -->
+測定条件：5 点 × ¥3,000・600 g/点・yahoo-auctions、宛先 US。1 位の行の合計 ¥37,075。
+
+| 確度 | 金額 | 割合 |
+|---|---:|---:|
+| 公表の料金表 | ¥31,200 | 84% |
+| 推定 | ¥4,000 | 11% |
+| 二次情報 | ¥1,875 | 5% |
+
+同じ条件で宛先だけ GB にすると、公表側 86% / 推定側 14%。
+<!-- generated:END measured-basket -->
 
 **実額との一致は約束しない。**代行 5 社の費目を実請求と突き合わせた検証は **0 件**
 （`docs/TODO-NEXT.md` §「残っている差分」）。
 
 **順位も重量の推定に対して頑健ではない。**「1/3〜5 倍に外しても順位は 1 つも動かなかった」と
-以前ここに書いていたのは 2026-09-06 の再測定で否定された。1 位が入れ替わる重量は
-2 点 1,150 g / 3 点 1,325 g / 5 点 1,625 g（米国・¥3,000/点・ヤフオク）で、既定の推定値
-5 点 × 600 g では **GB・DE・FR・CA の4カ国で `rankStable=false`**（US・AU・SG の3カ国は
-`true`——US は FROM JAPAN が、AU と SG は Neokyo が、重量を ×1/3〜×3 に振っても最安のまま
-動かない）。半数以上の国で不安定なのは変わらないので、この節の見出しは維持する。
+以前ここに書いていたのは 2026-09-06 の再測定で否定された。1 位が入れ替わる重量と、
+既定の推定値（5 点 × 600 g）での国別 `rankStable` は次の通り
+（米国・¥3,000/点・ヤフオクで測った重量を、現象の見える国に移して確認している。
+詳細は `docs/DESIGN-NOTES.md`）。
+
+<!-- generated:BEGIN weight-rank -->
+| 点数 | 1 位が入れ替わる重量 |
+|---:|---:|
+| 2 | 1,150 g |
+| 3 | 1,325 g |
+| 5 | 1,625 g |
+
+| 国 | `rankStable` | 動かない1位 |
+|---|---|---|
+| US | true | FROM JAPAN |
+| GB | false | — |
+| DE | false | — |
+| FR | false | — |
+| AU | true | Neokyo |
+| CA | false | — |
+| SG | true | Neokyo |
+<!-- generated:END weight-rank -->
+
+半数以上の国で不安定なのは変わらないので、この節の見出しは維持する。
 だから画面は `rankStable` をそのまま出す。
 
 **ここには以前「7 カ国すべてで `rankStable=false`」と書いていた。**それは間違いだった。
@@ -67,9 +97,9 @@ BRAVE_API_KEY=... npm run dev
 |---|---|
 | `npm run lint` | ESLint（flat config） |
 | `npm run typecheck` | `tsc --noEmit`。strict + `noUncheckedIndexedAccess` |
-| `npm test` | Vitest。539 件（2026-09-08 時点） |
+| `npm test` | Vitest |
 | `python3 master/validate.py` | 費目マスタのスキーマ検証＋実請求の再現 |
-| `python3 master/render-docs.py --check` | `docs/MASTER.md` の生成節がマスタとずれていないか |
+| `python3 master/render-docs.py --check` | `docs/MASTER.md` と、この README の生成節（測定値）がマスタ／実測とずれていないか |
 | `npm run build` | Next のプロダクションビルド |
 | `npm run test:e2e` | Playwright（desktop / Pixel 7 の 2 プロジェクト）。**先に `npx playwright install chromium` が要る** |
 
