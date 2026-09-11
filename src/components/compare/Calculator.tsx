@@ -17,6 +17,7 @@ import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
 import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
+import { StorageDaysInput } from './StorageDaysInput';
 import {
   AlcoholInCartNote, LongItemsInCartNote, RestrictedGoodsNote,
 } from './RestrictedGoodsNote';
@@ -29,7 +30,9 @@ import { useCompare, type Draft } from './useCompare';
  * 順位 → 凡例 → 内訳 → 弱点 → 広告の順で、確かな情報ほど上に置く。
  */
 export function Calculator() {
-  const { items, country, province, method, seq, unpriced, result, dispatch } = useCompare();
+  const {
+    items, country, province, method, storageDays, seq, unpriced, result, dispatch,
+  } = useCompare();
   // URL 取得で確定値になった項目の取得日。Item に日付欄が無いのでここで持つ。
   // 追加は必ずクライアント側の操作なので、SSR と食い違わない。
   const [readOn, setReadOn] = useState<Record<string, string>>({});
@@ -67,6 +70,17 @@ export function Calculator() {
           <CountryPicker
             value={country}
             onChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
+          />
+          {/* **保管日数も行き先・方式と同じ格の入力**（F21、0d）。既定45日は我々の仮定
+              なので、`tier: estimate` と同じ琥珀色で示す（`StorageDaysInput` のコメント）。
+              **`MethodPicker` より前に置く。**`MethodPicker` の `<select>` は選択肢の文言が
+              長く、モバイル幅ではそれだけで1行を使い切る（`Ship to` の隣には並ばない）。
+              コンパクトな `StorageDaysInput` を先に置くことで `Ship to` と同じ行に収まり、
+              モバイルで折り返す行数が増えない（`e2e/parcel.spec.ts` の「箱がビューポートに
+              収まる」を保つ。並び順を変えただけで、新しいデザインは発明していない）。 */}
+          <StorageDaysInput
+            value={storageDays}
+            onChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
           />
           {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
               （Neokyo 原文「please select ... as the shipment method」）。

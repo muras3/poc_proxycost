@@ -57,6 +57,38 @@ export interface DepositFee {
   note: string;
 }
 
+/**
+ * 保管超過（F21）。**総額の行**（`compare.ts` の `storageLine`）。
+ *
+ * 無料期間・上限日数は5社で違う（Buyee 30日／Neokyo 45日／他3社60日、上限は
+ * Buyee・ZenMarket 90日・Jauce 120日・FROM JAPAN は無料期間そのものが上限）。
+ * `docs/FEE-ITEMS.md` §4 オーナー決定・§5 R2/R3、`master/fees.json` F20/F21 が原文。
+ *
+ * **`rate` が額の姿を持ち、`tier`・確定/未取得の判定は `compare.ts` 側で
+ * amount の有無から決める**（Jauce だけ無料期間を超えると額を出せない）。
+ */
+export interface StorageFee {
+  /** 保管無料期間（日）。Neokyo は「商品45日／荷物7日」のうち商品側で測る（R3）。 */
+  freeDays: number;
+  /** 保管日数の上限。これを超えると商品を保管され続けられない（放棄・廃棄）。 */
+  maxDays: number;
+  /** 上限を超えたときに何が起きるか。画面の note にそのまま使う一文（英語）。 */
+  maxDaysConsequence: string;
+  rate:
+    /** Buyee。個口の梱包後重量で日額が変わる。 */
+    | { kind: 'per-day-per-parcel-by-weight'; bands: readonly { maxG: number; yen: number }[] }
+    /** ZenMarket。点数に比例。 */
+    | { kind: 'per-day-per-item'; yen: number }
+    /** Neokyo。注文ごと・週単位。寸法は入力に無いので最小段（small）で近似する。 */
+    | { kind: 'per-week-per-order'; yen: number; unpaidWeeksLimit: number }
+    /** FROM JAPAN。有料延長がそもそも存在しない。 */
+    | { kind: 'none' }
+    /** Jauce。月額はサイズ・価値で決まり非公表。参考額2点は点推定に使わない（R2）。 */
+    | { kind: 'unpublished' };
+  /** 額が書いてあるページ。社の料金ページと違うことがある（Neokyo は /en/storage）。 */
+  sourceUrl: string;
+}
+
 export interface PackingFee {
   /** 個口あたりの基本料。 */
   perParcelYen: number;
@@ -232,6 +264,8 @@ export interface Service {
    * **EMS は5社とも1円まで一致した**（全社 ¥3,400 = 公表額）ので、そこだけ `fixed`。
    */
   postage: Partial<Record<PostalMethod, PostageRate>>;
+  /** F21。総額の行（`compare.ts` の `storageLine`）。5社とも持つ。 */
+  storage: StorageFee;
   optional: OptionalFee[];
   /**
    * **条件がこの計算機では成立しない、既知の費目。**マスタに `A_confirmed` で値が
@@ -364,6 +398,21 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // https://neokyo.com/en/storage（2026-09-07 取得、F21 2026-09-11 総額化）。原文の表:
+    //   Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost
+    //   Small 350 yen / 210 yen ・ Average 700 yen / 490 yen ・ Large 1400 yen / 980 yen
+    // 「45 days for items and 7 days for packages」「up to a limit of six unpaid weeks」。
+    // **寸法は入力に無い**ので一番小さい段を出し、幅を note に書く（実勢はこれより高い）。
+    // **無料期間は「商品45日」で測る**（原文が items/packages の2つを並べており、貯めている
+    // 対象は商品だから ── R3、docs/FEE-ITEMS.md §5）。上限は「未払い6週まで」を6週ぶんの
+    // 日数（45+42=87日）として頭打ちにする（超過分を計上すると存在しない請求を出す）。
+    storage: {
+      freeDays: 45,
+      maxDays: 45 + 6 * 7,
+      maxDaysConsequence: 'unpaid storage fees are limited to six weeks — contact Neokyo directly beyond that',
+      rate: { kind: 'per-week-per-order', yen: 350, unpaidWeeksLimit: 6 },
+      sourceUrl: 'https://neokyo.com/en/storage',
+    },
     optional: [
       // 原文:「You will be charged 1000¥ **plus the price of the packing fee**
       // (Example: 500¥ Packing Fee, 1500¥ Unpacking Fee).」
@@ -374,18 +423,6 @@ export const SERVICES: Service[] = [
         note: '¥1,000 plus the packing fee for the same parcel', tier: 'fixed',
       },
       { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
-      // https://neokyo.com/en/storage（2026-09-07 取得）。原文の表:
-      //   Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost
-      //   Small 350 yen / 210 yen ・ Average 700 yen / 490 yen ・ Large 1400 yen / 980 yen
-      // 「45 days for items and 7 days for packages」「up to a limit of six unpaid weeks」。
-      // **寸法は入力に無い**ので一番小さい段を出し、幅を note に書く（実勢はこれより高い）。
-      {
-        key: 'storage', label: 'Storage, per week after 45 free days', amountYen: 350,
-        sourceUrl: 'https://neokyo.com/en/storage',
-        note: 'per order: ¥350 small / ¥700 average / ¥1,400 large — parcels ¥210 / ¥490 / ¥980.'
-          + ' We do not know your parcel size, so this is the smallest step',
-        tier: 'fixed',
-      },
     ],
     // 豪州の GST は自社で徴収すると公式に書いている（確認日 2026-09-06）。原文:
     // 「effective March 24th, 2023, we will be charging 10% of the declared value for
@@ -496,19 +533,20 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // 料金ページ原文（Arquivo.pt 2025-11-27 の写し、2026-09-07 読了、F21 2026-09-11 総額化）:
+    //   「Storage Over 60 Days: 50 JPY a day per item.」「free for 60 days … a fee of 50 JPY
+    //   will start to be taken for each item per day」「In total (including the free period),
+    //   you can keep your items at our warehouse for 90 days.」**点ごと**なので点数で出せる。
+    storage: {
+      freeDays: 60,
+      maxDays: 90,
+      maxDaysConsequence: 'items are discarded once the 90-day maximum storage period is reached',
+      rate: { kind: 'per-day-per-item', yen: 50 },
+      sourceUrl: 'https://zenmarket.jp/en/fees.aspx',
+    },
     optional: [
       { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
       { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
-      // 料金ページ原文（Arquivo.pt 2025-11-27 の写し、2026-09-07 読了）:
-      //   「Storage Over 60 Days: 50 JPY a day per item.」
-      // help の同じ説明:「free for 60 days … a fee of 50 JPY will start to be taken for
-      //   each item per day」。**点ごと**なので点数で出せる。
-      {
-        key: 'storage', label: 'Storage, per day after 60 free days', amountYen: 50,
-        amountFor: (ctx) => 50 * ctx.units,
-        note: '¥50 a day per item, counted from the day it arrived at the warehouse',
-        tier: 'fixed',
-      },
     ],
     // 料金ページの「To Australian customers」（確認日 2026-09-06、直アクセスは 403 なので
     // r.jina.ai 経由で本文を取得）。原文:「we are required to collect 10% GST for all parcels
@@ -630,6 +668,19 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // 翻訳ファイル原文（2026-09-07 読了、F21 2026-09-11 総額化）: help_fee_390
+    // 「Free storage (60 days)」、help_logistics_110「If an item is not instructed for
+    // shipping within 60 days, it will be discarded. The storage period cannot be extended.」
+    // → **延長そのものが無いので、超過料金は「未取得」ではなく存在しない。**
+    // 分かっている 0 は 0 と書く（分かっていない 0 は書かない、の裏返し）。60日が無料期間
+    // であり同時に上限（それを超えると廃棄）でもあるので、freeDays と maxDays が同じ値になる。
+    storage: {
+      freeDays: 60,
+      maxDays: 60,
+      maxDaysConsequence: 'items not shipped within 60 days are discarded — there is no paid extension',
+      rate: { kind: 'none' },
+      sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt',
+    },
     optional: [
       // **Product Protection Plan をここに置いてはいけない。** 原文
       // title_serviceRule_670:「Members agree that all purchased items will be covered by
@@ -651,16 +702,6 @@ export const SERVICES: Service[] = [
         note: 'actual cost — charged when FROM JAPAN judges an item too difficult to pack itself,'
           + ' and the amount is never published',
         tier: 'none',
-      },
-      // 翻訳ファイル原文（2026-09-07 読了）: help_fee_390「Free storage (60 days)」、
-      // help_logistics_110「If an item is not instructed for shipping within 60 days, it
-      // will be discarded. The storage period cannot be extended.」
-      // → **延長そのものが無いので、超過料金は「未取得」ではなく存在しない。**
-      // 分かっている 0 は 0 と書く（分かっていない 0 は書かない、の裏返し）。
-      {
-        key: 'storage', label: 'Storage after 60 free days', amountYen: 0,
-        note: 'there is no paid extension — items not shipped within 60 days are discarded',
-        tier: 'fixed',
       },
     ],
     // F27（`master/fees.json` A_confirmed）。この計算機は宅配便を価格化しておらず、
@@ -752,6 +793,21 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // https://buyee.jp/helpcenter/guide/storage?lang=en（2026-09-07 取得、F21 2026-09-11
+    // 総額化）。原文の表: ～10,000g JPY100 / 1 day、10,001g～20,000g JPY200 / 1 day、
+    // 20,001g～ JPY300 / 1 day。「free for the first 30 days」「Maximum storage period is
+    // 90 days」。**重量帯は個口の重量で決まる。**我々は梱包後重量を持っているので実額を出せる。
+    // 5社で無料期間が最短（30日）なのは Buyee なので、既定45日ではこの社だけに課金が乗る。
+    storage: {
+      freeDays: 30,
+      maxDays: 90,
+      maxDaysConsequence: 'the maximum storage period is 90 days',
+      rate: {
+        kind: 'per-day-per-parcel-by-weight',
+        bands: [{ maxG: 10000, yen: 100 }, { maxG: 20000, yen: 200 }, { maxG: Infinity, yen: 300 }],
+      },
+      sourceUrl: 'https://buyee.jp/helpcenter/guide/storage?lang=en',
+    },
     optional: [
       { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
       { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
@@ -761,20 +817,6 @@ export const SERVICES: Service[] = [
         key: 'photos', label: 'Photo service', amountYen: 300,
         amountFor: (ctx) => 300 * ctx.parcels,
         note: '5 photos per package', tier: 'fixed',
-      },
-      // https://buyee.jp/helpcenter/guide/storage?lang=en（2026-09-07 取得）。原文の表:
-      //   ～10,000g JPY100 / 1 day、10,001g～20,000g JPY200 / 1 day、20,001g～ JPY300 / 1 day
-      //   「free for the first 30 days」「Maximum storage period is 90 days」
-      // **重量帯は個口の重量で決まる。**我々は梱包後重量を持っているので実額を出せる。
-      // 5社で無料期間が最短（30日）なのは Buyee なので、ここを空欄にすると
-      // 一番効く社の費目だけが表から消える。
-      {
-        key: 'storage', label: 'Storage, per day after 30 free days', amountYen: 100,
-        amountFor: (ctx) => ctx.parcelGrossG.reduce(
-          (a, g) => a + (g <= 10000 ? 100 : g <= 20000 ? 200 : 300), 0,
-        ),
-        note: '¥100 a day up to 10 kg, ¥200 to 20 kg, ¥300 above — per parcel, max 90 days',
-        tier: 'fixed',
       },
     ],
     // 豪州（確認日 2026-09-06）:「Please pay the 10% GST along with the total price of the
@@ -860,6 +902,22 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // 原文（japan_auction_detail、master/fees.json F20/F21/jauce の checked_on 2026-09-11
+    // で再取得、F21 2026-09-11 総額化）:「We store them in our warehouse free for 60 days …
+    // After the free period elapses we will charge a monthly storage fee up to 120 days.」
+    // 「Storage fees depend on the item size and value. Very roughly, a music CD would cost
+    // around 200yen/month and a guitar around 700yen/month.」「Maximum storage time … is
+    // 120 days. Unclaimed items are discarded at the end of 120 days.」
+    // **月額は一律ではなくサイズ・価値で決まると公式が明記。**参考額2点は「Very roughly」の
+    // 前置き付きで料金表ではなく、¥700 は上限ではない（大きい・高価な物はもっと高い可能性が
+    // ある——R2、docs/FEE-ITEMS.md §5）。だから61日目以降は額を出さず null にする。
+    storage: {
+      freeDays: 60,
+      maxDays: 120,
+      maxDaysConsequence: 'items not claimed within 120 days are considered abandoned and may be disposed of',
+      rate: { kind: 'unpublished' },
+      sourceUrl: 'https://www.jauce.com/japan_auction_detail',
+    },
     optional: [
       // 以下すべて japan_auction_detail の原文（2026-09-07 取得）。
       // 「Fragile Packing : JPY 600 per package + JPY 240/kg」。既定の Smart Packing
@@ -901,16 +959,6 @@ export const SERVICES: Service[] = [
         key: 'premium-insurance', label: 'Premium insurance', amountYen: null,
         note: '1.9% of "the total amount" — the page does not say which total, so we do not'
           + ' put a number on it',
-        tier: 'none',
-      },
-      // 原文（japan_auction_detail、2026-09-07 取得）:「We store them in our warehouse
-      // free for 60 days … After the free period elapses we will charge a monthly storage
-      // fee up to 120 days.」**額はページのどこにも無い**（/storage も同じ文面）。
-      // 0 と書けば無料という嘘、行ごと省けば費目が無いという嘘。だから null で出す。
-      {
-        key: 'storage', label: 'Storage, per month after 60 free days', amountYen: null,
-        note: 'the company does not publish the amount — free for 60 days, then a monthly'
-          + ' fee up to 120 days, after which unclaimed items are discarded',
         tier: 'none',
       },
     ],

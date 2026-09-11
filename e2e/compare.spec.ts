@@ -374,6 +374,10 @@ test('23. a tie below the top shares its rank too, and does not move the winner'
   // 日本郵便を売っていないので、米国ではこの同額そのものが起きない。
   await gotoCompare(page);
   await page.getByLabel('Ship to').selectOption('DE');
+  // 0d: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が乗る。
+  // ここで検査しているのは同額・同順位の仕組みであって保管日数の効きではないので、
+  // 両社とも無料期間の内側になる30日に固定する（Buyee ¥0・Neokyo ¥0）。
+  await page.getByLabel('Days kept in the warehouse before shipping').fill('30');
   await emptyCart(page);
   await addByHand(page, TIE, 12800);
   await openCart(page);
@@ -442,6 +446,11 @@ async function tellWeight(page: Page, title: string, gramsValue: number): Promis
 test('7. seller-paid shipping takes the same domestic shipping off every row — the cheapest row does not move, a middle row does', async ({ page }) => {
   await gotoCompare(page);
   await openCart(page);
+
+  // 0d: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が乗る。
+  // このテストが検査しているのは送料込み出品の効きであって保管日数の効きではないので、
+  // 無料期間の内側になる30日に固定する（Buyee ¥0）。
+  await page.getByLabel('Days kept in the warehouse before shipping').fill('30');
 
   // 例の2点を捨てて、実測と同じカートを手で組む。
   await emptyCart(page);
@@ -765,6 +774,26 @@ test('18b. the shipping method is a control, and picking one moves every total',
   for (const c of ['FedEx', 'DHL', 'UPS']) {
     expect(options.join(' | '), `${c} が選択肢に居る`).not.toContain(c);
   }
+});
+
+test('18d. storage days shows the 45-day default and changing it recomputes every total (0d)', async ({ page }) => {
+  // **保管日数は既定 45 日で画面に見えていること**（隠して通さない）。既定45日では
+  // 無料期間30日の Buyee だけに課金が乗る（他4社は無料期間の内側で ¥0）。
+  await gotoCompare(page);
+  const days = page.getByLabel('Days kept in the warehouse before shipping');
+  await expect(days).toHaveCount(1);
+  await expect(days).toHaveValue('45');
+
+  const before = new Map(priced(await readRanking(page)).map((r) => [`${r.name}/${r.variant}`, r.total]));
+  expect(before.size).toBeGreaterThan(0);
+
+  // 30日に変えると、無料期間30日のBuyeeの保管料が消えて安くなる。
+  await days.fill('30');
+  await expect.poll(async () => {
+    const rows = priced(await readRanking(page));
+    const buyee = rows.find((r) => r.name === 'Buyee' && r.variant === 'default');
+    return buyee?.total;
+  }).toBeLessThan(before.get('Buyee/default')!);
 });
 
 test('18c. a method too small for the parcel marks every row not comparable, it does not make them cheap', async ({ page }) => {
