@@ -16,7 +16,40 @@ export type PostalMethod =
   | 'parcel-air'
   | 'parcel-surface';
 
+/**
+ * 宅配便の識別子（P2、オーナー確定 2026-09-11）。**`PostalMethod` とは別の軸。**
+ *
+ * `PostalMethod` の3条件（地帯別公表表・郵便通関・実重量課金）を満たさないので
+ * 混ぜない（`postage.ts` 冒頭のコメント参照）。だが「最終価格を正とする」
+ * （分解しない・`MeasuredPostageRate`）という別の扱いで価格化できる、というのが
+ * このPRで足す器。**このPR自体はどの社にもデータを入れない**——並行作業者が
+ * `master/courier-rates.json` を取っている（`docs/audit/o2-courier-2026-09-08.md`
+ * の便ID一覧に対応）。データが入るまで、この型に値は存在しても選ばれない。
+ */
+export type CourierMethod =
+  | 'courier-fedex'
+  | 'courier-ups'
+  | 'courier-dhl'
+  | 'courier-sf-express'
+  | 'courier-ecms';
+
 export type CountryCode = 'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG';
+
+/**
+ * 個口の寸法（cm）。**P2 2a。**箱は仮定する——既に梱包後重量を
+ * `round(net×1.2+300)` と仮定しているのと同じ性質の仮定（`compare.ts` の
+ * `grossG` 参照）。`postage.ts` の `DEFAULT_PARCEL_DIMENSIONS_CM` を見よ。
+ *
+ * **日本郵便の計算にこれを持ち込まない。**日本郵便4方式は寸法に一切依存しない
+ * ことが実測済み（`docs/audit/o2-courier-2026-09-08.md` §2）。使うのは
+ * (a) 日本郵便の「寸法による送れない」判定（額ではなく可否。同§2）と
+ * (b) 宅配便の容積重量の計算（同§5）の2箇所だけ。
+ */
+export interface BoxDimensionsCm {
+  lengthCm: number;
+  widthCm: number;
+  heightCm: number;
+}
 
 /**
  * カナダの州・準州。**州によって国境で取られる税が違う**（CBSA D2-3-6）ので、
@@ -173,8 +206,12 @@ export interface Row {
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;
-  /** この行に実際に使った国際配送の方式。`method: 'cheapest'` のとき行ごとに違いうる。 */
-  method: PostalMethod;
+  /**
+   * この行に実際に使った国際配送の方式。`method: 'cheapest'` のとき行ごとに違いうる。
+   * **`CourierMethod` も入りうる**（P2）——宅配便にデータが入り、かつそれが
+   * 最安のとき。データが無い間はどの行もここに `CourierMethod` を持たない。
+   */
+  method: PostalMethod | CourierMethod;
   /**
    * 1 始まり。総額のみで決まる。**同額なら同じ数字**（競技順位。1-1-3 で次は飛ぶ）。
    * 社名の辞書順のようなタイブレークは使わない（compare.ts の `rank()` に理由）。

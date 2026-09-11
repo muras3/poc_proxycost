@@ -1,5 +1,5 @@
-import type { CountryCode, PostalMethod, Tier } from './types';
-import type { PostageRate } from './services';
+import type { BoxDimensionsCm, CountryCode, PostalMethod, Tier } from './types';
+import type { MarkupPostageRate, MeasuredPostageRate } from './services';
 import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
 
 /**
@@ -208,7 +208,7 @@ export function postageFor(method: PostalMethod, cc: CountryCode, grams: number)
  * ——Jauce の船便は率で見ると 10.0% → 16.1% → 25.5% と動く。
  */
 export function markupYen(
-  rate: PostageRate, cc: CountryCode, grams: number,
+  rate: MarkupPostageRate, cc: CountryCode, grams: number,
 ): number {
   const m = rate.byCountry?.[cc] ?? rate.markup;
   switch (m.kind) {
@@ -231,4 +231,120 @@ export function markupYen(
       return last[1];
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// P2 2a: 寸法の軸。**箱は仮定する。**既に梱包後重量を `round(net×1.2+300)`
+// と仮定しているのと同じ性質の仮定（`compare.ts` の `grossG`）。
+// ---------------------------------------------------------------------------
+
+/**
+ * 既定の個口寸法（cm）。**20×15×10。**
+ *
+ * 根拠: `docs/audit/o2-courier-2026-09-08.md` の `compact` がこの値で、実測の
+ * 基準になっている（§2〜§4 の比較はすべて `blank` / `compact` / `bulky` の
+ * 3水準で行われ、`compact` = 20×15×10 が「送れる側」の基準として使われている）。
+ * さらにコーディネーターが2026-09-11 に集めた外部実測（GPT 引き継ぎ文書）で、
+ * Jauce の実測条件も 600g・**30×20×10** と、この既定に近い箱を使っている——
+ * 桁違いの箱ではないことの追加の裏付けになる。
+ *
+ * **これは確定値ではなく仮定である。**利用者に見せるときは必ずその旨を書く
+ * （tier `estimate`。`DEFAULT_PARCEL_DIMENSIONS_NOTE` を使う）。
+ * 利用者が寸法を入力できるようにするかどうかは、このPRのスコープ外
+ * （`docs/ROADMAP.md` P2、オーナー指示）。
+ */
+export const DEFAULT_PARCEL_DIMENSIONS_CM: BoxDimensionsCm = {
+  lengthCm: 20, widthCm: 15, heightCm: 10,
+};
+export const DEFAULT_PARCEL_DIMENSIONS_TIER: Tier = 'estimate';
+export const DEFAULT_PARCEL_DIMENSIONS_NOTE =
+  'we assume a 20×15×10cm box (ZenMarket\'s own "compact" reference size) — you cannot yet enter'
+  + ' your own dimensions';
+
+/**
+ * **日本郵便の方式が送れる立方体の一辺（cm）の上限。**額ではなく可否
+ * （`docs/audit/o2-courier-2026-09-08.md` §2）。「大きすぎて送れない」を、
+ * 「重すぎて送れない」（`maxGramsFor`）・「売っていない」（`unavailableIn`）と
+ * 並ぶ**別の理由**として持たせる。
+ *
+ * 実測（ZenMarket 2026-09-08、立方体を 5cm 刻みで走査）: 小形包装物
+ * （Airmail 小型、ID 1）は 30cm で送れて 35cm で選択肢から消えた。EMS・
+ * Airmail 標準・船便（ID 0/2/15）は 40cm で送れて 45cm で消えた。
+ * **閾値は「まだ送れた辺」と「消えた辺」の間のどこかとしか分からない**ので、
+ * まだ送れることが確認できた側の値を上限として置く（tier `estimate`。
+ * 5cm 刻みの粗さゆえ、実際の閾値はこの値より高いことがある——安全側＝
+ * 「まだ送れる」と言い過ぎない側に丸めている）。
+ *
+ * `small-packet-surface` は同じ実測で対象になっていない（走査は Airmail
+ * 便のIDのみ）ので、ここに含めない——確認していないものを確認済みとして
+ * 書かない、という開示原則（`FeeModel` 冒頭のコメントと同じ規律）。
+ */
+export const MAX_CUBE_SIDE_CM: Partial<Record<PostalMethod, number>> = {
+  'small-packet-air': 30,
+  ems: 40,
+  'parcel-air': 40,
+  'parcel-surface': 40,
+};
+export const MAX_CUBE_SIDE_TIER: Tier = 'estimate';
+export const MAX_CUBE_SIDE_SOURCE_URL =
+  'https://zenmarket.jp/en/calc.aspx';
+export const MAX_CUBE_SIDE_CHECKED_ON = '2026-09-08';
+
+/**
+ * この方式が、この寸法の個口を（額ではなく可否として）送れないか。
+ * 上限を持たない方式（表に無いキー）は常に false——**「分からない」を
+ * 「送れない」に倒さない**、既存の開示原則と同じ向き。
+ *
+ * `DEFAULT_PARCEL_DIMENSIONS_CM`（20×15×10。最大辺 20cm）は
+ * `MAX_CUBE_SIDE_CM` のどの上限（30/40cm）も下回るので、**この既定の箱を
+ * 使っているかぎりこの関数は常に false を返す**——寸法の軸を配管したことが、
+ * 今日の挙動を1円も変えない理由の一つ（他の理由は寸法非依存の実測）。
+ */
+export function dimensionsExceedCube(method: PostalMethod, dims: BoxDimensionsCm): boolean {
+  const cap = MAX_CUBE_SIDE_CM[method];
+  if (cap == null) return false;
+  return Math.max(dims.lengthCm, dims.widthCm, dims.heightCm) > cap;
+}
+
+// ---------------------------------------------------------------------------
+// P2: 宅配便（`MeasuredPostageRate`）。**最終価格を正とする。分解しない。**
+// このPR時点ではどの社にもデータが無い（`services.ts` の `Service.courier`
+// コメント参照）ので、以下は「器」であって、実際に選ばれることはまだ無い。
+// ---------------------------------------------------------------------------
+
+/**
+ * 容積重量（g）。`縦×横×高さ[cm] ÷ 除数 × 1000` を切り上げる。
+ * 除数は社ごとに違いうる（`MeasuredPostageRate.volumetricDivisorCm3PerKg`。
+ * `docs/audit/o2-courier-2026-09-08.md` §5 ── 5000 か 6000 かは未確定）。
+ */
+export function volumetricWeightG(dims: BoxDimensionsCm, divisorCm3PerKg: number): number {
+  const cm3 = dims.lengthCm * dims.widthCm * dims.heightCm;
+  return Math.ceil((cm3 / divisorCm3PerKg) * 1000);
+}
+
+/** 請求重量（g）。実重量と容積重量の重いほう。**宅配便は容積重量が効く**（同§5）。 */
+export function billableWeightG(
+  realGrams: number, dims: BoxDimensionsCm, divisorCm3PerKg: number,
+): number {
+  return Math.max(realGrams, volumetricWeightG(dims, divisorCm3PerKg));
+}
+
+/**
+ * その宅配便の、その国・その重量・その寸法での最終価格（円）。
+ *
+ * **公表額への上乗せではなく、最終価格をそのまま引く**（`markupYen` とは
+ * 別の関数——判別可能合併で `MarkupPostageRate` と取り違えられない）。
+ * `bandsByCountry` にその国のキーが無ければ **未価格**（`null`）——
+ * 「売っていない」（`unavailableIn`）や「表の外で送れない」（帯はあるが
+ * 該当する段が無い）とは理由が違うが、呼び出し側の扱いはどれも同じ
+ * （額を付けず、この方式を候補から外す）。
+ */
+export function courierPriceFor(
+  rate: MeasuredPostageRate, cc: CountryCode, realGrams: number, dims: BoxDimensionsCm,
+): number | null {
+  const bands = rate.bandsByCountry[cc];
+  if (!bands) return null; // まだ価格化されていない国
+  const billed = billableWeightG(realGrams, dims, rate.volumetricDivisorCm3PerKg);
+  const hit = bands.find((b) => billed <= b.maxG);
+  return hit ? hit.yen : null; // 帯の外＝送れない
 }
