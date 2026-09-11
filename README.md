@@ -56,7 +56,9 @@ BRAVE_API_KEY=... npm run dev
 |---|---|
 | `npm run lint` | ESLint（flat config） |
 | `npm run typecheck` | `tsc --noEmit`。strict + `noUncheckedIndexedAccess` |
-| `npm test` | Vitest。139 件（2026-09-06 時点） |
+| `npm test` | Vitest。539 件（2026-09-08 時点） |
+| `python3 master/validate.py` | 費目マスタのスキーマ検証＋実請求の再現 |
+| `python3 master/render-docs.py --check` | `docs/MASTER.md` の生成節がマスタとずれていないか |
 | `npm run build` | Next のプロダクションビルド |
 | `npm run test:e2e` | Playwright（desktop / Pixel 7 の 2 プロジェクト）。**先に `npx playwright install chromium` が要る** |
 
@@ -71,7 +73,8 @@ main への push は `deploy.yml` が同じ検査を通してから Cloudflare �
 src/lib/pricing/     計算エンジン（UI から独立。ここが本体）
   types.ts           Item / Row / Line / Band / Tier / CompareResult
   services.ts        代行 5 社の料金モデル（各社公式ページの URL つき）
-  ems.ts             日本郵便 EMS 公表料金 27 段 × ゾーン
+  ems.ts             日本郵便 EMS 公表料金 42 段（30 kg まで）× 5 ゾーン
+  postage.ts         EMS 以外の日本郵便 4 方式（小形包装物・国際小包 × 航空・船便）
   countries.ts       宛先 7 カ国の関税・VAT・免税限度・課税ベース（FOB / CIF）
   rates.ts           為替（固定値。ライブ取得は障害点なので使わない）
   weights.ts         商品タイトル → 重量ライン → EMS の段
@@ -96,7 +99,7 @@ docs/                UI-DESIGN.md（UI の決定）/ DESIGN-NOTES.md（測定）
 | データ | 源 |
 |---|---|
 | 代行 5 社の料金 | **各社の公式ページのみ。**二次情報は入れない |
-| EMS 料金 | 日本郵便の公表料金表（全 27 段） |
+| 国際送料 | 日本郵便の公表料金表。EMS は全 42 段（30 kg）、他 4 方式は方式ごとの段。**EMS と他方式で地帯の割り方が違う**（米国は EMS 第 4・他方式 第 3） |
 | 関税・VAT・免税限度 | 各国税関・政府ページ |
 | 商品重量 | 海外発送する日本の小売の公開商品 JSON（Shopify `products.json` の `grams`） |
 | 商品価格 | 検索結果は**参考値**、商品ページから取ったものは**確定値**。画面で区別する |
@@ -106,7 +109,9 @@ docs/                UI-DESIGN.md（UI の決定）/ DESIGN-NOTES.md（測定）
 国内送料「込み」→ 別途）。
 数字の正確さが唯一の価値なので、一次情報だけを入れる。全部 `/sources` に出典 URL つきで出す。
 
-**LLM は使わない。**実行時に外部の推論 API を呼ぶコードは無い。非決定性が致命的なので。
+**計算に LLM を使わない。**総額・順位・差額のどの数字も、実行時に推論 API を呼んで決めていない。
+非決定性が致命的で、価値の源が数字の正確さなので。**計算エンジンの外側は別**——カート構築の自動化（`docs/FIT-GAP.md` §6）はエージェントとして LLM を使うが、
+そこで出た結果がこの計算機の数字に戻ることはない。
 
 ### 重量データの但し書き
 
@@ -128,12 +133,14 @@ Shopify の `grams` は**送料計算用の入力値であって実測ではな�
 - **重量が取れていないカテゴリがある。**楽器・カメラ・書籍・漫画・ゲームは、
   公開カタログに商品ごとの重量を持つ店が見つかっていない。計算機は 1,000 g を「仮置き」と
   名乗って入れ、カートの重量欄でその場で直してもらう（docs/UI-DESIGN.md §4）。
-- `package.json` の `weights:fetch` / `weights:build` / `fees:check` は**まだ実体が無い**
-  （`scripts/` に該当ファイルが無く、実行するとエラーになる）。
-  そのため週次の `fees-watch` Action も現状は落ちる。重量表は手で起こしている。
 - 為替は固定値。実装日に転記したもので、自動更新しない（利用者は画面で変更できる）。
-- 未解決の数字（FROM JAPAN の決済手数料が点ごとか注文ごとか、など）は
-  「二次情報」「未確認」の見た目で描き分けている。`REQUIREMENTS.md` §8 に一覧がある。
+- 未解決の数字は「二次情報」「未確認」の見た目で描き分けている。`REQUIREMENTS.md` §8 に一覧がある。
+- **宅配便（FedEx / DHL / UPS 等）を 1 円も価格化していない。**実請求の言及数では発送の約半数が
+  宅配便で、その 0% を出していない（理由と塞ぎ方は `docs/COMPLETENESS.md` §6 と `docs/O2-COURIER-RUN.md`）。
+- **「大きすぎて送れない」を表現できない。**重量上限しか持たないので、軽くて嵩張る荷物に
+  日本郵便が引き受けない方式の値段を付ける（`docs/TODO-NEXT.md` §0b）。
+- **費目マスタ（`master/`）と計算エンジンの値を突き合わせる検査が無い。**実際に 3 件ずれている
+  （`docs/FIT-GAP.md` §4）。
 
 ## 数字が間違っていたら
 
