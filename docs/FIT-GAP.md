@@ -5,7 +5,12 @@
 | # | もの | 日付 | 正体 |
 |---|---|---|---|
 | **A** | `ProxyCost_Development_Handoff_FACTCHECKED_20260909.md` | 2026-09-09 | 外部（GPT）がまとめた設計・調査文書。**リポジトリ外** |
-| **B** | `src/lib/pricing/`（`services.ts` / `postage.ts` / `ems.ts` / `countries.ts` / `compare.ts`） | main `32a1106` | 実行されるコード |
+| **B** | `src/lib/pricing/`（`services.ts` / `postage.ts` / `ems.ts` / `countries.ts` / `compare.ts`） | main `3fe9a09` | 実行されるコード |
+
+照合は `32a1106` で行い、PR #16（重量マッチング）/ #17（上乗せを形として持つ）のマージ後に
+§1 の引用値を再検証した。**Jauce 船便 +¥250/kg段・Smart Packing 300＋120/kg・
+ZenMarket 小形包装物の観測2点は、マージ後も同じ。**重量モデルは大きく変わったが、
+この照合は費目と料金表に閉じているので結論は動かない。
 | **C** | `master/fees.json` / `master/customs.json` | 2026-09-07 | 費目マスタ（`validate.py` が評価する） |
 
 ---
