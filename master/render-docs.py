@@ -135,20 +135,21 @@ BLOCKS = {"counts": counts, "display": display_table, "countries": country_table
 TIER_LABEL = {"fixed": "公表の料金表", "estimate": "推定", "unverified": "二次情報"}
 
 def measured_basket():
-    """README 冒頭の測定条件と確度別内訳。生成元は `measured()`（= measured.ts）。
-    `what`（英語の説明文、/sources の画面文言）はここでは出さない——README は
-    日本語の散文で説明を持つので、数字だけをここに置く。"""
+    """README 冒頭の測定条件と、7カ国合計の確度別内訳。生成元は `measured()`
+    （= measured.ts の `CONFIDENCE_SPLIT_BY_COUNTRY` / `CONFIDENCE_TOTAL`）。
+    旧 README の「7カ国合計 ¥263,981・公表側84%」はコードのどこからも導けない
+    手書きの値だったので、ここで7カ国それぞれと総和を測り直したものに差し替える。"""
     m = measured()
     b = m["MEASURED_BASKET"]
-    total = sum(s["yen"] for s in m["CONFIDENCE_SPLIT"])
+    t = m["CONFIDENCE_TOTAL"]
     out = [f"測定条件：{b['units']} 点 × ¥{b['priceYen']:,}・{b['weightG']} g/点・"
-           f"{b['site']}、宛先 {b['country']}。1 位の行の合計 ¥{total:,}。", "",
-           "| 確度 | 金額 | 割合 |", "|---|---:|---:|"]
-    for s in m["CONFIDENCE_SPLIT"]:
-        out.append(f"| {TIER_LABEL.get(s['tier'], s['tier'])} | ¥{s['yen']:,} | {s['share']} |")
-    gb = m["GB_SPLIT"]
-    out.append("")
-    out.append(f"同じ条件で宛先だけ GB にすると、公表側 {gb['publishedShare']} / 推定側 {gb['inferredShare']}。")
+           f"{b['site']}、7 カ国それぞれの1位の行の合計 ¥{t['totalYen']:,}。", "",
+           "| 確度 | 金額 | 割合 |", "|---|---:|---:|",
+           f"| 公表の料金表 | ¥{t['fixedYen']:,} | {t['fixedShare']} |",
+           f"| 推定 | ¥{t['estimateYen']:,} | {t['estimateShare']} |",
+           f"| 二次情報 | ¥{t['unverifiedYen']:,} | {t['unverifiedShare']} |",
+           "", "国別の公表側の割合：" + " / ".join(
+               f"{r['country']} {r['publishedShare']}" for r in m["CONFIDENCE_SPLIT_BY_COUNTRY"])]
     return "\n".join(out)
 
 def weight_rank():

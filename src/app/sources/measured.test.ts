@@ -3,8 +3,8 @@ import { describe, expect, test } from 'vitest';
 import { compare } from '@/lib/pricing/compare';
 import type { CountryCode, Item, Row } from '@/lib/pricing/types';
 import {
-  CONFIDENCE_SPLIT, CROSSOVER_G, GB_SPLIT, MEASURED_BASKET, RANK_STABILITY, WEIGHT_SHIFT,
-  WEIGHT_SHIFT_COUNTRY,
+  CONFIDENCE_SPLIT, CONFIDENCE_SPLIT_BY_COUNTRY, CONFIDENCE_TOTAL, CROSSOVER_G, MEASURED_BASKET,
+  RANK_STABILITY, WEIGHT_SHIFT, WEIGHT_SHIFT_COUNTRY,
 } from './measured';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,15 +75,38 @@ describe('the numbers /sources calls measured are what compare() actually return
     expect(CONFIDENCE_SPLIT.reduce((a, s) => a + s.yen, 0)).toBe(top.total);
   });
 
-  test('the United Kingdom split the page quotes is the United Kingdom, not the United States', () => {
-    // 以前ここには米国の 47% / 53% が「英国では」と書かれていた。
-    const top = winner(rank(MEASURED_BASKET.weightG, 'GB'));
-    const published = top.lines
-      .filter((l) => l.tier === 'fixed')
-      .reduce((a, l) => a + (l.amount ?? 0), 0);
-    const share = Math.round((published / top.total) * 100);
-    expect(`${share}%`).toBe(GB_SPLIT.publishedShare);
-    expect(`${100 - share}%`).toBe(GB_SPLIT.inferredShare);
+  test('the seven-country confidence split and total are what compare() actually returns', () => {
+    // 旧 README の「7カ国合計 ¥263,981・公表側84%」はコードのどこからも導けない
+    // 手書きの値だった。ここで7カ国それぞれと総和を compare() に縛る。
+    const totals = { fixed: 0, estimate: 0, unverified: 0 };
+    for (const row of CONFIDENCE_SPLIT_BY_COUNTRY) {
+      const top = winner(rank(MEASURED_BASKET.weightG, row.country));
+      const byTier: Record<string, number> = {};
+      for (const l of top.lines) byTier[l.tier] = (byTier[l.tier] ?? 0) + (l.amount ?? 0);
+      const fixed = byTier['fixed'] ?? 0;
+      const estimate = byTier['estimate'] ?? 0;
+      const unverified = byTier['unverified'] ?? 0;
+
+      expect(top.total, `${row.country} total`).toBe(row.totalYen);
+      expect(fixed, `${row.country} fixed`).toBe(row.fixedYen);
+      expect(estimate, `${row.country} estimate`).toBe(row.estimateYen);
+      expect(unverified, `${row.country} unverified`).toBe(row.unverifiedYen);
+      expect(`${Math.round((fixed / top.total) * 100)}%`, `${row.country} published share`)
+        .toBe(row.publishedShare);
+
+      totals.fixed += fixed;
+      totals.estimate += estimate;
+      totals.unverified += unverified;
+    }
+
+    const grandTotal = totals.fixed + totals.estimate + totals.unverified;
+    expect(grandTotal).toBe(CONFIDENCE_TOTAL.totalYen);
+    expect(totals.fixed).toBe(CONFIDENCE_TOTAL.fixedYen);
+    expect(totals.estimate).toBe(CONFIDENCE_TOTAL.estimateYen);
+    expect(totals.unverified).toBe(CONFIDENCE_TOTAL.unverifiedYen);
+    expect(`${Math.round((totals.fixed / grandTotal) * 100)}%`).toBe(CONFIDENCE_TOTAL.fixedShare);
+    expect(`${Math.round((totals.estimate / grandTotal) * 100)}%`).toBe(CONFIDENCE_TOTAL.estimateShare);
+    expect(`${Math.round((totals.unverified / grandTotal) * 100)}%`).toBe(CONFIDENCE_TOTAL.unverifiedShare);
   });
 
   test('the crossover weights the page names are where the first place actually changes', () => {
