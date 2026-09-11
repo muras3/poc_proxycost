@@ -16,7 +16,9 @@ import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
 import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
-import { AlcoholInCartNote, RestrictedGoodsNote } from './RestrictedGoodsNote';
+import {
+  AlcoholInCartNote, LongItemsInCartNote, RestrictedGoodsNote,
+} from './RestrictedGoodsNote';
 import { StabilityNote } from './StabilityNote';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
 import { useCompare, type Draft } from './useCompare';
@@ -143,6 +145,9 @@ export function Calculator() {
                 酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
             <RestrictedGoodsNote result={result} country={country} />
             <AlcoholInCartNote result={result} items={items} />
+            {/* 長さで方式が絞られうる品。**寸法は入力にすら無い**ので、
+                どの方式が落ちるかは書けない——見ていないことだけ言う。 */}
+            <LongItemsInCartNote result={result} items={items} />
           </div>
 
           <div className="mt-4">

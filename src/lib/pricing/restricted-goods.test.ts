@@ -4,12 +4,16 @@ import { COUNTRY_CODES } from './countries';
 import {
   ALCOHOL_WEIGHT_LINE_IDS,
   LITHIUM_AIRMAIL_LISTED,
+  LONG_ITEM_WEIGHT_LINE_IDS,
   RESTRICTED_GOODS,
   alcoholItems,
+  longItems,
   restrictedList,
   weightLineLabel,
 } from './restricted-goods';
-import { weightFieldsFor } from './weights';
+import { compare } from './compare';
+import { resolveWeight, weightFieldsFor } from './weights';
+import type { CountryCode } from './types';
 import type { Item } from './types';
 
 const item = (title: string): Item => ({
@@ -107,5 +111,61 @@ describe('alcohol in the cart is detected from the weight table, never guessed',
     // 残らなくなったら警告が消えるので、ここで縛る。
     const typed: Item = { ...item('Dassai 45 junmai daiginjo sake 720ml'), weightG: 1500, weightOrigin: 'user' };
     expect(alcoholItems([typed])).toHaveLength(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 長さで方式が絞られうる品（`docs/audit/o2-courier-2026-09-08.md` §2）。
+// **我々は寸法を持っていない。**だから「どの方式が落ちるか」は言わず、
+// 「見ていない」とだけ言う。ここで縛るのは**誰を名指しするか**と、
+// **総額を1円も動かさないこと**の2つ。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('long items are named, and naming them changes no number', () => {
+  const item = (title: string, over: Partial<Item> = {}): Item => {
+    const w = resolveWeight(title);
+    return {
+      id: title, title, priceYen: 8000, priceTier: 'fixed', site: 'yahoo-auctions',
+      weightG: w.grams ?? 1000, weightTier: 'estimate', weightLineId: w.lineId,
+      qty: 1, ...over,
+    };
+  };
+
+  test('the six lines we flag are the ones the weight table can actually reach', () => {
+    // 表に無い id を並べても永久に鳴らない。**id が実在することをここで縛る。**
+    for (const id of LONG_ITEM_WEIGHT_LINE_IDS) {
+      expect(weightLineLabel(id), `${id} は重量表に無い`).toBeTruthy();
+    }
+    expect(LONG_ITEM_WEIGHT_LINE_IDS).toHaveLength(6);
+  });
+
+  test('a rod and a bow are named; a gel pen is not', () => {
+    const rod = item('シマノ ロッド 1ピース');
+    const bow = item('弓道 弓');
+    const pen = item('ゼブラ サラサクリップ 0.5mm 黒 10本');
+    expect(longItems([rod, bow, pen]).map((i) => i.weightLineId))
+      .toEqual(['rod-1piece', 'kyudo-yumi']);
+    // **当たらなかった品を「短い」とは言わない。**空配列は「該当なし」であって
+    // 「全部短い」ではない——その区別は常時開示の1行が引き受けている。
+    expect(longItems([pen])).toEqual([]);
+  });
+
+  test('**heavy is not the test — 800 g of shinai bag counts, 3 kg of figure does not**', () => {
+    // カテゴリでも重量でも絞れないことの現物。武道具袋は 800g だが竹刀の長さがある。
+    expect(longItems([item('防具袋 竹刀袋')]).map((i) => i.weightLineId)).toEqual(['budo-bag']);
+    // 1/4スケールのフィギュアは 3,000g だが箱で、長さは label から言えないので入れていない。
+    expect(longItems([item('1/4スケール フィギュア')])).toEqual([]);
+  });
+
+  test('the warning is disclosure only: the total and the ranking do not move', () => {
+    // **これが本体。**開示であって価格の変更ではないので、同じ籠の総額と順位が
+    // 長物を含むかどうかで変わってはいけない（変わったら寸法を価格に入れている）。
+    const rod = item('シマノ ロッド 1ピース');
+    const plain = item('無名の箱', { weightG: 9780, weightLineId: null });
+    for (const cc of ['US', 'DE', 'CA'] as CountryCode[]) {
+      const withRod = compare({ items: [rod], country: cc }).rows;
+      const without = compare({ items: [plain], country: cc }).rows;
+      expect(withRod.map((r) => [r.id, r.total]), cc)
+        .toEqual(without.map((r) => [r.id, r.total]));
+    }
   });
 });
