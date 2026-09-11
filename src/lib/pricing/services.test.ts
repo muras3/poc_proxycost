@@ -486,7 +486,24 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
   test('a mixed basket names both rates instead of hiding one', () => {
     const row = byService(rowsFor([item({ id: 'a', site: 'rakuten' }), item({ id: 'b' })]), 'zenmarket');
     expect(amount(row, 'service-fee')).toBe(1300);
-    expect(line(row, 'service-fee').note).toBe('¥500 / ¥800 by shop, 2 charged');
+    // 'b' はデフォルトの yahoo-auctions なので、行には推論の根拠が付く（T-F11a）
+    expect(line(row, 'service-fee').note).toBe(
+      '¥500 / ¥800 by shop, 2 charged'
+      + " — ZenMarket's fee page prices Mercari and JDirectItems Auction at ¥800 and"
+      + ' never names Yahoo Auctions; we read JDirectItems Auction as Yahoo Auctions',
+    );
+    // ヤフオクの item が混じっているので行全体の確度は estimate に落ちる
+    expect(line(row, 'service-fee').tier).toBe('estimate');
+  });
+
+  test('a Mercari-only basket keeps the service-fee line fixed', () => {
+    const row = byService(rowsFor([item({ id: 'a', site: 'mercari' })]), 'zenmarket');
+    expect(line(row, 'service-fee').tier).toBe('fixed');
+  });
+
+  test('a Yahoo!-Auctions-only basket marks the service-fee line as estimate', () => {
+    const row = byService(rowsFor([item({ id: 'a', site: 'yahoo-auctions' })]), 'zenmarket');
+    expect(line(row, 'service-fee').tier).toBe('estimate');
   });
 
   // 3.5% は「送金合計に対する率」なので gross-up。base × r / (1 - r) であって base × r ではない。

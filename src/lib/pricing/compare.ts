@@ -28,6 +28,11 @@ const L = (
   tier: Tier = 'fixed', sourceUrl: string | null = null,
 ): Line => ({ key, label, amount, note, tier, sourceUrl });
 
+// 確度の強さの順（弱い順）。複数サイトの行をまとめるとき、含まれる中で最も弱い確度を行の確度にする。
+const TIER_STRENGTH: Record<Tier, number> = { none: 0, unverified: 1, estimate: 2, fixed: 3 };
+const weakestTier = (tiers: Tier[]): Tier =>
+  tiers.reduce((worst, t) => (TIER_STRENGTH[t] < TIER_STRENGTH[worst] ? t : worst), 'fixed' as Tier);
+
 const sum = (lines: Line[]) => lines.reduce((a, l) => a + (l.amount ?? 0), 0);
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
@@ -344,6 +349,8 @@ function feeLines(
   const chargeableYen = chargeable.reduce((a, i) => a + i.priceYen * i.qty, 0);
   const rateFor = (i: (typeof ctx.items)[number]) =>
     f.perItemBySite?.[i.site] ?? f.perItemYen ?? 0;
+  const tierFor = (i: (typeof ctx.items)[number]) =>
+    f.perItemBySiteTier?.[i.site] ?? f.tier;
 
   if (f.perOrderYen != null) {
     out.push(L('purchase-fee', 'Purchase fee', f.perOrderYen * orders,
@@ -360,13 +367,25 @@ function feeLines(
     const amounts = chargeable.map((i) => rateFor(i) * countOf(i));
     const total = amounts.reduce((a, b) => a + b, 0);
     const distinct = [...new Set(chargeable.map((i) => rateFor(i)))].sort((a, b) => a - b);
+    const lineTier = f.perItemBySiteTier
+      ? weakestTier(chargeable.map(tierFor))
+      : f.tier;
+    // ヤフオク（JDirectItems Auction 相当）が混じっていて、行の確度が推定に落ちるときだけ
+    // 根拠を書く。断定にしない ── 「解釈している」であって「そうである」ではない。
+    const hasInferredYahoo = chargeable.some(
+      (i) => i.site === 'yahoo-auctions' && tierFor(i) === 'estimate',
+    );
     const note = (distinct.length > 1
       ? `${distinct.map((v) => `¥${v}`).join(' / ')} by shop, ${chargeableUnits} charged`
       : `¥${distinct[0] ?? f.perItemYen} × ${chargeableUnits}`)
       + (f.chargedPerDistinctItem && units > chargeableUnits + freeUnits
         ? ' (same item counted once)' : '')
-      + (freeUnits > 0 ? ` (${freeUnits} free — Rakuten / Yahoo! Shopping beta)` : '');
-    out.push(L('service-fee', 'Service fee', total, note, f.tier, svc.sourceUrl));
+      + (freeUnits > 0 ? ` (${freeUnits} free — Rakuten / Yahoo! Shopping beta)` : '')
+      + (hasInferredYahoo
+        ? ' — ZenMarket\'s fee page prices Mercari and JDirectItems Auction at ¥800 and'
+          + ' never names Yahoo Auctions; we read JDirectItems Auction as Yahoo Auctions'
+        : '');
+    out.push(L('service-fee', 'Service fee', total, note, lineTier, svc.sourceUrl));
   }
   if (f.adValoremRate != null) {
     out.push(L('ad-valorem', 'Commission',

@@ -98,6 +98,25 @@ const MAPPED: MappedEntry[] = [
     read: () => EXPORT_DECLARATION_FEE_YEN,
     expect: () => findRow('F26', 'buyee', '輸出通関手数料').rule.amount,
   },
+  // T-F11a: ヤフオク(yahoo-auctions)の ¥800 はオーナー決定(2026-09-11)で B_inferred として
+  // マスタに入った（金額は変えず、確度だけ「原文が名指ししていない推論」と印を付けた）。
+  // コード側の tier も 'estimate' に落としてあるので、ここで両者の一致を assert する。
+  // 単にドル額を比べるだけだと、片方だけ確度を戻されても落ちない ── 確度も突き合わせる。
+  {
+    id: 'F02', company: 'zenmarket', name: 'サービス料',
+    // マスタ: rule.amounts.yahoo_auction 800（rule.inferred_marketplaces.yahoo_auction で
+    // B_inferred と印付け）とrule.amounts.mercari 800 の両方が、コードの perItemBySite と
+    // 一致すること。JSON.stringify で1エントリにまとめて比べる（片方のキーだけの
+    // ズレも拾えるように、両方をまとめて1つの値として比較する）
+    read: () => JSON.stringify({
+      yahoo: svc('zenmarket').fee.perItemBySite?.['yahoo-auctions'],
+      mercari: svc('zenmarket').fee.perItemBySite?.mercari,
+    }),
+    expect: () => {
+      const rule = findRow('F02', 'zenmarket', 'サービス料').rule;
+      return JSON.stringify({ yahoo: rule.amounts.yahoo_auction, mercari: rule.amounts.mercari });
+    },
+  },
   {
     id: 'F04', company: 'zenmarket', name: '同一商品の複数個',
     read: () => svc('zenmarket').fee.chargedPerDistinctItem,
@@ -369,33 +388,6 @@ interface ConflictEntry extends RowKeyParts {
 }
 
 const CONFLICT: ConflictEntry[] = [
-  // ── T-F11: マスタが unknown/null（C_unknown）と言っている値に、
-  //           コードが確定値を置いている（一次情報から読めない数字を確定値にしている）
-  {
-    id: 'F02', company: 'zenmarket', name: 'サービス料',
-    master: 'rule.amounts.yahoo_auction === null（unknown_marketplaces に yahoo_auction、'
-      + 'amount_tier C_unknown）。原文の quote は「Amazon, Rakuten, and most other stores」'
-      + '「Recommended Stores」「all Mercari items and JDirectItems Auction bids」の5区分しか'
-      + '列挙しておらず、**「Yahoo オークション」という語が原文に一度も出てこない。** note に'
-      + '「最大の仕入先である Yahoo オークションが¥500か¥800か公式から読めない。default で'
-      + '埋めない」と明記されている',
-    code: "perItemBySite['yahoo-auctions'] = 800（tier: 'fixed'）── 一次情報から読めない数字を"
-      + '確定値として出している。差は ¥300/点で、5点カートなら ¥1,500。基準ケースの1位2位差'
-      + '¥650 を超えるので順位が動く',
-    reason: '一次情報が5区分しか列挙していないため Yahoo オークションの扱いが確定できない。'
-      + 'なお同じ行には recommended_stores=300・jdirectitems_auction=800 という'
-      + '「マスタでは既知」の値もあるが、コードの SiteId 型に recommended_stores・'
-      + 'jdirectitems_auction という区分が存在しないため、これらも既定の ¥500 に落ちて'
-      + 'いて未接続（この行にもう1つ、値が既知なのに未接続という別種の欠陥が同居している。'
-      + 'コーディネーターに報告済み・T-F11 に含めてよいとの指示を受けた）。',
-    task: 'T-F11',
-    assertStillConflicting: () => {
-      const rule = findRow('F02', 'zenmarket', 'サービス料').rule;
-      expect(rule.amounts.yahoo_auction).toBeNull();
-      expect(rule.unknown_marketplaces).toContain('yahoo_auction');
-      expect(svc('zenmarket').fee.perItemBySite?.['yahoo-auctions']).toBe(800);
-    },
-  },
 ];
 
 // ============================================================================
@@ -649,13 +641,17 @@ describe('MAPPED ── マスタとコードが一致しなければならな�
   }
 });
 
-describe('CONFLICT ── 既知の食い違い。まだ食い違っていることを assert する', () => {
-  for (const e of CONFLICT) {
-    it(`[${e.task}] ${e.id}/${e.company} ${e.name}`, () => {
-      e.assertStillConflicting();
-    });
-  }
-});
+// 既知の食い違いは現在ゼロ件（#25 で4件・T-F11a で1件を解消）。
+// 空の describe は vitest で失敗するので、CONFLICT が空でない場合だけ this describe を作る。
+if (CONFLICT.length > 0) {
+  describe('CONFLICT ── 既知の食い違い。まだ食い違っていることを assert する', () => {
+    for (const e of CONFLICT) {
+      it(`[${e.task}] ${e.id}/${e.company} ${e.name}`, () => {
+        e.assertStillConflicting();
+      });
+    }
+  });
+}
 
 describe('NOT_IN_CODE ── 意図的にコードに繋いでいない行', () => {
   for (const e of NOT_IN_CODE) {
@@ -663,6 +659,35 @@ describe('NOT_IN_CODE ── 意図的にコードに繋いでいない行', () 
       e.assertNotInCode();
     });
   }
+});
+
+// ============================================================================
+// T-F11a: 額だけでなく確度も、マスタとコードで整合していること。
+// 片方だけ確定に戻されたときにここが落ちるように、額の一致とは別に確度を assert する。
+// ============================================================================
+describe('T-F11a ── ZenMarket ヤフオク¥800 の確度がマスタとコードで一致する', () => {
+  it('マスタ: yahoo_auction は rule.inferred_marketplaces で B_inferred と印がある', () => {
+    const rule = findRow('F02', 'zenmarket', 'サービス料').rule;
+    expect(rule.inferred_marketplaces?.yahoo_auction?.tier).toBe('B_inferred');
+    expect(rule.inferred_marketplaces?.yahoo_auction?.inference_basis).toBeTruthy();
+    // unknown 扱いからは外れていること（¥800 は既知の値として置かれている）
+    expect(rule.unknown_marketplaces ?? []).not.toContain('yahoo_auction');
+  });
+
+  it('マスタ: mercari は inferred_marketplaces に無い（原文が名指ししているため fixed）', () => {
+    const rule = findRow('F02', 'zenmarket', 'サービス料').rule;
+    expect(rule.inferred_marketplaces?.mercari).toBeUndefined();
+  });
+
+  it('コード: perItemBySiteTier でヤフオクだけ estimate、メルカリは fixed（未指定 = svc.fee.tier）', () => {
+    const fee = svc('zenmarket').fee as {
+      perItemBySiteTier?: Partial<Record<string, string>>;
+      tier: string;
+    };
+    expect(fee.perItemBySiteTier?.['yahoo-auctions']).toBe('estimate');
+    expect(fee.perItemBySiteTier?.mercari).toBeUndefined();
+    expect(fee.tier).toBe('fixed'); // mercari はこの既定 tier に従う
+  });
 });
 
 describe('網羅性 ── 70行すべてがちょうど1つのバケットに入る', () => {

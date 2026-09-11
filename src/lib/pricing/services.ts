@@ -6,6 +6,14 @@ export interface FeeModel {
   /** 出品サイトで額が変わる社（ZenMarket）。無い site は perItemYen。 */
   perItemBySite?: Partial<Record<SiteId, number>>;
   /**
+   * サイト別の額の確度。**原文がそのサイトを名指ししていないものだけ落とす。**
+   * 指定の無いサイトは `tier` に従う（`perItemBySite` の額に対する確度の上書き）。
+   * 例: ZenMarket の ¥800 は原文が `all Mercari items` と `JDirectItems Auction`
+   * を名指ししているが、`Yahoo` の語は一度も出てこない。ヤフオク＝JDirectItems Auction
+   * は我々の解釈なので、ヤフオクだけ `estimate` に落とす（メルカリは `fixed` のまま）。
+   */
+  perItemBySiteTier?: Partial<Record<SiteId, Tier>>;
+  /**
    * 同一商品を複数個買っても手数料は1回か。
    * Neokyo / ZenMarket / FROM JAPAN は自社ページで明記している。
    * Buyee は注文ごとなのでこの欄を使わない。
@@ -367,9 +375,26 @@ export const SERVICES: Service[] = [
     // 一律 ¥800 ではない。原文は「500 yen … Amazon, Rakuten, and most other stores /
     // 300 yen … Recommended Stores / 800 yen … all Mercari items and JDirectItems Auction bids」。
     // 「If you buy 3 identical T-shirts, our service fee will still be the same」も明記。
+    //
+    // **ヤフオクの ¥800 は一次情報から読めない（2026-09-11 に英日両ページを再確認）。**
+    // - 英語料金ページ原文（fees.aspx）: 上記の通り。500円 / 300円 / 800円の内訳しかない。
+    // - 日本語料金ページも同じ構成 ── 「メルカリ全商品、JDirectItems Auction：商品1点に
+    //   つき800円」／「楽天市場やAmazon、その他一般的な通販サイト：商品1点につき500円」。
+    // - **英語・日本語とも、料金ページに `Yahoo` / `ヤフオク` の語が1つも出てこない。**
+    // - トップページは `Bid real-time on JDirectItems Auction from anywhere in the world.`
+    //   とだけ書き、サイト内では `JDirectItems Auction` と `JDirectItems Shopping` を
+    //   別項目として並べている。
+    // - `zenmarket.jp/en/yahoo.aspx` / `zenmarket.jp/ja/yahoo.aspx` は現行ページとして存在せず、
+    //   公式ブログ・ニュースにも `JDirectItems Auction = Yahoo Auctions` の対応を示す記述は
+    //   見つからなかった。
+    // 金額（¥800）は変えない。**「ヤフオク＝JDirectItems Auction」は我々の推論**（Auction/
+    // Shopping の対がヤフオク／Yahoo!ショッピングの対に一致することからの強い推論だが推論）
+    // なので、ヤフオクだけ確度を `estimate` に落とす。メルカリは原文が名指ししているので
+    // `fixed` のまま。
     fee: {
       perItemYen: 500,
       perItemBySite: { 'yahoo-auctions': 800, mercari: 800 },
+      perItemBySiteTier: { 'yahoo-auctions': 'estimate' },
       chargedPerDistinctItem: true,
       tier: 'fixed',
     },
