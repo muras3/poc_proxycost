@@ -103,4 +103,29 @@ export const WEIGHT_SHIFT: WeightShiftRow[] = [
  */
 export const CROSSOVER_G: Record<number, number> = { 2: 1150, 3: 1325, 5: 1625 };
 
+/**
+ * 7 カ国それぞれの `rankStable`（`MEASURED_BASKET` の条件、既定の推定重量 600 g）。
+ * **以前ここに `rankStable` の実測値は無かった。**README は「7 カ国すべてで false」と
+ * 手で書いており、2026-09-06 以降の料金修正（Neokyo の国内送料・FROM JAPAN の ¥200・
+ * ZenMarket のサイト別・輸出通関の総額化など）で値が動いたのに誰も測り直していなかった。
+ * 実際は US・AU・SG が true。この表を足して `measured.test.ts` に縛ったので、
+ * 今後は料金を直して値が変わればテストが落ちる。
+ */
+export interface RankStabilityRow {
+  country: CountryCode;
+  rankStable: boolean;
+  /** true の国だけ埋まる。compare() の rankStabilityNote から、社名の分かる文だけ転記。 */
+  staysCheapest: string | null;
+}
+
+export const RANK_STABILITY: RankStabilityRow[] = [
+  { country: 'US', rankStable: true, staysCheapest: 'FROM JAPAN' },
+  { country: 'GB', rankStable: false, staysCheapest: null },
+  { country: 'DE', rankStable: false, staysCheapest: null },
+  { country: 'FR', rankStable: false, staysCheapest: null },
+  { country: 'AU', rankStable: true, staysCheapest: 'Neokyo' },
+  { country: 'CA', rankStable: false, staysCheapest: null },
+  { country: 'SG', rankStable: true, staysCheapest: 'Neokyo' },
+];
+
 export const yen = (n: number) => `¥${n.toLocaleString('en-US')}`;

@@ -23,7 +23,18 @@
 **順位も重量の推定に対して頑健ではない。**「1/3〜5 倍に外しても順位は 1 つも動かなかった」と
 以前ここに書いていたのは 2026-09-06 の再測定で否定された。1 位が入れ替わる重量は
 2 点 1,150 g / 3 点 1,325 g / 5 点 1,625 g（米国・¥3,000/点・ヤフオク）で、既定の推定値
-5 点 × 600 g では **7 カ国すべてで `rankStable=false`**。だから画面は `rankStable` をそのまま出す。
+5 点 × 600 g では **GB・DE・FR・CA の4カ国で `rankStable=false`**（US・AU・SG の3カ国は
+`true`——US は FROM JAPAN が、AU と SG は Neokyo が、重量を ×1/3〜×3 に振っても最安のまま
+動かない）。半数以上の国で不安定なのは変わらないので、この節の見出しは維持する。
+だから画面は `rankStable` をそのまま出す。
+
+**ここには以前「7 カ国すべてで `rankStable=false`」と書いていた。**それは間違いだった。
+2026-09-06 の測定以降、Neokyo の国内送料・FROM JAPAN の ¥200・ZenMarket のサイト別費目・
+輸出通関の総額化などの修正が重なって値が動いたのに、`rankStable` だけは誰も測り直していなかった
+——`CONFIDENCE_SPLIT` や `WEIGHT_SHIFT` のような他の実測値は `src/app/sources/measured.ts` が
+`compare()` で測り直してテストで縛っているが、`rankStable` にはその仕掛けが無かったので静かに
+ずれた。今回 `RANK_STABILITY`（`src/app/sources/measured.ts`）に7カ国分の実測を載せ、
+`measured.test.ts` で縛ったので、以後は料金を直して値が変わると自動的にテストが落ちる。
 測定の中身は `docs/DESIGN-NOTES.md`、約束の全文は `REQUIREMENTS.md` §2。
 
 だから画面の主役は順位と差額で、総額は概算として添える。
