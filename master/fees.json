@@ -1872,10 +1872,97 @@
       "name": "会社の申告額ポリシー（CN22/インボイスに何を書くか）",
       "in_fees_master": false,
       "kind": "company_attribute",
-      "excluded_reason": "**未取得（C）。輸入側の全ルール（免税閾値・VAT・通関手数料）の入力になるのに、5社とも公表していない。**商品代のみか手数料込みか、Buyee の注文別送ではパーセルごとにいくら申告するか。これが無いと輸入側の計算は開始できない",
+      "excluded_reason": "**訂正（2026-09-12、`docs/audit/declared-value-2026-09-12.md`）: ここに従来書かれていた『5社とも公表していない』は、source/quote/checked_on の裏付けを欠いたまま置かれた誤りだった。**原因は3つの別の問いを1行に畳んでいたこと。分解すると②は5社とも公表している。①②③に分解して下記 `questions` に記録する。①（商品代のみか手数料込みか）は Neokyo のみ取得済み・他4社は未取得。②（過少申告・ギフト扱いの可否）は5社とも取得済み。③（複数個口の按分）は5社とも未取得（『公開ページを探したが見当たらなかった』であり『存在しない』とは断定していない）。輸入側の計算（F31・F32・F34・F36）の入力になる点自体は変わらない",
       "occurrence": "C_conditional_no_input",
       "display": "engine_only",
-      "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。5社とも非公表。"
+      "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。①③は未取得だが②は5社とも取得済み（2026-09-12 訂正、下記 `questions` 参照）。",
+      "questions": {
+        "$comment": "F39 は1つの tier で表せない。3つの問い（F39a/b/c）に分解し、問いごとに tier と根拠を持つ。tier 語彙は docs/MASTER.md と共通（A_confirmed / B_inferred / C_unknown / D_unpredictable）。confidence は取得経路（direct_fetch / search_snippet / search_snippet_no_verbatim_quote）を区別する追加軸で、同じ tier でも確度の差を残すために使う",
+        "F39a": {
+          "question": "①商品代のみを申告するか、代行の手数料を含めて申告するか（課税ベースそのもの）",
+          "tier": "C_unknown",
+          "note": "Neokyo のみ取得済み。残り4社（Buyee / ZenMarket / Jauce / FROM JAPAN）は未取得——『非公表』と断定はしていない。①が未確定な限り F31・F32・F34・F36 は開始できない。ドイツの既定カートで VAT が数千円ずれる規模。今日『根拠が無いので触らない』と判断した ZenMarket の EU 矛盾（€3定額関税と通関手数料、最大¥1,453）と SG の CIF 閾値判定の2件も①に依存している",
+          "confirmed": [
+            {
+              "company": "neokyo",
+              "tier": "A_confirmed",
+              "confidence": "search_snippet",
+              "source": "https://neokyohelp.zendesk.com/hc/en-us/articles/10988086624025-What-is-the-parcel-invoice-breakdown-What-does-it-include",
+              "quote": "Neokyo always encloses a \"Pro Forma Invoice\" with your parcel...as well as their value. The Pro Forma Invoice does not include the Neokyo service fee.",
+              "checked_on": "2026-09-12",
+              "note": "直接 fetch は 403。検索エンジンのスニペット経由での確認"
+            }
+          ],
+          "unresolved": [
+            { "company": "buyee", "status": "not_found_on_public_pages_searched", "note": "FAQ 記事1本のみ確認。網羅的には探していない" },
+            { "company": "zenmarket", "status": "not_found_on_public_pages_searched", "note": "FAQ一覧ページ1本のみ確認" },
+            { "company": "jauce", "status": "not_found_on_public_pages_searched", "note": "利用規約1本のみ確認" },
+            { "company": "fromjapan", "status": "not_found_on_public_pages_searched", "note": "ヘルプページ2本・ブログ記事1本のみ確認" }
+          ]
+        },
+        "F39b": {
+          "question": "②過少申告・ギフト扱いの可否",
+          "tier": "A_confirmed",
+          "note": "2026-09-12 の監査で5社とも取得済み。訂正前の『5社とも非公表』はこの問いに関する限り誤りだった。5社とも『過少申告・ギフト偽装はしない／できない』と明言している",
+          "confirmed": [
+            {
+              "company": "jauce",
+              "tier": "A_confirmed",
+              "confidence": "direct_fetch",
+              "source": "https://www.jauce.com/terms",
+              "quote": "JAUCE describes items with accuracy and transparency. JAUCE does not reduce values on invoices or label items as gifts.",
+              "checked_on": "2026-09-12"
+            },
+            {
+              "company": "fromjapan",
+              "tier": "A_confirmed",
+              "confidence": "direct_fetch",
+              "source": "https://blog.fromjapan.co.jp/en/how-to/shipping-from-japan-to-the-u-s-new-customs-rules-and-your-qa.html",
+              "quote": "The invoice value cannot be changed.",
+              "checked_on": "2026-09-12"
+            },
+            {
+              "company": "neokyo",
+              "tier": "A_confirmed",
+              "confidence": "search_snippet",
+              "source": "https://neokyohelp.zendesk.com/hc/en-us/articles/10988086624025-What-is-the-parcel-invoice-breakdown-What-does-it-include",
+              "quote": "Your parcel value cannot be changed",
+              "checked_on": "2026-09-12",
+              "note": "直接 fetch は 403。検索エンジンのスニペット経由"
+            },
+            {
+              "company": "buyee",
+              "tier": "A_confirmed",
+              "confidence": "search_snippet",
+              "source": "https://faq.buyee.jp/article/131?lang=en",
+              "quote": "the item price on the invoice cannot be edited - it will remain as the same price as when you bought it",
+              "checked_on": "2026-09-12",
+              "note": "直接 fetch は 403。検索エンジンのスニペット経由"
+            },
+            {
+              "company": "zenmarket",
+              "tier": "B_inferred",
+              "confidence": "search_snippet_no_verbatim_quote",
+              "source": "https://zenmarket.jp/en/static/frequently-asked-questions",
+              "quote": null,
+              "checked_on": "2026-09-12",
+              "note": "5社の中で唯一、逐語引用が取れていない。検索エンジンの要約表現に依拠しており原文そのものではないため tier を A ではなく B に落とす。他4社より確度が低い"
+            }
+          ]
+        },
+        "F39c": {
+          "question": "③複数個口（Buyee の注文別送など）でパーセルごとにいくら申告するか（按分）",
+          "tier": "C_unknown",
+          "note": "5社とも未取得。『公開ページを探したが見当たらなかった』であり『存在しない』と断定していない——各社1〜3ページしか見ていない（Buyee: FAQ記事1本／Neokyo: FAQ記事2本／ZenMarket: FAQ一覧1本／Jauce: 利用規約1本／FROM JAPAN: ヘルプ2本+ブログ1本）。`docs/O3-PLAN.md`（アカウント作成〜明細画面）に委ねる現状の位置づけは維持する",
+          "unresolved": [
+            { "company": "buyee", "status": "not_found_on_public_pages_searched" },
+            { "company": "neokyo", "status": "not_found_on_public_pages_searched" },
+            { "company": "zenmarket", "status": "not_found_on_public_pages_searched" },
+            { "company": "jauce", "status": "not_found_on_public_pages_searched" },
+            { "company": "fromjapan", "status": "not_found_on_public_pages_searched" }
+          ]
+        }
+      }
     },
     {
       "id": "F40",
