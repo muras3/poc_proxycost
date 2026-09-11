@@ -82,6 +82,23 @@ def findings():
         out.append("")
     return "\n".join(out).rstrip()
 
+def display_table():
+    from collections import Counter, OrderedDict
+    order = ["total", "engine_only", "optional", "warning_only", "hidden"]
+    counts = Counter(e.get("display") for e in fees["catalog"])
+    out = ["| display | 件数 | 意味 |", "|---|---:|---|"]
+    for k in order:
+        out.append(f"| `{k}` | {counts.get(k, 0)} | {fees['schema']['display_vocabulary'][k]} |")
+    out.append("")
+    out.append("### `total` 以外に分類された項目（載せない・載せない理由が1か所で読めること）")
+    out.append("")
+    out.append("| id | 名前 | display | 理由 |")
+    out.append("|---|---|---|---|")
+    for e in fees["catalog"]:
+        if e.get("display") != "total":
+            out.append(f"| {e['id']} | {e['name']} | `{e['display']}` | {e['display_reason']} |")
+    return "\n".join(out)
+
 def validator_output():
     """`validate.py` の出力そのものを埋める。**貼り付けた実行例は必ず古くなる**——
     以前ここには『通関経路 21』『[CONFLICT] ca-canadapost-forum ... 未解決』が
@@ -93,8 +110,8 @@ def validator_output():
         print("NG: validate.py が失敗した\n" + r.stdout + r.stderr); sys.exit(1)
     return "```\n" + r.stdout.strip() + "\n```"
 
-BLOCKS = {"counts": counts, "countries": country_table, "findings": findings,
-          "validator": validator_output}
+BLOCKS = {"counts": counts, "display": display_table, "countries": country_table,
+          "findings": findings, "validator": validator_output}
 
 def main():
     doc = DOC.read_text(encoding="utf-8")
