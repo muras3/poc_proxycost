@@ -51,7 +51,15 @@ USPS $9.35 は無条件加算をやめ、前払い帯では**取得できた 0**
 
 交差点は 1〜2kg にある。代行で買う品物としてごく普通の重量帯であり、
 重量表の推定誤差が容易に跨ぐ幅である。5点 × 600g（既定の推定値）では
-**7カ国すべてで `rankStable=false`**。
+**GB・DE・FR・CA の4カ国で `rankStable=false`**（US・AU・SG の3カ国は `true`——US は
+FROM JAPAN、AU と SG は Neokyo が最安のまま動かない）。
+
+**ここには以前「7カ国すべてで `rankStable=false`」と書いていたが、これは間違いだった。**
+`CONFIDENCE_SPLIT` や `WEIGHT_SHIFT` と同じく `compare()` で測り直してテストで縛る仕掛けを
+`rankStable` にも作っていなかったため、2026-09-06 以降の費目修正（Neokyo の国内送料・
+FROM JAPAN の ¥200・ZenMarket のサイト別・輸出通関の総額化）で値が動いたのに、この行だけ
+誰も測り直していなかった。いまは `src/app/sources/measured.ts` の `RANK_STABILITY` が
+7カ国分を持ち、`measured.test.ts` が縛る。
 
 5点 × ¥3,000・米国の実測（`docs/audit/measured-2026-09-06.md`）。この表と `/sources` の同じ表は `src/app/sources/measured.ts` の1か所から来ていて、`src/app/sources/measured.test.ts` が毎回 `compare()` で測り直して突き合わせる。**手で書いた総額は腐る。**為替を ECB へ直したとき（4186822）この表を直し忘れ、公開ページが ¥58 古い総額を実測として出していた：
 
