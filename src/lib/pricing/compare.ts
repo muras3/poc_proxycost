@@ -45,6 +45,23 @@ const weakestTier = (tiers: Tier[]): Tier =>
 
 const sum = (lines: Line[]) => lines.reduce((a, l) => a + (l.amount ?? 0), 0);
 
+/**
+ * 総額の区間（P1）。`low` は `sum()` と同じ式（未取得 = 0）。
+ * `high` は未取得の費目のうち `unknownCapYen` が置けるものだけ足す。
+ * 置けないものが1件でもあれば `highUnbounded`。
+ */
+function totalRange(lines: Line[]): Row['total'] {
+  const low = sum(lines);
+  let high = low;
+  let highUnbounded = false;
+  for (const l of lines) {
+    if (l.amount != null) continue; // 点・区間は low に既に入っている
+    if (l.unknownCapYen != null) high += l.unknownCapYen;
+    else highUnbounded = true;
+  }
+  return { low, high, highUnbounded };
+}
+
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 /** 梱包後の重量。仮定であって実測ではない。 */
@@ -450,12 +467,27 @@ function storageLine(
         return L('storage', `Storage after ${st.freeDays} free days`, 0,
           `free for the first ${st.freeDays} days${freeSuffix}`, 'fixed', st.sourceUrl);
       }
-      const note = 'the company does not publish the amount — it depends on item size and'
-        + ' value; reference examples (~¥200/month for a CD, ~¥700/month for a guitar) are'
-        + ' "very roughly" and not a price list, so we do not use them as a point estimate'
-        + ' and ¥700 is not a ceiling'
+      const unknownReason = 'the company does not publish the amount — it depends on item size'
+        + ' and value; reference examples (~¥200/month for a CD, ~¥700/month for a guitar) are'
+        + ' "very roughly" and not a price list, so we do not use them as a point estimate';
+      const note = `${unknownReason} and ¥700 is not a ceiling`
         + (overMax ? ` — capped at ${st.maxDays} days; ${st.maxDaysConsequence}` : '');
-      return L('storage', `Storage after ${st.freeDays} free days`, null, note, 'none', st.sourceUrl);
+      // 上端（P1）: 単価は非公表でも、有料になりうる期間は maxDays - freeDays で閉じている
+      // （Jauce「Maximum storage time is 120 days」）ので「額×期間」で上端が置ける。
+      // `referenceMonthlyYen` は上限ではなく参考額（R2）——ここでも上限としては使わない。
+      // 使うのは「この額を月あたりの上端の見積りとして掛け合わせる」という一段別の判断。
+      const paidPeriodDays = st.maxDays - st.freeDays;
+      const paidMonths = Math.ceil(paidPeriodDays / 30);
+      const capYen = paidMonths * rate.referenceMonthlyYen;
+      const capNote = `estimated upper bound, not a published cap: ¥${rate.referenceMonthlyYen}`
+        + `/month (the guitar reference figure, not a ceiling) × up to ${paidMonths} paid`
+        + ` month(s) before the ${st.maxDays}-day maximum storage period is reached`;
+      return {
+        ...L('storage', `Storage after ${st.freeDays} free days`, null, note, 'none', st.sourceUrl),
+        unknownReason,
+        unknownCapYen: capYen,
+        unknownCapNote: capNote,
+      };
     }
   }
 }
@@ -809,7 +841,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   });
   if (prepaid) lines.push(prepaid);
 
-  const total = sum(lines);
+  const total = totalRange(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
   // **重量は費目ではないので、行の tier には現れない。** EMS 行が「公表料金」になった今、
   // 重量が推定であることをここで別に数えないと、推定の重量で引いた総額が確定値の顔をする。
@@ -905,17 +937,17 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 function rank(rows: Row[]): Row[] {
   // 第2キーを持たない。同額の並びは入力順（SERVICES の宣言順）のまま残る
   // ——Array#sort は安定なので。その並びに意味は無く、意味が無いことは画面が書く。
-  const byTotal = (a: Row, b: Row) => a.total - b.total;
+  const byTotal = (a: Row, b: Row) => a.total.low - b.total.low;
   const ok = rows.filter((r) => r.comparable).sort(byTotal);
   const notOk = rows.filter((r) => !r.comparable).sort(byTotal);
-  const low = ok[0]?.total ?? 0;
+  const low = ok[0]?.total.low ?? 0;
   return [
     ...ok.map((r) => ({
       ...r,
-      rank: ok.filter((o) => o.total < r.total).length + 1,
-      diff: r.total - low,
-      cheapest: r.total === low,
-      tied: ok.some((o) => o.id !== r.id && o.total === r.total),
+      rank: ok.filter((o) => o.total.low < r.total.low).length + 1,
+      diff: r.total.low - low,
+      cheapest: r.total.low === low,
+      tied: ok.some((o) => o.id !== r.id && o.total.low === r.total.low),
     })),
     // 比べられない行の総額は最大の費目を欠いている。同額でも「並んだ」ことにならない
     // ので tied は立てない（比べていないものを「同じ」と書かない）。
@@ -933,8 +965,8 @@ function rank(rows: Row[]): Row[] {
 function cheapestIds(rows: Row[]): string[] {
   const ok = rows.filter((r) => r.comparable);
   if (!ok.length) return [];
-  const low = Math.min(...ok.map((r) => r.total));
-  return ok.filter((r) => r.total === low).map((r) => r.id);
+  const low = Math.min(...ok.map((r) => r.total.low));
+  return ok.filter((r) => r.total.low === low).map((r) => r.id);
 }
 
 /** 'A' / 'A and B' / 'A, B and C'。英語UIにそのまま出る。 */
@@ -1191,7 +1223,9 @@ export function compare(
   for (const band of bands) {
     for (const r of band.rows) {
       const t = rowTotalRange[r.id];
-      rowTotalRange[r.id] = t ? [Math.min(t[0], r.total), Math.max(t[1], r.total)] : [r.total, r.total];
+      rowTotalRange[r.id] = t
+        ? [Math.min(t[0], r.total.low), Math.max(t[1], r.total.low)]
+        : [r.total.low, r.total.low];
       const d = rowDiffRange[r.id];
       rowDiffRange[r.id] = d ? [Math.min(d[0], r.diff), Math.max(d[1], r.diff)] : [r.diff, r.diff];
     }
@@ -1203,7 +1237,7 @@ export function compare(
     (keep, b) => keep.filter((id) => b.cheapestRowIds.includes(id)),
     first.cheapestRowIds);
   const stable = holdsAcrossBands.length > 0;
-  const totals = bands.flatMap((b) => b.rows.map((r) => r.total));
+  const totals = bands.flatMap((b) => b.rows.map((r) => r.total.low));
   // 代表として真ん中の段を rows に据える。1つの数字を主役にはしないが、
   // 画面が何も出せないと困るので順序の代表は要る。
   const mid = bands[Math.floor(bands.length / 2)]!;

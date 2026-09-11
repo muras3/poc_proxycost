@@ -42,13 +42,42 @@ export type SiteId =
   | 'toranoana'
   | 'other';
 
+/**
+ * 額の形（P1）。**`Tier`（確度）とは軸が別。混ぜない。**
+ *   point   … 確定した1つの額
+ *   range   … 幅のある額（`amount` が下端、`amountHighYen` が上端）
+ *   unknown … 額が無い。`amount` は null。理由は `unknownReason` に構造化して持つ
+ *             （旧: `note` の散文にしか無く、機械可読ではなかった）
+ * 省略時は `amount` の有無から推論する（`amount != null` なら 'point'、null なら
+ * 'unknown'）── 660件超の既存コードが `amount: number | null` だけで Line を作れることを崩さない。
+ */
+export type AmountKind = 'point' | 'range' | 'unknown';
+
 export interface Line {
   /** 安定した識別子。表の行を会社間で突き合わせるのに使う。 */
   key: string;
   /** 画面表示（英語）。 */
   label: string;
-  /** 円。null = 未取得。**0 で埋めるな。** */
+  /** 円。null = 未取得。**0 で埋めるな。** 'range' のときは下端。 */
   amount: number | null;
+  /** 額の形。省略時は amount の有無から推論（上の AmountKind 参照）。 */
+  amountKind?: AmountKind;
+  /** amountKind が 'range' のときの上端（円）。 */
+  amountHighYen?: number | null;
+  /**
+   * amount が null（未取得）の理由（英語、構造化）。**`note` の散文とは別に機械可読で持つ。**
+   * 画面・集計はこちらを読み、`note` は引き続き行の1行説明として残す。
+   */
+  unknownReason?: string | null;
+  /**
+   * 未取得だが「額 × 期間」等で上端が置けるときの見積り（円）。
+   * null/undefined = 上端が置けない費目（P1 時点で3件: FROM JAPAN 外注梱包・
+   * US Zonos 利用料・F35 立替/DDP。docs/ROADMAP.md P1 参照）。
+   * **これは上限ではなく推定。**`unknownCapNote` に必ずその旨を書く。
+   */
+  unknownCapYen?: number | null;
+  /** unknownCapYen の根拠・「推定であり上限ではない」旨（英語）。 */
+  unknownCapNote?: string | null;
   /** 内訳の1行説明（英語）。 */
   note: string;
   tier: Tier;
@@ -96,7 +125,14 @@ export interface Row {
   /** '3 orders · 3 parcels' */
   tag: string;
   lines: Line[];
-  total: number;
+  /**
+   * 総額は区間（P1）。**`low` は従来の総額と同じ計算式**
+   * （未取得の費目は 0 として落ちる）── 順位・差額は P1 では `low` で測り、挙動を変えない。
+   * `high` は `low` に、未取得のうち上端が置ける費目の `unknownCapYen` を足した額。
+   * `highUnbounded` が true のとき、`high` は「置ける上端だけを足した額」であって
+   * 真の上限ではない（上端が置けない費目が残っている）。画面はそのとき「上限不明」と出す。
+   */
+  total: { low: number; high: number; highUnbounded: boolean };
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;

@@ -29,7 +29,7 @@ function diffText(row: Row, result: CompareResult): string {
  * 「上が勝っている」と読まれる。誰と並んでいるのかまで書いて初めて打ち消せる。
  */
 function tiedText(row: Row, rows: Row[]): string {
-  const others = rows.filter((r) => r.id !== row.id && r.comparable && r.total === row.total);
+  const others = rows.filter((r) => r.id !== row.id && r.comparable && r.total.low === row.total.low);
   if (!others.length) return '';
   return `tied with ${andList(others.map((r) => r.label))}`
     + ' — the order between them means nothing';
@@ -47,7 +47,7 @@ function totalText(row: Row, result: CompareResult): string {
     const r = result.rowTotalRange[row.id];
     if (r) return `${row.approximate ? '~' : ''}${yenRange(r, true)}`;
   }
-  return `${row.approximate ? '~' : ''}${yenRounded(row.total)}`;
+  return `${row.approximate ? '~' : ''}${yenRounded(row.total.low)}`;
 }
 
 /**
@@ -249,11 +249,11 @@ export function Summary({ result }: { result: CompareResult }) {
       ))}{' '}
       <span className="text-neutral-500">
         approx. total{' '}
-        <Amount amount={first.total} tier={first.approximate ? 'estimate' : 'fixed'} round />
+        <Amount amount={first.total.low} tier={first.approximate ? 'estimate' : 'fixed'} round />
         {' · '}
         {/* 「fixed <日付>」とだけ出していた頃は、実装日を出典日として名乗る嘘だった。
             出典名と参照日を出し、詳細は Sources の #fx に送る。 */}
-        {foreign(first.total, result.currency.code, result.currency.rate)} at ¥
+        {foreign(first.total.low, result.currency.code, result.currency.rate)} at ¥
         {rateLabel(result.currency.rate)}/{result.currency.code} (ECB reference rate for{' '}
         {result.currency.asOf})
       </span>

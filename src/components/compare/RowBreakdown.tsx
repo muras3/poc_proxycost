@@ -54,15 +54,15 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
         <tr className="border-t border-neutral-300 font-medium dark:border-neutral-700">
           <td className="py-1">approx. total</td>
           <td className="py-1 text-right num">
-            <Amount amount={row.total} tier={row.approximate ? 'estimate' : 'fixed'} round />
+            <Amount amount={row.total.low} tier={row.approximate ? 'estimate' : 'fixed'} round />
           </td>
           {!isCheapest && (
             <td className="py-1 text-right num text-neutral-500">
-              <Amount amount={cheapest.total} tier={cheapest.approximate ? 'estimate' : 'fixed'} round />
+              <Amount amount={cheapest.total.low} tier={cheapest.approximate ? 'estimate' : 'fixed'} round />
             </td>
           )}
           {!isCheapest && (
-            <td className="py-1 text-right num">+{yen(row.total - cheapest.total)}</td>
+            <td className="py-1 text-right num">+{yen(row.total.low - cheapest.total.low)}</td>
           )}
         </tr>
       </tfoot>
