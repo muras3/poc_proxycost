@@ -1641,3 +1641,68 @@ describe('edges', () => {
     for (const r of rows) expect(r.outboundUrl).toMatch(/^https:\/\//);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ロードマップ 0b / 0c ── F26 輸出通関手数料（総額）と F30 小形包装物の価格上限。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('F26 export clearance fee is a total line with a per-row threshold', () => {
+  test('¥200,000 exactly is under the threshold: ¥0', () => {
+    const rows = compare({ items: [item({ id: 'a', priceYen: 200000 })], country: 'US' }).rows;
+    for (const r of rows) expect(line(r, 'export-clearance').amount, r.serviceId).toBe(0);
+  });
+
+  test('¥200,001 is over the threshold: ¥2,800', () => {
+    const rows = compare({ items: [item({ id: 'a', priceYen: 200001 })], country: 'US' }).rows;
+    for (const r of rows) expect(line(r, 'export-clearance').amount, r.serviceId).toBe(2800);
+  });
+
+  test('multiple parcels still charge the fee once per row, not once per parcel', () => {
+    // Buyee は既定で注文ごとに別送する（複数個口）。それでも輸出通関は行につき1回。
+    const rows = compare({
+      items: [
+        item({ id: 'a', priceYen: 200001 }),
+        item({ id: 'b', priceYen: 1 }),
+        item({ id: 'c', priceYen: 1 }),
+      ],
+      country: 'US',
+    }).rows;
+    const buyee = rows.find((r) => r.id === 'buyee:default')!;
+    expect(buyee.parcels).toBeGreaterThan(1);
+    expect(line(buyee, 'export-clearance').amount).toBe(2800);
+  });
+});
+
+describe('F30 FROM JAPAN small packet is only selectable at or under ¥30,000 declared value', () => {
+  test('¥30,000 exactly is still eligible', () => {
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 30000, weightG: 100 })],
+      country: 'DE',
+      method: 'small-packet-air',
+    }).rows;
+    const fj = rows.find((r) => r.id === 'fromjapan')!;
+    expect(fj.comparable).toBe(true);
+    expect(line(fj, 'intl-shipping').amount).not.toBeNull();
+  });
+
+  test('¥30,001 is no longer eligible for small packet — a different reason than weight or country', () => {
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 30001, weightG: 100 })],
+      country: 'DE',
+      method: 'small-packet-air',
+    }).rows;
+    const fj = rows.find((r) => r.id === 'fromjapan')!;
+    expect(fj.comparable).toBe(false);
+    expect(fj.notComparableReason).toContain('declared value');
+    expect(line(fj, 'intl-shipping').amount).toBeNull();
+  });
+
+  test('the price cap does not affect other companies without that limit', () => {
+    const rows = compare({
+      items: [item({ id: 'a', priceYen: 30001, weightG: 100 })],
+      country: 'DE',
+      method: 'small-packet-air',
+    }).rows;
+    const buyee = rows.find((r) => r.id === 'buyee')!;
+    expect(buyee.comparable).toBe(true);
+  });
+});
