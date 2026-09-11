@@ -13,14 +13,24 @@ import { RowBreakdown } from './RowBreakdown';
 const rel = (paysUs: boolean) =>
   paysUs ? 'sponsored nofollow noopener noreferrer' : 'nofollow noopener noreferrer';
 
+/**
+ * **判定不能では「CHEAPEST」と言い切らない**（コーディネーター指摘、P1-3 追修正）。
+ * `rankIndeterminate` は「比較可能な全社が枠＋同等に収まっていて、どの社が安いか
+ * 判別できていない」状態そのものなので、下端最小の行にだけ「CHEAPEST」を付けると
+ * すぐ下の `StabilityNote`（「we can't tell which one wins」）と同じ画面の中で
+ * 自己矛盾する——このプロダクトが最も避けるべき欠陥。**「LEADS」に変える**
+ * ——下端が最小である事実（`row.cheapest`）自体は本当なので消さないが、
+ * 「安いと確定した」ではなく「今のところ先頭」だと分かる言葉にする。
+ */
 function diffText(row: Row, result: CompareResult): string {
   // 比較できない行に差額を出したら、比べられるかのように見える。
   if (!row.comparable) return 'NOT COMPARABLE';
+  const leadWord = result.rankIndeterminate ? 'LEADS' : 'CHEAPEST';
   if (result.rowDiffRange) {
     const r = result.rowDiffRange[row.id];
-    if (r) return r[0] === 0 && r[1] === 0 ? 'CHEAPEST' : `+${yenRange(r)}`;
+    if (r) return r[0] === 0 && r[1] === 0 ? leadWord : `+${yenRange(r)}`;
   }
-  return row.diff === 0 ? 'CHEAPEST' : `+${yen(row.diff)}`;
+  return row.diff === 0 ? leadWord : `+${yen(row.diff)}`;
 }
 
 /**
@@ -222,7 +232,9 @@ export function RankBoard({
                     className={`block font-semibold num ${
                       !row.comparable
                         ? 'text-xs text-neutral-500'
-                        : row.cheapest
+                        // **判定不能では緑（断定の色）を使わない。**「LEADS」の文字だけ
+                        // 変えても、隣の「CHEAPEST」と同じ強い緑のままでは断定に見える。
+                        : row.cheapest && !result.rankIndeterminate
                           ? 'text-lg text-emerald-700 dark:text-emerald-400'
                           : 'text-lg'
                     }`}
@@ -304,14 +316,26 @@ export function Summary({ result }: { result: CompareResult }) {
   // 直下の StabilityNote が打ち消していても、一番大きい文が断定していたら嘘になる。
   const midBand = result.bands?.[Math.floor(result.bands.length / 2)];
   const qualify = !result.rankStable && midBand ? ` at ${midBand.label}` : '';
+  // **判定不能では「is cheapest」「are tied cheapest」と言い切らない**
+  // （コーディネーター指摘、P1-3 追修正）。すぐ下の `StabilityNote` が
+  // 「we can't tell which one wins」と言っているのと同じ画面内で「最安」と
+  // 断定したら自己矛盾になる——CHEAPEST バッジ（`diffText`）と同じ欠陥。
+  // `StabilityNote` に断定を任せ、ここは総額・換算だけを黙って出す
+  // （`data-testid="summary"` は e2e が文言ではなく要素そのものを掴むための
+  // フック——本文言を変えるたびにセレクタが壊れる P1-2 の事故と同じ形を
+  // 繰り返さないため）。
   return (
-    <p className="text-sm">
-      <strong>
-        {leaders.length > 1
-          ? `${andList(leaders.map((r) => r.label))} are tied cheapest${qualify}.`
-          : `${first.serviceName} is cheapest${qualify}.`}
-      </strong>{' '}
-      {rest.map((r, i) => (
+    <p className="text-sm" data-testid="summary">
+      {!result.rankIndeterminate && (
+        <>
+          <strong>
+            {leaders.length > 1
+              ? `${andList(leaders.map((r) => r.label))} are tied cheapest${qualify}.`
+              : `${first.serviceName} is cheapest${qualify}.`}
+          </strong>{' '}
+        </>
+      )}
+      {!result.rankIndeterminate && rest.map((r, i) => (
         <span key={r.id}>
           {/* 重量が不明なときは差額も幅になる。1点に丸めて言い切らない。 */}
           {r.label} costs {result.rowDiffRange?.[r.id]

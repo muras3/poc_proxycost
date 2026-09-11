@@ -126,7 +126,10 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     if (!comparable && totalMatch) {
       throw new Error(`row ${i} is not comparable but still prints a total: ${text}`);
     }
-    const cheapest = /(^|\s)CHEAPEST(\s|$)/.test(text);
+    // 判定不能では「CHEAPEST」と言い切らず「LEADS」に変わる（P1-3 追修正、
+    // `RankBoard` の `diffText`）——`row.cheapest`（下端最小）という事実自体は
+    // 変わらないので、どちらの文言でも同じ意味として読む。
+    const cheapest = /(^|\s)(CHEAPEST|LEADS)(\s|$)/.test(text);
     const diffMatch = text.match(/\+¥([\d,]+)/);
     // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
     const shown = text.match(/^(\d+)\s/);
