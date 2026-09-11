@@ -8,7 +8,10 @@ import {
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
-import { SERVICES, type OptionalFeeContext, type Service } from './services';
+import {
+  EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
+  EXPORT_DECLARATION_FEE_YEN, SERVICES, type OptionalFeeContext, type Service,
+} from './services';
 import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import { alcoholItems } from './restricted-goods';
@@ -35,10 +38,6 @@ const weakestTier = (tiers: Tier[]): Tier =>
 
 const sum = (lines: Line[]) => lines.reduce((a, l) => a + (l.amount ?? 0), 0);
 
-// 確度の強さの順（弱い順）。複数の item をまとめるとき、含まれる中で最も弱い確度を行の確度にする。
-const TIER_STRENGTH: Record<Tier, number> = { none: 0, unverified: 1, estimate: 2, fixed: 3 };
-const weakestTier = (tiers: Tier[]): Tier =>
-  tiers.reduce((worst, t) => (TIER_STRENGTH[t] < TIER_STRENGTH[worst] ? t : worst), 'fixed' as Tier);
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
 
 /** 梱包後の重量。仮定であって実測ではない。 */
@@ -336,6 +335,30 @@ function taxLines(
   return out;
 }
 
+/**
+ * F26 輸出通関手数料。**日本郵便の費目であって代行の費目ではない**ので、
+ * 5社すべてに同額・同条件で出す（`EXPORT_DECLARATION_FEE_YEN` のコメント参照）。
+ *
+ * 条件は行の商品代合計（`itemsYen`）が ¥200,000 を超えるかどうかだけ。
+ * **個口の数では倍にしない**（同じ受取人あてに2個以上は「全ての梱包を合わせて1件」）。
+ * よって行につき1回。発生しないとき（¥200,000 以下）も額 0 の行を出す——
+ * 消すと「調べていない」と区別が付かない。
+ */
+function exportClearanceLine(itemsYen: number): Line {
+  const over = itemsYen > EXPORT_DECLARATION_FEE_THRESHOLD_JPY;
+  return L(
+    'export-clearance', 'Export clearance fee',
+    over ? EXPORT_DECLARATION_FEE_YEN : 0,
+    over
+      ? `¥${EXPORT_DECLARATION_FEE_YEN.toLocaleString('en-US')} — declared value over`
+        + ` ¥${EXPORT_DECLARATION_FEE_THRESHOLD_JPY.toLocaleString('en-US')}, charged once per`
+        + ' shipment (Japan Post treats parcels sent together to the same recipient as one)'
+      : `only over ¥${EXPORT_DECLARATION_FEE_THRESHOLD_JPY.toLocaleString('en-US')}`,
+    'fixed',
+    EXPORT_DECLARATION_FEE_SOURCE,
+  );
+}
+
 function packingLine(svc: Service, parcelWeights: number[]): Line | null {
   if (!svc.packing) return null;
   const p = svc.packing;
@@ -560,6 +583,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     const rate = svc.postage[m];
     if (!rate) return null;                        // その社はこの方式を売っていない
     if (rate.unavailableIn?.includes(ctx.cc)) return null;  // その国へは出していない
+    // F30: 商品価格（Charge 1）がこの方式の上限を超えたら選べない。重量や国とは別の理由。
+    if (rate.priceCapJpy != null && itemsYen > rate.priceCapJpy) return null;
     const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
     if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
     // **上乗せは個口ごとに足す。**1kg 段の定額なので、個口を分ければその数だけ乗る。
@@ -584,12 +609,16 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 以前は最上段に丸めていたので、20kg の小包を 15kg の料金で安く見せていた。
   const each = parcelGross.map((g) => postageFor(method, ctx.cc, g));
   const overMax = each.some((e) => e == null);
+  // F30: 商品価格の上限超は「重すぎる」でも「売っていない」でもなく「選べない」。
+  const priceCapExceeded = !!rate?.priceCapJpy && itemsYen > rate.priceCapJpy;
   const shipYen: number | null = priceAll(method);
-  // **「その社が売っていない」と「重すぎる」は違う理由なので、書き分ける。**
+  // **「その社が売っていない」「重すぎる」「商品価格が高すぎる」は違う理由なので、書き分ける。**
   const stepLabel = !rate
     ? `${svc.name} does not offer this method`
     : rate.unavailableIn?.includes(ctx.cc)
       ? `${svc.name} does not ship this method to ${COUNTRIES[ctx.cc].name}`
+    : priceCapExceeded
+      ? `not eligible above ¥${rate.priceCapJpy!.toLocaleString('en-US')} declared value`
     : overMax
       ? `over ${formatStep(maxGramsFor(method, ctx.cc))} — outside this method's table`
       : split
@@ -639,6 +668,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     + markupNote
     + (shipYen == null ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
     shipTier, method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL));
+
+  // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
+  lines.push(exportClearanceLine(itemsYen));
 
   // 入金手数料は送金合計額に対する率なので gross-up。
   // ¥10,000 をチャージするには 10000/(1-0.035) = ¥10,363 が要る。
@@ -752,6 +784,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : rate.unavailableIn?.includes(ctx.cc)
         ? `${svc.name} does not ship ${spec.label} to ${COUNTRIES[ctx.cc].name}`
           + ' — its options there are couriers, which we do not price'
+      : priceCapExceeded
+        ? `${spec.label} can only be selected under ¥${rate.priceCapJpy!.toLocaleString('en-US')}`
+          + ' declared value at this company, and this cart is over that'
         : `${spec.label} has no published rate above ${formatStep(maxGramsFor(method, ctx.cc))}`
           + ' in our table, so this total is missing its largest line',
   };
