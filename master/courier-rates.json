@@ -1,0 +1,71 @@
+{
+  "$schema_note": "宅配便の最終価格。分解しない（社の契約が外から見えないため）。今回のランでは observations は0件 ── 全社がボット対策/robots.txtで測定不能だった。捏造していない。注記: 外部文書（リポジトリ非搭載の引き継ぎ文書、2026-09-09時点）に既存の実測データがある。別途取り込み予定。詳細は docs/audit/o2-courier-2026-09-11.md §6 を参照（数値はこのファイルには入れていない）。",
+  "sources": [
+    {
+      "proxy": "zenmarket",
+      "url": "https://zenmarket.jp/calc.aspx/Calculate",
+      "robots_checked": "2026-09-11: /calc.aspx 自体はrobots.txtで許可（Disallow対象は/en/en/等の言語重複パスのみ）。Crawl-delayの指定なし",
+      "terms_checked": "2026-09-11: 未確認（Cloudflareチャレンジで到達不能のため利用規約の自動アクセス条項確認まで進めなかった）",
+      "fetched_at": "2026-09-11",
+      "interval_seconds": null,
+      "result": "blocked_captcha",
+      "note": "POST /calc.aspx/Calculate への実測呼び出しがCloudflareの『Just a moment...』チャレンジ（challenges.cloudflare.com、CAPTCHA相当のJSチャレンジ）を返した。手順書作成時（2026-09-07）以降にCloudflare保護が追加された可能性が高い。指示（AGENTS.md / O2-COURIER-RUN.md）によりCAPTCHA回避は行わず、ここで停止した。観測値は1件も取得していない"
+    },
+    {
+      "proxy": "neokyo",
+      "url": "https://neokyo.com/en/shipping-rates-estimate",
+      "robots_checked": "2026-09-11: robots.txt で `Disallow: /*?*` ── クエリ文字列付きURL全体が禁止。計算機は `?weight=...&country_to=...` というクエリ文字列でしか呼べないため、この計算機自体がrobots.txtで自動アクセス禁止対象",
+      "terms_checked": "2026-09-11: robots.txtの時点で不可と判断したため利用規約は未確認",
+      "fetched_at": "2026-09-11",
+      "interval_seconds": null,
+      "result": "blocked_robots",
+      "note": "手順書（2026-09-07確認）はURLだけで結果が出ると記録しているが、robots.txtの `Disallow: /*?*` に抵触するため測定しない。指示（O2-COURIER-RUN.md）通り、規約以前にrobots.txtで自動アクセス禁止と判断した時点で対象外とした"
+    },
+    {
+      "proxy": "buyee",
+      "url": "https://buyee.jp/robots.txt",
+      "robots_checked": "2026-09-11: robots.txt 取得自体が HTTP 403（Bot対策で robots.txt すら読めない）",
+      "terms_checked": "2026-09-11: robots.txtが確認できないため利用規約以前に判断不能。「判断が付かなければ止めて報告」に従い測定しない",
+      "fetched_at": "2026-09-11",
+      "interval_seconds": null,
+      "result": "blocked_unknown",
+      "note": "buyee.jp/helpcenter/guide/shipping-method の計算機リンク先の実測に進む前に、robots.txt確認の段階で403となり停止した"
+    },
+    {
+      "proxy": "fromjapan",
+      "url": "https://fromjapan.co.jp/robots.txt",
+      "robots_checked": "2026-09-11: robots.txt へのアクセスが 301 リダイレクトのみ返り、内容未取得（リダイレクト先の追跡は本ランでは行わなかった）",
+      "terms_checked": "2026-09-11: 未確認",
+      "fetched_at": "2026-09-11",
+      "interval_seconds": null,
+      "result": "not_confirmed",
+      "note": "計算機の場所自体が未確認（手順書記載の通り）。robots.txt確認も完了しなかったため、この社は今回のランでは着手できなかった"
+    },
+    {
+      "proxy": "jauce",
+      "url": "https://jauce.com/robots.txt",
+      "robots_checked": "2026-09-11: TLS証明書エラー（証明書期限切れ）で接続不能",
+      "terms_checked": "2026-09-11: 未確認",
+      "fetched_at": "2026-09-11",
+      "interval_seconds": null,
+      "result": "not_confirmed",
+      "note": "jauce.com へのHTTPS接続がSSL証明書失効のため確立できず、robots.txtの確認にも進めなかった"
+    }
+  ],
+  "observations": [],
+  "defaults": [],
+  "not_available": [
+    { "proxy": "zenmarket", "reason": "計算機APIがCloudflareのCAPTCHA相当チャレンジで保護されており、指示によりバイパスを試みず測定を停止した", "checked_at": "2026-09-11" },
+    { "proxy": "neokyo", "reason": "計算機のURLがクエリ文字列を使う形式で、同社robots.txtの `Disallow: /*?*` に該当するため測定しない", "checked_at": "2026-09-11" },
+    { "proxy": "buyee", "reason": "robots.txt取得自体がHTTP 403で、自動アクセス可否を確認できないため測定しない", "checked_at": "2026-09-11" },
+    { "proxy": "fromjapan", "reason": "計算機の場所が未確認。robots.txtの取得も301リダイレクトで完了せず、今回のランでは着手できなかった", "checked_at": "2026-09-11" },
+    { "proxy": "jauce", "reason": "TLS証明書エラーで接続不能。robots.txtの確認にも進めなかった", "checked_at": "2026-09-11" }
+  ],
+  "conclusions": {
+    "volumetric_divisor": {
+      "value": null,
+      "confidence": "unknown",
+      "note": "今回のランでは observations が0件のため、容積重量の除数は決まらなかった。前回（2026-09-08）の監査で指摘された blank 測定の欠陥を修正する機会自体がなかった。次に必要なのは、ZenMarketがCloudflareチャレンジを課すようになった経緯の確認（正規ブラウザからの手動確認や、社への問い合わせ等、自動アクセスに拠らない方法）と、Neokyo/Buyee/FROM JAPAN/Jauceそれぞれのrobots.txt・利用規約の人力での再確認"
+    }
+  }
+}
