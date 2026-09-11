@@ -132,6 +132,46 @@ export function alcoholItems(items: Item[]): Item[] {
 }
 
 /**
+ * **長さで方式が絞られうる品の、重量表のライン。**
+ *
+ * 2026-09-08 の実測（`docs/audit/o2-courier-2026-09-08.md` §2）で分かったこと:
+ * **大きい箱を指定すると、見積画面から EMS・航空・船便が消える。**
+ * つまり日本郵便の方式には、額ではなく**可否**として寸法が効く軸がある。
+ * **我々のモデルは重量の上限しか持っていない**（`postage.ts` の `maxGramsFor`）ので、
+ * 「軽いが長い」荷物に、**実際には引き受けられない方式の値段を付けている。**
+ * 寸法は入力に無いので**額は直せない。直せないことを言う**のがここ（T27 と同じ作法）。
+ *
+ * **カテゴリ単位でやらない。**実データが誤爆を保証している:
+ *   - `fishing-tackle` … 30g のルアーと 9,780g の1ピースロッドが同居
+ *   - `sports-goods`  … 200g の手ぬぐいと 7,000g の弓が同居
+ *   - `figures`       … 439g のねんどろいどと 3,000g の1/4スケールが同居
+ * **効くのは重さではなく長さ**なので、重さでも絞れない（`budo-bag` は 800g だが竹刀の長さ）。
+ * だから酒（`ALCOHOL_WEIGHT_LINE_IDS`）と同じく**行を名指しで列挙する。**
+ *
+ * 入れる基準は「**label だけで長さが定義的に大きいと言い切れる**」こと。
+ * 1/4スケールのフィギュアは重いが箱であり、長さは label から言えないので**入れていない。**
+ * 見逃す側に外している——漏れる分は常時開示の「我々は寸法を見ていない」が引き受ける。
+ */
+export const LONG_ITEM_WEIGHT_LINE_IDS = [
+  'rod-1piece',      // Rod, 1-piece                        9,780g
+  'rod-2piece',      // Rod, 2-piece                        6,660g
+  'rod-multipiece',  // Rod, 3-piece or more / telescopic   5,890g
+  'rod',             // Rod (piece count unknown)           6,660g
+  'kyudo-yumi',      // Kyudo yumi (bow)                    7,000g
+  'budo-bag',        // Bogu bag / shinai bag / weapon case   800g
+] as const;
+
+/**
+ * カートの中で「長さで絞られうる」ラインに当たった品。当たらなければ空。
+ * `alcoholItems` と同じ形で、**推測はしない**——当たった品を挙げるだけで、
+ * 当たらなかった品を「短い」とは言わない。
+ */
+export function longItems(items: Item[]): Item[] {
+  const ids: readonly string[] = LONG_ITEM_WEIGHT_LINE_IDS;
+  return items.filter((i) => i.weightLineId != null && ids.includes(i.weightLineId));
+}
+
+/**
  * 重量表のラインの見出し（'Sake / spirits, 700-750ml bottle'）。
  * `Item.weightSource` は出典と件数まで含む長い文字列なので、警告文には向かない。
  * **表の1か所から引く。**画面に文字列を書き写すと、表を直したとき片方だけ古くなる。

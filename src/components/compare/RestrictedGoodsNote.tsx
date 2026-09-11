@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { COUNTRIES } from '@/lib/pricing/countries';
 import {
-  alcoholItems, LITHIUM_AIRMAIL_LISTED, restrictedList, weightLineLabel,
+  alcoholItems, LITHIUM_AIRMAIL_LISTED, longItems, restrictedList, weightLineLabel,
 } from '@/lib/pricing/restricted-goods';
 import type { CompareResult, CountryCode, Item } from '@/lib/pricing/types';
 
@@ -18,7 +18,9 @@ import type { CompareResult, CountryCode, Item } from '@/lib/pricing/types';
  *      宛先（英国・ドイツ）では、そう足す。**品目の判定ではなく宛先の事実**なので、
  *      カートを見ずに言える。持っている事実を黙る理由が無い。
  * 品目そのものの判定はしない（内容品の申告も品目分類も持っていない）。
- * 例外は重量表が既に分類している酒だけで、それは `AlcoholInCartNote` が扱う。
+ * 例外は**重量表が既に分類しているもの**だけで、酒は `AlcoholInCartNote`、
+ * 長さで方式が絞られうる品は `LongItemsInCartNote` が扱う。どちらも
+ * 「表が当てたラインを名指しする」以上のことはしない。
  */
 export function RestrictedGoodsNote({
   result, country,
@@ -85,6 +87,48 @@ export function AlcoholInCartNote({
       as international mail anywhere in the world, and below that the destination country
       decides. We priced this basket without checking either, so these totals may belong to a
       parcel that cannot be sent.{' '}
+      <Link href="/sources#restricted" className="underline">
+        What the rules say
+      </Link>
+      .
+    </p>
+  );
+}
+
+/**
+ * カートに**長さで方式が絞られうる品**が入っているときの警告。
+ * `AlcoholInCartNote` と同じ作法——**重量表が当てたラインを名指しするだけ**で、
+ * 当たらなかった品を「短い」とは言わない。
+ *
+ * **酒より弱い色で出す。**酒は「送れない小包の値段」になりうるので総額そのものが
+ * 無意味になるが、こちらは**選べる方式が減るかもしれない**であって、総額が嘘に
+ * なるとは限らない（一番安い方式が落ちれば上がるが、EMS が残れば額は変わらない）。
+ * 強さを揃えると、本当に強い警告のほうが薄まる。
+ *
+ * **どの方式が落ちるかは書けない。**寸法制限を我々は持っていないから
+ * （`EmsOnlyNote` の注記と同じ理由）。**言えるのは「見ていない」ことだけ**で、
+ * 見ていないことを言うのがこの行の全部。
+ */
+export function LongItemsInCartNote({
+  result, items,
+}: { result: CompareResult; items: Item[] }) {
+  if (!result.rows.length) return null;
+  const hits = longItems(items);
+  if (!hits.length) return null;
+  // 品名ではなく**当たったライン**の見出しを出す。長いと言える根拠はそちらにある。
+  const lines = [...new Set(
+    hits.map((i) => (i.weightLineId && weightLineLabel(i.weightLineId)) ?? i.title),
+  )];
+
+  return (
+    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+      {/* 記号は色だけに頼らないため（docs/UI-DESIGN.md §6）。 */}
+      <span aria-hidden>↔ </span>
+      Your basket holds {hits.length === 1 ? 'an item' : 'items'} that are long rather than
+      heavy{lines.length ? ` (${lines.join(', ')})` : ''}. Japan Post caps a parcel&rsquo;s
+      size as well as its weight, and a long parcel can be refused by a method we have priced
+      here. <strong className="font-medium">We hold no size limits and never measured yours</strong>,
+      so we cannot say which of the methods above would actually take it.{' '}
       <Link href="/sources#restricted" className="underline">
         What the rules say
       </Link>
