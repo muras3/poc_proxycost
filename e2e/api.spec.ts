@@ -73,9 +73,10 @@ test.describe('the calculator survives an unusable search', () => {
       page.getByText(/not configured|No listings found|unavailable/i),
     ).toBeVisible();
 
-    // 通知が出たあとも順位は生きている。**文言ではなく要素で見る**——既定カート
-    // （米国）は判定不能で、Summary はもう「is cheapest」と言い切らない
-    // （P1-3 追修正）。
+    // 通知が出たあとも順位は生きている。**文言ではなく要素で見る**（P1-3 追修正:
+    // 判定不能なら Summary は「is cheapest」と言い切らない。既定カート（米国）は
+    // P1-4 で判定不能ではなくなったが、要素の存在だけを見るこの検査自体は
+    // どちらの状態でも成り立つ）。
     await expect(page.getByTestId('summary')).toBeVisible();
   });
 

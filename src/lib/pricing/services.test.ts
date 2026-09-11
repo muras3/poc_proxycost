@@ -260,14 +260,18 @@ describe('display: total fees without a published amount are still total lines',
   const unpriced = (serviceId: string, key: string, over: Partial<Item> = {}): Line =>
     line(one(serviceId, over), key);
 
-  test('only FROM JAPAN (outsourced-packing) and Jauce (premium-insurance) carry unpricedFees', () => {
+  test('only FROM JAPAN (outsourced-packing) carries an unpricedFee by default', () => {
+    // P1-4（オーナー確定 2026-09-11）: Jauce の premium-insurance は任意（利用者が
+    // 選ぶ）で、既定では加入しない。以前は無条件で乗せており、選んでいない利用者にも
+    // 常に上限不明を課していた。この計算機はまだ加入するかどうかを選ぶ UI を持たない
+    // ので、既定では出さない。
     const keysOf = (id: string) => (SERVICES.find((s) => s.id === id)!.unpricedFees ?? [])
       .map((u) => u.key).sort();
     expect(keysOf('neokyo')).toEqual([]);
     expect(keysOf('zenmarket')).toEqual([]);
     expect(keysOf('buyee')).toEqual([]);
     expect(keysOf('fromjapan')).toEqual(['outsourced-packing']);
-    expect(keysOf('jauce')).toEqual(['premium-insurance']);
+    expect(keysOf('jauce')).toEqual([]);
   });
 
   test('outsourced packing is a total line, amount null, and named in excluded', () => {
@@ -279,13 +283,12 @@ describe('display: total fees without a published amount are still total lines',
     expect(row.excluded).toContain(l.label);
   });
 
-  test('Jauce premium insurance is a total line without a number, because the base is not published', () => {
+  test('Jauce premium insurance is opt-in and does not appear by default', () => {
+    // US は Zonos 前払い利用料（duty-prepayment）が全社に乗るので、そちらのせいで
+    // `total.high` はどのみち null になる（設計どおりの別の理由）。ここで見るのは
+    // premium-insurance 行そのものが既定では現れないことだけ。
     const row = one('jauce');
-    const l = unpriced('jauce', 'premium-insurance');
-    expect(l.amount).toBeNull();
-    expect(l.tier).toBe('none');
-    expect(l.note).toContain('1.9%');
-    expect(row.excluded).toContain(l.label);
+    expect(row.lines.some((l) => l.key === 'premium-insurance')).toBe(false);
   });
 
   test('an unpriced total line is never ¥0', () => {
