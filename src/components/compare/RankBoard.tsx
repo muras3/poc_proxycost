@@ -35,6 +35,16 @@ function leaderDiffCertain(result: CompareResult): boolean {
   return leaders.every((r) => totalIsCertain(r.total));
 }
 
+/**
+ * 差額そのものが確定した点かどうか（外部レビュー2回目 A-4）。
+ * `leaderDiffCertain` は1位側だけを見ていたが、**1位が確定していても、比べる
+ * 相手の行自身が上限不明（`high === null`）や幅あり（`high > low`）なら、
+ * 差額は下端どうしの差でしかない。**両方が確定しているときだけ言い切る。
+ */
+function diffCertainFor(row: Row, result: CompareResult): boolean {
+  return leaderDiffCertain(result) && totalIsCertain(row.total);
+}
+
 function diffText(row: Row, result: CompareResult): string {
   // 比較できない行に差額を出したら、比べられるかのように見える。
   if (!row.comparable) return 'NOT COMPARABLE';
@@ -48,7 +58,7 @@ function diffText(row: Row, result: CompareResult): string {
   // 上限不明（`total.high === null`）か幅を持つ（`high > low`）とき、1位の実際の
   // 総額はこの下端より高くなりうる——下端どうしの差はその分だけ縮む・逆転しうる。
   // 「ちょうどこれだけ高い」とは言えないので、そう断言しない。
-  return leaderDiffCertain(result) ? `+${yen(row.diff)}` : `at least +${yen(row.diff)}`;
+  return diffCertainFor(row, result) ? `+${yen(row.diff)}` : `at least +${yen(row.diff)}`;
 }
 
 /**
@@ -351,7 +361,8 @@ export function Summary({ result }: { result: CompareResult }) {
   const midBand = result.bands?.[Math.floor(result.bands.length / 2)];
   const qualify = !result.rankStable && midBand ? ` at ${midBand.label}` : '';
   // **1位の総額が確定していなければ「少なくとも」**（外部レビュー④、`diffText` と同じ規則）。
-  const diffCertain = leaders.every((r) => totalIsCertain(r.total));
+  // **相手の行自身が確定していなくても「少なくとも」**（外部レビュー2回目 A-4）。
+  const leadersDiffCertain = leaders.every((r) => totalIsCertain(r.total));
   // **判定不能では「is cheapest」「are tied cheapest」と言い切らない**
   // （コーディネーター指摘、P1-3 追修正）。すぐ下の `StabilityNote` が
   // 「we can't tell which one wins」と言っているのと同じ画面内で「最安」と
@@ -376,7 +387,7 @@ export function Summary({ result }: { result: CompareResult }) {
           {/* 重量が不明なときは差額も幅になる。1点に丸めて言い切らない。 */}
           {r.label} costs {result.rowDiffRange?.[r.id]
             ? yenRange(result.rowDiffRange[r.id]!)
-            : diffCertain ? yen(r.diff) : `at least ${yen(r.diff)}`} more{i === rest.length - 1 ? '.' : ', '}
+            : leadersDiffCertain && totalIsCertain(r.total) ? yen(r.diff) : `at least ${yen(r.diff)}`} more{i === rest.length - 1 ? '.' : ', '}
         </span>
       ))}{' '}
       <span className="text-neutral-500">

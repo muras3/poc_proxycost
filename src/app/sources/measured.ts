@@ -102,12 +102,13 @@ export const CONFIDENCE_SPLIT_BY_COUNTRY: CountryConfidenceRow[] = [
   { country: 'DE', totalYen: 42735, fixedYen: 34649, estimateYen: 6724, unverifiedYen: 1362, publishedShare: '81%' },
   { country: 'FR', totalYen: 43152, fixedYen: 36428, estimateYen: 6724, unverifiedYen: 0, publishedShare: '84%' },
   { country: 'AU', totalYen: 33950, fixedYen: 29950, estimateYen: 4000, unverifiedYen: 0, publishedShare: '88%' },
-  // **外部レビュー⑤-b（2026-09-11、コーディネーター指摘で1点訂正）で CA の
-  // GST・州税ベースを直した**（国際送料は除くが、国内送料は含む——CBSA
-  // Memorandum D13-3-3/D13-3-4 の duty paid value に揃えた。`compare.ts` の
-  // `taxLines` 参照）ので、CA の総額が下がった（国際送料のみ除いた場合より
-  // 少しだけ高い＝国内送料ぶんが戻っている）。
-  { country: 'CA', totalYen: 36250, fixedYen: 30542, estimateYen: 5708, unverifiedYen: 0, publishedShare: '84%' },
+  // **外部レビュー⑤-b（2026-09-11）で CA の GST・州税ベースを直し**（国際送料は
+  // 除くが、国内送料は含む——CBSA Memorandum D13-3-3/D13-3-4 の duty paid value
+  // に揃えた）、**外部レビュー2回目 A-6（2026-09-11）で関税のベースも同じ
+  // `items + dom` に揃えた**（以前は関税だけ `items` のみで、GST・州税と
+  // ベースが食い違っていた。`compare.ts` の `taxLines` 参照）ので、CA の総額が
+  // 動いた。
+  { country: 'CA', totalYen: 36340, fixedYen: 30546, estimateYen: 5794, unverifiedYen: 0, publishedShare: '84%' },
   { country: 'SG', totalYen: 30836, fixedYen: 24500, estimateYen: 6336, unverifiedYen: 0, publishedShare: '79%' },
 ];
 
@@ -128,11 +129,11 @@ export interface ConfidenceTotal {
 }
 
 export const CONFIDENCE_TOTAL: ConfidenceTotal = {
-  // ⑤-b（国内送料を含む訂正後）で CA が下がった分、7カ国合計も下がった
-  // （¥264,931 → ¥264,119）。
-  totalYen: 264119,
-  fixedYen: 221699,
-  estimateYen: 37492,
+  // 外部レビュー2回目 A-6（CA の関税ベースを国内送料込みに揃えた）で CA が
+  // +¥90 動いた分、7カ国合計も動いた（¥264,119 → ¥264,209）。
+  totalYen: 264209,
+  fixedYen: 221703,
+  estimateYen: 37578,
   unverifiedYen: 4928,
   fixedShare: '84%',
   estimateShare: '14%',
@@ -154,14 +155,14 @@ export interface WeightShiftRow {
   last: string;
 }
 
-// ⑤-b（外部レビュー、2026-09-11、コーディネーター指摘で1点訂正）で CA の
-// GST・州税ベースを直したので、4つの重量すべてで総額が下がった
-// （国際送料は除くが国内送料は含む——並び・交差重量は動いていない）。
+// ⑤-b（外部レビュー、2026-09-11）で CA の GST・州税ベースを直し、外部レビュー
+// 2回目 A-6（2026-09-11）で関税のベースもそれに揃えた（`items + dom`）ので、
+// 4つの重量すべてで総額が動いた（並び・交差重量は動いていない）。
 export const WEIGHT_SHIFT: WeightShiftRow[] = [
-  { weight: '200 g', perItemG: 200, totalYen: 30600, delta: '−16%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 36250, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', perItemG: 1500, totalYen: 49750, delta: '+37%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', perItemG: 3000, totalYen: 68700, delta: '+90%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
+  { weight: '200 g', perItemG: 200, totalYen: 30690, delta: '−16%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 36340, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '1,500 g', perItemG: 1500, totalYen: 49840, delta: '+37%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '3,000 g', perItemG: 3000, totalYen: 68790, delta: '+89%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
 ];
 
 /**
