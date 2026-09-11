@@ -907,18 +907,23 @@ export const SERVICES: Service[] = [
     // 特殊処理（customized-processing、ともに F24）は catalog が display: hidden
     // （利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。
     //
-    // Premium Insurance（F29 の一部。catalog の F29 自体は display: total）は残す。
-    // 「Premium Insurance More peace of mind for only 1.9% over the total amount!」
-    // **どの合計に掛かるのかが原文から読めない**（商品代か、送料込みの支払総額か）。
-    // 率を勝手に当てて数字を出せば、その額は我々の推測になる。display: total なので
-    // 行そのものは消せない——額は null（画面「—」）で総額の行にし、excluded に名前を載せる。
-    unpricedFees: [
-      {
-        key: 'premium-insurance', label: 'Premium insurance',
-        note: '1.9% of "the total amount" — the page does not say which total, so we do not'
-          + ' put a number on it',
-      },
-    ],
+    // **Premium Insurance は既定では足さない**（P1-4、オーナー確定 2026-09-11。
+    // `docs/FEE-ITEMS.md` F29・`master/fees.json` catalog F29 の display_reason）。
+    //
+    // マスタの一次記述は「Premium Insurance 1.9%……は**利用者が選ぶ任意**（D）」。
+    // 以前はここで `unpricedFees` に無条件で乗せていた——**選んでいない利用者にも
+    // 常に上限不明を課す**ことになり、Jauce の `total.high` が既定カートで常に
+    // `null` になる原因の一つだった（①の入口の一つ、`docs/ROADMAP.md` P1-4）。
+    //
+    // 任意の費目は、選んだときにだけ計上するのが正しい——選ばれてもいないのに
+    // 「額が分からない費目が乗っている」と見せるのは、コードが勝手にマスタと
+    // 違うことをしていた側（③）。この計算機はまだ Premium Insurance を選ぶ UI を
+    // 持たないので、選ばれない前提（既定 = 加入しない）の間は行を出さない。
+    // **F29 自体（標準の郵便保険。基本補償¥20,000まで無料）は A_always で残る**
+    // ——`storage` などと同じく既に無料枠として扱われており、この行の削除は
+    // 「標準保険を消す」話ではない。UI が Premium Insurance の加入有無を選べる
+    // ようになったら、選んだときだけこの `unpricedFees` を足す形に戻す。
+    unpricedFees: [],
     // 豪州（確認日 2026-09-06、https://www.jauce.com/australian-gst）。原文:
     //「If the total amount including the item price, domestic and international
     //  packing/delivery fees, our service fee, and optional fees is less than A$1,000,

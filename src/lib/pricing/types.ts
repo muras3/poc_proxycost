@@ -80,6 +80,20 @@ export interface Line {
   unknownCapYen?: number | null;
   /** unknownCapYen の根拠・「推定であり上限ではない」旨（英語）。 */
   unknownCapNote?: string | null;
+  /**
+   * P1-4（外部レビュー、オーナー確定 2026-09-11）。この行が**輸入側（買主側）で
+   * 発生する費目か**——「どの社を使っても同じようにかかる」もの（米国の Zonos
+   * 前払い利用料・連邦売上税の不在など）。`taxLines()`（国・カートの情報だけで
+   * 決まり、社の識別子を見ない関数）が作る行にだけ付く。
+   *
+   * **`amount === null`（未取得）のときにだけ意味を持つ。**額が確定している行に
+   * 付けても何も変わらない。未取得の行がこれを持つと、`compare.ts` の順位・
+   * おすすめ枠・`rankIndeterminate` の判定（`rankHighFor`）はこの行を
+   * 「差を生まない共通の未知」として無視する——**総額の表示（`Row.total.high`）
+   * からは除かない**（絶対値の不確かさは本物なので「以上（上限不明）」は残す）。
+   * 未指定（社固有の未知。FROM JAPAN の外注梱包など）は順位判定にも従来どおり効く。
+   */
+  scope?: 'shared';
   /** 内訳の1行説明（英語）。 */
   note: string;
   tier: Tier;
@@ -142,6 +156,20 @@ export interface Row {
    * （`excluded.length === 0`）では `high === low`（幅ゼロが正しい状態）。
    */
   total: { low: number; high: number | null };
+  /**
+   * P1-4（外部レビュー、オーナー確定 2026-09-11）。**画面には出さない内部専用の値。**
+   * 順位・おすすめ枠・`rankIndeterminate` の判定にだけ使う上端。`total.high` と
+   * ほぼ同じだが、`Line.scope === 'shared'` な未取得行（社を問わず輸入側でかかる
+   * 未知——米国の Zonos 前払い利用料・連邦売上税の不在など）は「差を生まない」
+   * ものとして無視し、0 として畳む。社固有の未取得行（FROM JAPAN の外注梱包など）
+   * は `total.high` と同じくこの行を `null` にする。
+   *
+   * **`total.high` はこの値の影響を受けない。**「以上（上限不明）」という総額の
+   * 表示は、共通の未知があるかぎり消えない——本物の絶対値の不確かさだからだ。
+   * `rankHigh` は「社同士の差が付くかどうか」だけを測るための、表示に出ない
+   * 補助値。
+   */
+  rankHigh: number | null;
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;

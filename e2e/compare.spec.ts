@@ -661,13 +661,16 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   // 米国では反転が起きないので、この導線を米国では実演できない。
   await page.getByLabel('Ship to').selectOption('DE');
 
-  // **P1-2 でここの前提が変わった。** ドイツの既定2点では FROM JAPAN が1位で
-  // 総額が上限不明（Zonos 相当の uncappable な費目は無いが、FROM JAPAN の
-  // 外注梱包が uncappable）——+Infinity 扱いの重なり判定（判断1）により
-  // 比較可能な全社が枠か同等に収まり、「安定」ではなく「判定不能」（判断3）。
+  // **P1-4 でここの前提が変わった（外部レビュー、オーナー確定 2026-09-11）。**
+  // ドイツの既定2点は FROM JAPAN が1位で総額は上限不明（外注梱包が uncappable）
+  // のままだが、Neokyo（閉区間・確定額）が明確な2位で、ZenMarket 以下とは
+  // 確定した差がある——`isIndeterminate` は「比較可能な全社の上端が置けない」
+  // ときだけ真になるよう絞ったので、以前ここで出ていた「判定不能」（全社が
+  // 不確かさの中）の注記はもう出ない。出るのは「不安定」側の重量注記——ただし
   // この時点ではどの1点の重量が原因かはまだ言えない（`decisive` はまだ無し）
   // ので、個別の品には何も印が付かない。
-  await expect(page.getByText(/sit within the same uncertainty/)).toBeVisible();
+  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
+  await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
   await expect(page.getByText(DECIDES)).toHaveCount(0);
 
@@ -705,7 +708,7 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   await expect(cartItem(page, title).getByText(DECIDES)).toBeVisible();
 });
 
-test('18. a single item: the winner never changes, and the US total is indeterminate (not weight-driven)', async ({ page }) => {
+test('18. a single item: the winner never changes, and the US total is not indeterminate (P1-4)', async ({ page }) => {
   await gotoCompare(page);
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
@@ -713,17 +716,21 @@ test('18. a single item: the winner never changes, and the US total is indetermi
 
   // 仮置きは入るし、仮置きだと名乗る。500 g〜10 kg で**1位（FROM JAPAN）は動かず、
   // おすすめ枠（FROM JAPAN・ZenMarket、枠は最大2社）も動かない**——`decisive` は
-  // false。それでも米国の総額は不安定側に出る: FROM JAPAN の総額が上限不明
-  // （Zonos 前払い利用料）で、比較可能な全社が枠か同等に収まる「判定不能」
-  // （判断3）。**これは「重量を確かめれば解決する」話ではない**ので、個別の品には
-  // 何も印が付かない——ボタンは出るが、押しても「これを直せば直る」品を指せない
-  // （`Calculator` は decisive な品が無ければ先頭の品にフォーカスする、
-  // という既存のフォールバックのまま。UI の見直しは P1-3）。
+  // false。**P1-4（外部レビュー、オーナー確定 2026-09-11）で米国の総額はもう
+  // 判定不能ではない。**FROM JAPAN 自身の総額は上限不明（外注梱包。FJ 固有の
+  // 未知）のままだが、Zonos 前払い利用料・連邦売上税のような「社を問わず同じ
+  // ようにかかる共通の未知」は順位判定から無視されるので、ZenMarket が明確な
+  // 2位として枠に残る——枠が動かない以上 `rankStable` も `true`。個別の品には
+  // 何も印が付かない（`decisive` が無いのは変わらない——枠自体が動かないから）。
   await expect(weightBox(page, PLUSH)).toHaveValue('1000');
   await expect(cartItem(page, PLUSH).getByText(/assumed/).first()).toBeVisible();
-  await expect(page.getByText(/sit within the same uncertainty/)).toBeVisible();
+  await expect(page.getByText(
+    /FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight/,
+  )).toBeVisible();
+  await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
   await expect(cartItem(page, PLUSH).getByText(DECIDES)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toBeVisible();
+  // 枠が動かない（安定）ので「重量を確かめろ」の導線はもう出ない。
+  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
 
   // それでも直せる。直せば総額は動く（1位は動かない）。
   const before = await readRanking(page);
@@ -1144,6 +1151,60 @@ test.describe('desktop layout', () => {
     await expect(fixed).toBeVisible();
     const plain = await fixed.evaluate((el) => getComputedStyle(el).textDecorationLine);
     expect(plain).toBe('none');
+  });
+
+  /**
+   * ②の欠陥（コーディネーター指摘、2026-09-11）: 内訳表の `approx. total` 行が
+   * `total.low` を1点表示し、`high === null` でも「or more」が付かず、
+   * `comparable: false` の行にまで総額を出していた（米国の既定カートで Neokyo
+   * 列に総額が出る一方 EMS 行は「—」——`RankBoard.tsx:49` が直した欠陥と
+   * 同じ形が内訳表に残っていた）。**e2e はこの表を見ていなかった**
+   * （`readRanking` は Ranking 領域のボタンしか読まない）ので、ここで直接見る。
+   */
+  test('the breakdown footer follows the same interval rules as the ranking (② regression)', async ({ page }) => {
+    await gotoCompare(page);
+    const table = breakdownTable(page);
+    await expect(table).toBeVisible();
+
+    // 既定カート（米国）: FROM JAPAN の総額は上限不明（Zonos）。
+    // Ranking 側の 'or more' と、内訳表の footer の 'or more' が一致すること。
+    const rows = await readRanking(page);
+    const fromJapan = rows.find((r) => r.name === 'FROM JAPAN');
+    expect(fromJapan, 'FROM JAPAN missing from ranking').toBeDefined();
+
+    const headers = await headerCells(table);
+    const fjColumn = headers.findIndex((h) => h.includes('FROM JAPAN'));
+    expect(fjColumn, 'FROM JAPAN column not found in breakdown table').toBeGreaterThan(0);
+
+    const footerRow = table.getByRole('row').filter({
+      has: page.getByRole('cell', { name: 'approx. total' }),
+    });
+    const footerCells = await rowCells(footerRow);
+    // ヘッダーとフッターの列位置は同じ（先頭が Cost/approx. total、以降が会社ごと）。
+    expect(footerCells[fjColumn]).toContain('or more');
+    expect(footerCells[fjColumn]).not.toMatch(/–/); // 偽の上端（「¥X – Y」）を書かない
+
+    // **重量を EMS 公表表（30 kg）の外まで重くすると、EMS を売れない社が
+    // 比較不能になる。**その社の Ranking 側 'NOT COMPARABLE' と、内訳表の
+    // footer の '—' が一致すること（`total.low` を出して最安に見せない）。
+    await openCart(page);
+    await weightBox(page, FIGURE).fill('25000');
+    await weightBox(page, NENDOROID).fill('25000');
+    const heavyRows = await readRanking(page);
+    const notComparable = heavyRows.filter((r) => !r.comparable);
+    expect(notComparable.length, 'expected at least one not-comparable row at 25 kg/item').toBeGreaterThan(0);
+
+    const heavyHeaders = await headerCells(table);
+    const heavyFooterRow = table.getByRole('row').filter({
+      has: page.getByRole('cell', { name: 'approx. total' }),
+    });
+    const heavyFooterCells = await rowCells(heavyFooterRow);
+    for (const r of notComparable) {
+      const col = heavyHeaders.findIndex((h) => h.includes(r.name)
+        && (r.variant == null || h.includes(r.variant)));
+      expect(col, `${r.name} ${r.variant ?? ''} column not found`).toBeGreaterThan(0);
+      expect(heavyFooterCells[col], `${r.name} ${r.variant ?? ''} should show — like the ranking`).toBe('—');
+    }
   });
 });
 

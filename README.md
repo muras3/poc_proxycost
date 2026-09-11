@@ -55,7 +55,7 @@
 
 | 国 | `rankStable` | 状態 | 動かない1位 |
 |---|---|---|---|
-| US | false | 判定不能（全社が不確かさの中） | — |
+| US | true | 安定 | FROM JAPAN and ZenMarket |
 | GB | false | 不安定（重量で変わる） | — |
 | DE | false | 不安定（重量で変わる） | — |
 | FR | false | 不安定（重量で変わる） | — |

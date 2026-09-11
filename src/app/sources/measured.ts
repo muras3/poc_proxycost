@@ -183,9 +183,15 @@ export interface RankStabilityRow {
 }
 
 export const RANK_STABILITY: RankStabilityRow[] = [
-  // US: 1位（FROM JAPAN）の総額が上限不明（Zonos 前払い利用料）で、他4社も
-  // その不確かさの中に収まる——「安定」ではなく「判定不能」（判断3）。
-  { country: 'US', rankStable: false, rankIndeterminate: true, staysCheapest: null },
+  // US: P1-4（外部レビュー、オーナー確定 2026-09-11）で「安定」に変わった。
+  // 1位（FROM JAPAN）の総額はいまも上限不明だが、それは FROM JAPAN 固有の
+  // 未知（外注梱包）——米国の Zonos 前払い利用料・連邦売上税のような「社を
+  // 問わず同じようにかかる共通の未知」は順位判定（`Row.rankHigh`）から無視する
+  // ようにしたので、ZenMarket が明確な2位として枠に残り、判定不能ではなくなった。
+  {
+    country: 'US', rankStable: true, rankIndeterminate: false,
+    staysCheapest: 'FROM JAPAN and ZenMarket',
+  },
   { country: 'GB', rankStable: false, rankIndeterminate: false, staysCheapest: null },
   { country: 'DE', rankStable: false, rankIndeterminate: false, staysCheapest: null },
   { country: 'FR', rankStable: false, rankIndeterminate: false, staysCheapest: null },

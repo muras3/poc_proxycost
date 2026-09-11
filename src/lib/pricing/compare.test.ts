@@ -669,11 +669,13 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // FROM JAPAN だけで、残る3社の行には税が乗っていない（その3社の総額は税のぶん低い）。
     // 確認できる社が増えれば、ここは不安定に転じうる。
     //
-    // **US はこの帯では「安定」ではなく「判定不能」**（下で別に検査する）。
-    // 1位（FROM JAPAN）の総額が上限不明（Zonos 前払い利用料）で、比較可能な
-    // 全社がおすすめ枠か同等に収まる——判断3。かつての「US はモデルの改善では
-    // なく Neokyo が居ないから安定に見えていただけ」という注記は、実は
-    // 「安定」ですらなく「判別できていない」だったことがここで分かる。
+    // **US（下で別に検査する）は P1-4（外部レビュー、オーナー確定 2026-09-11）で
+    // 「安定」に変わった。**1位（FROM JAPAN）の総額はいまも上限不明（外注梱包）
+    // だが、その未取得行は Zonos・連邦売上税と違い FROM JAPAN 固有——`rankHigh`
+    // （順位判定専用の内部値）はそれを引き続き `null` として扱い、Zonos・連邦
+    // 売上税のような「社を問わず同じようにかかる共通の未知」だけを無視する。
+    // 結果、ZenMarket（`rankHigh` は閉じている）が明確な2位として枠に残り、
+    // Buyee consolidated・Jauce・Buyee default とは確定した差がある。
     const stable: CountryCode[] = ['AU', 'SG'];
     for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c) && c !== 'US')) {
       const r = compare({ items: items(5, 600), country: cc });
@@ -697,51 +699,54 @@ describe('rank stability is measured, not assumed — and it is often false', ()
         'Neokyo stays in the recommended range even if we are off by 3x on weight.');
     }
     const us = compare({ items: items(5, 600), country: 'US' });
-    expect(us.rankStable).toBe(false);
-    expect(us.rankIndeterminate).toBe(true);
-    expect(us.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(us.rankStable).toBe(true);
+    expect(us.rankIndeterminate).toBe(false);
+    expect(us.rankStabilityNote).toBe(
+      'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.');
   });
 
   test('**「唯一値段が付く社」を「最安」と書かない**', () => {
     // 3,000 g/点。×3 すると同梱する社が EMS 公表表（30kg）を出て脱落し、
     // 注文ごとに分ける Buyee default だけが残る。安いのではなく、値段が付く
     // 唯一の社というだけ——ここを取り違えると、費目が欠けた行を薦めることになる。
-    // **この基準重量（3,000 g）自体は米国で判定不能**（FROM JAPAN が1位で総額が
-    // 上限不明。判断3）なので、トップレベルの `rankStabilityNote` はいまその文言に
-    // なる。「唯一値段が付く社≠最安」という主張そのものは per-item の
-    // `weightSensitivity`（`onlyPricedAtLow`/`onlyPricedAtHigh`）で別に縛っている
-    // （`when the heavy end leaves the EMS table, ...` テスト）。
+    // **この基準重量（3,000 g）は P1-4 で米国でも「判定不能」ではなくなった。**
+    // FROM JAPAN が1位（総額は外注梱包で上限不明のまま）で、ZenMarket が明確な
+    // 2位——枠が ×3 で「Buyee, default だけが値段を持つ」帯に変わるので不安定
+    // ではあるが、判定不能ではない。「唯一値段が付く社≠最安」という主張そのものは
+    // per-item の `weightSensitivity`（`onlyPricedAtLow`/`onlyPricedAtHigh`）で
+    // 別に縛っている（`when the heavy end leaves the EMS table, ...` テスト）。
     const r = compare({ items: items(5, 3000), country: 'US' });
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).not.toContain('Buyee, default is cheapest');
+    expect(r.rankStabilityNote).toContain('the only one we can still price');
   });
 
-  test('200 g per item is stable in six of the seven countries — the US total is indeterminate', () => {
-    // **US だけ違う。**FROM JAPAN が1位で総額が上限不明なので、比較可能な全社が
-    // おすすめ枠か同等に収まり「判定不能」（判断3）。
-    for (const cc of COUNTRIES_ALL.filter((c) => c !== 'US')) {
+  test('200 g per item is stable in all seven countries (P1-4: US too)', () => {
+    // **US も含めて全国が安定側。**FROM JAPAN 自身の総額はいまも上限不明
+    // （外注梱包。FJ 固有の未知）だが、ZenMarket（`rankHigh` は閉じている）が
+    // 明確な2位で枠に残り、他社とは確定した差がある。
+    for (const cc of COUNTRIES_ALL) {
       const r = compare({ items: items(5, 200), country: cc });
       expect(r.rankStable, cc).toBe(true);
       expect(r.rankIndeterminate, cc).toBe(false);
       expect(r.rankStabilityNote, cc).toBe(
-        'Neokyo stays in the recommended range even if we are off by 3x on weight.');
+        cc === 'US'
+          ? 'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.'
+          : 'Neokyo stays in the recommended range even if we are off by 3x on weight.');
     }
-    const us = compare({ items: items(5, 200), country: 'US' });
-    expect(us.rankStable).toBe(false);
-    expect(us.rankIndeterminate).toBe(true);
-    expect(us.rankStabilityNote).toContain('sit within the same uncertainty');
   });
 
-  test('a 9,000 g single item in the US is indeterminate, not stable', () => {
-    // 1位（FROM JAPAN）自身が上限不明（`total.high === null`）なので、判断1どおり
-    // 重なり判定は +∞ として扱う。比較可能な4社（FROM JAPAN・ZenMarket・Buyee・
-    // Jauce）全員がその不確かさの中で区別できない——「安定」ではなく
-    // 「判定不能」（判断3）。
+  test('a 9,000 g single item in the US: FROM JAPAN leads, ZenMarket a clear second (not indeterminate)', () => {
+    // 1位（FROM JAPAN）自身は上限不明（外注梱包。FJ 固有）のままだが、
+    // ZenMarket（`rankHigh` は閉じている）は明確な2位で枠に残り、
+    // Buyee・Jauce とは確定した差がある——P1-4 により「判定不能」ではない。
     const r = compare({ items: items(1, 9000), country: 'US' });
-    expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(r.rankStable).toBe(true);
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).toBe(
+      'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.'
+      + ' Beyond that the parcel leaves the published EMS table.');
   });
 
   test('the cheapest service flips at 1,150 g / 1,325 g / 1,625 g by basket size', () => {
@@ -1207,14 +1212,15 @@ describe('one item at a time: whose weight decides the winner', () => {
     table('i1', 439, [380, 600], { priceYen: 4200, site: 'mercari' }),
   ];
 
-  test('the example cart: FROM JAPAN wins, but the US total is indeterminate (P1-2)', () => {
-    // **FROM JAPAN の総額は米国では常に上限不明**（Zonos 前払い利用料が uncappable）。
-    // FROM JAPAN が1位（下端最小）なので +Infinity 扱いの重なり判定（判断1）が
-    // 効き、比較可能な全社がおすすめ枠か同等に収まる——「安定」ではなく
-    // 「判定不能」（判断3）。1位そのものは動かない。
+  test('the example cart: FROM JAPAN wins, and the US total is not indeterminate (P1-4)', () => {
+    // **FROM JAPAN の総額は米国では常に上限不明**（外注梱包。FJ 固有の未知）。
+    // だが Zonos 前払い利用料・連邦売上税のような「社を問わず同じようにかかる
+    // 共通の未知」は `rankHigh`（順位判定専用の内部値）から無視されるので
+    // （P1-4、外部レビュー、オーナー確定 2026-09-11）、ZenMarket が明確な2位で
+    // 枠に残り、判定不能ではない。1位そのものは動かない。
     const r = compare({ items: EXAMPLE, country: 'US' });
-    expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStable).toBe(true);
+    expect(r.rankIndeterminate).toBe(false);
     expect(r.rows[0]!.id).toBe('fromjapan');
     // 幅の無いライン（P25=P75）は動かしても同じなので、見ない。
     expect(r.weightSensitivity['i0']).toBeUndefined();
@@ -1246,16 +1252,16 @@ describe('one item at a time: whose weight decides the winner', () => {
     });
   });
 
-  test('a single item off the table: FROM JAPAN always wins, and the US total is indeterminate', () => {
+  test('a single item off the table: FROM JAPAN always wins, and the US total is not indeterminate (P1-4)', () => {
     // FROM JAPAN は500g〜10kgの全域で1位のまま（winnerAtLow/High とも FROM JAPAN）で、
-    // **枠は{FROM JAPAN, ZenMarket}の2社のまま動かない**（枠の上限が2社に直った
-    // ことで、以前3社のときに枠へ出入りしていた Jauce/Buyee は枠に入らなくなった
-    // ——`decisive` は false）。それでも米国の rankStable は false: FROM JAPAN の
-    // 総額が上限不明なので比較可能な全社がおすすめ枠か同等に収まり、判定不能
-    // （判断3）。
+    // 枠は{FROM JAPAN, ZenMarket}の2社のまま動かない（`decisive` は false）。
+    // FROM JAPAN 自身の総額は上限不明（外注梱包）のままだが、それは FJ 固有の
+    // 未知——Zonos・連邦売上税のような共通の未知とは違い、`rankHigh` はそれを
+    // 引き続き `null` にする一方、ZenMarket の `rankHigh` は閉じているので
+    // 判定不能にはならない（P1-4）。
     const r = compare({ items: [assumed('i2')], country: 'US' });
-    expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
+    expect(r.rankStable).toBe(true);
+    expect(r.rankIndeterminate).toBe(false);
     expect(r.weightSensitivity['i2']).toMatchObject({
       lowG: 500, highG: 10000, winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN', decisive: false,
     });
@@ -1275,7 +1281,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     }
   });
 
-  test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is indeterminate', () => {
+  test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is not indeterminate', () => {
     const r = compare({
       items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
       // **国が米国からドイツに変わった。**×1/3 側の勝者が Neokyo で、Neokyo は
@@ -1288,12 +1294,16 @@ describe('one item at a time: whose weight decides the winner', () => {
     expect(r.weightSensitivity['do']!.decisive).toBe(true);
     expect(r.weightSensitivity['hakama']!.decisive).toBe(false);
     expect(r.weightSensitivity['tare']).toBeUndefined();
-    // 基準の重量（1x）では FROM JAPAN が1位で総額が上限不明——比較可能な全社が
-    // おすすめ枠か同等に収まり、「安定」ではなく「判定不能」（判断3）。
+    // 基準の重量（1x）では FROM JAPAN が1位で総額が上限不明だが、ZenMarket
+    // （閉区間・確定額）が明確に2位で、Neokyo 以下とは確定した差がある
+    // ——**P1-4（オーナー確定 2026-09-11）:** 上限不明の1位がいても、閉区間
+    // 同士で確実に差が付く社は「同等」にしない。`isIndeterminate` は「比較可能な
+    // 全社の上端が置けない」ときだけ真になるよう絞ったので、このケースは
+    // 「不安定」（`rankStable: false`）ではあっても「判定不能」ではない。
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
-    expect(r.rankStabilityNote).not.toContain('you gave us');
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).toContain('at a third of our weight estimate');
+    expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
   test('a weight the user typed is theirs: we do not second-guess it', () => {
@@ -1368,42 +1378,49 @@ describe('unknown weight falls back to EMS steps', () => {
     const r = unknown(2);
     expect(r.bands!.map((b) => b.cheapestRowIds))
       .toEqual([['neokyo'], ['neokyo'], ['fromjapan'], ['fromjapan'], ['fromjapan'], ['fromjapan']]);
-    // 代表段（3kg）は FROM JAPAN が1位で総額が上限不明——比較可能な全社が
-    // おすすめ枠か同等に収まり「判定不能」（判断3）。1位が段で入れ替わること自体は
+    // 代表段（3kg）は FROM JAPAN が1位で総額が上限不明だが、比較可能な行の中に
+    // 閉区間同士で確定した差が残っている（P1-4、オーナー確定 2026-09-11:
+    // `isIndeterminate` は「比較可能な全社の上端が置けない」ときだけ真）ので、
+    // 「不安定」ではあっても「判定不能」ではない。1位が段で入れ替わること自体は
     // 変わっていない（上の cheapestRowIds の並びがそれを示す）。
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
-  test('in the US every band is indeterminate — FROM JAPAN always leads with an unbounded total', () => {
+  test('in the US every band keeps the same bracket — FROM JAPAN leads, ZenMarket a clear second', () => {
     // 米国には Neokyo が居ない（日本郵便を売っていない）ので、どの帯でも1位は
-    // FROM JAPAN のまま。だが FROM JAPAN の総額は米国では常に上限不明
-    // （Zonos 前払い利用料）なので、代表段では比較可能な全社が枠か同等に収まり
-    // 「判定不能」（判断3）——「1位が変わらない」＝安定、ではない。
+    // FROM JAPAN のまま。FROM JAPAN 自身の総額は米国では常に上限不明（外注梱包。
+    // FJ 固有の未知）だが、Zonos 前払い利用料・連邦売上税のような「社を問わず
+    // 同じようにかかる共通の未知」は `rankHigh` から無視される（P1-4、外部
+    // レビュー、オーナー確定 2026-09-11）ので、ZenMarket が明確な2位として枠に
+    // 残り続け、判定不能にはならない——「1位が変わらない」＝安定という主張が
+    // そのまま成り立つ。
     const r = compare({
       items: Array.from({ length: 2 }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
       country: 'US',
     });
     expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
-    expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(r.rankStable).toBe(true);
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).toBe(
+      'In the recommended range at every step from 500 g to 10 kg: FROM JAPAN and ZenMarket.');
     // どの帯でも Neokyo は値段を持たない。
     for (const band of r.bands!) {
       expect(band.rows.find((x) => x.id === 'neokyo')!.comparable).toBe(false);
     }
   });
 
-  test('one unknown item: FROM JAPAN leads every band, but the CA total is indeterminate', () => {
+  test('one unknown item: FROM JAPAN leads every band, and the CA total is not indeterminate', () => {
     const r = unknown(1);
     expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
-    // 代表段（3kg）は FROM JAPAN が1位（総額は上限不明）で、比較可能な全社が
-    // おすすめ枠（FROM JAPAN・Neokyo、枠は最大2社）か同等（ZenMarket・Jauce・Buyee）
-    // に収まる——「安定」ではなく「判定不能」（判断3）。
+    // 代表段（3kg）は FROM JAPAN が1位（総額は上限不明）で、枠は FROM JAPAN・
+    // Neokyo（最大2社）——だが ZenMarket・Jauce・Buyee は閉区間で確定した差が
+    // あるので「同等」にはならない（P1-4、オーナー確定 2026-09-11）。
+    // 「不安定」ではあっても「判定不能」ではない。
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
   test('each band is itself a ranked board and totals grow with the step', () => {
@@ -1961,20 +1978,26 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     }
   });
 
-  test('the bracket holds at most 1 more company beyond the leader (2 total), even when more overlap', () => {
-    // 米国・5点600gでは FROM JAPAN が1位（total.high===null、上限不明）。
-    // 上限不明は +Infinity として扱う（判断1）ので、下端で並ぶ他社は全員重なりうる
-    // ——それでも枠に入れるのは**1位を含めて最大2社**（確定仕様2。最初の実装は
-    // 誤って3社まで入れていた——コーディネーター指摘、2026-09-11）。
-    // 5社中3社（Buyee consolidated・Jauce・Buyee default）は重なっていても枠の外
-    // ——「同等」の印だけが付く（確定仕様4）。
+  test('an unbounded leader does not swallow the rest into "equivalent" (P1-4)', () => {
+    // **米国・5点600gでは FROM JAPAN が1位で、自身の総額は上限不明のまま**
+    // （外注梱包。FJ 固有の未知）。以前はこれだけで、下端で並ぶ他社が全員
+    // 「重なりうる」ことになり、枠に入りきらない3社（Buyee consolidated・Jauce・
+    // Buyee default）が無条件で「同等」になっていた——枠は最大2社（確定仕様2）
+    // でも `equivalent` には上限が無いので、そこが巻き込みの経路だった。
+    //
+    // **P1-4（外部レビュー、オーナー確定 2026-09-11）で直った。**Zonos 相当の
+    // 「社を問わず同じようにかかる共通の未知」が米国には無く、FROM JAPAN 自身の
+    // 外注梱包という**社固有**の未知だけが残る——`rankHigh` はこれを引き続き
+    // `null` にするが、他社の重なり判定を Infinity に飛ばすことはない
+    // （`computeBracket` は境界を「既知の上限を持つ行」からのみ伸ばす）。
+    // 結果、ZenMarket が明確な2位として枠に残り、Buyee consolidated・Jauce・
+    // Buyee default とは確定した差がついて、誰も「同等」に落ちない。
     const rows = compare({ items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
     const recommended = rows.filter((r) => r.recommended);
     const equivalent = rows.filter((r) => r.equivalent);
     expect(recommended.map((r) => r.id).sort()).toEqual(['fromjapan', 'zenmarket']);
     expect(recommended.length).toBeLessThanOrEqual(2); // 1位 + 最大1社 = 2社
-    expect(equivalent.map((r) => r.id).sort())
-      .toEqual(['buyee:consolidated', 'buyee:default', 'jauce']);
+    expect(equivalent).toEqual([]);
     // 枠と同等は互いに排他。
     for (const row of rows) expect(row.recommended && row.equivalent, row.id).toBe(false);
   });
@@ -1988,6 +2011,22 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     const zenmarket = byId(rows, 'zenmarket');
     expect(zenmarket.total.high).toBeNull();
     expect(zenmarket.recommended).toBe(true);
+  });
+
+  test('genuine closed-interval overlap still marks a 3rd company "equivalent" (the mechanism is not dead)', () => {
+    // **④（外部レビュー、オーナー確定 2026-09-11）で「共通の未知」を無視するように
+    // なったからといって、`equivalent` の仕組みそのものが働かなくなったわけではない。**
+    // 1点・150 g・¥500・保管90日（米国）は Jauce の保管超過（額に幅がある）が
+    // ZenMarket の総額と実際に重なる、閉区間同士の正真正銘の重なり。
+    const rows = compare({ items: items(1, 150, 500), country: 'US', storageDays: 90 })
+      .rows.filter((r) => r.comparable);
+    const zenmarket = byId(rows, 'zenmarket');
+    const buyee = byId(rows, 'buyee');
+    expect(zenmarket.recommended).toBe(false);
+    expect(zenmarket.equivalent).toBe(true); // 枠には入らないが、閉区間で確かに重なる
+    // 重ならない社（Buyee）は同等にもならない——重なりの判定が働いている証拠。
+    expect(buyee.recommended).toBe(false);
+    expect(buyee.equivalent).toBe(false);
   });
 
   test('an unbounded leader (leader.total.high === null) does not swallow everyone — the 2-company cap still holds', () => {

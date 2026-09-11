@@ -688,8 +688,7 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + '無料（日本郵便の公表）。基準ケース（5点×¥3,000＝¥15,000）はこの範囲内で影響が無いため、'
       + 'コードには未接続のまま（額は0で確定しているが行として繋いでいない）。',
     assertNotInCode: () => {
-      const ins = (svc('jauce').unpricedFees ?? []).find((o) => o.key === 'premium-insurance');
-      expect(ins).toBeDefined();
+      expect((svc('jauce').unpricedFees ?? []).length).toBe(0);
     },
   },
   {
@@ -698,20 +697,19 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       + 'あるが、Jauce がそれを利用者に自動で付保・請求するかどうかを一次情報から確認できていない'
       + '（開いた問い）。amount_tier C_unknown。基準ケースは¥20,000以内のため実害は無い。',
     assertNotInCode: () => {
-      const ins = (svc('jauce').unpricedFees ?? []).find((o) => o.key === 'premium-insurance');
-      expect(ins).toBeDefined();
+      expect((svc('jauce').unpricedFees ?? []).length).toBe(0);
     },
   },
   {
     id: 'F29', company: 'jauce', name: '保険（Premium・任意）',
-    reason: 'catalog F29:「Jauce の Premium 1.9% は利用者が選ぶもので、かつ課税ベースが'
-      + '原文から読めない」ため額を出さない（2026-09-11 に標準の郵便保険2行と区別するため改名）。'
-      + '0e で display: total に従わせた——`unpricedFees` として毎行の総額に amount: null'
-      + '（画面「—」）で載り、excluded に名前が出る。',
+    reason: 'P1-4（オーナー確定 2026-09-11）: catalog F29 も `docs/FEE-ITEMS.md` も'
+      + '「Premium 1.9% は利用者が選ぶ任意」と明記しており、既定では加入しない。'
+      + '以前はここを `unpricedFees` として毎行の総額に無条件で乗せ、選んでいない利用者にも'
+      + '常に上限不明（`total.high === null`）を課していた——閉区間同士で確定した差がある'
+      + '社まで「判別不能」に巻き込む①の入口の一つだったため、既定では行を出さない形に直した'
+      + '（この計算機はまだ Premium Insurance の加入有無を選ぶ UI を持たない）。',
     assertNotInCode: () => {
-      const ins = (svc('jauce').unpricedFees ?? []).find((o) => o.key === 'premium-insurance')!;
-      expect(ins).toBeDefined();
-      expect(ins.note).toContain('1.9%');
+      expect((svc('jauce').unpricedFees ?? []).some((o) => o.key === 'premium-insurance')).toBe(false);
     },
   },
   {
@@ -872,10 +870,9 @@ describe('display ── マスタの `display` 分類がコードに効いて�
     expect(optionalItems.map((c) => c.id)).toEqual([]);
   });
 
-  it('display: total の2件（F14外注梱包・F29 Premium insurance）は、額が無くても総額の行になる', () => {
+  it('display: total の F14外注梱包は、額が無くても総額の行になる', () => {
     // catalog 側の分類そのものが total であること（マスタを直接読む。ハードコードしない）。
     expect(displayOf('F14')).toBe('total');
-    expect(displayOf('F29')).toBe('total');
     // コード側 ── `unpricedFees` として `compare.ts` の `buildRow` が毎行の `lines[]` に足す。
     // 額は公表されていないので amount: null（画面「—」）で、`excluded` に名前が載る。
     const fj = rowsOf().find((r) => r.serviceId === 'fromjapan')!;
@@ -883,12 +880,23 @@ describe('display ── マスタの `display` 分類がコードに効いて�
     expect(outsourced, 'F14 outsourced-packing must be a total line, not dropped').toBeDefined();
     expect(outsourced!.amount).toBeNull();
     expect(fj.excluded).toContain(outsourced!.label);
+  });
 
+  it('display: total だが**任意**の F29 Premium insurance は、選ばれていない既定では行にしない', () => {
+    // P1-4（オーナー確定 2026-09-11）: catalog の display: total は「額が無くても
+    // 総額の行として消さない」を意味するだけで、「常に発生する」ことは意味しない。
+    // F29 Premium Insurance は catalog の display_reason・`docs/FEE-ITEMS.md` の
+    // どちらも「利用者が選ぶ任意」と明記しており、選んでいなければ発生しない。
+    // 以前はここを無条件で `unpricedFees` に乗せ、選んでいない利用者にも常に
+    // 上限不明を課していた（①の入口の一つ）。この計算機はまだ加入するかどうかを
+    // 選ぶ UI を持たないので、既定＝加入しない、の間は行を出さない。
+    expect(displayOf('F29')).toBe('total');
+    // rowsOf() は US 向け。US は Zonos 前払い利用料（duty-prepayment）が全社に乗り、
+    // そちらのせいで `total.high` はどのみち null になる（設計どおりの別の理由）。
+    // ここで見るのは premium-insurance 行そのものが既定では現れないことだけ。
     const jauce = rowsOf().find((r) => r.serviceId === 'jauce')!;
     const premium = jauce.lines.find((l) => l.key === 'premium-insurance');
-    expect(premium, 'F29 premium-insurance must be a total line, not dropped').toBeDefined();
-    expect(premium!.amount).toBeNull();
-    expect(jauce.excluded).toContain(premium!.label);
+    expect(premium, 'premium-insurance is opt-in — must not appear by default').toBeUndefined();
   });
 
   it('display: hidden の9件は、どのサービスの `unpricedFees` にも、どの行の key にも現れない', () => {
