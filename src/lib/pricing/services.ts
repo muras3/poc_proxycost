@@ -80,7 +80,12 @@ export interface StorageFee {
     /** ZenMarket。点数に比例。 */
     | { kind: 'per-day-per-item'; yen: number }
     /** Neokyo。注文ごと・週単位。寸法は入力に無いので最小段（small）で近似する。 */
-    | { kind: 'per-week-per-order'; yen: number; unpaidWeeksLimit: number }
+    /**
+     * `yen` は寸法「small」の額（寸法が入力に無いのでこれを点推定に使う）。
+     * `maxYen` は寸法「large」の額——**上端を置くためだけに使う**（P1）。
+     * 実際の寸法が large なら点推定は過小に出るので、上端はそのギャップを画面に出す。
+     */
+    | { kind: 'per-week-per-order'; yen: number; maxYen: number; unpaidWeeksLimit: number }
     /** FROM JAPAN。有料延長がそもそも存在しない。 */
     | { kind: 'none' }
     /**
@@ -408,7 +413,7 @@ export const SERVICES: Service[] = [
       freeDays: 45,
       maxDays: 45 + 6 * 7,
       maxDaysConsequence: 'unpaid storage fees are limited to six weeks — contact Neokyo directly beyond that',
-      rate: { kind: 'per-week-per-order', yen: 350, unpaidWeeksLimit: 6 },
+      rate: { kind: 'per-week-per-order', yen: 350, maxYen: 1400, unpaidWeeksLimit: 6 },
       sourceUrl: 'https://neokyo.com/en/storage',
     },
     // 開梱（unpacking）・コンビニ払い（konbini）は catalog F17 / F08 が display: hidden
