@@ -35,7 +35,7 @@
 import { describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { EXPORT_DECLARATION_FEE_YEN, SERVICE_BY_ID } from './services';
+import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVICE_BY_ID } from './services';
 import type { Service } from './services';
 
 // ── マスタ読み込み ──────────────────────────────────────────────
@@ -95,8 +95,14 @@ const MAPPED: MappedEntry[] = [
   },
   {
     id: 'F26', company: 'buyee', name: '輸出通関手数料',
-    read: () => EXPORT_DECLARATION_FEE_YEN,
-    expect: () => findRow('F26', 'buyee', '輸出通関手数料').rule.amount,
+    // 0b（ロードマップ）で任意欄から総額へ移した。額は EXPORT_DECLARATION_FEE_YEN、
+    // 閾値は EXPORT_DECLARATION_FEE_THRESHOLD_JPY（`compare.ts` の exportClearanceLine
+    // が両方を使って行を作る。5社とも同じ定数を参照するので、この行だけで代表させる）。
+    read: () => ({ amount: EXPORT_DECLARATION_FEE_YEN, over: EXPORT_DECLARATION_FEE_THRESHOLD_JPY }),
+    expect: () => {
+      const rule = findRow('F26', 'buyee', '輸出通関手数料').rule;
+      return { amount: rule.amount, over: rule.when.declared_value_jpy_over };
+    },
   },
   // T-F11a: ヤフオク(yahoo-auctions)の ¥800 はオーナー決定(2026-09-11)で B_inferred として
   // マスタに入った（金額は変えず、確度だけ「原文が名指ししていない推論」と印を付けた）。
@@ -372,6 +378,38 @@ const MAPPED: MappedEntry[] = [
     read: () => svc('neokyo').optional.find((o) => o.key === 'storage')!.amountYen,
     expect: () => findRow('F20', 'neokyo', '保管無料期間').rule.after.amounts_by_size.small.order,
   },
+  // ── 0c: F27・F30 の接続 ──────────────────────────────────────────────
+  // F27 ── 条件（carrier: FedEx・直配エリア外の住所）がどちらもこの計算機では
+  // 成立しない（宅配便を価格化していない・住所が入力に無い）ので、画面にも総額にも
+  // 出さない。**それでも「未接続」ではなく MAPPED**——存在・額・出典をデータとして
+  // 持たせてあるので、マスタが動いた瞬間にここが落ちる（`services.ts` の
+  // `DormantCourierFee` コメント、PR の判断3参照）。
+  {
+    id: 'F27', company: 'fromjapan', name: 'FedEx 直配エリア外',
+    read: () => svc('fromjapan').dormantFees?.[0]?.amountYen,
+    expect: () => findRow('F27', 'fromjapan', 'FedEx 直配エリア外').rule.amount,
+  },
+  // F30 ── `limits` のうち、この計算機が価格化している方式に対応するのは
+  // `Small_Packet`（small-packet-air / small-packet-surface）だけ。
+  // `Charge 1` は「注文/落札時点で払う、商品代を含む」額（en_help.txt の Charge 1/Charge 2
+  // 定義を 2026-09-11 に取得して確認。Charge 2 が「plan fee, domestic shipping,
+  // international shipping, payment fee」と明記しているので、それ以外＝ Charge 1 は
+  // 商品代と読める）なので、行の itemsYen（商品代合計）と比べる `priceCapJpy` として繋ぐ。
+  // ePacket_Light（¥10,000）・ePacket / IPA（$400）・PMI（$2,499.99）は、この計算機が
+  // 価格化していない方式（`postage` にキーが無い）なので繋ぐ対象が無い——
+  // `services.ts` の postage コメントが「宅配便・容積重量課金の方式は入れない」と
+  // 書いている条件と同じ理由で、そもそも売っている方式の集合に入っていない。
+  {
+    id: 'F30', company: 'fromjapan', name: '配送方法の可否（商品代に依存）',
+    read: () => ({
+      air: svc('fromjapan').postage['small-packet-air']?.priceCapJpy,
+      surface: svc('fromjapan').postage['small-packet-surface']?.priceCapJpy,
+    }),
+    expect: () => {
+      const cap = findRow('F30', 'fromjapan', '配送方法の可否（商品代に依存）').rule.limits.Small_Packet.charge1_jpy_max;
+      return { air: cap, surface: cap };
+    },
+  },
 ];
 
 // ============================================================================
@@ -548,23 +586,12 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       expect(svc('fromjapan').optional.some((o) => o.key.includes('dispos'))).toBe(false);
     },
   },
-  {
-    id: 'F27', company: 'fromjapan', name: 'FedEx 直配エリア外',
-    reason: 'catalog F27:「住所で決まる（FJ の FedEx 直配エリア外 ¥2,710）。マスタに'
-      + ' A_confirmed で値があるのにコードに接続されていない」（docs/FIT-GAP.md §5 T-F3/T-F8）。',
-    assertNotInCode: () => {
-      expect(svc('fromjapan').optional.some((o) => o.key.includes('fedex'))).toBe(false);
-    },
-  },
-  {
-    id: 'F30', company: 'fromjapan', name: '配送方法の可否（商品代に依存）',
-    reason: 'catalog F30:「FJ の価格別可否はマスタに A_confirmed で在るのに未接続」'
-      + '（docs/FIT-GAP.md §5 T-F3/T-F8）。postage の型には価格帯による method_eligibility を'
-      + '表すフィールドが無い。',
-    assertNotInCode: () => {
-      expect(svc('fromjapan').postage['small-packet-air']).not.toHaveProperty('priceEligibility');
-    },
-  },
+  // ── 0c（解消）: F27・F30 はマスタに A_confirmed で在ったのに未接続だった行。
+  // F27 は MAPPED（dormantFees としてデータを繋いだ。画面には出さない）へ、
+  // F30/fromjapan は下の MAPPED ── Small_Packet（charge1_jpy_max）だけを接続 ── へ
+  // それぞれ移した。F30 の中で価格化していない方式（ePacket_Light 等）ぶんは、
+  // その理由を MAPPED エントリのコメントに書く（この行自体は「未接続」ではなく
+  // 「部分接続」なので、行の鍵を二重に使わないよう NOT_IN_CODE 側には置かない）。
   {
     id: 'F36', company: 'fromjapan', name: 'GST 15% 代理徴収',
     reason: '対象国を7カ国に確定した（オーナー決定 2026-09-11）。国名も原文に無く'

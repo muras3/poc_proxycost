@@ -1607,7 +1607,7 @@
       "in_fees_master": true,
       "occurrence": "B_conditional_known",
       "display": "total",
-      "display_reason": "¥200,000 超でだけ発生し、条件は完全に分かっている。代行の費目ではなく日本郵便の費目なので5社に同額。現在 optionalLines にあるのは誤配置。"
+      "display_reason": "¥200,000 超でだけ発生し、条件は完全に分かっている。代行の費目ではなく日本郵便の費目なので5社に同額。0b（2026-09-11）で optionalLines から総額の行（compare.ts exportClearanceLine）へ移した。個口の数では倍にしない（日本郵便の原文「同じ受取人あてに2個以上は全ての梱包を合わせて1件」）。"
     },
     {
       "id": "F27",
@@ -1615,7 +1615,7 @@
       "in_fees_master": true,
       "occurrence": "C_conditional_no_input",
       "display": "total",
-      "display_reason": "住所で決まる（FJ の FedEx 直配エリア外 ¥2,710）。マスタに A_confirmed で値があるのにコードに接続されていない。"
+      "display_reason": "住所で決まる（FJ の FedEx 直配エリア外 ¥2,710）。carrier=FedEx（宅配便は未価格化）と住所（入力に無い）のどちらの条件もこの計算機では成立しないため、0c（2026-09-11）でも画面には出さない。存在・額・出典は services.ts の dormantFees として繋ぎ、master-sync.test.ts で見張る（P2で宅配便を価格化するまで寝かせる）。"
     },
     {
       "id": "F28",
@@ -1640,7 +1640,7 @@
       "in_fees_master": true,
       "occurrence": "C_conditional_no_input",
       "display": "engine_only",
-      "display_reason": "「送れない便に値段を付けない」ための制約。行ではなく、どの方式に価格を出すかを決める。FJ の価格別可否はマスタに A_confirmed で在るのに未接続。"
+      "display_reason": "「送れない便に値段を付けない」ための制約。行ではなく、どの方式に価格を出すかを決める。0c（2026-09-11）で、この計算機が価格化している方式のうち Small_Packet（charge1_jpy_max ¥30,000）だけを PostageRate.priceCapJpy として接続した。ePacket_Light / ePacket / IPA / PMI はこの計算機が価格化していない方式なので繋がない。"
     },
     {
       "id": "F31",
