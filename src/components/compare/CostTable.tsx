@@ -1,4 +1,5 @@
-import { Amount, TierLegend } from '@/lib/ui/tiers';
+import { Amount, TierLegend, tierClass } from '@/lib/ui/tiers';
+import { totalIntervalText } from '@/lib/ui/format';
 import { SERVICE_BY_ID } from '@/lib/pricing/services';
 import type { CompareResult } from '@/lib/pricing/types';
 
@@ -81,7 +82,22 @@ export function CostTable({ result }: { result: CompareResult }) {
               <td className="py-2 pr-3">approx. total</td>
               {rows.map((r) => (
                 <td key={r.id} className="py-2 pl-3 text-right num">
-                  <Amount amount={r.total.low} tier={r.approximate ? 'estimate' : 'fixed'} round />
+                  {/*
+                    ② の欠陥修正（コーディネーター指摘、2026-09-11）: 以前はここで
+                    `total.low` を1点表示していた──`high === null`（上限不明）でも
+                    「or more」が付かず、`high > low`（幅のある行）でも下端だけを
+                    見せ、`comparable: false`（比べられない行、最大の費目を欠いた
+                    総額）まで同じ書式で総額を出していた。RankBoard の `totalText`
+                    と同じ規則に揃える: 比べられない行は総額を出さない。
+                  */}
+                  {r.comparable ? (
+                    <span className={tierClass[r.approximate ? 'estimate' : 'fixed']}>
+                      {r.approximate ? '~' : ''}
+                      {totalIntervalText(r.total, true)}
+                    </span>
+                  ) : (
+                    <span className={tierClass.none}>—</span>
+                  )}
                 </td>
               ))}
             </tr>

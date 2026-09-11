@@ -1275,7 +1275,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     }
   });
 
-  test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is indeterminate', () => {
+  test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is not indeterminate', () => {
     const r = compare({
       items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
       // **国が米国からドイツに変わった。**×1/3 側の勝者が Neokyo で、Neokyo は
@@ -1288,12 +1288,16 @@ describe('one item at a time: whose weight decides the winner', () => {
     expect(r.weightSensitivity['do']!.decisive).toBe(true);
     expect(r.weightSensitivity['hakama']!.decisive).toBe(false);
     expect(r.weightSensitivity['tare']).toBeUndefined();
-    // 基準の重量（1x）では FROM JAPAN が1位で総額が上限不明——比較可能な全社が
-    // おすすめ枠か同等に収まり、「安定」ではなく「判定不能」（判断3）。
+    // 基準の重量（1x）では FROM JAPAN が1位で総額が上限不明だが、ZenMarket
+    // （閉区間・確定額）が明確に2位で、Neokyo 以下とは確定した差がある
+    // ——**P1-4（オーナー確定 2026-09-11）:** 上限不明の1位がいても、閉区間
+    // 同士で確実に差が付く社は「同等」にしない。`isIndeterminate` は「比較可能な
+    // 全社の上端が置けない」ときだけ真になるよう絞ったので、このケースは
+    // 「不安定」（`rankStable: false`）ではあっても「判定不能」ではない。
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
-    expect(r.rankStabilityNote).not.toContain('you gave us');
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).toContain('at a third of our weight estimate');
+    expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
   test('a weight the user typed is theirs: we do not second-guess it', () => {
@@ -1368,12 +1372,14 @@ describe('unknown weight falls back to EMS steps', () => {
     const r = unknown(2);
     expect(r.bands!.map((b) => b.cheapestRowIds))
       .toEqual([['neokyo'], ['neokyo'], ['fromjapan'], ['fromjapan'], ['fromjapan'], ['fromjapan']]);
-    // 代表段（3kg）は FROM JAPAN が1位で総額が上限不明——比較可能な全社が
-    // おすすめ枠か同等に収まり「判定不能」（判断3）。1位が段で入れ替わること自体は
+    // 代表段（3kg）は FROM JAPAN が1位で総額が上限不明だが、比較可能な行の中に
+    // 閉区間同士で確定した差が残っている（P1-4、オーナー確定 2026-09-11:
+    // `isIndeterminate` は「比較可能な全社の上端が置けない」ときだけ真）ので、
+    // 「不安定」ではあっても「判定不能」ではない。1位が段で入れ替わること自体は
     // 変わっていない（上の cheapestRowIds の並びがそれを示す）。
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
   test('in the US every band is indeterminate — FROM JAPAN always leads with an unbounded total', () => {
@@ -1395,15 +1401,16 @@ describe('unknown weight falls back to EMS steps', () => {
     }
   });
 
-  test('one unknown item: FROM JAPAN leads every band, but the CA total is indeterminate', () => {
+  test('one unknown item: FROM JAPAN leads every band, and the CA total is not indeterminate', () => {
     const r = unknown(1);
     expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
-    // 代表段（3kg）は FROM JAPAN が1位（総額は上限不明）で、比較可能な全社が
-    // おすすめ枠（FROM JAPAN・Neokyo、枠は最大2社）か同等（ZenMarket・Jauce・Buyee）
-    // に収まる——「安定」ではなく「判定不能」（判断3）。
+    // 代表段（3kg）は FROM JAPAN が1位（総額は上限不明）で、枠は FROM JAPAN・
+    // Neokyo（最大2社）——だが ZenMarket・Jauce・Buyee は閉区間で確定した差が
+    // あるので「同等」にはならない（P1-4、オーナー確定 2026-09-11）。
+    // 「不安定」ではあっても「判定不能」ではない。
     expect(r.rankStable).toBe(false);
-    expect(r.rankIndeterminate).toBe(true);
-    expect(r.rankStabilityNote).toContain('sit within the same uncertainty');
+    expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
   test('each band is itself a ranked board and totals grow with the step', () => {
