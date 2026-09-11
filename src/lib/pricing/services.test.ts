@@ -238,17 +238,18 @@ describe('the optional extras match what each company publishes', () => {
 
   test('each service offers exactly the extras its own page lists', () => {
     // 0b: 輸出通関手数料は任意欄から総額（`lines`）へ移した。もう optionalLines には無い。
-    expect(keysOf('neokyo')).toEqual(['konbini', 'storage', 'unpacking']);
-    expect(keysOf('zenmarket')).toEqual(['photos', 'repack', 'storage']);
+    // 0d: 保管料（storage）も同じ理由で任意欄から総額（`lines`）へ移した。
+    expect(keysOf('neokyo')).toEqual(['konbini', 'unpacking']);
+    expect(keysOf('zenmarket')).toEqual(['photos', 'repack']);
     expect(keysOf('fromjapan')).toEqual([
-      'konbini', 'outsourced-packing', 'photos', 'repack', 'storage',
+      'konbini', 'outsourced-packing', 'photos', 'repack',
     ]);
     expect(keysOf('buyee')).toEqual([
-      'photos', 'protective-packing', 'special-packing', 'storage',
+      'photos', 'protective-packing', 'special-packing',
     ]);
     expect(keysOf('jauce')).toEqual([
       'customized-processing', 'expedited', 'fragile-packing',
-      'photos', 'premium-insurance', 'storage',
+      'photos', 'premium-insurance',
     ]);
   });
 
@@ -339,28 +340,28 @@ describe('the optional extras match what each company publishes', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// T19: 保管料。**時間は入力に無い**ので総額には入れない。だが5社で無料期間も単価も
-// 違い、同梱前提の使い方では必ず効く。任意欄に単位つきで並べる。
+// T19 / ロードマップ 0d: 保管超過（F21）。**利用者が選ぶ費目ではない**
+// （区分 C_conditional_no_input）ので、任意欄ではなく総額の行にする。日数の入力欄が
+// 足りなかっただけで、5社ぶんのルールはそろっている。既定は45日
+// （`DEFAULT_STORAGE_DAYS`、docs/FEE-ITEMS.md §5 R2）。
 // ─────────────────────────────────────────────────────────────────────────────
-describe('storage is offered as an optional line for every service', () => {
-  const storageOf = (serviceId: string, over: Partial<Item> = {}): Line => {
-    const row = one(serviceId, over);
-    return row.optionalLines.find((l) => l.key === 'storage')
+describe('storage is a total line for every service (0d)', () => {
+  const storageOf = (serviceId: string, storageDays?: number, over: Partial<Item> = {}): Line => {
+    const row = byService(
+      compare({ items: [item({ id: 'a', ...over })], country: 'US', storageDays }).rows,
+      serviceId,
+    );
+    return row.lines.find((l) => l.key === 'storage')
       ?? (() => { throw new Error(`no storage line for ${serviceId}`); })();
   };
 
-  test('all five carry a storage line, and none of it enters the total', () => {
+  test('all five carry a storage line in the total, and none of it is in optionalLines', () => {
     for (const s of SERVICES) {
       const row = one(s.id);
       const storage = storageOf(s.id);
       expect(storage.label, s.id).toMatch(/^Storage/);
-      // 出典は**その額が書いてあるページ**。社の料金ページとは限らない
-      // （Neokyo の保管料は neokyo.com/en/storage が原文）。ここで社の
-      // 料金ページに固定すると、額の出どころを取り違えたまま固まる。
       expect(storage.sourceUrl, s.id).toMatch(/^https:\/\//);
-      expect(new URL(storage.sourceUrl!).host, `${s.id}: storage cited off-site`)
-        .toBe(new URL(s.sourceUrl!).host);
-      expect(row.lines.some((l) => l.key === 'storage'), s.id).toBe(false);
+      expect(row.optionalLines.some((l) => l.key === 'storage'), s.id).toBe(false);
       expect(row.total, s.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
     }
   });
@@ -370,62 +371,129 @@ describe('storage is offered as an optional line for every service', () => {
     expect(storageOf('zenmarket').label).toBe('Storage, per day after 60 free days');
     expect(storageOf('fromjapan').label).toBe('Storage after 60 free days');
     expect(storageOf('buyee').label).toBe('Storage, per day after 30 free days');
-    expect(storageOf('jauce').label).toBe('Storage, per month after 60 free days');
+    expect(storageOf('jauce').label).toBe('Storage after 60 free days');
   });
 
-  test('Buyee charges by parcel weight, so the band follows the parcel we built', () => {
+  // ── 既定45日: 無料期間が短い Buyee だけに課金が乗り、他4社は「正当な¥0」 ──────
+  test('at the default 45 days, only Buyee is charged — the other four are a sourced ¥0, tier fixed', () => {
+    for (const s of SERVICES) {
+      const storage = storageOf(s.id);
+      if (s.id === 'buyee') {
+        expect(storage.amount, s.id).toBeGreaterThan(0);
+      } else {
+        expect(storage.amount, s.id).toBe(0);
+      }
+      // 取得できた0（またはBuyeeの確定額）であって未取得の「—」ではない。
+      expect(storage.tier, s.id).toBe('fixed');
+    }
+  });
+
+  // ── 境界値 ──────────────────────────────────────────────────────────────
+  test('Buyee: ¥0 at 30 days, charged at 31 days', () => {
+    expect(storageOf('buyee', 30).amount).toBe(0);
+    expect(storageOf('buyee', 30).note).toContain('free for the first 30 days');
+    expect(storageOf('buyee', 31).amount).toBeGreaterThan(0);
+  });
+
+  test('Neokyo: ¥0 at 45 days, charged at 46 days', () => {
+    expect(storageOf('neokyo', 45).amount).toBe(0);
+    expect(storageOf('neokyo', 46).amount).toBe(350);
+  });
+
+  test('ZenMarket / FROM JAPAN: ¥0 at 60 days, charged (or not) at 61 days', () => {
+    expect(storageOf('zenmarket', 60).amount).toBe(0);
+    expect(storageOf('zenmarket', 61).amount).toBe(50);
+    expect(storageOf('fromjapan', 60).amount).toBe(0);
+    // FROM JAPAN には有料延長がそもそも無いので、61日でも¥0のまま。
+    expect(storageOf('fromjapan', 61).amount).toBe(0);
+  });
+
+  test('Jauce: ¥0 at 60 days (tier fixed), null from 61 days (tier none)', () => {
+    const at60 = storageOf('jauce', 60);
+    expect(at60.amount).toBe(0);
+    expect(at60.tier).toBe('fixed');
+    const at61 = storageOf('jauce', 61);
+    expect(at61.amount).toBeNull();
+    expect(at61.tier).toBe('none');
+    expect(at61.note).toContain('does not publish the amount');
+    // ¥700 を上限として扱わない・参考値を点推定に使わない、という判断がここに出る。
+    expect(at61.note).toContain('not a ceiling');
+  });
+
+  // ── Buyee の重量帯 ──────────────────────────────────────────────────────
+  test('Buyee charges by parcel weight band (10kg / 20kg / above)', () => {
     // 原文の表: ～10,000g ¥100/日、10,001〜20,000g ¥200/日、20,001g〜 ¥300/日。
-    // 梱包後重量 = net × 1.2 + 300 g。
-    expect(storageOf('buyee', { weightG: 600 }).amount).toBe(100);    // gross 1,020 g
-    expect(storageOf('buyee', { weightG: 8083 }).amount).toBe(100);   // gross 10,000 g ちょうど
-    expect(storageOf('buyee', { weightG: 8084 }).amount).toBe(200);   // gross 10,001 g
-    expect(storageOf('buyee', { weightG: 20000 }).amount).toBe(300);  // gross 24,300 g
+    // 梱包後重量 = net × 1.2 + 300 g。1日ぶん（31日、無料30日超過1日）で額を見る。
+    expect(storageOf('buyee', 31, { weightG: 600 }).amount).toBe(100);    // gross 1,020 g
+    expect(storageOf('buyee', 31, { weightG: 8083 }).amount).toBe(100);   // gross 10,000 g ちょうど
+    expect(storageOf('buyee', 31, { weightG: 8084 }).amount).toBe(200);   // gross 10,001 g
+    expect(storageOf('buyee', 31, { weightG: 20000 }).amount).toBe(300); // gross 24,300 g
   });
 
   test('Buyee counts every parcel: two orders in the split row are two daily fees', () => {
-    const split = rowsFor([item({ id: 'a' }), item({ id: 'b' })])
-      .find((r) => r.id === 'buyee:default')!;
+    const split = compare({
+      items: [item({ id: 'a' }), item({ id: 'b' })], country: 'US', storageDays: 31,
+    }).rows.find((r) => r.id === 'buyee:default')!;
     expect(split.parcels).toBe(2);
-    expect(split.optionalLines.find((l) => l.key === 'storage')!.amount).toBe(200);
+    expect(split.lines.find((l) => l.key === 'storage')!.amount).toBe(200);
   });
 
   test('ZenMarket charges per item, so three items is ¥150 a day', () => {
-    expect(storageOf('zenmarket').amount).toBe(50);
-    expect(storageOf('zenmarket', { qty: 3 }).amount).toBe(150);
+    expect(storageOf('zenmarket', 61).amount).toBe(50);
+    expect(storageOf('zenmarket', 61, { qty: 3 }).amount).toBe(150);
   });
 
-  test('Neokyo prints the smallest size step and says the rest of the range', () => {
+  test('Neokyo charges per order, prints the smallest size step and says the rest of the range', () => {
     // 寸法は入力に無い。一番小さい段を出し、幅と「あなたの寸法は分からない」を note に書く。
-    const storage = storageOf('neokyo');
+    const storage = storageOf('neokyo', 46);
     expect(storage.amount).toBe(350);
     expect(storage.tier).toBe('fixed');
     expect(storage.note).toContain('¥1,400 large');
     expect(storage.note).toContain('We do not know your parcel size');
   });
 
-  test('FROM JAPAN has no paid extension at all — a sourced ¥0, not an unknown', () => {
+  test('FROM JAPAN: ¥0 no matter how many days, but a discard warning past 60', () => {
     // help_logistics_110「it will be discarded. The storage period cannot be extended.」
-    const storage = storageOf('fromjapan');
-    expect(storage.amount).toBe(0);
-    expect(storage.tier).toBe('fixed');
-    expect(storage.note).toContain('discarded');
+    // 金額が¥0だから安全、ではない——60日を超えたら商品が廃棄される。
+    expect(storageOf('fromjapan', 45).amount).toBe(0);
+    expect(storageOf('fromjapan', 400).amount).toBe(0);
+    expect(storageOf('fromjapan', 60).note).not.toContain('discarded');
+    expect(storageOf('fromjapan', 61).note).toContain('discarded');
   });
 
-  test('Jauce publishes no amount, so the line is — and never 0', () => {
-    const storage = storageOf('jauce');
-    expect(storage.amount).toBeNull();
-    expect(storage.tier).toBe('none');
-    expect(storage.note).toContain('does not publish the amount');
+  test('Jauce: past 120 days the note still warns about disposal even though the amount is null', () => {
+    const at130 = storageOf('jauce', 130);
+    expect(at130.amount).toBeNull();
+    expect(at130.tier).toBe('none');
+    expect(at130.note).toContain('abandoned');
   });
 
-  test('an optional line with tier none is null, and one with an amount is never none', () => {
-    // 本体の行と同じ不変条件を任意欄にも掛ける。任意欄は総額に入らないぶん見落としやすい。
-    for (const s of SERVICES) {
-      for (const l of one(s.id).optionalLines) {
-        if (l.tier === 'none') expect(l.amount, `${s.id} ${l.key}`).toBeNull();
-        if (l.amount === null) expect(l.tier, `${s.id} ${l.key}`).toBe('none');
-      }
-    }
+  // ── 90日／120日の上限 ───────────────────────────────────────────────────
+  test('Buyee and ZenMarket cap billing at the 90-day maximum instead of billing past it', () => {
+    const cappedBuyee = storageOf('buyee', 90);
+    const overBuyee = storageOf('buyee', 200);
+    expect(overBuyee.amount).toBe(cappedBuyee.amount); // 200日でも90日ぶんで頭打ち
+    expect(overBuyee.note).toContain('capped at 90 days');
+
+    const cappedZen = storageOf('zenmarket', 90);
+    const overZen = storageOf('zenmarket', 200);
+    expect(overZen.amount).toBe(cappedZen.amount);
+    expect(overZen.note).toContain('capped at 90 days');
+  });
+
+  test('Jauce caps at 120 days — the amount stays null but the note names the maximum', () => {
+    const at120 = storageOf('jauce', 120);
+    const at500 = storageOf('jauce', 500);
+    expect(at120.amount).toBeNull();
+    expect(at500.amount).toBeNull();
+    expect(at500.note).toContain('capped at 120 days');
+  });
+
+  test('excluded lists the storage label when Jauce cannot price it', () => {
+    const row = byService(
+      compare({ items: [item({ id: 'a' })], country: 'US', storageDays: 61 }).rows, 'jauce',
+    );
+    expect(row.excluded).toContain('Storage after 60 free days');
   });
 });
 
@@ -793,9 +861,8 @@ describe('an optional fee points at whoever sets the amount', () => {
   });
 
   test("Neokyo's storage fee cites the storage page it was read from", () => {
-    const fee = SERVICES.find((s) => s.id === 'neokyo')!.optional
-      .find((o) => o.key === 'storage')!;
-    expect(fee.sourceUrl).toBe('https://neokyo.com/en/storage');
+    expect(SERVICES.find((s) => s.id === 'neokyo')!.storage.sourceUrl)
+      .toBe('https://neokyo.com/en/storage');
   });
 
   test('an optional fee that names no source of its own falls back to the service page', () => {

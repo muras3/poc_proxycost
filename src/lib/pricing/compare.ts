@@ -26,6 +26,13 @@ export const ASSUMED_DOMESTIC_SHIPPING_YEN = 800; // 実勢 ¥150〜1,500 の中
 export const PACKING_MULTIPLIER = 1.2;            // 梱包で増える分
 export const PACKING_ADD_G = 300;                 // 緩衝材・外箱
 
+/**
+ * 倉庫に置く既定日数。**45 日**（オーナー決定 2026-09-11）。
+ * 「貯めてまとめ発送」の実態に寄せた我々の仮定で、一次情報ではない
+ * （docs/FEE-ITEMS.md §5 R2）。45 という数字はここ一箇所だけに置く。
+ */
+export const DEFAULT_STORAGE_DAYS = 45;
+
 const L = (
   key: string, label: string, amount: number | null, note: string,
   tier: Tier = 'fixed', sourceUrl: string | null = null,
@@ -98,6 +105,8 @@ interface Ctx {
   weightScale: number;
   /** 国際配送の方式。'cheapest' なら行ごとに「運べる中で最安」を選ぶ。 */
   method: PostalMethod | 'cheapest';
+  /** 倉庫に置く日数。未指定は `DEFAULT_STORAGE_DAYS`。 */
+  storageDays: number;
 }
 
 function itemWeightG(item: Item, ctx: Ctx): number | null {
@@ -371,6 +380,84 @@ function packingLine(svc: Service, parcelWeights: number[]): Line | null {
     ? `¥${p.perParcelYen} up to ${p.freeUpToG / 1000} kg, then ¥${p.perKgYen}/kg`
     : `¥${p.perParcelYen} per parcel + ¥${p.perKgYen}/kg`;
   return L('packing', 'Packing', yen, note, p.tier, svc.sourceUrl);
+}
+
+/**
+ * F21 保管超過。**総額の行。**以前は `optional`（任意欄）にあったが、
+ * 「倉庫に貯めてまとめ発送」という主要な使い方では既定で発生する費目であり、
+ * 利用者が選ぶものではない（`docs/FEE-ITEMS.md` §1 の区分 C）。
+ *
+ * **上限日数は頭打ちにする。**超過分をそのまま計上すると、存在しない請求を出す
+ * ことになる（Buyee・ZenMarket 90日、Jauce 120日、Neokyo は未払い6週、FROM JAPAN は
+ * 無料期間そのものが上限）。上限を超えたら note に「何が起きるか」を書く——
+ * 金額が ¥0 や `—` でも安全とは限らない（FROM JAPAN・Jauce は廃棄される）。
+ */
+function storageLine(
+  svc: Service, days: number, orders: number, parcels: number,
+  parcelGrossG: number[], units: number,
+): Line {
+  const st = svc.storage;
+  const overMax = days > st.maxDays;
+  const cappedDays = Math.min(days, st.maxDays);
+  const daysOver = Math.max(0, cappedDays - st.freeDays);
+  const freeDaysLeft = Math.max(0, st.freeDays - days);
+  const capSuffix = overMax ? ` — capped at ${st.maxDays} days; ${st.maxDaysConsequence}` : '';
+  const freeSuffix = daysOver === 0 && freeDaysLeft > 0
+    ? `, ${plural(freeDaysLeft, 'day')} of the free period left` : '';
+
+  const rate = st.rate;
+  switch (rate.kind) {
+    case 'per-day-per-parcel-by-weight': {
+      const rateFor = (g: number) => rate.bands.find((b) => g <= b.maxG)!.yen;
+      const amount = daysOver === 0 ? 0
+        : parcelGrossG.reduce((a, g) => a + daysOver * rateFor(g), 0);
+      const note = daysOver === 0
+        ? `free for the first ${st.freeDays} days${freeSuffix}${capSuffix}`
+        : `¥100 a day up to 10 kg, ¥200 to 20 kg, ¥300 above — per parcel,`
+          + ` ${plural(daysOver, 'day')} over the free period${capSuffix}`;
+      return L('storage', `Storage, per day after ${st.freeDays} free days`, amount,
+        note, 'fixed', st.sourceUrl);
+    }
+    case 'per-day-per-item': {
+      const amount = daysOver === 0 ? 0 : daysOver * rate.yen * units;
+      const note = daysOver === 0
+        ? `free for the first ${st.freeDays} days${freeSuffix}${capSuffix}`
+        : `¥${rate.yen} a day per item, ${plural(daysOver, 'day')} over the free period`
+          + ` × ${plural(units, 'item')}${capSuffix}`;
+      return L('storage', `Storage, per day after ${st.freeDays} free days`, amount,
+        note, 'fixed', st.sourceUrl);
+    }
+    case 'per-week-per-order': {
+      const weeksOver = Math.min(Math.ceil(daysOver / 7), rate.unpaidWeeksLimit);
+      const amount = weeksOver === 0 ? 0 : weeksOver * rate.yen * orders;
+      const sizeNote = 'per order: ¥350 small / ¥700 average / ¥1,400 large — parcels'
+        + ' ¥210 / ¥490 / ¥980. We do not know your parcel size, so this is the smallest step'
+        + ' (measured on the item, not the packed parcel)';
+      const note = daysOver === 0
+        ? `free for the first ${st.freeDays} days${freeSuffix}. ${sizeNote}${capSuffix}`
+        : `${sizeNote} — ${plural(weeksOver, 'week')} over the free period${capSuffix}`;
+      return L('storage', `Storage, per week after ${st.freeDays} free days`, amount,
+        note, 'fixed', st.sourceUrl);
+    }
+    case 'none': {
+      const note = overMax
+        ? `¥0 — but ${st.maxDaysConsequence}`
+        : `there is no paid extension after the ${st.freeDays}-day free period${freeSuffix}`;
+      return L('storage', `Storage after ${st.freeDays} free days`, 0, note, 'fixed', st.sourceUrl);
+    }
+    case 'unpublished': {
+      if (daysOver === 0) {
+        return L('storage', `Storage after ${st.freeDays} free days`, 0,
+          `free for the first ${st.freeDays} days${freeSuffix}`, 'fixed', st.sourceUrl);
+      }
+      const note = 'the company does not publish the amount — it depends on item size and'
+        + ' value; reference examples (~¥200/month for a CD, ~¥700/month for a guitar) are'
+        + ' "very roughly" and not a price list, so we do not use them as a point estimate'
+        + ' and ¥700 is not a ceiling'
+        + (overMax ? ` — capped at ${st.maxDays} days; ${st.maxDaysConsequence}` : '');
+      return L('storage', `Storage after ${st.freeDays} free days`, null, note, 'none', st.sourceUrl);
+    }
+  }
 }
 
 function feeLines(
@@ -648,6 +735,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const pack = packingLine(svc, parcelGross);
   if (pack) lines.push(pack);
 
+  // F21。既定45日では無料期間30日のBuyeeだけに課金が乗る（他4社は無料期間の内側）。
+  lines.push(storageLine(svc, ctx.storageDays, orders, parcels, parcelGross, units));
+
   // **EMS 行の tier は「料金の出どころ」だけを表す。**
   // 料金表は日本郵便の公表値（一次情報）で、そこに入れる重量は我々の推定である。
   // 2つを1つの tier に潰していたので `approximate` が常に true になり、画面の `~` が
@@ -899,7 +989,7 @@ function sensitivityRange(item: Item): [number, number] | null {
  */
 function weightSensitivityFor(
   items: Item[], cc: CompareInput['country'], province: ProvinceCode | null, base: Row[],
-  method: PostalMethod | 'cheapest',
+  method: PostalMethod | 'cheapest', storageDays: number,
 ): Record<string, WeightSensitivity> {
   const out: Record<string, WeightSensitivity> = {};
   const baseIds = cheapestIds(base);
@@ -912,7 +1002,7 @@ function weightSensitivityFor(
     const at = (g: number) => {
       const rows = rowsFor({
         items: items.map((i) => (i.id === item.id ? { ...i, weightG: g } : i)),
-        cc, province, assumeUnknownG: null, weightScale: 1, method,
+        cc, province, assumeUnknownG: null, weightScale: 1, method, storageDays,
       });
       const ids = cheapestIds(rows);
       return {
@@ -958,7 +1048,7 @@ function weightSensitivityFor(
  * （src/components/compare/useCompare.ts）。つまりこれは利用者に見せるエラーではなく、
  * 我々が直すべき不具合の通報である。
  */
-function assertUsableInput({ items, country, province }: CompareInput): void {
+function assertUsableInput({ items, country, province, storageDays }: CompareInput): void {
   if (!COUNTRIES[country]) {
     throw new RangeError(`compare(): unknown destination country ${String(country)}`);
   }
@@ -966,6 +1056,10 @@ function assertUsableInput({ items, country, province }: CompareInput): void {
   // 出すことになる。呼び出し側の不具合なので、そこで止める。
   if (province != null && !CA_PROVINCES[province]) {
     throw new RangeError(`compare(): unknown province ${String(province)}`);
+  }
+  if (storageDays != null
+    && (!Number.isInteger(storageDays) || storageDays < 0)) {
+    throw new RangeError(`compare(): unusable storageDays: ${String(storageDays)}`);
   }
   for (const i of items) {
     const bad = (field: string, v: unknown) =>
@@ -987,9 +1081,12 @@ function assertUsableInput({ items, country, province }: CompareInput): void {
 }
 
 export function compare(
-  { items, country, province = null, method = DEFAULT_METHOD }: CompareInput,
+  {
+    items, country, province = null, method = DEFAULT_METHOD,
+    storageDays = DEFAULT_STORAGE_DAYS,
+  }: CompareInput,
 ): CompareResult {
-  assertUsableInput({ items, country, province });
+  assertUsableInput({ items, country, province, storageDays });
   const currency = {
     code: COUNTRIES[country].ccy,
     rate: rateFor(COUNTRIES[country].ccy),
@@ -1007,14 +1104,14 @@ export function compare(
   const hasUnknownWeight = items.some((i) => i.weightG == null);
 
   if (!hasUnknownWeight) {
-    const base = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: 1, method });
+    const base = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: 1, method, storageDays });
     // 一番大きく一番弱い数字（重量）を 1/3・3倍 に振って、1位が動くか見る。
     // **5倍まで振らないのは、5倍にすると同梱後の重量が EMS 公表表（30kg）を
     // 超えて「順位が変わる」のではなく「比べられなくなる」ため。**
     // 比較可能な行が無くなった倍率は「動いた」ではなく「判定できない」として扱う。
     const baseComparable = base.filter((r) => r.comparable).length;
     const winners = [1 / 3, 3].map((sc) => {
-      const rows = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: sc, method });
+      const rows = rowsFor({ items, cc: country, province, assumeUnknownG: null, weightScale: sc, method, storageDays });
       const comparable = rows.filter((r) => r.comparable);
       // **「最安が替わった」と「他が比べられなくなった」を混ぜない。**
       // 重い側では同梱する社が EMS 表を出て脱落する。残った1社は安いのではなく、
@@ -1075,7 +1172,7 @@ export function compare(
               .join('; ')
           }.`,
       hasUnknownWeight: false,
-      weightSensitivity: weightSensitivityFor(items, country, province, base, method),
+      weightSensitivity: weightSensitivityFor(items, country, province, base, method, storageDays),
     };
   }
 
@@ -1084,7 +1181,7 @@ export function compare(
   // null を渡す呼び出し側のために残す。
   const bands: Band[] = [];
   for (const stepG of UNKNOWN_WEIGHT_STEPS_G) {
-    const rows = rowsFor({ items, cc: country, province, assumeUnknownG: stepG, weightScale: 1, method });
+    const rows = rowsFor({ items, cc: country, province, assumeUnknownG: stepG, weightScale: 1, method, storageDays });
     if (!rows.length) continue;
     // 段ごとの最安も**集合**で持つ。同額のとき `rows[0]` を最安と呼ぶと、
     // 並びの偶然を段ごとの答えとして出すことになる。

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useReducer } from 'react';
-import { compare } from '@/lib/pricing/compare';
+import { compare, DEFAULT_STORAGE_DAYS } from '@/lib/pricing/compare';
 import { weightFieldsFor } from '@/lib/pricing/weights';
 import { siteById } from '@/lib/search/sites';
 import type {
@@ -31,6 +31,11 @@ interface State {
   province: ProvinceCode | null;
   /** 国際配送の方式。既定は EMS（`compare()` の `DEFAULT_METHOD` と同じ）。 */
   method: PostalMethod | 'cheapest';
+  /**
+   * 倉庫に置く日数（F21、0d）。既定は `DEFAULT_STORAGE_DAYS`（45日、我々の仮定）。
+   * 利用者が変えたら即座に `compare()` を呼び直し、再ランキングする。
+   */
+  storageDays: number;
   seq: number;
   /**
    * 価格をまだ一度も貰えていない項目の id。
@@ -47,7 +52,8 @@ type Action =
   | { type: 'patch'; id: string; patch: Partial<Item> }
   | { type: 'country'; country: CountryCode }
   | { type: 'province'; province: ProvinceCode | null }
-  | { type: 'method'; method: PostalMethod | 'cheapest' };
+  | { type: 'method'; method: PostalMethod | 'cheapest' }
+  | { type: 'storageDays'; storageDays: number };
 
 function itemFromDraft(draft: Draft, id: string): Item {
   // 重量はタイトルから引く。当たらなければ仮置き（ASSUMED_WEIGHT_G）を 'assumed' として入れる。
@@ -111,6 +117,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, province: action.province };
     case 'method':
       return { ...state, method: action.method };
+    case 'storageDays':
+      return { ...state, storageDays: action.storageDays };
   }
 }
 
@@ -129,7 +137,10 @@ const EXAMPLES: Draft[] = [
 function initial(): State {
   let seq = 0;
   const items = EXAMPLES.map((d) => itemFromDraft(d, `i${seq++}`));
-  return { items, country: 'US', province: null, method: 'ems', seq, unpriced: [] };
+  return {
+    items, country: 'US', province: null, method: 'ems', storageDays: DEFAULT_STORAGE_DAYS,
+    seq, unpriced: [],
+  };
 }
 
 export function useCompare() {
@@ -142,8 +153,9 @@ export function useCompare() {
   const result: CompareResult = useMemo(
     () => compare({
       items: priced, country: state.country, province: state.province, method: state.method,
+      storageDays: state.storageDays,
     }),
-    [priced, state.country, state.province, state.method],
+    [priced, state.country, state.province, state.method, state.storageDays],
   );
   return { ...state, result, dispatch };
 }
