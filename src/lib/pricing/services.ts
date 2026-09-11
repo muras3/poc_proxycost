@@ -102,38 +102,27 @@ export interface PackingFee {
 }
 
 /**
- * 任意費目の額を決めるのに要る、その行の実際の姿。
- * 「1個口あたり」「1kgあたり」「1点あたり」の費目を、**持っている数字で実額にする**
- * ために渡す。持っていない数字（保管日数など）は額にしない。
+ * **マスタの `display: total` だが、額を公表していない費目。**
+ * `docs/FEE-ITEMS.md` §1 の区分に「任意欄」は存在しない（オーナー決定
+ * 2026-09-11、`master/fees.json` の catalog に `optional` は0件）。だから
+ * `display: total` の費目は、額が出せなくても総額の行にする——`amount: null`
+ * （画面は「—」）にして `excluded` に名前を載せる。行そのものを消すと
+ * 「そんな費目は無い」という嘘になる。
+ *
+ * いま該当するのは2件だけ（0e、2026-09-11）:
+ *   - FROM JAPAN の外注梱包（F14。課税ベースならぬ額そのものが「実費」としか
+ *     書かれておらず、社が決める額ではない）
+ *   - Jauce の Premium Insurance（F29。1.9% の課税ベースが原文から読めない）
+ * `compare.ts` の `buildRow` が `lines[]` に無条件（毎行）で足す。
  */
-export interface OptionalFeeContext {
-  parcels: number;
-  /** 個口ごとの梱包後重量（g）。 */
-  parcelGrossG: number[];
-  /** 点数（qty の合計）。 */
-  units: number;
-  /** その行で実際に積んだ梱包料（円）。Neokyo の開梱料が「¥1,000 ＋ 梱包料」なので要る。 */
-  packingYen: number;
-}
-
-export interface OptionalFee {
+export interface UnpricedFee {
   key: string;
   label: string;
-  /** 円。**null = 額が公表されていない。** 画面では「—」。0 とは書かない。 */
-  amountYen: number | null;
+  note: string;
   /**
    * 額の出どころが、その社の料金ページとは別のとき指す。省略すると社の sourceUrl。
-   * **輸出申告代行手数料は日本郵便の額**で、代行各社は「郵便局が取る」と書いているだけ。
-   * 社のページを出典に立てると、額を社が決めているように読める。
    */
   sourceUrl?: string;
-  /**
-   * 個口・重量・点数で額が決まる費目。あれば amountYen より優先する。
-   * null を返せば「この入力では額を出せない」。
-   */
-  amountFor?: (ctx: OptionalFeeContext) => number | null;
-  note: string;
-  tier: Tier;
 }
 
 /**
@@ -266,7 +255,11 @@ export interface Service {
   postage: Partial<Record<PostalMethod, PostageRate>>;
   /** F21。総額の行（`compare.ts` の `storageLine`）。5社とも持つ。 */
   storage: StorageFee;
-  optional: OptionalFee[];
+  /**
+   * `display: total` だが額を公表していない費目（F14 外注梱包・F29 Premium
+   * insurance の2件のみ、0e）。**「任意欄」ではない**——total として毎行に足す。
+   */
+  unpricedFees?: UnpricedFee[];
   /**
    * **条件がこの計算機では成立しない、既知の費目。**マスタに `A_confirmed` で値が
    * あるが、画面にも総額にも出さない（F27。理由は `DormantCourierFee` のコメント参照）。
@@ -413,17 +406,9 @@ export const SERVICES: Service[] = [
       rate: { kind: 'per-week-per-order', yen: 350, unpaidWeeksLimit: 6 },
       sourceUrl: 'https://neokyo.com/en/storage',
     },
-    optional: [
-      // 原文:「You will be charged 1000¥ **plus the price of the packing fee**
-      // (Example: 500¥ Packing Fee, 1500¥ Unpacking Fee).」
-      // 梱包料はこの行が実際に積んでいる額なので、そこから出す。¥1,000 だけ出すのは過小。
-      {
-        key: 'unpacking', label: 'Unpacking / removing original box', amountYen: 1000,
-        amountFor: (ctx) => 1000 + ctx.packingYen,
-        note: '¥1,000 plus the packing fee for the same parcel', tier: 'fixed',
-      },
-      { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
-    ],
+    // 開梱（unpacking）・コンビニ払い（konbini）は catalog F17 / F08 が display: hidden
+    // （利用者が選んだときだけ発生し、総額の精度に効かない。オーナー決定 2026-09-11）。
+    // 0e で撤去した——枠を残すと次の作業者が費目を戻す置き場になる（docs/FEE-ITEMS.md §2）。
     // 豪州の GST は自社で徴収すると公式に書いている（確認日 2026-09-06）。原文:
     // 「effective March 24th, 2023, we will be charging 10% of the declared value for
     //  parcels containing Low-Value Goods (1000 AUD or less) bound for Australia as GST,
@@ -544,10 +529,8 @@ export const SERVICES: Service[] = [
       rate: { kind: 'per-day-per-item', yen: 50 },
       sourceUrl: 'https://zenmarket.jp/en/fees.aspx',
     },
-    optional: [
-      { key: 'photos', label: 'Extra photos', amountYen: 500, note: 'per request', tier: 'fixed' },
-      { key: 'repack', label: 'Repacking', amountYen: 1000, note: 'from ¥1,000 to ¥4,000', tier: 'fixed' },
-    ],
+    // 写真（photos, F18）・再梱包（repack, F16）は catalog が display: hidden
+    // （利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。
     // 料金ページの「To Australian customers」（確認日 2026-09-06、直アクセスは 403 なので
     // r.jina.ai 経由で本文を取得）。原文:「we are required to collect 10% GST for all parcels
     // sent to Australia with a total value of 1,000 AUD or less … GST will be applied to
@@ -681,27 +664,27 @@ export const SERVICES: Service[] = [
       rate: { kind: 'none' },
       sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt',
     },
-    optional: [
-      // **Product Protection Plan をここに置いてはいけない。** 原文
-      // title_serviceRule_670:「Members agree that all purchased items will be covered by
-      // our Product Protection Plan. Use of the Product Protection Plan is mandatory for
-      // all items.」＝必須で、その ¥500/点 は既に service-fee として総額に入っている。
-      // 任意欄にも並べると同じ費目を二度見せることになる（docs/audit/fees.md §3）。
-      { key: 'konbini', label: 'Convenience store payment', amountYen: 1000, note: 'per payment', tier: 'fixed' },
-      { key: 'repack', label: 'Repacking', amountYen: 1500, note: 'from ¥1,500', tier: 'fixed' },
-      { key: 'photos', label: 'Extra photos', amountYen: 500, note: '3 photos', tier: 'fixed' },
-      // 翻訳ファイル原文（2026-09-07 読了）: help_fee_720「Outsourced Packing」＋
-      // help_fee_721「Actual cost」、help_logistics_1730「Items that cannot be packed by
-      // FROM JAPAN will require outsourced packing. You must pay the actual cost to have a
-      // packing company pack the items.」、title_serviceRule_1870「Items that meet any of the
-      // conditions below will require outsourced packing.」
-      // **額は「実費」としか書かれていない。**社が決める額ではないので推定もできない。
-      // null で出して「—」にする。0 と書けば、掛かる社を掛からない社として見せる。
+    // コンビニ・郵便局払い（konbini, F08）・再梱包（repack, F16）・写真（photos, F18）は
+    // catalog が display: hidden（利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。
+    // **Product Protection Plan は独立費目として置かない。** 原文
+    // title_serviceRule_670:「Members agree that all purchased items will be covered by
+    // our Product Protection Plan. Use of the Product Protection Plan is mandatory for
+    // all items.」＝必須で、その ¥500/点 は既に service-fee として総額に入っている。
+    //
+    // 外注梱包（F14 の変種。catalog の F14 自体は display: total）は残す。
+    // 翻訳ファイル原文（2026-09-07 読了）: help_fee_720「Outsourced Packing」＋
+    // help_fee_721「Actual cost」、help_logistics_1730「Items that cannot be packed by
+    // FROM JAPAN will require outsourced packing. You must pay the actual cost to have a
+    // packing company pack the items.」、title_serviceRule_1870「Items that meet any of the
+    // conditions below will require outsourced packing.」
+    // **額は「実費」としか書かれていない。**社が決める額ではないので推定もできない。
+    // display: total なので行そのものは消せない——null（画面「—」）で総額の行にし、
+    // excluded に名前を載せる。0 と書けば、掛かる社を掛からない社として見せる。
+    unpricedFees: [
       {
-        key: 'outsourced-packing', label: 'Outsourced packing', amountYen: null,
+        key: 'outsourced-packing', label: 'Outsourced packing',
         note: 'actual cost — charged when FROM JAPAN judges an item too difficult to pack itself,'
           + ' and the amount is never published',
-        tier: 'none',
       },
     ],
     // F27（`master/fees.json` A_confirmed）。この計算機は宅配便を価格化しておらず、
@@ -808,17 +791,9 @@ export const SERVICES: Service[] = [
       },
       sourceUrl: 'https://buyee.jp/helpcenter/guide/storage?lang=en',
     },
-    optional: [
-      { key: 'protective-packing', label: 'Protective packing', amountYen: 1500, note: 'per parcel', tier: 'fixed' },
-      { key: 'special-packing', label: 'Special packing', amountYen: 2500, note: 'per parcel', tier: 'fixed' },
-      // /helpcenter/guide/photo-shoot（2026-09-07 取得）:「Photo Service Fee is 300 yen /
-      // $3 per package(5 photos).」
-      {
-        key: 'photos', label: 'Photo service', amountYen: 300,
-        amountFor: (ctx) => 300 * ctx.parcels,
-        note: '5 photos per package', tier: 'fixed',
-      },
-    ],
+    // 保護梱包（protective-packing）・特殊梱包（special-packing、ともに F15）・
+    // 写真サービス（photos, F18）は catalog が display: hidden（利用者が選んだときだけ。
+    // オーナー決定 2026-09-11）。0e で撤去。
     // 豪州（確認日 2026-09-06）:「Please pay the 10% GST along with the total price of the
     // goods, Buyee's service fee, and other optional fees during handling.」
     // → **この文に送料は挙がっていない。** 徴収は「handling（購入手続き）」の時点で、
@@ -918,48 +893,20 @@ export const SERVICES: Service[] = [
       rate: { kind: 'unpublished' },
       sourceUrl: 'https://www.jauce.com/japan_auction_detail',
     },
-    optional: [
-      // 以下すべて japan_auction_detail の原文（2026-09-07 取得）。
-      // 「Fragile Packing : JPY 600 per package + JPY 240/kg」。既定の Smart Packing
-      // （¥300 + ¥120/kg、必須なので総額に入っている）**の代わり**に選ぶもの。
-      // 差額ではなく全額を出し、置き換えであることを note に書く。
+    // 補強梱包（fragile-packing）・写真（photos, F18）・速達（expedited）・
+    // 特殊処理（customized-processing、ともに F24）は catalog が display: hidden
+    // （利用者が選んだときだけ。オーナー決定 2026-09-11）。0e で撤去。
+    //
+    // Premium Insurance（F29 の一部。catalog の F29 自体は display: total）は残す。
+    // 「Premium Insurance More peace of mind for only 1.9% over the total amount!」
+    // **どの合計に掛かるのかが原文から読めない**（商品代か、送料込みの支払総額か）。
+    // 率を勝手に当てて数字を出せば、その額は我々の推測になる。display: total なので
+    // 行そのものは消せない——額は null（画面「—」）で総額の行にし、excluded に名前を載せる。
+    unpricedFees: [
       {
-        key: 'fragile-packing', label: 'Fragile packing', amountYen: 600,
-        amountFor: (ctx) => ctx.parcelGrossG.reduce(
-          (a, g) => a + 600 + 240 * Math.ceil(g / 1000), 0,
-        ),
-        note: '¥600 per package + ¥240/kg, instead of the Smart Packing already in the total',
-        tier: 'fixed',
-      },
-      // 「it costs 300 yen per auction. … If the auction closing price is 20,000 yen or
-      //  higher, we provide this service for the supported categories for free!」
-      {
-        key: 'photos', label: 'Picture service', amountYen: 300,
-        note: '3 photos per auction — free when the auction closed at ¥20,000 or more',
-        tier: 'fixed',
-      },
-      // 「The fee for 'Expedited Shipping' service is JPY 200 + JPY 80/kg.」
-      {
-        key: 'expedited', label: 'Expedited shipping', amountYen: 200,
-        amountFor: (ctx) => ctx.parcelGrossG.reduce(
-          (a, g) => a + 200 + 80 * Math.ceil(g / 1000), 0,
-        ),
-        note: '¥200 + ¥80/kg — dispatched within one business day',
-        tier: 'fixed',
-      },
-      // 「Customized Processing Option … priced at 2,000¥ per hour.」
-      {
-        key: 'customized-processing', label: 'Customized processing', amountYen: 2000,
-        note: '¥2,000 per hour of handling', tier: 'fixed',
-      },
-      // 「Premium Insurance More peace of mind for only 1.9% over the total amount!」
-      // **どの合計に掛かるのかが原文から読めない**（商品代か、送料込みの支払総額か）。
-      // 率を勝手に当てて数字を出せば、その額は我々の推測になる。額は出さない。
-      {
-        key: 'premium-insurance', label: 'Premium insurance', amountYen: null,
+        key: 'premium-insurance', label: 'Premium insurance',
         note: '1.9% of "the total amount" — the page does not say which total, so we do not'
           + ' put a number on it',
-        tier: 'none',
       },
     ],
     // 豪州（確認日 2026-09-06、https://www.jauce.com/australian-gst）。原文:
