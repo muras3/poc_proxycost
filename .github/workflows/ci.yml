@@ -21,6 +21,15 @@ concurrency:
 # **並列にして落ちるテストは1件も無かった**ので、隠れた状態依存は無い。
 # ただし workers を上げても3分で頭打ち。ビルド（約40秒）と1本のサーバが
 # ボトルネックなので、**ジョブごと分ける**（各シャードが自分のビルドとサーバを持つ）。
+#
+# 上のビルド（約40秒）は build ジョブで1回にした（下）。`npm ci` の重複（fast +
+# build + 4シャード、計6回）は**あえて残した**。`actions/cache` で
+# `node_modules` を package-lock のハッシュで鍵を切ればインストールそのものを
+# 飛ばせるが、`npm ci` は「lock と node_modules を完全に一致させる」ための
+# 道具で、キャッシュで飛ばすとその保証が薄れる（postinstall の再実行漏れ・
+# 鍵の当たり損ないでの黙った不一致など）。`cache: npm` の効果もあって
+# 1回あたり約25秒とビルドの約40秒より軽く、ビルドの1回化だけで狙いの短縮は
+# 取れたので、ここには手を入れない。
 jobs:
   # 速い門を先に、単独で。lint・型・単体・マスタは1分弱で答えが出る。
   # E2E の4分を待たずに「壊れている」と分かる方が、直すのが早い。
@@ -45,8 +54,39 @@ jobs:
       # 手書きの表は必ずずれるので、生成して CI で縛る。
       - run: python3 master/render-docs.py --check
 
+  # 同じコミットを4シャードそれぞれが `npm run build` していた（約40秒 x4）。
+  # ビルドの入力（ソース・依存関係）はどのシャードでも同じなので、ここで1回だけ
+  # ビルドして `.next` を artifact に上げ、4シャードはそれを降ろして使う。
+  #
+  # **分離は壊さない。** artifact で渡すのはビルド成果物（`.next`）だけで、
+  # サーバは今まで通り各シャードが `next start` で自分のを起こす
+  # （playwright.config.ts の webServer、PW_SKIP_BUILD=1 でビルド行だけ飛ばす）。
+  # 「シャード間は並列、シャード内・サーバは共有しない」という e2e ジョブの
+  # コメントの判断はそのまま。
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next
+          retention-days: 1
+          # 空だと4シャードが黙って「ビルド無し」で走ってしまう。上げ損ねたら
+          # ここで落として気付けるようにする。
+          if-no-files-found: error
+
   e2e:
     name: e2e ${{ matrix.shard }}/4
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -62,6 +102,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
+      # build ジョブが1回だけ作った `.next` を降ろす。artifact が無い・壊れている
+      # ときは download-artifact がそのまま失敗するので、シャードは黙って
+      # 「成功」にはならない（デフォルトで失敗時にジョブを落とす）。
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
 
       # ブラウザは毎回 25 秒かけて落としていた。版で鍵を切って使い回す。
       # **鍵は package-lock から取る。** 手で書くと上げ忘れて古いブラウザで
@@ -90,6 +138,11 @@ jobs:
       # （実測 3.6分）、共有サーバの状態を触るテストが互いに干渉しうる。
       # いまは干渉しないと確かめたが、**速さのために依存を増やさない。**
       - run: npx playwright test --shard=${{ matrix.shard }}/4
+        env:
+          # ここで既にビルド済みの `.next` を降ろしてあるので、webServer 側の
+          # ビルド行を飛ばす（playwright.config.ts）。ローカルの `npm run test:e2e`
+          # はこの変数を立てないので今まで通り自前でビルドする。
+          PW_SKIP_BUILD: '1'
 
       # 落ちた理由をログから掘らせない。トレースは Playwright で開ける。
       - uses: actions/upload-artifact@v4
@@ -108,15 +161,16 @@ jobs:
   all-green:
     name: all green
     runs-on: ubuntu-latest
-    needs: [fast, e2e]
+    needs: [fast, build, e2e]
     if: always()
     steps:
       - name: Fail unless every job succeeded
         run: |
           fast='${{ needs.fast.result }}'
+          build='${{ needs.build.result }}'
           e2e='${{ needs.e2e.result }}'
-          echo "fast=$fast e2e=$e2e"
-          [ "$fast" = success ] && [ "$e2e" = success ] || {
-            echo "::error::CI is not green (fast=$fast, e2e=$e2e)"
+          echo "fast=$fast build=$build e2e=$e2e"
+          [ "$fast" = success ] && [ "$build" = success ] && [ "$e2e" = success ] || {
+            echo "::error::CI is not green (fast=$fast, build=$build, e2e=$e2e)"
             exit 1
           }

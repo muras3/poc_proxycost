@@ -46,8 +46,38 @@ jobs:
       - run: python3 master/validate.py
       - run: python3 master/render-docs.py --check
 
+  # ci.yml と同じ理由でビルドを1回にする（詳細は ci.yml の build ジョブの
+  # コメントを見ろ）。deploy 側にも「同じコミットを4回ビルド」が起きていたので
+  # ここでも1回化する。
+  #
+  # **`deploy` ジョブの `npx opennextjs-cloudflare build`（cf:build）とは共有しない。**
+  # cf:build は Next のビルドをそのまま使うのではなく、Cloudflare Workers 向けに
+  # 別の変換（open-next のアダプタ）をかけて別の出力（`.open-next/`）を作る、
+  # 別物のビルドパイプライン。e2e 用の `.next` を渡して差し替えられる保証がなく、
+  # 無理に共有すると「e2e は通ったのに deploy 用ビルドだけ壊れる」を検知し損ねる
+  # リスクがある。**deploy 側の cf:build は今まで通り単独で走らせる。**
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next
+          retention-days: 1
+          if-no-files-found: error
+
   e2e:
     name: e2e ${{ matrix.shard }}/4
+    needs: [build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -61,6 +91,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next
       - name: Resolve Playwright version
         id: pw
         run: |
@@ -76,6 +110,8 @@ jobs:
       - run: npx playwright install-deps chromium
         if: steps.pw-cache.outputs.cache-hit == 'true'
       - run: npx playwright test --shard=${{ matrix.shard }}/4
+        env:
+          PW_SKIP_BUILD: '1'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -87,7 +123,7 @@ jobs:
           if-no-files-found: ignore
 
   deploy:
-    needs: [fast, e2e]
+    needs: [fast, build, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

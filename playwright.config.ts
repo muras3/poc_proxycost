@@ -13,6 +13,13 @@ const PORT = 3100;
 // クロスオリジンとして遮断し、チャンクが 404 になって hydration が完了しない。
 // 実ブラウザで操作すると「クリックしても何も起きない」形で出る。
 
+// CI では `build` ジョブが1回だけビルドし、その `.next` を4つの e2e シャードに
+// artifact で配る（ci.yml / deploy.yml を見ろ）。シャード側は PW_SKIP_BUILD=1 を
+// 立てて、ここでのビルドを飛ばして `next start` だけ行う。
+// ローカルで `npm run test:e2e` を叩いたときはこの変数は立たないので、
+// 今まで通り毎回ビルドしてから起動する（開発者の手順は変えない）。
+const SKIP_BUILD = process.env.PW_SKIP_BUILD === '1';
+
 export default defineConfig({
   testDir: './e2e',
   // E2E は実操作を求める。1件ずつ確実に。
@@ -35,7 +42,9 @@ export default defineConfig({
   ],
   webServer: {
     // 本番ビルドで回す。dev サーバの遅延で E2E が揺れるのを避ける。
-    command: `npm run build && npx next start -p ${PORT} -H localhost`,
+    command: SKIP_BUILD
+      ? `npx next start -p ${PORT} -H localhost`
+      : `npm run build && npx next start -p ${PORT} -H localhost`,
     url: `http://localhost:${PORT}`,
     // 再ビルドで .next が入れ替わると、生き残ったサーバが消えたチャンクを参照して
     // 500 を返し続ける。毎回起こし直す方が確実。
