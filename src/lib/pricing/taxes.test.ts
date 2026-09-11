@@ -198,8 +198,14 @@ const COLLECTS: Record<'AU' | 'SG', string[]> = {
 };
 
 const PREPAID = 'prepaid-import-tax';
+// **`deposit` も除く**（外部レビュー⑤-a、2026-09-11）。Jauce の豪州GST原文
+// 「the item price, domestic and international packing/delivery fees, our
+// service fee, and optional fees」は入金手数料（banking/deposit fee）を
+// 挙げていない——課税ベースの計算式（`prepaidImportTaxLine`）はこの
+// `preTaxYen`（入金手数料を積む前の額）をそのまま使うので、ここで
+// テストが再現する「課税ベース」も入金手数料を除いて計算しないと一致しない。
 const nonTaxLines = (row: Row) =>
-  row.lines.filter((l) => !['duty', 'vat', 'province-tax', 'clearance', PREPAID, 'duty-prepayment']
+  row.lines.filter((l) => !['duty', 'vat', 'province-tax', 'clearance', PREPAID, 'duty-prepayment', 'deposit']
     .includes(l.key));
 
 describe('the GST the service collects at checkout is shown per service', () => {

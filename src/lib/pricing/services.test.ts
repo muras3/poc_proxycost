@@ -585,19 +585,53 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
     expect(amount(row, 'deposit')).toBe(363);
   });
 
-  test('the deposit is always the gross-up of the lines above it', () => {
+  /**
+   * ⑤-a（外部レビュー、2026-09-11）: 入金手数料のベースは「決済でこの社を通る額」。
+   * `duty`（国境で別途払う関税）を境に、それより前の行 + 決済時に徴収する
+   * VAT/GST（`prepaid-import-tax`）だけを足す——国境で払う関税・国境の通関手数料・
+   * 州税は含めない（`compare.ts` のコメント参照）。
+   */
+  test('the deposit is always the gross-up of the lines that actually go through checkout', () => {
     for (const priceYen of [1200, 8000, 25000, 140000]) {
       const row = one('zenmarket', { priceYen });
       const idx = row.lines.findIndex((l) => l.key === 'deposit');
-      const base = row.lines.slice(0, idx).reduce((a, l) => a + (l.amount ?? 0), 0);
+      const dutyIdx = row.lines.findIndex((l) => l.key === 'duty');
+      const preTax = row.lines.slice(0, dutyIdx).reduce((a, l) => a + (l.amount ?? 0), 0);
+      const prepaid = row.lines.find((l) => l.key === 'prepaid-import-tax')?.amount ?? 0;
+      const base = preTax + prepaid;
+      expect(row.lines.slice(0, idx).length).toBe(row.lines.length - 1); // deposit は最後の行
       expect(amount(row, 'deposit')).toBe(Math.round(base / (1 - 0.035) - base));
     }
   });
 
-  test('the deposit sits after EMS and before the taxes, so it grosses up the shipping too', () => {
+  /**
+   * **決済時に徴収する VAT/GST（IOSS 等）は入金手数料のベースに含める**
+   * （⑤-a）ので、入金手数料はその後ろに置く。関税・国境の通関手数料は
+   * この社の決済を通らないので、入金手数料はそれより前で確定してよい
+   * ——だが `prepaid-import-tax` は税の行の中で最後に積まれるので、
+   * 結局 `deposit` は行の最後に来る。
+   */
+  test('the deposit sits after the checkout-collected VAT/GST, not before it', () => {
     const keys = one('zenmarket').lines.map((l) => l.key);
     expect(keys.indexOf('deposit')).toBeGreaterThan(keys.indexOf('intl-shipping'));
-    expect(keys.indexOf('deposit')).toBeLessThan(keys.indexOf('duty'));
+    expect(keys.indexOf('deposit')).toBeGreaterThan(keys.indexOf('duty'));
+    expect(keys.indexOf('deposit')).toBe(keys.length - 1);
+  });
+
+  test('DE: the IOSS VAT collected at checkout raises the deposit fee base (⑤-a)', () => {
+    // ZenMarket DE ¥12,800（外部レビューの実例）: 修正前は入金手数料が
+    // 決済時に徴収する IOSS VAT に掛からず、約 ¥136 過少だった。
+    const row = byService(
+      compare({ items: [item({ id: 'a', priceYen: 12800, weightG: 600 })], country: 'DE' }).rows,
+      'zenmarket',
+    );
+    const prepaid = row.lines.find((l) => l.key === 'prepaid-import-tax')!;
+    expect(prepaid.amount).toBeGreaterThan(0);
+    const dutyIdx = row.lines.findIndex((l) => l.key === 'duty');
+    const preTax = row.lines.slice(0, dutyIdx).reduce((a, l) => a + (l.amount ?? 0), 0);
+    const withoutVat = Math.round(preTax / (1 - 0.035) - preTax);
+    const withVat = amount(row, 'deposit')!;
+    expect(withVat).toBeGreaterThan(withoutVat);
   });
 });
 
@@ -823,7 +857,13 @@ describe('Jauce — ¥400 + 8% on the auction site, ¥1,000 + 8% off it', () => 
   test('the deposit is ¥40 flat then a 3.9% gross-up, and is still flagged unverified', () => {
     const row = one('jauce');
     const idx = row.lines.findIndex((l) => l.key === 'deposit');
-    const base = row.lines.slice(0, idx).reduce((a, l) => a + (l.amount ?? 0), 0) + 40;
+    // ⑤-a: ベースは「この社の決済を通る額」——関税より前の行 + 決済時に徴収する
+    // VAT/GST（`prepaid-import-tax`）。US には該当する VAT/GST が無いので、
+    // ここでは実質 duty より前の行の合計と同じになる。
+    const dutyIdx = row.lines.findIndex((l) => l.key === 'duty');
+    const preTax = row.lines.slice(0, dutyIdx).reduce((a, l) => a + (l.amount ?? 0), 0);
+    const prepaid = row.lines.find((l) => l.key === 'prepaid-import-tax')?.amount ?? 0;
+    const base = preTax + prepaid + 40;
     expect(amount(row, 'deposit')).toBe(Math.round(40 + (base / (1 - 0.039) - base)));
     // 原文未確認の解釈。fixed に格上げするなら先に原文を取ること。
     expect(row.lines[idx]!.tier).toBe('unverified');
