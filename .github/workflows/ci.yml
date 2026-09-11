@@ -83,6 +83,9 @@ jobs:
           # 空だと4シャードが黙って「ビルド無し」で走ってしまう。上げ損ねたら
           # ここで落として気付けるようにする。
           if-no-files-found: error
+          # `.next` はドット始まりのディレクトリ。upload-artifact はデフォルトで
+          # 隠しファイルを除外するので、これが無いと常に「ファイルが無い」になる。
+          include-hidden-files: true
 
   e2e:
     name: e2e ${{ matrix.shard }}/4
