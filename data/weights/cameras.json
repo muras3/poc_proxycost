@@ -1,0 +1,153 @@
+{
+  "category": "cameras",
+  "labelJa": "カメラ・レンズ",
+  "labelEn": "Cameras and lenses",
+  "checkedOn": "2026-09-08",
+  "method": "shopify-products-json",
+  "measured": false,
+  "sources": [
+    {
+      "domain": "kamerastore.com",
+      "url": "https://kamerastore.com/products.json?limit=250&page=1",
+      "products": 10000,
+      "variantsWithGrams": 8412,
+      "verdict": "usable",
+      "reason": "distinct=1,172 (13.9%), top value 2%, multiples of 100: 5%. Adopted. This is the first camera catalogue found whose grams move per product: every other shop probed for this category published one number for the whole stock (1,500 g), which is a postage band. The values here read as the weight of the item itself — a Nikon Z6 body comes back as 684 g against the 585 g Nikon publishes for the body alone — so they carry no box, no padding and no charger. Per product type: SLR Digital Cameras n=456 median 640 g (p25 505 / p75 800, spread 1.58); Mirrorless Digital Cameras n=293 median 450 g (346 / 617, 1.78); Point & Shoot Digital Cameras n=297 median 271 g (164 / 473, 2.88); 35mm Film Cameras n=661 median 509 g (360 / 620, 1.72); Medium Format Film Cameras n=153 median 1,114 g (889 / 1,498, 1.69); SLR / DSLR Lenses n=3,844 median 304 g (200 / 530, 2.65); Mirrorless Lenses n=639 median 345 g (186 / 539, 2.90); Flashes n=200 median 318 g (164 / 394, 2.40). Every one of those slices is n >= 50 and spread <= 3 and comes back usable on its own.",
+      "reasonJa": "distinct=1,172 (13.9%), 最頻値 2%, 100の倍数 5%。採用。このカテゴリで叩いた中で、grams が商品ごとに動く初めてのカメラ・カタログ。ほかの店は在庫全部に同じ値（1,500g）を書いていて、それは送料区分であって重量ではない。ここの値は品物そのものの重量に読める（Nikon Z6 のボディが 684g で、ニコンのボディ単体 585g との差はバッテリーとカードぶん）。つまり箱・緩衝材・充電器は入っていない。product_type ごと: SLR Digital Cameras 456件・中央値 640g（p25 505 / p75 800、spread 1.58）、Mirrorless Digital Cameras 293件・450g（346 / 617、1.78）、Point & Shoot Digital Cameras 297件・271g（164 / 473、2.88）、35mm Film Cameras 661件・509g（360 / 620、1.72）、Medium Format Film Cameras 153件・1,114g（889 / 1,498、1.69）、SLR / DSLR Lenses 3,844件・304g（200 / 530、2.65）、Mirrorless Lenses 639件・345g（186 / 539、2.90）、Flashes 200件・318g（164 / 394、2.40）。いずれも n≧50 かつ spread≦3 で、スライス単体の判定も usable"
+    }
+  ],
+  "lines": [
+    {
+      "id": "dslr-body",
+      "labelEn": "DSLR body",
+      "match": [
+        "一眼レフ",
+        "デジタル一眼レフ",
+        "dslr",
+        "デジイチ"
+      ],
+      "medianG": 640,
+      "p25": 505,
+      "p75": 800,
+      "n": 456,
+      "spread": 1.58,
+      "tier": "estimate"
+    },
+    {
+      "id": "mirrorless-body",
+      "labelEn": "Mirrorless body",
+      "match": [
+        "ミラーレス一眼",
+        "ミラーレス 一眼",
+        "ミラーレスカメラ",
+        "mirrorless"
+      ],
+      "medianG": 450,
+      "p25": 346,
+      "p75": 617,
+      "n": 293,
+      "spread": 1.78,
+      "tier": "estimate"
+    },
+    {
+      "id": "compact-camera",
+      "labelEn": "Compact camera",
+      "match": [
+        "コンパクトデジカメ",
+        "コンデジ",
+        "compact camera",
+        "point and shoot",
+        "point & shoot"
+      ],
+      "medianG": 271,
+      "p25": 164,
+      "p75": 473,
+      "n": 297,
+      "spread": 2.88,
+      "tier": "estimate"
+    },
+    {
+      "id": "film-camera-35mm",
+      "labelEn": "35 mm film camera",
+      "match": [
+        "フィルムカメラ",
+        "film camera",
+        "35mm カメラ"
+      ],
+      "medianG": 509,
+      "p25": 360,
+      "p75": 620,
+      "n": 661,
+      "spread": 1.72,
+      "tier": "estimate"
+    },
+    {
+      "id": "medium-format-camera",
+      "labelEn": "Medium format film camera",
+      "match": [
+        "中判カメラ",
+        "ブローニー",
+        "medium format",
+        "二眼レフ"
+      ],
+      "medianG": 1114,
+      "p25": 889,
+      "p75": 1498,
+      "n": 153,
+      "spread": 1.69,
+      "tier": "estimate"
+    },
+    {
+      "id": "slr-lens",
+      "labelEn": "SLR / DSLR lens",
+      "match": [
+        "交換レンズ",
+        "一眼レフ用レンズ",
+        "ズームレンズ",
+        "単焦点レンズ",
+        "slr lens",
+        "dslr lens"
+      ],
+      "medianG": 304,
+      "p25": 200,
+      "p75": 530,
+      "n": 3844,
+      "spread": 2.65,
+      "tier": "estimate"
+    },
+    {
+      "id": "mirrorless-lens",
+      "labelEn": "Mirrorless lens",
+      "match": [
+        "ミラーレス用レンズ",
+        "mirrorless lens"
+      ],
+      "medianG": 345,
+      "p25": 186,
+      "p75": 539,
+      "n": 639,
+      "spread": 2.9,
+      "tier": "estimate"
+    },
+    {
+      "id": "flash",
+      "labelEn": "Flash / speedlight",
+      "match": [
+        "スピードライト",
+        "クリップオンストロボ",
+        "speedlight",
+        "外付けストロボ"
+      ],
+      "medianG": 318,
+      "p25": 164,
+      "p75": 394,
+      "n": 200,
+      "spread": 2.4,
+      "tier": "estimate"
+    }
+  ],
+  "fallbackG": null,
+  "fallbackTier": "none",
+  "notes": "This category was listed as not obtained until 2026-09-08. The reason recorded then still holds for every Japanese camera shop probed: they publish one constant for the whole catalogue, which is a postage band and not a weight. kamerastore.com is the exception and it is not in Japan — it is a used-camera dealer in Finland whose stock is the same bodies and lenses the Japanese auction sites sell. The object is the same object; the seller is not the same seller.\n\nWhat the numbers are: the weight of the item on its own. A Nikon Z6 body reads 684 g in this catalogue against the 585 g Nikon publishes for the body alone (nikonusa.com, read 2026-09-08); the gap is small enough to be the battery and a card, and far too small to be a packed parcel. So a parcel is heavier than the line by whatever the box, the padding and any charger weigh, and the table has no measurement of those. The lines are on the light side, which is the unsafe direction for a postage estimate, and the tier stays estimate for that reason.\n\nA body sold as a kit is the sharper limit. Half the live titles read \"EOS Kiss M twin-lens kit\" or \"Z6II body\" (in Japanese) — the first is a body and two lenses in one box and the second is the body alone, and the dictionary answers the same 450 g for both. Only the body line is claimed; the kit is not.\n\nThere is no category average. A lens and a medium-format body are four times apart and averaging them describes nothing, so fallbackG is null.\n\nNot obtained: webcams and PC peripherals (a webcam is not in this catalogue and no other shop publishing per-product grams for them was found), camcorders (30 rows, under the threshold of 50), tripods, bags and other accessories (not attempted), and a Japan-based seller for any of it.\n\nThe mirrorless line asks for the compound (mirrorless single-lens, mirrorless camera) and not the bare word, which also appears in strap and accessory listings. The SLR line has no such compound to lean on: a camera strap listed as \"camera strap, SLR, mirrorless\" still takes the 640 g body weight, and stopping that needs an accessory gate in src/lib/pricing/weights.ts naming straps, cases and bags.",
+  "notesJa": "2026-09-08 まで「取れていないカテゴリ」だった。そのとき書いた理由は、日本のカメラ店については今も正しい — 在庫全部に同じ値を書いていて、それは送料区分であって重量ではない。例外が kamerastore.com で、これは日本の店ではない（フィンランドの中古カメラ店）。ただし在庫は日本のオークションに出るのと同じボディ・レンズで、物は同じ物、売り手が違うだけ。\n\nこの数字が何かというと、品物そのものの重量。このカタログの Nikon Z6 のボディは 684g で、ニコンがボディ単体として出している 585g（nikonusa.com、2026-09-08 に確認）との差は、バッテリーとカードで説明がつく大きさ。梱包した小包では到底ない。つまり小包はこのラインより箱・緩衝材・充電器のぶん重く、その重さは測れていない。ラインは軽い側に寄っていて、送料見積もりとしては安全でない方向。tier を estimate のままにしているのはそのため。\n\nもっと鋭い限界はキット売り。実タイトルの半分は「EOS Kiss M ダブルレンズキット」や「Z6II ボディ」で、前者はボディ＋レンズ2本が1箱、後者はボディ単体なのに、辞書はどちらにも同じ 450g を返す。名乗っているのはボディのラインだけで、キットは名乗っていない。\n\nカテゴリ平均は置かない。レンズと中判ボディは4倍離れていて、平均しても何も指さない。fallbackG は null。\n\n取れなかったもの: webカメラと PC 周辺機器（このカタログに無く、1点ごとの grams を公開する店も見つからない）、ビデオカメラ（30件で閾値 50 に届かない）、三脚・バッグなどの付属品（未着手）、そして以上すべてについて日本の売り手\n\nミラーレスのラインは複合語（ミラーレス一眼・ミラーレスカメラ）を要求し、単語の「ミラーレス」は持たない。ストラップや付属品の出品にも出るため。一眼レフ側にはそういう複合語が無く、「カメラストラップ 一眼レフ ミラーレス」はボディの 640g を取ってしまう。止めるには src/lib/pricing/weights.ts にストラップ・ケース・バッグを名乗る付属品の門が要る。"
+}

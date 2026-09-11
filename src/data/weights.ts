@@ -70,7 +70,7 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     category: 'figures',
     labelEn: 'Figures',
     labelJa: 'フィギュア',
-    checkedOn: '2026-09-07',
+    checkedOn: '2026-09-08',
     measured: false,
     sources: [
       {
@@ -80,6 +80,14 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
         variantsWithGrams: 4747,
         verdict: 'usable',
         reason: 'Every product carries grams. Lines with a scale in the title have a spread of 1.0x. Re-fetched 2026-09-07: 5,000 products, 10,630 variants with grams, verdict usable (distinct=287 at 2.7%, top value 22%). product_type=\'Figure\' is n=9,893.',
+      },
+      {
+        domain: 'japan-figure.com',
+        url: 'https://japan-figure.com/products.json?limit=250&page=1',
+        products: 10000,
+        variantsWithGrams: 17428,
+        verdict: 'usable',
+        reason: 'distinct=801 (4.6%), top value 9%, multiples of 100: 25%. Adopted 2026-09-08 for the prize line only. product_type=\'Prize Figures\' is n=749, median 480 g, p25 331 / p75 650, spread 1.96, verdict usable (distinct=173 at 23.1%, top value 7%). The plush rows from the same shop went to the toys-models category, because the resolver refuses every figures line on a title that says ぬいぐるみ.',
       },
     ],
     lines: [
@@ -97,31 +105,42 @@ export const WEIGHT_CATEGORIES: WeightCategory[] = [
     notes: 
       '5,000 products from the Solaris Japan public catalogue. The grams look like one standard value per packing class rather than a measurement — every 1/7 scale is exactly 1,500 g. Good enough to pick an EMS step, but we never call it a measured weight.\n'
       + '\n'
-      + '2026-09-07: added the generic line. The audit (docs/audit/logic.md §5) recorded that this category had no Japanese word for "a figure" at all — only the Japanese spellings of Nendoroid and Pop Up Parade — so ordinary Yahoo! Auctions and Mercari titles matched nothing. Two of the 37 live search titles were plain figure listings and both fell through. The 800 g is the same Solaris Japan catalogue re-fetched, sliced to product_type=\'Figure\' with the rows the existing lines already claim removed (1/4, 1/6, 1/7, 1/8, Nendoroid, figma, Pop Up Parade): n=5,103, verdict usable (distinct=179 at 3.5%, top value 41%), median 800 g, p25 800 / p75 1,300, spread 1.63. It is marked generic, which means it only resolves when no other line in the table matched. The Japanese word for a figure is five characters and \'1/7\' is three, so under the longest-match rule the generic line would otherwise swallow every scale line.',
+      + '2026-09-07: added the generic line. The audit (docs/audit/logic.md §5) recorded that this category had no Japanese word for "a figure" at all — only the Japanese spellings of Nendoroid and Pop Up Parade — so ordinary Yahoo! Auctions and Mercari titles matched nothing. Two of the 37 live search titles were plain figure listings and both fell through. The 800 g is the same Solaris Japan catalogue re-fetched, sliced to product_type=\'Figure\' with the rows the existing lines already claim removed (1/4, 1/6, 1/7, 1/8, Nendoroid, figma, Pop Up Parade): n=5,103, verdict usable (distinct=179 at 3.5%, top value 41%), median 800 g, p25 800 / p75 1,300, spread 1.63. It is marked generic, which means it only resolves when no other line in the table matched. The Japanese word for a figure is five characters and \'1/7\' is three, so under the longest-match rule the generic line would otherwise swallow every scale line.\n'
+      + '\n'
+      + '2026-09-08: prize figures came in from a second shop, japan-figure.com. A prize figure is 480 g against the 800 g generic figure line, so lending it the generic number overstated it by two thirds. Plush from the same catalogue is 184 g and lives in the toys-models category, not here.\n'
+      + '\n'
+      + 'The prize line deliberately does not carry the bare word プライズ. A dictionary that matches one word at a time cannot tell プライズ フィギュア (a prize figure, 480 g) from プライズ ぬいぐるみ or a prize towel, and the bare word would take every one of them off the 800 g generic line. It only resolves when the compound is written without a space. Two live titles in data/weights-corpus.json (h-b7780a18, h-b8cf7c0e) are single prize figures whose labels read "no prize-specific line exists, so the generic figure line is the closest measured population"; that sentence is no longer true, and whether those rows should now expect prize-figure — and the bare word be added with a corroborating word in the resolver — is a labelling decision, not a data one.',
   },
   {
     category: 'music',
     labelEn: 'Records and CDs',
     labelJa: 'レコード・CD',
-    checkedOn: '2026-09-06',
+    checkedOn: '2026-09-08',
     measured: false,
     sources: [
       {
         domain: 'snowrecords.com',
-        url: 'https://snowrecords.com/',
-        products: 0,
-        variantsWithGrams: 0,
+        url: 'https://snowrecords.com/products.json?limit=250&page=1',
+        products: 10000,
+        variantsWithGrams: 10000,
         verdict: 'suspect',
-        reason: 'Recorded as a range only; the sample count was not kept',
+        reason: 'distinct ratio 1.0%, multiples of 100: 12%. Suspect, and adopted with that on the record, because the shop weighs in 20 g steps: 100 distinct values over 10,000 rows, every one of them a multiple of 10 and nearly all of them a multiple of 20. The steps are small enough to separate a CD from an LP, which is what the lines need. Until 2026-09-08 this row said products 0 and the two lines carried n=0, because only the shop\'s published range had been read and the catalogue behind it never had been. product_type=\'CD\' is n=2,907, median 120 g, p25 120 / p75 140, spread 1.17. product_type=\'Vinyl Records\' is n=7,075 and bimodal: 1,840 rows at 80 g or below, then a trough of about 150 rows across 90-180 g, then 5,235 rows at 200 g and above with median 280 g, p25 250 / p75 300, spread 1.20. The light mode is the 7-inch single, which this shop does not type separately; the split above is by that gap in the distribution and not by anything in the titles.',
       },
     ],
     lines: [
-      { id: 'cd', labelEn: 'CD', match: ['cd', 'compact disc'], medianG: 100, p25: 80, p75: 120, n: 0, spread: 1.5, tier: 'estimate' },
-      { id: 'lp', labelEn: 'LP / vinyl', match: ['lp', 'vinyl', 'レコード'], medianG: 270, p25: 240, p75: 300, n: 0, spread: 1.25, tier: 'estimate' },
+      { id: 'cd', labelEn: 'CD', match: ['cd', 'compact disc'], medianG: 120, p25: 120, p75: 140, n: 2907, spread: 1.17, tier: 'estimate' },
+      { id: 'lp', labelEn: 'LP / vinyl', match: ['lp', 'vinyl', 'レコード'], medianG: 280, p25: 250, p75: 300, n: 5235, spread: 1.2, tier: 'estimate' },
     ],
     fallbackG: 200,
     fallbackTier: 'estimate',
-    notes: 'Ranges published by Snow Records (CD 80-120 g, LP 240-300 g). We did not keep the sample count, so n is 0 here. Needs re-fetching.',
+    notes: 
+      'The two lines were read from the Snow Records catalogue on 2026-09-08: 10,000 products, every one carrying grams. Until then they came from the range the shop publishes on its own site (CD 80-120 g, LP 240-300 g) with no sample count, and the table printed "sample size not recorded" beside them. The catalogue agrees with the published range for vinyl (250-300 g against 240-300 g) and puts a CD 20 g heavier than the middle of its published range.\n'
+      + '\n'
+      + 'The verdict on the catalogue is suspect: the shop weighs in 20 g steps, so the values are rounded rather than measured. The steps are far smaller than the difference between the formats, which is all these lines have to carry.\n'
+      + '\n'
+      + 'The 7-inch line is the light half of a two-peaked vinyl distribution — 1,840 rows sit at 80 g, then almost nothing until 200 g, then 5,235 rows make the LP peak. The shop does not type the two separately, so the sample was split at that gap and not by anything a title says. What a listing does say is EP or 7-inch, and those are the words the line matches.\n'
+      + '\n'
+      + 'Not obtained: box sets and heavyweight or double LPs (they are inside the LP peak and nothing separates them), and the cases, sleeves and storage the live search returns alongside the discs.',
   },
   {
     category: 'books-manga',
@@ -1722,17 +1741,35 @@ export const WEIGHT_CATEGORIES_NOT_OBTAINED: MissingWeightCategory[] = [
     reason: 'No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg).',
   },
   {
-    id: 'cameras',
-    labelEn: 'Cameras and lenses',
-    labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
+    id: 'webcams-pc-peripherals',
+    labelEn: 'Webcams and PC peripherals',
+    labelJa: 'webカメラ・PC周辺機器',
+    reason: 'The used-camera catalogue behind the cameras category carries no webcam, and no other shop publishing a per-product weight for one was found. Sixteen live titles ask about them.',
   },
   {
-    id: 'apparel',
-    labelEn: 'Clothing and outfit sets',
-    labelJa: 'アパレル・コーデセット',
-    reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
+    id: 'home-appliances',
+    labelEn: 'Home appliances and consumer audio',
+    labelJa: '家電・オーディオ',
+    reason: 'Not obtained, and four catalogues were read before saying so. audio46.com (3,819 products) types 1,375 in-ear headphones and 59% of them carry exactly 907 g, which is two pounds of packing box and not an earphone. turntablelab.com (5,000 products) has 180 turntables at a median of 9,072 g, spread 2.27, and the slice is sound — but it is a hi-fi dealer, and the live titles are suitcase and portable players that weigh a third of that with nothing in a title to separate them, so nothing is claimed. u-turnaudio.com and us.zojirushi.com do not answer products.json. Rice cookers, vacuum cleaners, hair dryers and watch straps were not found in any catalogue that publishes per-product grams.',
+  },
+  {
+    id: 'power-tools',
+    labelEn: 'Power tools and sewing machines',
+    labelJa: '電動工具・ミシン',
+    reason: 'Not obtained. toolnut.com publishes real per-product weights (distinct 49.7%) but only 483 of its 5,000 products carry grams at all, and they are bits, pliers and sandpaper rather than drivers and drills; no product type reaches the threshold of 50. acmetools.com and www.andertons.co.uk do not answer products.json. Tool sets are multi-piece anyway, which no single weight would answer.',
+  },
+  {
+    id: 'stationery',
+    labelEn: 'Stationery',
+    labelJa: '文房具',
+    reason: 'Measured and rejected. japanesetaste.com carries 285 office-supply rows, but the slice spans a 2 g refill to a 1,208 g paper pack: writing supplies n=113 spread 6.3, paper n=83 spread 46.8. Nothing in a title separates a pen from a ream.',
+  },
+  {
+    id: 'supplements',
+    labelEn: 'Supplements',
+    labelJa: 'サプリメント',
+    reason: 'Measured and rejected. kokorojapanstore.com n=163 median 90 g spread 5.0, japanesetaste.com n=149 median 174 g spread 6.6. A 30-day pouch of capsules and a 3.4 kg tub of protein powder sit in one slice and a title does not say which it is.',
   },
 ];
 
-export const WEIGHTS_CHECKED_ON = '2026-09-07';
+export const WEIGHTS_CHECKED_ON = '2026-09-08';

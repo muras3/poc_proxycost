@@ -63,16 +63,21 @@ interface WeightCategory {
 // ── 出力順。調査した順ではなく、利用者が探す順（小さい物から大きい物へ）に並べる。
 const CATEGORY_ORDER = [
   'figures',
+  'toys-models',
   'music',
   'books-manga',
   'tcg-singles',
+  'tcg-sealed',
   'kpop',
+  'cosmetics',
+  'apparel',
   'used-luxury',
   'sneakers',
   'food-tea-sake',
   'fishing-tackle',
   'sports-goods',
   'games',
+  'cameras',
 ];
 
 // ── 誤爆する match 語を落とす。**数値は一切いじらない。**当てる語を狭めるだけ。
@@ -123,16 +128,80 @@ const NOT_OBTAINED = [
     reason: 'No public catalogue carries a per-product weight. The stores that do publish grams charge a flat band (a guitar came back as 180 kg).',
   },
   {
+    id: 'webcams-pc-peripherals',
+    labelEn: 'Webcams and PC peripherals',
+    labelJa: 'webカメラ・PC周辺機器',
+    reason: 'The used-camera catalogue behind the cameras category carries no webcam, and no other shop publishing a per-product weight for one was found. Sixteen live titles ask about them.',
+  },
+  {
+    id: 'home-appliances',
+    labelEn: 'Home appliances and consumer audio',
+    labelJa: '家電・オーディオ',
+    reason: 'Not obtained, and four catalogues were read before saying so. audio46.com (3,819 products) types 1,375 in-ear headphones and 59% of them carry exactly 907 g, which is two pounds of packing box and not an earphone. turntablelab.com (5,000 products) has 180 turntables at a median of 9,072 g, spread 2.27, and the slice is sound — but it is a hi-fi dealer, and the live titles are suitcase and portable players that weigh a third of that with nothing in a title to separate them, so nothing is claimed. u-turnaudio.com and us.zojirushi.com do not answer products.json. Rice cookers, vacuum cleaners, hair dryers and watch straps were not found in any catalogue that publishes per-product grams.',
+  },
+  {
+    id: 'power-tools',
+    labelEn: 'Power tools and sewing machines',
+    labelJa: '電動工具・ミシン',
+    reason: 'Not obtained. toolnut.com publishes real per-product weights (distinct 49.7%) but only 483 of its 5,000 products carry grams at all, and they are bits, pliers and sandpaper rather than drivers and drills; no product type reaches the threshold of 50. acmetools.com and www.andertons.co.uk do not answer products.json. Tool sets are multi-piece anyway, which no single weight would answer.',
+  },
+  {
+    id: 'stationery',
+    labelEn: 'Stationery',
+    labelJa: '文房具',
+    reason: 'Measured and rejected. japanesetaste.com carries 285 office-supply rows, but the slice spans a 2 g refill to a 1,208 g paper pack: writing supplies n=113 spread 6.3, paper n=83 spread 46.8. Nothing in a title separates a pen from a ream.',
+  },
+  {
+    id: 'supplements',
+    labelEn: 'Supplements',
+    labelJa: 'サプリメント',
+    reason: 'Measured and rejected. kokorojapanstore.com n=163 median 90 g spread 5.0, japanesetaste.com n=149 median 174 g spread 6.6. A 30-day pouch of capsules and a 3.4 kg tub of protein powder sit in one slice and a title does not say which it is.',
+  },
+];
+
+// ── 取得済みだが、まだ src/data/weights.ts に出さないもの。
+//
+// **データは他と同じ検査を通す。門は緩めない。**出さないのは、ラインを1本足すたびに
+// 別の表がそれを覆わなければならないからで（グリフの形・米国関税の見出し）、
+// その表はこの調査の担当外にある。空欄のまま画面に出すより、取れたことを記録して
+// 出さないほうが正しい。待ちが片付いたらここから消す。それだけで表に入る。
+//
+// data/weights/index.json の `obtainedNotWiredUp` に理由ごと出るので、
+// 「測ったのに表に無い」が黙って埋もれることはない。
+const PENDING_CATEGORIES: { id: string; waitingOn: string }[] = [
+  {
     id: 'cameras',
-    labelEn: 'Cameras and lenses',
-    labelJa: 'カメラ・レンズ',
-    reason: 'Every camera store probed publishes one constant for the whole catalogue (1,500 g), which is a shipping band, not a weight. Webcams and other PC peripherals sit here too and were not attempted separately.',
+    waitingOn: 'a US duty verdict in src/lib/pricing/us-duty.ts (HTS headings for cameras and lenses) and a glyph shape in src/lib/ui/glyphs/shapes.ts for each of the 8 lines. The resolver also needs an accessory gate: a camera strap listed with the words for SLR takes the 640 g body weight.',
   },
   {
     id: 'apparel',
-    labelEn: 'Clothing and outfit sets',
-    labelJa: 'アパレル・コーデセット',
-    reason: 'Not attempted yet. The live search returns outfit sets (three garments in one listing), which no single-garment weight would answer anyway.',
+    waitingOn: 'a US duty verdict (HTS 61/62 rates run past the 12.5% floor, so this category is almost certainly can-exceed and needs the headings pulled), a glyph shape for each of the 10 lines (the garment family has no t-shirt, hoodie, skirt or coat kind yet), and labels in data/weights-corpus.json for the 18 apparel titles that read listing-no-data because apparel was not obtained.',
+  },
+  {
+    id: 'cosmetics',
+    waitingOn: 'a US duty verdict (HTS 3304 / 3305 / 3401) and a glyph shape for each of the 8 lines (a bottle family exists and fits).',
+  },
+  {
+    id: 'toys-models',
+    waitingOn: 'a US duty verdict (HTS 9503) and a glyph shape for the 3 lines, plus the paint gate described in the category notes before the bare word for a plastic model can be taken back.',
+  },
+  {
+    id: 'tcg-sealed',
+    waitingOn: 'a US duty verdict (HTS 9504.40 for sealed cards, 3926/4202 for sleeves and cases) and a glyph shape for the 3 lines. The card family already draws a sleeve.',
+  },
+];
+
+// ── 出さないライン。カテゴリごとではなく1本だけ待たせるときに使う。
+const PENDING_LINES: { category: string; line: string; waitingOn: string }[] = [
+  {
+    category: 'music',
+    line: 'vinyl-7inch',
+    waitingOn: 'a glyph shape in src/lib/ui/glyphs/shapes.ts. The media family already draws a disc and a 7-inch is the same drawing at a smaller size.',
+  },
+  {
+    category: 'figures',
+    line: 'prize-figure',
+    waitingOn: 'a glyph shape in src/lib/ui/glyphs/shapes.ts, and a decision on the two corpus rows (h-b7780a18, h-b8cf7c0e) whose labels say the generic figure line is the closest population because no prize line existed.',
   },
 ];
 
@@ -147,8 +216,14 @@ const PARTIAL_GAPS = [
   { category: 'used-luxury', gap: 'Used watches', reason: 'The 839 g line comes from a new-watch store and includes the presentation box; a used watch shipped without its box is far lighter.' },
   { category: 'games', gap: 'Handheld consoles', reason: 'The adopted shop has only 26 handheld rows, below the threshold of 50, and they range from 400 g to 4,100 g. A Chinese pocket handheld and a boxed Game Boy are not the same object, and there is nothing to separate them with, so nothing is claimed.' },
   { category: 'games', gap: 'Current-generation consoles', reason: 'The console line is built from retro systems (Famicom through Wii) sold as boxed sets. No shop publishing grams for a Switch or a PS5 console was found.' },
-  { category: 'books-manga', gap: 'Illustrated reference books', reason: 'The general-book line comes from 84 novels. A 図鑑 or a 教科書 is a different object, so titles that name one resolve to nothing rather than to the novel median.' },
-  { category: 'figures', gap: 'Prize figures and plush', reason: 'The adopted shop has no prize-figure product type and only 33 plush rows, below the threshold of 50.' },
+  { category: 'books-manga', gap: 'Illustrated reference books', reason: 'The general-book line comes from 84 novels. A picture reference or a textbook is a different object, so titles that name one resolve to nothing rather than to the novel median. Re-measured 2026-09-08: the same shop types 33 art-and-design books at a median of 650 g and 37 how-to books at 410 g. Both are under the threshold of 50 and their medians are 1.6x apart, so they were not merged to clear it.' },
+  { category: 'figures', gap: 'Capsule-toy and gashapon figures', reason: 'The 800 g generic line was measured on finished figures around 1/7 scale. A 20-50 g capsule-toy figure is twenty times lighter and no catalogue publishing grams for them was found, so the resolver refuses ガシャポン and 食玩 rather than lending them the generic number.' },
+  { category: 'figures', gap: 'Garage kits', reason: 'Every figure line was measured on finished figures. japan-figure.com has 3 resin-kit rows, so an unpainted unassembled kit is still unanswered.' },
+  { category: 'toys-models', gap: 'Lego, die-cast cars, jigsaw puzzles and model paint', reason: 'The only block rows are 63 Nanoblock kits, a different object; die-cast is 184 rows with a spread of 5.9 at one shop and 76 candy-toy-mixed rows at another; the 51 puzzle rows are small anime and 3D puzzles while the live titles ask about 1,000-piece boards; no catalogue carrying model paint was found. Model trains are 169 rows with a spread of 6.0.' },
+  { category: 'cameras', gap: 'A body sold as a lens kit, and a Japan-based seller', reason: 'The lines are the weight of the item alone, read from a Finnish used-camera dealer. A live title that says twin-lens kit is a body and two lenses in one box, and the table answers it with the body alone. Japanese camera shops publish one constant for the whole catalogue.' },
+  { category: 'apparel', gap: 'Dresses, kimono and a Japan-based seller', reason: 'The dress slice is real (n=3,578, median 431 g, spread 1.71) but the Japanese word ワンピース is also the title of One Piece, which the live search returns by the hundred, so it cannot be a match word. Kimono rows at the Japanese shops are pseudo or under the threshold. The adopted shop is a US retailer whose whole-catalogue verdict is suspect.' },
+  { category: 'cosmetics', gap: 'Perfume, toothpaste and sample sets', reason: 'Perfume is 30 rows and toothpaste 30, both under the threshold of 50. A three-piece sample set is three containers and the lines hold one.' },
+  { category: 'tcg-sealed', gap: 'Single sealed packs and lots', reason: 'A pack is roughly a tenth of a box and the catalogue does not type packs separately. Oripa and lucky-bag listings state a count and the table holds no per-item weight to multiply.' },
 ];
 
 // ── フィギュア / レコード・CD の種。JSON が無いときだけ書き出す。
@@ -504,6 +579,9 @@ function main(): void {
   if (files.length === 0) fail('data/weights/ has no category JSON');
 
   const cats: WeightCategory[] = [];
+  const all: WeightCategory[] = [];
+  // 外したラインは cats からも all からも消える（同じ実体）ので、外す前に控えておく。
+  const heldLines = new Map<string, WeightLine>();
   const denylog: string[] = [];
   let droppedWords = 0;
   for (const f of files) {
@@ -512,7 +590,26 @@ function main(): void {
     const d = applyDenylist(c);
     droppedWords += d.dropped;
     denylog.push(...d.log);
+    all.push(c);
+    // **検査は済ませてから外す。**待っているだけで、質が落ちているわけではない。
+    if (PENDING_CATEGORIES.some((p) => p.id === c.category)) continue;
+    const held = PENDING_LINES.filter((p) => p.category === c.category);
+    if (held.length > 0) {
+      for (const h of held) {
+        check(c.lines.some((l) => l.id === h.line), f, `PENDING_LINES names a line that does not exist: ${h.line}`);
+      }
+      for (const h of held) heldLines.set(`${c.category}/${h.line}`, c.lines.find((l) => l.id === h.line)!);
+      c.lines = c.lines.filter((l) => !held.some((h) => h.line === l.id));
+      check(c.lines.length > 0, f, 'every line in this category is held back; hold the category instead');
+    }
     cats.push(c);
+  }
+
+  for (const p of PENDING_CATEGORIES) {
+    if (!all.some((c) => c.category === p.id)) fail(`PENDING_CATEGORIES names a category with no JSON: ${p.id}`);
+  }
+  for (const p of PENDING_LINES) {
+    if (!all.some((c) => c.category === p.category)) fail(`PENDING_LINES names a category with no JSON: ${p.category}`);
   }
 
   const ids = cats.map((c) => c.category);
@@ -554,6 +651,27 @@ function main(): void {
       notObtained: NOT_OBTAINED.length,
     },
     categoryIds: cats.map((c) => c.category),
+    // 取れているが表に出していないもの。理由つき。**測ったことを黙らせない。**
+    obtainedNotWiredUp: {
+      categories: PENDING_CATEGORIES.map((p) => {
+        const c = all.find((x) => x.category === p.id)!;
+        return {
+          id: p.id,
+          labelEn: c.labelEn,
+          labelJa: c.labelJa,
+          lineCount: c.lines.length,
+          sampleN: c.lines.reduce((a, l) => a + l.n, 0),
+          waitingOn: p.waitingOn,
+        };
+      }),
+      lines: PENDING_LINES.map((p) => {
+        const l = heldLines.get(`${p.category}/${p.line}`)!;
+        return {
+          category: p.category, line: p.line, labelEn: l.labelEn,
+          medianG: l.medianG, n: l.n, spread: l.spread, waitingOn: p.waitingOn,
+        };
+      }),
+    },
     notObtained: NOT_OBTAINED,
     partialGaps: PARTIAL_GAPS,
     matchWordsDropped: denylog,
