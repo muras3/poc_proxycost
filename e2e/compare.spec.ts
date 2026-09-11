@@ -1145,6 +1145,60 @@ test.describe('desktop layout', () => {
     const plain = await fixed.evaluate((el) => getComputedStyle(el).textDecorationLine);
     expect(plain).toBe('none');
   });
+
+  /**
+   * ②の欠陥（コーディネーター指摘、2026-09-11）: 内訳表の `approx. total` 行が
+   * `total.low` を1点表示し、`high === null` でも「or more」が付かず、
+   * `comparable: false` の行にまで総額を出していた（米国の既定カートで Neokyo
+   * 列に総額が出る一方 EMS 行は「—」——`RankBoard.tsx:49` が直した欠陥と
+   * 同じ形が内訳表に残っていた）。**e2e はこの表を見ていなかった**
+   * （`readRanking` は Ranking 領域のボタンしか読まない）ので、ここで直接見る。
+   */
+  test('the breakdown footer follows the same interval rules as the ranking (② regression)', async ({ page }) => {
+    await gotoCompare(page);
+    const table = breakdownTable(page);
+    await expect(table).toBeVisible();
+
+    // 既定カート（米国）: FROM JAPAN の総額は上限不明（Zonos）。
+    // Ranking 側の 'or more' と、内訳表の footer の 'or more' が一致すること。
+    const rows = await readRanking(page);
+    const fromJapan = rows.find((r) => r.name === 'FROM JAPAN');
+    expect(fromJapan, 'FROM JAPAN missing from ranking').toBeDefined();
+
+    const headers = await headerCells(table);
+    const fjColumn = headers.findIndex((h) => h.includes('FROM JAPAN'));
+    expect(fjColumn, 'FROM JAPAN column not found in breakdown table').toBeGreaterThan(0);
+
+    const footerRow = table.getByRole('row').filter({
+      has: page.getByRole('cell', { name: 'approx. total' }),
+    });
+    const footerCells = await rowCells(footerRow);
+    // ヘッダーとフッターの列位置は同じ（先頭が Cost/approx. total、以降が会社ごと）。
+    expect(footerCells[fjColumn]).toContain('or more');
+    expect(footerCells[fjColumn]).not.toMatch(/–/); // 偽の上端（「¥X – Y」）を書かない
+
+    // **重量を EMS 公表表（30 kg）の外まで重くすると、EMS を売れない社が
+    // 比較不能になる。**その社の Ranking 側 'NOT COMPARABLE' と、内訳表の
+    // footer の '—' が一致すること（`total.low` を出して最安に見せない）。
+    await openCart(page);
+    await weightBox(page, FIGURE).fill('25000');
+    await weightBox(page, NENDOROID).fill('25000');
+    const heavyRows = await readRanking(page);
+    const notComparable = heavyRows.filter((r) => !r.comparable);
+    expect(notComparable.length, 'expected at least one not-comparable row at 25 kg/item').toBeGreaterThan(0);
+
+    const heavyHeaders = await headerCells(table);
+    const heavyFooterRow = table.getByRole('row').filter({
+      has: page.getByRole('cell', { name: 'approx. total' }),
+    });
+    const heavyFooterCells = await rowCells(heavyFooterRow);
+    for (const r of notComparable) {
+      const col = heavyHeaders.findIndex((h) => h.includes(r.name)
+        && (r.variant == null || h.includes(r.variant)));
+      expect(col, `${r.name} ${r.variant ?? ''} column not found`).toBeGreaterThan(0);
+      expect(heavyFooterCells[col], `${r.name} ${r.variant ?? ''} should show — like the ranking`).toBe('—');
+    }
+  });
 });
 
 // ────────────────────────────────────────────────────────────────
