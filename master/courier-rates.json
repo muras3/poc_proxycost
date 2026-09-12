@@ -13708,6 +13708,13 @@
       ],
       "not_backfilled": "本フィールド新設以前に取り込んだ行（neokyo_2026_09_12・zenmarket_2026_09_12の旧230行・jauce系・single_points等）には methods_shown_total が無い。実測時に数えていない数値を後から推測で埋めることはしない。今後の再測定・追加測定で埋まる。",
       "naming_note": "フィールド名は必ず methods_shown_total に統一する（methods_shown・shown_total等の表記ゆれを禁止）。今回取り込んだ3ファイルはいずれもこの名前で提供されており、そのまま採用した。"
+    },
+    "fuel_surcharge_inclusion_2026_09_12": {
+      "status": "not_answerable_from_current_data",
+      "statement": "FedEx・DHLの表示価格（本ファイルのobservations）に燃油サーチャージが込みかどうかは、現在保有するデータからは判定できない。UPSは公式に『込み』と述べているが（この文言自体は本ファイルにもmaster/carrier-surcharges.jsonにも未収録——引き継ぎ事項）、FedEx・DHLは公表ページに明言がない。ベース運賃データ不在（Test A不能）、全捕捉が単一燃油週2026-09-12に集中（Test B不能）、UPS対FedEx/DHLの価格比が国によって0.5〜2.2倍と暴れ燃油の有無だけでは説明も否定もできない（Test C=示唆止まり）。",
+      "basis": "docs/audit/fuel-surcharge-inclusion-2026-09-12.md",
+      "instruction": "この問いが決着するまで、compare.ts でFedEx・DHLの宅配便価格に燃油サーチャージを追加で乗せてはならない。表示価格をそのまま使い、不確実性を保持する（係数を推測しない）。compare.tsは現時点でfuelサーチャージ処理を一切持たず、これが安全側の現状維持になっている。",
+      "next_step": "docs/audit/fuel-surcharge-inclusion-2026-09-12.md §6の実験（fromjapan / DE / 600g / 20x15x10cm / UPS・FedEx-Economy・FedEx-Priority・DHL、2026-09-12時点データを1回目とし、2026-09-14〜09-20の間に2回目、可能なら2026-09-21以降に3回目）で決着させる。"
     }
   }
 }
