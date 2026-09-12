@@ -2240,6 +2240,120 @@
         "ZenMarket は基本率が 3.5% と一致する一方、方法別の内訳（'from 1%'）を見る限り、カード決済の実際の率は 3.5% よりかなり低い可能性がある（'1%から'という表現は、少なくとも一部の方法で 1%台があることを示唆する）。オーナー方針の『カード前提』に厳密に従うなら、ZenMarket について 3.5% を使い続けることは過大請求側に倒れている可能性がある。",
         "Jauce は方法によらず 3.9%+¥40 と判明しており、これは『非公表だから一般相場を使う』対象ではなく『公表されているのに一般相場（3.5%）を使ってしまっている』ケースに当たる——もし現行コードが Jauce にも一律 3.5% を適用しているなら、これは推測の話ではなく実際の公表値との差し替えが必要な既知の不整合として T-F9 に残すべき。"
       ]
+    },
+    "F07_payment_fee_working_treatment": {
+      "id": "F07_working_treatment_2026_09_12",
+      "decided_on": "2026-09-12",
+      "decided_by": "オーナー（Tatsuya氏）",
+      "treatment": "3.5%（総額に対する率）を、支払方法・会社を問わず5社全社（FROM JAPAN/Buyee/ZenMarket/Neokyo/Jauce）の入金・決済手数料の暫定値として当面維持する。個社別・支払方法別の実料率調査は手が空くまで延期する。ただし Jauce は既に自社の公表値（¥40+3.9%、deposit amountベース）で別行として登録されており、この一律デフォルトの対象ではない——Jauceの数字が3.5%と異なることは、このデフォルトに対する矛盾ではなく、単にJauceには既に個別ルールがあるということ。",
+      "confidence": "reasoned_judgement_partial_direct_confirmation",
+      "confidence_vocabulary_note": "master/carrier-surcharges.json の reasoned_judgement_unconfirmed（一次情報での確認が一切無い判断）とは異なり、本件は5社中1社（ZenMarket）について一次ページによる直接裏付けがある。そのため『未確認のまま下した判断』ではなく『1社は直接確認、残りは一般論による推定』という部分的な確度であることを別の語として区別する。",
+      "claim_precision_note": "記録している主張は『3.5%は5社共通の正しい料率である』ではなく、『これこれの根拠に基づき、手が空くまでは5社共通で3.5%を使うことにした。この判断のうちZenMarket以外の部分は未検証であり、下記の調査で決着する』という主張である。",
+      "grounds_supporting": [
+        {
+          "ref": "G1_zenmarket_direct_confirmation",
+          "strength": "direct_statement_single_company",
+          "text": "ZenMarket は自社ページ（payment.aspx、2026-09-07 direct_fetch）で「Deposit fee is 3.5% of the total transaction amount」と明記しており、これが5社中で唯一、3.5%そのものへの直接の一次裏付けになっている。ただしこれは1社限定の確認であり、他4社への一般化を証明するものではない。"
+        },
+        {
+          "ref": "G2_no_contradiction_among_what_we_could_read",
+          "strength": "consistent_with_not_proof_of",
+          "text": "今回読めた範囲（ZenMarket・Jauce・Buyee・Neokyoの一次ページ）に、3.5%というデフォルト値そのものと矛盾する公表値は無い。Jauceの¥40+3.9%は3.5%より高いが、Jauceは既に個別ルールを持つのでこのデフォルトの対象外——デフォルトが適用される会社（Buyee/Neokyo/FROM JAPAN）については、そもそも比較対象となる公表値が無いため『矛盾していない』としか言えない。"
+        },
+        {
+          "ref": "G3_small_share_bounded_error_reasoning",
+          "strength": "reasoning_not_evidence",
+          "text": "入金・決済手数料は総額の数%に過ぎない費目であり、支払方法の違いで生じる誤差は絶対額として小さく、系統的に一方向に偏っていない（今回確認できた値は1%台〜3.9%の範囲に分布）。申告価格（関税・VATという課税ベースそのものを動かす費目）とは性質が異なり、一律の暫定値を置くことによる下振れ・上振れのリスクは相対的に小さい、という一般論。個社の実測による裏付けではない。"
+        }
+      ],
+      "grounds_against": [
+        {
+          "ref": "G4_buyee_neokyo_our_number_not_theirs",
+          "strength": "counter_evidence_from_our_own_data",
+          "text": "Buyee・Neokyoは自社の一次ページで方法別の入金・決済手数料を公表していないことを direct_fetch で確認済み（本PR）。したがってこの2社について3.5%は『我々が置いた数字』であって『彼らの数字』ではない。特にNeokyoは『the above-mentioned payment providers collect their own transaction fee at checkout』と明記しており、実際の手数料はPayPal/Stripe/Wiseという決済プロバイダごとに決まるもので、そもそも単一の会社レベルの料率という前提自体がNeokyoには成り立たない構造的な理由がある——3.5%はNeokyoについて『妥当な近似』にはなり得ても、モデルとして『正しい』わけではない。"
+        },
+        {
+          "ref": "G5_fromjapan_unverified_not_confirmed_absent",
+          "strength": "absence_not_evidence",
+          "text": "FROM JAPANの該当ページは本セッションの環境から全て403（AWS WAF）で、公表の有無そのものを確認できなかった。これはBuyee/Neokyoの『確認できた非公表』とは異なり『見ることができなかった』というだけの状態——将来ブラウザ操作を持つ環境で実際の公表値が見つかり、3.5%と大きく異なる可能性は排除できない。"
+        },
+        {
+          "ref": "G6_base_differs_across_companies_we_could_read",
+          "strength": "additional_unstated_assumption",
+          "text": "読めた2社の間でも料率の基準（ベース）が異なる——ZenMarketは total transaction amount（総額）、Jauceは deposit amount（入金額）。一律の料率を5社に一律のベースで適用することは、料率の値そのものだけでなく『どのベースに掛けるか』についても我々の仮定を重ねることになる。"
+        }
+      ],
+      "pending_test": {
+        "status": "not_yet_scheduled",
+        "condition": "非公表3社（Buyee/Neokyo/FROM JAPAN）それぞれについて、実際にアカウントを作成し決済画面（チェックアウト時）に表示される支払方法別の料率を記録するか、実請求書（invoice）を入手して逆算する。",
+        "shared_bottleneck_note": "この調査はF39③・P4（アカウント保有者でないと見えない情報）と同じボトルネックを共有しており、独立した調査枠として扱わない——同じ制約を解消する作業の一部として一緒に片付ける。",
+        "decision_rule": "非公表3社のいずれかで方法別の実料率が判明した場合、その会社についてのみ3.5%のデフォルトから判明値へ差し替える（他社への横展開はしない）。ZenMarketの『from 1%』の内訳（fees.aspx、要ログインのprofile/addfunds.aspx）が判明すれば、カード決済に限定した場合に3.5%のままでよいかも別途再評価する。"
+      }
+    },
+    "F07_ui_tier_requirement_for_followup_src_pr": {
+      "id": "F07_ui_tier_2026_09_12",
+      "text_for_reviewer": "この要件は master/fees.json のみを変更する本PR (#74) では実装しない——tier は src/lib/pricing/services.ts の SERVICES[] 配列にハードコードされており、そこは PR #73 が書き換え中のファイルなので、ここでは変更しない。PR #73 マージ後の src/ 側フォローアップPRが、このキーの内容だけを見て実装できるよう、現状の値と必要な変更を機械可読な形でここに記録する。",
+      "current_state_in_src_2026_09_12": {
+        "note": "src/lib/pricing/services.ts の SERVICES[].deposit を目視確認した結果（tier は 'fixed' | 'estimate' | 'unverified' | 'none'、src/lib/pricing/types.ts）。deposit: null の会社は F07 の行自体が compare.ts で生成されない（WhatCouldBeOff の『Not included』にも現れない——欠落そのものが可視化されていない）。",
+        "zenmarket": {
+          "deposit_present": true,
+          "rate": 0.035,
+          "flatYen": 0,
+          "tier": "estimate",
+          "comment_in_code": "「逆算は我々の推定なので estimate」——本PRの調査でこの前提が古くなった: ZenMarket自身の一次ページ(payment.aspx)がまさに3.5%を自社の基本料率として明記しているため、もはや『我々の逆算』ではなく『会社の公表値』"
+        },
+        "jauce": {
+          "deposit_present": true,
+          "rate": 0.039,
+          "flatYen": 40,
+          "tier": "unverified",
+          "comment_in_code": "tier unverified は¥40の定額と率が gross-up でどう組み合わさるかの解釈が原文で未確認、という別の理由によるもの。今回の調査でJauceの基本の料率・ベース自体は direct_fetch で確認済みなので、この tier 'unverified' の妥当性自体は本タスクのスコープ外（触れていない）"
+        },
+        "buyee": {
+          "deposit_present": false,
+          "value": null,
+          "implication": "F07 が Buyee には一切計上されていない。今回の決定（5社共通で3.5%を暫定適用）を実装するには、deposit を null から追加する必要がある"
+        },
+        "neokyo": {
+          "deposit_present": false,
+          "value": null,
+          "implication": "buyeeと同じくF07が未計上。決定を実装するには deposit を追加する必要がある"
+        },
+        "fromjapan": {
+          "deposit_present": false,
+          "value": null,
+          "implication": "buyee/neokyoと同じく未計上。追加が必要"
+        }
+      },
+      "required_change_spec_for_followup_pr": [
+        {
+          "file": "src/lib/pricing/services.ts",
+          "company": "zenmarket",
+          "change": "deposit.tier を 'estimate' から 'fixed' に変更する（rate: 0.035, flatYen: 0 は変更しない）。理由: ZenMarket自身の一次ページが3.5%を自社の基本料率として明記しており、もはや我々の推定ではない。WhatCouldBeOffの表示上、ZenMarketのdeposit行が『Estimated』から外れ、確定値として扱われるようになる。"
+        },
+        {
+          "file": "src/lib/pricing/services.ts",
+          "company": "buyee",
+          "change": "deposit: null を deposit: { flatYen: 0, rate: 0.035, tier: 'estimate', note: '...' } に変更する。3.5%はBuyee自身の公表値ではなく我々の暫定値なので tier は必ず 'estimate' にする。"
+        },
+        {
+          "file": "src/lib/pricing/services.ts",
+          "company": "neokyo",
+          "change": "deposit: null を deposit: { flatYen: 0, rate: 0.035, tier: 'estimate', note: '...' } に変更する。tier 'estimate'。noteには『Neokyoは決済プロバイダ(PayPal/Stripe/Wise)自身の手数料に委ねており自社の料率を公表していない。3.5%はその近似値』という趣旨を残すこと——3.5%が『会社の暫定値』ではなく『プロセッサ次第で本質的に変動する値の近似』であることをコード上でも区別できるように。"
+        },
+        {
+          "file": "src/lib/pricing/services.ts",
+          "company": "fromjapan",
+          "change": "deposit: null を deposit: { flatYen: 0, rate: 0.035, tier: 'estimate', note: '...' } に変更する。tier 'estimate'。noteには『FROM JAPANの支払ページは調査時点(2026-09-12)でこの環境から403のため未検証。非公表と確認できたわけではない』という趣旨を残すこと——BuyeeやNeokyoと『非公表の確からしさ』が異なることをコード上でも区別できるように。"
+        },
+        {
+          "file": "src/lib/pricing/services.ts",
+          "company": "jauce",
+          "change": "変更不要。既に自社公表値で個別のrule（flatYen: 40, rate: 0.039）を持ち、このF07共通デフォルト（3.5%）の対象外。tier 'unverified' の妥当性自体は本決定のスコープ外。"
+        }
+      ],
+      "ui_consequence": "src/components/compare/WhatCouldBeOff.tsx は既存のtier分岐（'estimate'→Estimated/'unverified'→Second-hand/欠落→Not included）をそのまま使うため、UI側の新規コンポーネントは不要——上記のservices.ts変更だけで、ZenMarketのdeposit行はConfirmed扱いに、Buyee/Neokyo/FROM JAPANのdeposit行は新たにEstimated扱いとしてWhatCouldBeOffに表示されるようになる。オーナーが見せたい『同じ3.5%が1社では確定値、3社では仮定である』という区別は、この変更だけで画面に反映される。",
+      "blocked_by": "PR #73（src/lib/pricing/* を書き換え中）。#73 マージ後の別PRで実装すること。本PR (#74) はこの仕様を記録するだけで src/ には触れていない。"
     }
   }
 }

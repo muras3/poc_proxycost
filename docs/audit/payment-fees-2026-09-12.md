@@ -10,6 +10,36 @@
 - **FROM JAPAN は判定不能**——該当ページがこの環境からは終始 403（AWS WAF）で、公表の有無そのものを確認できなかった。
 - 結果として、オーナーの読みは**部分的に真**（Jauce・ZenMarketは公表）であり、**部分的に外れている**（Buyee・Neokyoは明確に非公表。しかもNeokyoは「決済会社任せ」と積極的に書いている）。
 
+### 追記（2026-09-12、オーナー決定）: 当面は5社共通で3.5%を維持する
+
+上記の調査結果を受けて、オーナーは次のように決定した。**個社別・支払方法別の調査は手が空くまで延期し、3.5%を5社共通の暫定値として維持する。**Jauceは既に自社公表値（¥40+3.9%）の個別ルールを持つのでこの共通デフォルトの対象外。根拠・反論・決着条件は `master/fees.json` の `conclusions.F07_payment_fee_working_treatment` に `carrier-surcharges.json` の `fuel_surcharge_working_treatment` と同じ形（treatment / confidence / grounds_supporting・grounds_against をそれぞれ強さ付きで / pending_test）で記録した。要旨:
+
+- **根拠**: (1) ZenMarketは自社ページで3.5%を直接公表している（5社中唯一の直接裏付け）。(2) 読めた範囲でこのデフォルト値と矛盾する公表値は無い。(3) 入金・決済手数料は総額の数%に過ぎず、方法による誤差は絶対額として小さく双方向に閉じている、という一般論（宣言価格＝課税ベースを動かす費目とは非対称）。
+- **反論として残した点**: (4) Buyee・Neokyoは非公表と確認済みなので、3.5%はこの2社については「我々の数字」。特にNeokyoは決済プロバイダ自身の手数料に委ねると明記しており、実額はPayPal/Stripe/Wiseで変わるため、単一の会社レベルの料率という前提自体が構造的に成り立たない。(5) FROM JAPANは「非公表」ではなく「この環境からは確認できなかった」だけ——将来大きく異なる値が見つかる可能性を排除できない。(6) 読めた2社の間でも率のベースが異なる（ZenMarket: 総額 / Jauce: 入金額）。一律適用はベースについても仮定を重ねる。
+- **決着条件**: 非公表3社についてアカウントを作って決済画面の実料率を見るか、実請求書を入手する（F39③・P4と同じボトルネックを共有する調査であり、別枠ではない）。
+
+### UI要件: 同じ3.5%でも「確定」と「仮定」を区別する
+
+`src/components/compare/WhatCouldBeOff.tsx` は既に行の `tier`（`fixed` / `estimate` / `unverified` / 欠落）からリスク表示を導出している。新しいUIコンポーネントは不要で、`src/lib/pricing/services.ts` の `SERVICES[].deposit` の `tier` を会社ごとに正しく設定するだけでよい。
+
+**本PR (#74) の時点で判明している現状**（`src/lib/pricing/services.ts` を読んだ限り）:
+
+| 会社 | deposit フィールド | 現状の tier | 必要な変更 |
+|---|---|---|---|
+| ZenMarket | あり（rate 0.035） | `estimate` | `fixed` に変更——ZenMarket自身の一次ページが3.5%を公表しているので、もう「我々の推定」ではない |
+| Jauce | あり（¥40+3.9%、個別ルール） | `unverified` | 変更不要（このF07共通デフォルトの対象外。tier 'unverified' の妥当性自体は別の理由によるもので本決定のスコープ外） |
+| Buyee | **無し（`deposit: null`）** | ― | `deposit: { flatYen: 0, rate: 0.035, tier: 'estimate', ... }` を新規追加。3.5%はBuyeeの公表値ではないので必ず `estimate` |
+| Neokyo | **無し（`deposit: null`）** | ― | 同上で追加、tier `estimate`。かつ「実額は決済プロバイダ次第で変動する」という構造的な注記をnoteに残すこと |
+| FROM JAPAN | **無し（`deposit: null`）** | ― | 同上で追加、tier `estimate`。「非公表ではなく未検証（403）」という注記をnoteに残すこと |
+
+**重要な既存の発見**: Buyee・Neokyo・FROM JAPANは現状 `deposit: null` のため、**F07の行自体がこの3社には一切計上されていない**（コードのF07は現在ZenMarketとJauceの2社にしか適用されていない）。「5社共通で3.5%を維持する」というオーナー決定を実装するには、この3社に`deposit`を新規追加する必要がある——既存の値を書き換えるだけでは済まない。
+
+この変更は `src/lib/pricing/services.ts`（`src/lib/pricing/*` 全体）を対象にしており、**PR #73 がこのディレクトリを書き換え中のため、本PR (#74) では実装しない。**必要な変更の仕様は `master/fees.json` の `conclusions.F07_ui_tier_requirement_for_followup_src_pr` に会社ごとの差分として機械可読な形で記録した——#73マージ後のフォローアップPRは、この調査をやり直さずにこのキーだけを見て実装できる。
+
+### #74 のマージ順序について
+
+`npx vitest run` は 702/703 pass のまま。失敗している `master-sync.test.ts` の網羅性チェックは、本PRで追加した3行（Buyee/Neokyo/FROM JAPANのF07）が `src/` 側のMAPPED/CONFLICT/NOT_IN_CODEバケットにまだ分類されていないことを正しく検出している——これは検証器が仕事をしている状態であり、`src/`側を触って黙らせることはしていない。この分類は、上記のtier変更と同じ `src/lib/pricing/*` フォローアップPRでまとめて行うのが自然。**したがって本PR (#74) は #73 がマージされ、その後のsrc/フォローアップPRが分類とtier変更を実装するまでは、マージしない（できない）想定。**
+
 ## per-proxy × per-method 表
 
 | 会社 | 方法 | 料率 | 固定額 | ベース | 何回課金 | 通貨/為替スプレッド | confidence | source |
