@@ -234,7 +234,13 @@ export function ParcelView({
 
       {multiBox && <MultiBoxView boxes={multiBox} items={items} country={country} />}
 
-      <div className={`mt-3 flex flex-col gap-4 sm:flex-row sm:items-start${multiBox ? ' hidden' : ''}`}>
+      {/* **単箱のときだけマウントする。**以前は `hidden` クラスで隠すだけだったため、
+          分割時にこの単箱と `MultiBoxView` の箱が両方 DOM に残り、
+          `packing-box-scene` などの locator が複数要素にヒットしていた
+          （strict mode violation、CI で発覚）。「隠す」ではなく「描かない」。 */}
+      {!multiBox && (
+      <>
+      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <PackingBox
             stepIndex={shown.stepIndex}
@@ -328,7 +334,7 @@ export function ParcelView({
       {/* 但し書きは箱と目盛りの両方に掛かるので、2つの下に幅いっぱいで置く。
           箱の側の列に入れておくと、縦積み（モバイル）で数字と目盛りのあいだに
           3行の散文が挟まり、**段が最初の視界から押し出される。** */}
-      <p className={`mt-3 text-xs text-neutral-600 dark:text-neutral-400${multiBox ? ' hidden' : ''}`}>
+      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
         EMS is priced by weight alone — volume never enters the price, so this box is not a packing
         simulation. Faded items are weights we estimated, not measured.{' '}
         {/* 点線の輪郭（`drawUnknown`）は「重量表に当たらなかった」の形。箱に居るときだけ
@@ -343,6 +349,8 @@ export function ParcelView({
           Japan Post EMS rates ↗
         </a>
       </p>
+      </>
+      )}
     </section>
   );
 }
