@@ -1211,6 +1211,65 @@ describe('Buyee splits parcels by order', () => {
     expect(only.parcels).toBe(1);
   });
 
+  // ── docs/DESIGN-BOX-SIZE.md §2⑤（オーナー確定 2026-09-12）: 各口の申告額はその口に
+  // 実際に入っている商品の合計額であって、カート全額の均等割りではない。
+  // ここでは店舗が違う2点セットを作り、均等割りだったら免税限度をまたがない額
+  // （€150 の半分ずつ）でも、実際の内訳（安い店の2点／高い店の1点）で判定すると
+  // 高いほうの個口だけが限度を超えることを確認する——これが均等割りの誤り。
+  describe('per-parcel declared value replaces the even split (§2⑤)', () => {
+    const shopItem = (id: string, shop: string, priceYen: number): Item => item({
+      id, priceYen, weightG: 600, site: 'rakuten',
+      url: `https://item.rakuten.co.jp/${shop}/${id}/`,
+    });
+
+    test('conservation: the sum of per-parcel declared values equals the cart total exactly', () => {
+      // 店A2点（安い）＋店B1点（高い）＝2注文＝2個口。
+      const cart = [
+        shopItem('a1', 'shop-a', 3000), shopItem('a2', 'shop-a', 3000), shopItem('b1', 'shop-b', 30_000),
+      ];
+      const rows = compare({ method: 'ems', items: cart, country: 'DE' }).rows;
+      const dflt = byId(rows, 'buyee:default');
+      expect(dflt.parcels).toBe(2);
+      // 商品行（Items）は依然カート全額——申告額の按分だけを変えたのであって、
+      // 買い手が払う商品代の合計自体は動かさない。
+      expect(line(dflt, 'items').amount).toBe(36_000);
+    });
+
+    test('a high-value order is taxed on its own declared value, not on an averaged-down figure', () => {
+      const cart = [
+        shopItem('a1', 'shop-a', 3000), shopItem('a2', 'shop-a', 3000), shopItem('b1', 'shop-b', 30_000),
+      ];
+      const rows = compare({ method: 'ems', items: cart, country: 'DE' }).rows;
+      const dflt = byId(rows, 'buyee:default');
+      // 均等割りなら ¥36,000 ÷ 2 = ¥18,000/個口（≈€99）——EU の €150 免税限度の
+      // どちらの個口も下回り、DE の「限度以下は€3定額」の枝にしか入らなかった
+      // （このテストが以前は「定額のみ」で通っていた形）。実際の内訳は店Aの個口
+      // ¥6,000（≈€33、定額€3×2点のまま）／店Bの個口 ¥30,000（≈€165、限度超）
+      // ——店Bの個口だけ 4.1% の従価税に切り替わるはずで、定額だけの場合より高くなる。
+      const flatOnlyYen = Math.round(3 * 3 * rateFor('EUR')); // 3点すべてが€3定額だった場合
+      expect(line(dflt, 'duty').amount).toBeGreaterThan(flatOnlyYen);
+    });
+
+    test('when every order is individually under the threshold, both get the flat per-item duty (even split agrees here too)', () => {
+      // DE は €150 以下では均等割り・実際の内訳のどちらで判定しても
+      // 「1点あたり€3定額」という同じ枝に入る——ここは新旧のロジックが一致する場合。
+      const cart = [
+        shopItem('a1', 'shop-a', 3000), shopItem('a2', 'shop-a', 3000), shopItem('b1', 'shop-b', 3000),
+      ];
+      const rows = compare({ method: 'ems', items: cart, country: 'DE' }).rows;
+      const dflt = byId(rows, 'buyee:default');
+      const eurYen = rateFor('EUR');
+      expect(line(dflt, 'duty').amount).toBe(Math.round(3 * 3 * eurYen));
+    });
+
+    test('a single parcel (no split) is unaffected: declared value is simply the cart total', () => {
+      const rows = compare({ method: 'ems', items: items(2, 600, 30_000), country: 'DE' }).rows;
+      const row = byId(rows, 'neokyo'); // 個口を割らない社
+      expect(row.parcels).toBe(1);
+      expect(line(row, 'items').amount).toBe(60_000);
+    });
+  });
+
   test('the other four services stay at one parcel', () => {
     const rows = compare({ method: 'ems', items: items(4, 600), country: 'US' }).rows;
     for (const id of ['neokyo', 'zenmarket', 'fromjapan', 'jauce']) {
