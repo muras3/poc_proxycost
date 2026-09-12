@@ -138,36 +138,57 @@ describe('容積重量 ── 宅配便は容積重量が効く（監査 §5）'
   });
 });
 
-describe('courierPriceFor ── 最終価格をそのまま引く（分解しない）', () => {
-  // コーディネーターが2026-09-11に伝えた外部実測（GPT引き継ぎ文書）の実例が
-  // 素直に載るかを確かめる。**この値をマスタには入れない。**フィクスチャのみ。
-  const fedexEconomyDe600g: MeasuredPostageRate = {
+describe('courierPriceFor ── 測定点の間は区間（P2 1、2026-09-12 拡張）', () => {
+  // FROM JAPAN, US, FedEx Economy を単純化した3点のフィクスチャ。**マスタの実データは
+  // services.test.ts / courier-monotonicity.test.ts 側で検査する。**
+  const fedexEconomyUs: MeasuredPostageRate = {
     kind: 'measured',
     volumetricDivisorCm3PerKg: 5000,
-    bandsByCountry: {
-      DE: [{ maxG: 1000, yen: 5309 }], // FROM JAPAN, FedEx Economy, DE 600g = ¥5,309
+    weightPointsByCountry: {
+      US: [{ g: 500, yen: 5109 }, { g: 600, yen: 5109 }, { g: 1000, yen: 5109 }],
     },
-    tier: 'unverified', // 実データではなくフィクスチャなので unverified
+    tier: 'estimate',
     sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
-    checkedOn: '2026-09-07',
-    labelRaw: 'FedEx Economy',
+    checkedOn: '2026-09-12',
+    labelRaw: 'FedEx - Economy',
   };
 
-  test('実測の1点がそのまま帯に載る', () => {
-    expect(courierPriceFor(fedexEconomyDe600g, 'DE', 600, DEFAULT_PARCEL_DIMENSIONS_CM)).toBe(5309);
+  test('ちょうど測定点に乗る重量は low === high（幅ゼロ）', () => {
+    expect(courierPriceFor(fedexEconomyUs, 'US', 600, DEFAULT_PARCEL_DIMENSIONS_CM))
+      .toEqual({ low: 5109, high: 5109 });
+  });
+
+  test('測定点の間は [下の点, 上の点] の区間', () => {
+    expect(courierPriceFor(fedexEconomyUs, 'US', 700, DEFAULT_PARCEL_DIMENSIONS_CM))
+      .toEqual({ low: 5109, high: 5109 }); // 600と1000の間だが両方とも5109なので幅ゼロ
+    const wide: MeasuredPostageRate = {
+      ...fedexEconomyUs,
+      weightPointsByCountry: { US: [{ g: 500, yen: 5000 }, { g: 1000, yen: 6000 }] },
+    };
+    expect(courierPriceFor(wide, 'US', 700, DEFAULT_PARCEL_DIMENSIONS_CM))
+      .toEqual({ low: 5000, high: 6000 });
   });
 
   test('データの無い国は null（0円にしない）', () => {
-    expect(courierPriceFor(fedexEconomyDe600g, 'US', 600, DEFAULT_PARCEL_DIMENSIONS_CM)).toBeNull();
+    expect(courierPriceFor(fedexEconomyUs, 'DE', 600, DEFAULT_PARCEL_DIMENSIONS_CM)).toBeNull();
   });
 
-  test('帯の外の重量は null（送れない。丸めない）', () => {
-    expect(courierPriceFor(fedexEconomyDe600g, 'DE', 5000, DEFAULT_PARCEL_DIMENSIONS_CM)).toBeNull();
+  test('測定範囲の外（下も上も）は null。外挿しない', () => {
+    expect(courierPriceFor(fedexEconomyUs, 'US', 100, DEFAULT_PARCEL_DIMENSIONS_CM)).toBeNull();
+    expect(courierPriceFor(fedexEconomyUs, 'US', 50000, DEFAULT_PARCEL_DIMENSIONS_CM)).toBeNull();
   });
 
-  test('容積重量が実重量を超えれば、それで帯を判定する', () => {
-    const bigBox = { lengthCm: 50, widthCm: 50, heightCm: 50 }; // 125,000cm³
-    // 125,000 / 5000 * 1000 = 25,000g ── 上の帯(1000g)を超えるので送れない扱い
-    expect(courierPriceFor(fedexEconomyDe600g, 'DE', 100, bigBox)).toBeNull();
+  test('既定の箱と違う寸法では引けない（測ったのは既定の箱だけ）', () => {
+    const bigBox = { lengthCm: 50, widthCm: 50, heightCm: 50 };
+    expect(courierPriceFor(fedexEconomyUs, 'US', 600, bigBox)).toBeNull();
+  });
+
+  test('単調性が崩れている区間だけ high: null に落ちる', () => {
+    const nonMonotonic: MeasuredPostageRate = {
+      ...fedexEconomyUs,
+      weightPointsByCountry: { US: [{ g: 500, yen: 6000 }, { g: 1000, yen: 5000 }] },
+    };
+    expect(courierPriceFor(nonMonotonic, 'US', 700, DEFAULT_PARCEL_DIMENSIONS_CM))
+      .toEqual({ low: 6000, high: null });
   });
 });

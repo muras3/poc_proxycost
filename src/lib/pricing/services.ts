@@ -305,12 +305,22 @@ export interface MeasuredPostageRate extends PostageRateCommon {
    */
   volumetricDivisorCm3PerKg: number;
   /**
-   * 国ごとの、請求重量帯（g、実重量と容積重量の重いほう）→最終価格（円）。
+   * **2026-09-12 実装（P2 1、オーナー確定）。**国ごとの、実測した重量点→最終価格（円）の列。
+   * `master/courier-rates.json` の `*_us_grid_v2_2026_09_12` から転記——既定の箱
+   * （20×15×10cm）でだけ測った11点（500/600/700/1000/1500/2000/2500/3000/5000/
+   * 10000/20000g）。**点と点の間は補間しない。区間として持つ**
+   * （`postage.ts` の `courierPriceFor` が下端＝下の点・上端＝上の点として返す）。
+   *
    * **キーが無い国＝その社のその宅配便がまだ価格化されていない**（`unavailableIn`
    * とは違う——「売っていない」ではなく「まだ調べていない・調べたが取れなかった」）。
-   * `postage.ts` の `courierPriceFor` がここを引く。表の外の重量は「送れない」。
+   * 測ったのは US のみ（P2 2、オーナー確定）——他国へこの列を持ち越さない。重量帯の
+   * 境界は社・便ごとに違うため、US の列を GB 等に流用すると根拠のない数字になる。
+   *
+   * **点は重量の昇順で置き、単調非減少であることをテスト
+   * （`src/lib/pricing/__tests__/courier-monotonicity.test.ts`）で保証する。**
+   * 昇順が崩れている社・便は、そのテストが落ちて取り込みを止める。
    */
-  bandsByCountry: Partial<Record<CountryCode, readonly { maxG: number; yen: number }[]>>;
+  weightPointsByCountry: Partial<Record<CountryCode, readonly { g: number; yen: number }[]>>;
 }
 
 /** 判別可能合併。`kind` で `markup`（日本郵便）／`measured`（宅配便）を取り違えない。 */
@@ -539,6 +549,58 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // P2 1（オーナー確定 2026-09-12）。`master/courier-rates.json` の
+    // `neokyo_us_grid_v2_2026_09_12` から転記。**Neokyo は米国宛には日本郵便3方式を
+    // 出していない**（上の `unavailableIn: ['US']` 参照）ので、米国向けはこの3便の
+    // 宅配便だけが Neokyo の実際の選択肢——このPRで初めて米国向けに1円でも値が付く。
+    courier: {
+      'courier-dhl-express-1200': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 6031 }, { g: 600, yen: 6031 }, { g: 700, yen: 6031 },
+            { g: 1000, yen: 6031 }, { g: 1500, yen: 6294 }, { g: 2000, yen: 6558 },
+            { g: 2500, yen: 9136 }, { g: 3000, yen: 9275 }, { g: 5000, yen: 9834 },
+            { g: 10000, yen: 33811 }, { g: 20000, yen: 42299 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'DHL EXPRESS 12:00 (2-5 days)', sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
+        checkedOn: '2026-09-12',
+      },
+      'courier-dhl-express-worldwide': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 4651 }, { g: 600, yen: 4651 }, { g: 700, yen: 4651 },
+            { g: 1000, yen: 4651 }, { g: 1500, yen: 4914 }, { g: 2000, yen: 5178 },
+            { g: 2500, yen: 7756 }, { g: 3000, yen: 7895 }, { g: 5000, yen: 8454 },
+            { g: 10000, yen: 32431 }, { g: 20000, yen: 40919 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'DHL Express Worldwide (2-6 days)', sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
+        checkedOn: '2026-09-12',
+      },
+      'courier-fedex-connect-plus': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 5558 }, { g: 600, yen: 5558 }, { g: 700, yen: 5558 },
+            { g: 1000, yen: 5558 }, { g: 1500, yen: 6140 }, { g: 2000, yen: 6680 },
+            { g: 2500, yen: 7230 }, { g: 3000, yen: 7819 }, { g: 5000, yen: 11083 },
+            { g: 10000, yen: 17442 }, { g: 20000, yen: 29719 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'FedEx International Connect Plus (3-5 days)',
+        sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
+        checkedOn: '2026-09-12',
+      },
+    },
     // https://neokyo.com/en/storage（2026-09-07 取得、F21 2026-09-11 総額化）。原文の表:
     //   Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost
     //   Small 350 yen / 210 yen ・ Average 700 yen / 490 yen ・ Large 1400 yen / 980 yen
@@ -692,6 +754,109 @@ export const SERVICES: Service[] = [
         checkedOn: '2026-09-07',
       },
     },
+    // P2 1（オーナー確定 2026-09-12）。`master/courier-rates.json` の
+    // `zenmarket_us_grid_v2_2026_09_12` から転記。US のみ、既定の箱のみ。
+    // **AIRMAIL (AVIA) Small/Standard Parcel はここに含めない**——上の `postage`
+    // （`small-packet-air`/`parcel-air`）の `labelRaw` と文字列が一致し、日本郵便の
+    // 公表表への上乗せとして既に価格化済みだから、二重に持たない。
+    // **SURFACE は日本郵便の公表表とは別物。**`postage['parcel-surface']` は
+    // 1,000g からしか表が無く 600g では価格化できないのに、画面の SURFACE は
+    // 600g で ¥3,300 を出す——公表表への上乗せでは説明できない、社独自の便
+    // （`courier-surface`。**順位には入れない**——`compare.ts` の `SURFACE_COURIER_IDS`）。
+    courier: {
+      'courier-dhl-green-plus': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 6044 }, { g: 600, yen: 6044 }, { g: 700, yen: 6044 },
+            { g: 1000, yen: 6044 }, { g: 1500, yen: 6044 }, { g: 2000, yen: 6044 },
+            { g: 2500, yen: 9510 }, { g: 3000, yen: 9904 }, { g: 5000, yen: 11480 },
+            { g: 10000, yen: 25046 }, { g: 20000, yen: 38074 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'DHL (GREEN+)', sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-12',
+      },
+      'courier-ecms-express': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 4361 }, { g: 600, yen: 4361 }, { g: 700, yen: 4361 },
+            { g: 1000, yen: 4361 }, { g: 1500, yen: 4361 }, { g: 2000, yen: 4361 },
+            { g: 2500, yen: 4692 }, { g: 3000, yen: 5236 }, { g: 5000, yen: 7582 },
+            { g: 10000, yen: 13566 }, { g: 20000, yen: 24582 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'ECMS EXPRESS', sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-12',
+      },
+      'courier-fedex': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 5707 }, { g: 600, yen: 5707 }, { g: 700, yen: 5707 },
+            { g: 1000, yen: 5707 }, { g: 1500, yen: 5707 }, { g: 2000, yen: 5707 },
+            { g: 2500, yen: 6353 }, { g: 3000, yen: 7493 }, { g: 5000, yen: 10470 },
+            { g: 10000, yen: 19499 }, { g: 20000, yen: 29348 },
+          ],
+        },
+        tier: 'estimate',
+        // ZenMarket 自身がこの便を Economy/Priority のどちらとも書いていない
+        // （`postage.ts` の `COURIER_METHOD_NAME_MAP` に「未解決の組」として記録済み）。
+        labelRaw: 'FEDEX', sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-12',
+      },
+      'courier-fedex-lowcost': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 6277 }, { g: 600, yen: 6277 }, { g: 700, yen: 6277 },
+            { g: 1000, yen: 6277 }, { g: 1500, yen: 6277 }, { g: 2000, yen: 6277 },
+            { g: 2500, yen: 6829 }, { g: 3000, yen: 7935 }, { g: 5000, yen: 10796 },
+            { g: 10000, yen: 18087 }, { g: 20000, yen: 32606 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'FEDEX LOWCOST', sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-12',
+      },
+      'courier-ups': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 6650 }, { g: 600, yen: 6650 }, { g: 700, yen: 6650 },
+            { g: 1000, yen: 6650 }, { g: 1500, yen: 6650 }, { g: 2000, yen: 6650 },
+            { g: 2500, yen: 7580 }, { g: 3000, yen: 8468 }, { g: 5000, yen: 11843 },
+            { g: 10000, yen: 20025 }, { g: 20000, yen: 28165 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'UPS', sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-12',
+      },
+      'courier-surface': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 3300 }, { g: 600, yen: 3300 }, { g: 700, yen: 3300 },
+            { g: 1000, yen: 3300 }, { g: 1500, yen: 3300 }, { g: 2000, yen: 3300 },
+            { g: 2500, yen: 4000 }, { g: 3000, yen: 4000 }, { g: 5000, yen: 5400 },
+            { g: 10000, yen: 8900 }, { g: 20000, yen: 14900 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'SURFACE', sourceUrl: 'https://zenmarket.jp/en/calc.aspx',
+        checkedOn: '2026-09-12',
+      },
+    },
     // 料金ページ原文（Arquivo.pt 2025-11-27 の写し、2026-09-07 読了、F21 2026-09-11 総額化）:
     //   「Storage Over 60 Days: 50 JPY a day per item.」「free for 60 days … a fee of 50 JPY
     //   will start to be taken for each item per day」「In total (including the free period),
@@ -828,6 +993,89 @@ export const SERVICES: Service[] = [
         labelRaw: 'AirMail',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
+      },
+    },
+    // **P2 1（オーナー確定 2026-09-12）。**宅配便（`CourierMethod`）を初めて価格化する。
+    // `master/courier-rates.json` の `fromjapan_us_grid_v2_2026_09_12` から転記——
+    // 既定の箱（20×15×10cm）・US 宛のみ。他国は測っていないので US 以外のキーを置かない
+    // （P2 2、オーナー確定）。5便とも重量で単調（`courier-monotonicity.test.ts` が検査）。
+    // **燃油サーチャージの扱いが未検証**（別監査 `docs/audit/fuel-surcharge-inclusion-*`）
+    // なので、tier は 'estimate'（画面の `~`）に統一する——`compare.ts` 側でも強制する。
+    courier: {
+      'courier-ecms': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000, // 未確定（5000 か 6000 か）。既定の箱では影響しない
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 2795 }, { g: 600, yen: 3506 }, { g: 700, yen: 3506 },
+            { g: 1000, yen: 3506 }, { g: 1500, yen: 4250 }, { g: 2000, yen: 4895 },
+            { g: 2500, yen: 5557 }, { g: 3000, yen: 6152 }, { g: 5000, yen: 8418 },
+            { g: 10000, yen: 15861 }, { g: 20000, yen: 28994 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'ECMS', sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-12',
+      },
+      'courier-ups': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 3539 }, { g: 600, yen: 3539 }, { g: 700, yen: 3539 },
+            { g: 1000, yen: 3539 }, { g: 1500, yen: 4124 }, { g: 2000, yen: 4772 },
+            { g: 2500, yen: 5336 }, { g: 3000, yen: 5942 }, { g: 5000, yen: 8086 },
+            { g: 10000, yen: 10626 }, { g: 20000, yen: 23969 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'UPS', sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-12',
+      },
+      'courier-dhl': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 4771 }, { g: 600, yen: 4771 }, { g: 700, yen: 4771 },
+            { g: 1000, yen: 4771 }, { g: 1500, yen: 5009 }, { g: 2000, yen: 5247 },
+            { g: 2500, yen: 7446 }, { g: 3000, yen: 7823 }, { g: 5000, yen: 9330 },
+            { g: 10000, yen: 16680 }, { g: 20000, yen: 32457 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'DHL', sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-12',
+      },
+      'courier-fedex-economy': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 5109 }, { g: 600, yen: 5109 }, { g: 700, yen: 5109 },
+            { g: 1000, yen: 5109 }, { g: 1500, yen: 5299 }, { g: 2000, yen: 5819 },
+            { g: 2500, yen: 6347 }, { g: 3000, yen: 7296 }, { g: 5000, yen: 10639 },
+            { g: 10000, yen: 15216 }, { g: 20000, yen: 21831 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'FedEx - Economy', sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-12',
+      },
+      'courier-fedex-priority': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 5437 }, { g: 600, yen: 5437 }, { g: 700, yen: 5437 },
+            { g: 1000, yen: 5437 }, { g: 1500, yen: 5879 }, { g: 2000, yen: 5984 },
+            { g: 2500, yen: 6663 }, { g: 3000, yen: 7786 }, { g: 5000, yen: 10832 },
+            { g: 10000, yen: 19862 }, { g: 20000, yen: 33253 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'FedEx - Priority', sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
+        checkedOn: '2026-09-12',
       },
     },
     // 翻訳ファイル原文（2026-09-07 読了、F21 2026-09-11 総額化）: help_fee_390
@@ -996,6 +1244,43 @@ export const SERVICES: Service[] = [
         labelRaw: 'International Parcel Post (AIR)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
+      },
+    },
+    // P2 1（オーナー確定 2026-09-12）。`master/courier-rates.json` の
+    // `buyee_us_grid_v2_2026_09_12` から転記。**このファイルだけ重量キーが `weight_g`
+    // ではなく `weight_actual_g`。**次に取り込む作業者が同じ罠を踏まないよう、ここと
+    // `docs/audit/` に記録する。US のみ、既定の箱のみ、5便中2便のみ価格化済み
+    // （Buyee の課金カテゴリはこの2つだけが確認できた）。
+    courier: {
+      'courier-buyee-air': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 4526 }, { g: 600, yen: 4526 }, { g: 700, yen: 4526 },
+            { g: 1000, yen: 4526 }, { g: 1500, yen: 4526 }, { g: 2000, yen: 4607 },
+            { g: 2500, yen: 6044 }, { g: 3000, yen: 6848 }, { g: 5000, yen: 8653 },
+            { g: 10000, yen: 14884 }, { g: 20000, yen: 25549 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'Buyee Air Delivery', sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
+        checkedOn: '2026-09-12',
+      },
+      'courier-ecms': {
+        kind: 'measured',
+        volumetricDivisorCm3PerKg: 5000,
+        weightPointsByCountry: {
+          US: [
+            { g: 500, yen: 2288 }, { g: 600, yen: 2288 }, { g: 700, yen: 2288 },
+            { g: 1000, yen: 2288 }, { g: 1500, yen: 2288 }, { g: 2000, yen: 2790 },
+            { g: 2500, yen: 3541 }, { g: 3000, yen: 3719 }, { g: 5000, yen: 5794 },
+            { g: 10000, yen: 10186 }, { g: 20000, yen: 18674 },
+          ],
+        },
+        tier: 'estimate',
+        labelRaw: 'ECMS', sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
+        checkedOn: '2026-09-12',
       },
     },
     // https://buyee.jp/helpcenter/guide/storage?lang=en（2026-09-07 取得、F21 2026-09-11

@@ -27,7 +27,7 @@ function basket(weightG: number, units = MEASURED_BASKET.units): Item[] {
 }
 
 function rank(weightG: number, country: CountryCode = MEASURED_BASKET.country): Row[] {
-  return compare({ items: basket(weightG), country }).rows;
+  return compare({ method: 'ems', items: basket(weightG), country }).rows;
 }
 
 const winner = (rows: Row[]): Row =>
@@ -114,8 +114,8 @@ describe('the numbers /sources calls measured are what compare() actually return
       const n = Number(units);
       // **交差の重量は米国で測ったときと同じ。国だけカナダに移した。**
       const cc = WEIGHT_SHIFT_COUNTRY;
-      const at25gBelow = compare({ items: basket(at - 25, n), country: cc }).rows;
-      const atCross = compare({ items: basket(at, n), country: cc }).rows;
+      const at25gBelow = compare({ method: 'ems', items: basket(at - 25, n), country: cc }).rows;
+      const atCross = compare({ method: 'ems', items: basket(at, n), country: cc }).rows;
       expect(winner(at25gBelow).serviceId, `n=${n}: ${at - 25}g`).toBe('neokyo');
       expect(winner(atCross).serviceId, `n=${n}: ${at}g`).toBe('fromjapan');
     }
@@ -125,7 +125,7 @@ describe('the numbers /sources calls measured are what compare() actually return
     // README は以前「7 カ国すべてで false」と手で書いていた。料金修正で値が動いても
     // 誰も測り直していなかったからで、この表を足すのはそれを二度と静かに起こさないため。
     for (const row of RANK_STABILITY) {
-      const result = compare({ items: basket(MEASURED_BASKET.weightG), country: row.country });
+      const result = compare({ method: 'ems', items: basket(MEASURED_BASKET.weightG), country: row.country });
       expect(result.rankStable, `${row.country} rankStable`).toBe(row.rankStable);
       expect(result.rankIndeterminate, `${row.country} rankIndeterminate`).toBe(row.rankIndeterminate);
       if (row.staysCheapest) {

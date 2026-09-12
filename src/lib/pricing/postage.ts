@@ -1,4 +1,4 @@
-import type { BoxDimensionsCm, CountryCode, PostalMethod, Tier } from './types';
+import type { BoxDimensionsCm, CountryCode, CourierMethod, PostalMethod, Tier } from './types';
 import type { DimensionLimit, MarkupPostageRate, MeasuredPostageRate } from './services';
 import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
 
@@ -329,6 +329,47 @@ export function dimensionsExceedLimit(
 // ---------------------------------------------------------------------------
 
 /**
+ * **便名 → `CourierMethod` ID の対応表。1箇所だけ。**（P2 1、オーナー確定 2026-09-12）
+ * `master/courier-rates.json` の `*_us_grid_v2_2026_09_12.observations[].method_name` を
+ * `services.ts` に転記するとき、次のデータ取り込みがここと照合できるようにする。
+ *
+ * **未解決の組**（同じ便かもしれないが確定できないので ID を分けたまま）:
+ *   - ZenMarket の無印 `FEDEX` ↔ FROM JAPAN の `FedEx - Economy` / `FedEx - Priority`
+ *     ── ZenMarket 画面はどちらの速度か明記していない。
+ *   - Neokyo の `FedEx International Connect Plus` ↔ 上記のどちらか、または別サービス
+ *     ── FedEx のブランド名としては Connect Plus は独自の商品名で、決め打ちしない。
+ *
+ * **確定して束ねた組**（表記が完全一致）: FROM JAPAN と Buyee の `ECMS` → 同じ
+ * `courier-ecms`。ZenMarket の `ECMS EXPRESS` は表記が違うので束ねない。
+ */
+export const COURIER_METHOD_NAME_MAP: Readonly<Record<string, Readonly<Record<string, CourierMethod>>>> = {
+  fromjapan: {
+    ECMS: 'courier-ecms',
+    UPS: 'courier-ups',
+    DHL: 'courier-dhl',
+    'FedEx - Economy': 'courier-fedex-economy',
+    'FedEx - Priority': 'courier-fedex-priority',
+  },
+  buyee: {
+    'Buyee Air Delivery': 'courier-buyee-air',
+    ECMS: 'courier-ecms',
+  },
+  zenmarket: {
+    'DHL (GREEN+)': 'courier-dhl-green-plus',
+    'ECMS EXPRESS': 'courier-ecms-express',
+    FEDEX: 'courier-fedex',
+    'FEDEX LOWCOST': 'courier-fedex-lowcost',
+    SURFACE: 'courier-surface',
+    UPS: 'courier-ups',
+  },
+  neokyo: {
+    'DHL EXPRESS 12:00 (2-5 days)': 'courier-dhl-express-1200',
+    'DHL Express Worldwide (2-6 days)': 'courier-dhl-express-worldwide',
+    'FedEx International Connect Plus (3-5 days)': 'courier-fedex-connect-plus',
+  },
+};
+
+/**
  * 容積重量（g）。`縦×横×高さ[cm] ÷ 除数 × 1000` を切り上げる。
  * 除数は社ごとに違いうる（`MeasuredPostageRate.volumetricDivisorCm3PerKg`。
  * `docs/audit/o2-courier-2026-09-08.md` §5 ── 5000 か 6000 かは未確定）。
@@ -346,21 +387,48 @@ export function billableWeightG(
 }
 
 /**
- * その宅配便の、その国・その重量・その寸法での最終価格（円）。
+ * **区間で返す（P2 1、オーナー確定 2026-09-12）。**測ったのは11個の重量点だけで、
+ * 点と点の間の実カートの重量は補間しない・最寄りの点に丸めない——単調性
+ * （軽いほうが安いか同額）から言える区間として返す: `low` = 直下の点の価格、
+ * `high` = 直上の点の価格。
  *
- * **公表額への上乗せではなく、最終価格をそのまま引く**（`markupYen` とは
- * 別の関数——判別可能合併で `MarkupPostageRate` と取り違えられない）。
- * `bandsByCountry` にその国のキーが無ければ **未価格**（`null`）——
- * 「売っていない」（`unavailableIn`）や「表の外で送れない」（帯はあるが
- * 該当する段が無い）とは理由が違うが、呼び出し側の扱いはどれも同じ
- * （額を付けず、この方式を候補から外す）。
+ * - **測定範囲の外（500g未満・20000g超）は `null`。**外挿しない。
+ * - **ちょうど測定点に乗る重量は `low === high`**（幅ゼロ、区間ではなく1点）。
+ * - **その社・その国の列に重量で逆行する箇所があれば `high: null`**
+ *   （オーナー確定の例外規定）——単調性が崩れている区間だけを「上限不明」に
+ *   落とし、崩れていない区間（このPRで取り込んだ4社×USは全便で単調——
+ *   `src/lib/pricing/__tests__/courier-monotonicity.test.ts` が検査する）
+ *   まで巻き込んで unknown にしない。
+ *
+ * **容積重量を掛け直さない。**観測値そのものが「その代行にその実重量を入力したら
+ * 出た画面の額」——代行が内部でどんな容積重量規則を使っていたかは、その額に
+ * 織り込み済みで観測から分離できない（`docs/audit/o2-courier-2026-09-08.md` §5）。
+ * ここで改めて `billableWeightG` を通すと、代行の未公表の規則の上に
+ * こちらの未確定の規則（除数 5000 か 6000 か）を重ねて二重に補正することになる。
+ * `dims` は**既定の箱（20×15×10cm）と一致するときだけ**この列を引ける、という
+ * 適用範囲のガードにだけ使う——測ったのがその箱だけだから。
  */
 export function courierPriceFor(
   rate: MeasuredPostageRate, cc: CountryCode, realGrams: number, dims: BoxDimensionsCm,
-): number | null {
-  const bands = rate.bandsByCountry[cc];
-  if (!bands) return null; // まだ価格化されていない国
-  const billed = billableWeightG(realGrams, dims, rate.volumetricDivisorCm3PerKg);
-  const hit = bands.find((b) => billed <= b.maxG);
-  return hit ? hit.yen : null; // 帯の外＝送れない
+): { low: number; high: number | null } | null {
+  if (dims.lengthCm !== DEFAULT_PARCEL_DIMENSIONS_CM.lengthCm
+    || dims.widthCm !== DEFAULT_PARCEL_DIMENSIONS_CM.widthCm
+    || dims.heightCm !== DEFAULT_PARCEL_DIMENSIONS_CM.heightCm) {
+    return null; // 測ったのは既定の箱だけ
+  }
+  const points = rate.weightPointsByCountry[cc];
+  if (!points || points.length === 0) return null; // まだ価格化されていない国
+  if (realGrams < points[0]!.g || realGrams > points[points.length - 1]!.g) {
+    return null; // 測定範囲の外。外挿しない。
+  }
+  const exact = points.find((p) => p.g === realGrams);
+  if (exact) return { low: exact.yen, high: exact.yen };
+  let lower = points[0]!;
+  let upper = points[points.length - 1]!;
+  for (const p of points) {
+    if (p.g < realGrams && p.g > lower.g) lower = p;
+    if (p.g > realGrams && p.g < upper.g) upper = p;
+  }
+  if (upper.yen < lower.yen) return { low: lower.yen, high: null }; // この区間だけ単調性が崩れている
+  return { low: lower.yen, high: upper.yen };
 }

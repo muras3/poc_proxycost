@@ -141,8 +141,17 @@ const grossG = (netG: number) => Math.round(netG * PACKING_MULTIPLIER + PACKING_
  * **反証**: 実請求の標本はスペインの掲示板に偏り、「通関で驚いた人が投稿する」
  * バイアスがある（宅配便が過剰に出る）。約40言及と小さい。フェーズ2で各国・各重量の
  * 観測が増えたら、この既定は再検討に値する。
+ *
+ * **2026-09-12、上の理由はオーナーにより上書きされた（P2 4）。**上の実請求ベースの
+ * 議論はそのまま残す——EMS 既定がどこから来たかの記録として価値があるので消さない。
+ * **新しい既定は `'cheapest'`（条件ごとに再計算する、運べる中の最安）。**
+ * ただし **Surface（1〜3か月）は最安であっても既定候補から外す**——所要時間が
+ * 理由で、値段の話ではない（`stepLabel`/`Row.surface` に必ずその旨を書く）。
+ * `'cheapest'` の解決自体は `buildRow` の中で行っており（`nonSurfacePostalMethods`
+ * と `COURIER_METHOD_IDS` から Surface 系だけを除いて比較する）、ここではこの
+ * 定数を `'cheapest'` に変えるだけでよい。
  */
-const DEFAULT_METHOD: PostalMethod | 'cheapest' = 'ems';
+const DEFAULT_METHOD: PostalMethod | 'cheapest' = 'cheapest';
 
 /**
  * カート全体を1個口にまとめたときの梱包後重量（g）。
@@ -171,7 +180,7 @@ interface Ctx {
   /** 既知の重量にこの倍率を掛ける（順位の頑健性チェック用）。 */
   weightScale: number;
   /** 国際配送の方式。'cheapest' なら行ごとに「運べる中で最安」を選ぶ。 */
-  method: PostalMethod | 'cheapest';
+  method: PostalMethod | CourierMethod | 'cheapest';
   /** 倉庫に置く日数。未指定は `DEFAULT_STORAGE_DAYS`。 */
   storageDays: number;
 }
@@ -841,33 +850,61 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     return parcelGross.reduce(
       (a, g, i) => a + each[i]!.yen + markupYen(rate, ctx.cc, g), 0);
   };
-  // **宅配便（P2）。**`svc.courier` は現時点でどの社も未設定——データが入るまで
-  // このループは常に空を返し、既存の挙動（0e）を1円も変えない。データが入っても
-  // 「値段が付かない国」は `courierPriceFor` が null を返すのでここで自然に落ちる
-  // （0円にしない。`courierPriceFor` のコメント参照）。
-  const priceCourier = (m: CourierMethod): number | null => {
+  // **宅配便（P2 1、2026-09-12 拡張）。**`courierPriceFor` は区間 `{low, high}` を返す
+  // ——重量が測定点の間なら `high` はその上の測定点、測定範囲の外や国が無ければ
+  // 呼び出し側は `null`（値段が付かない）。個口が複数あるときは低い側・高い側を
+  // それぞれ独立に合計する（1個口でも区間が崩れれば全体も崩れる——`high` の
+  // どれか1つでも `null` なら合計の `high` も `null`）。
+  const priceCourier = (m: CourierMethod): { low: number; high: number | null } | null => {
     const rate = svc.courier?.[m];
     if (!rate) return null;
     if (rate.unavailableIn?.includes(ctx.cc)) return null;
     if (rate.priceCapJpy != null && itemsYen > rate.priceCapJpy) return null;
     const each = parcelGross.map((g) => courierPriceFor(rate, ctx.cc, g, parcelDims));
     if (each.some((e) => e == null)) return null;
-    return each.reduce((a: number, e) => a + (e as number), 0);
+    const sure = each as { low: number; high: number | null }[];
+    return {
+      low: sure.reduce((a, e) => a + e.low, 0),
+      high: sure.some((e) => e.high == null) ? null : sure.reduce((a, e) => a + e.high!, 0),
+    };
   };
-  const COURIER_METHOD_IDS: readonly CourierMethod[] =
-    ['courier-fedex', 'courier-ups', 'courier-dhl', 'courier-sf-express', 'courier-ecms'];
+  // **P2 1（オーナー確定 2026-09-12）。**「1社1本」の代表値に潰さず、社の画面が
+  // 実際に出す便名ごとに ID を持つ——理由は `types.ts` の `CourierMethod` コメント。
+  // `courier-surface` はここに含めない: **順位（`cheapest`）には絶対に選ばれない**
+  // （P2 4。1〜3か月かかる便を既定にしない、オーナー決定）——`Row.surface` にだけ出す。
+  const COURIER_METHOD_IDS: readonly CourierMethod[] = [
+    'courier-fedex', 'courier-fedex-economy', 'courier-fedex-priority', 'courier-fedex-lowcost',
+    'courier-fedex-connect-plus', 'courier-ups', 'courier-dhl', 'courier-dhl-green-plus',
+    'courier-dhl-express-1200', 'courier-dhl-express-worldwide', 'courier-sf-express',
+    'courier-ecms', 'courier-ecms-express', 'courier-buyee-air',
+  ];
+  // **P2 4（オーナー確定 2026-09-12）。**Surface はどの経路（日本郵便の公表2方式・
+  // 社独自の宅配便）でも既定の解決（`'cheapest'`）から外す——1〜3か月かかる便を
+  // 「一番安いから」で既定にしない。額そのものは隠さない、というのが別立ての
+  // `Row.surface`（下）。**以前は日本郵便の2方式だけが `'cheapest'` の候補で、
+  // Surface が最安なら既定になっていた**（ZenMarket→US 600gでは Surface ¥3,300 が
+  // EMS ¥7,900 より安いのでそれが起きていた）——ここを直すのが今回の変更点。
+  const SURFACE_POSTAL_IDS: readonly PostalMethod[] = ['small-packet-surface', 'parcel-surface'];
+  const nonSurfacePostalMethods = POSTAL_METHODS.filter((s) => !SURFACE_POSTAL_IDS.includes(s.id));
   const method: PostalMethod | CourierMethod = wanted === 'cheapest'
     // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
     // **郵便と宅配便を同じ土俵で比べる**——「宅配便は最終価格を正とする」という
     // オーナー決定（2026-09-11）により、宅配便も総額としては郵便の各方式と対等。
+    // 比べるのは**下端**（宅配便は目的地側の未知の手数料で上端が開くことがあるが、
+    // それでも下端で比較する——オーナー決定 P2 3「順位は下端で決める」）。
     ? ([
-        ...POSTAL_METHODS.map((s) => ({ id: s.id as PostalMethod | CourierMethod, yen: priceAll(s.id) })),
-        ...COURIER_METHOD_IDS.map((id) => ({ id: id as PostalMethod | CourierMethod, yen: priceCourier(id) })),
+        ...nonSurfacePostalMethods.map((s) => ({ id: s.id as PostalMethod | CourierMethod, yen: priceAll(s.id) })),
+        ...COURIER_METHOD_IDS.map((id) => ({ id: id as PostalMethod | CourierMethod, yen: priceCourier(id)?.low ?? null })),
       ]
         .filter((x): x is { id: PostalMethod | CourierMethod; yen: number } => x.yen != null)
         .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0]?.id ?? 'ems')
     : wanted;
-  const isCourier = COURIER_METHOD_IDS.includes(method as CourierMethod);
+  // **`isCourier` は `COURIER_METHOD_IDS`（ランキング候補）とは別に判定する。**
+  // `courier-surface` は候補集合には無いが、`ctx.method` で明示的に選ぶことは
+  // でき（`Row.surface` の内部計算や、利用者が明示的に選ぶ将来のUIのため）、
+  // そのときも「宅配便として」扱わないと `postageFor` に落ちて壊れる
+  // （宅配便IDを日本郵便の方式表に引いてしまうため）。
+  const isCourier = COURIER_METHOD_IDS.includes(method as CourierMethod) || method === 'courier-surface';
   const courierRate = isCourier ? svc.courier?.[method as CourierMethod] : undefined;
   const spec = isCourier
     // 宅配便は `PostalMethodSpec` の表に無い。ラベルは料金データ自身の `labelRaw`
@@ -894,9 +931,13 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // F30: 商品価格の上限超は「重すぎる」でも「売っていない」でもなく「選べない」。
   const priceCapExceeded = !!(rate ?? courierRate)?.priceCapJpy
     && itemsYen > (rate ?? courierRate)!.priceCapJpy!;
-  const shipYen: number | null = isCourier
-    ? priceCourier(method as CourierMethod)
-    : priceAll(method as PostalMethod);
+  // **`shipYen` は常に下端。**`shipHigh` は宅配便のときだけ意味を持つ上端候補——
+  // 測定点の間の重量で、単調性が崩れていなければ「直上の測定点の価格」、崩れて
+  // いれば `null`（P2 1）。郵便は測定区間という概念が無いので `shipHigh === shipYen`
+  // で常に閉じる。
+  const courierShip = isCourier ? priceCourier(method as CourierMethod) : null;
+  const shipYen: number | null = isCourier ? (courierShip?.low ?? null) : priceAll(method as PostalMethod);
+  const shipHigh: number | null = isCourier ? (courierShip?.high ?? null) : shipYen;
   // **「その社が売っていない」「重すぎる」「商品価格が高すぎる」は違う理由なので、書き分ける。**
   const stepLabel = isCourier
     ? (!courierRate
@@ -972,7 +1013,11 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 何も言わなくなっていた（docs/audit/logic.md C4）。重量の確度は Items 行の重量 tier
   // と `Row.approximate` が持つ。**段に入れた重量が梱包後の仮定（×1.2 + 300 g）である
   // ことは、この行の note に必ず書く**（tier からは読めないので、文字で書く）。
-  const shipTier: Tier = shipYen == null ? 'none' : (rate ?? courierRate)!.tier;
+  // **宅配便の行は常に `tier: 'estimate'`（別監査 2026-09-12、燃油サーチャージの扱い）。**
+  // 表示額に燃油サーチャージが含まれているかどうかを検証できていない——「一般的な
+  // 慣行では含まれているはず」という推測に基づく扱いなので、`fixed`（一次情報で確認済み）
+  // とは書けない。郵便（`rate.tier`）はこの監査の対象外なのでそのまま。
+  const shipTier: Tier = shipYen == null ? 'none' : isCourier ? 'estimate' : rate!.tier;
   // **宅配便は最終価格を正とする。分解しない**（オーナー確定 2026-09-11）——
   // 公表額への上乗せという概念が無いので `markupYen` を呼ばない。
   const markupNote = isCourier
@@ -985,17 +1030,49 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **速さと追跡を額と同じ行に出す。**船便は 3kg で EMS より ¥5,100 安いが 1〜3 か月かかる。
   // 額だけ出して日数を出さなければ、安いほうを選ばせる誤誘導になる。
   const boxNote = isCourier && shipYen != null ? `, ${DEFAULT_PARCEL_DIMENSIONS_NOTE}` : '';
-  lines.push(L('intl-shipping', `${spec.label} to ${COUNTRIES[ctx.cc].name}`, shipYen,
-    (isCourier ? stepLabel : `zone ${zone}, ${stepLabel}`)
-    + (shipYen == null ? '' : ' (weight after our packing allowance)')
-    + markupNote
-    + boxNote
-    + (shipYen == null ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
-    isCourier && shipYen != null
+  // **P2 1: 測定点の間の重量は区間として見せる。**`shipHigh` が下端と違えば、
+  // この行自体を range にする——「少なくとも¥X、測定区間の上端まで届きうる」。
+  const weightIntervalOpen = isCourier && shipYen != null && shipHigh !== shipYen;
+  const intlShippingLine: Line = {
+    key: 'intl-shipping',
+    label: `${spec.label} to ${COUNTRIES[ctx.cc].name}`,
+    amount: shipYen,
+    note: (isCourier ? stepLabel : `zone ${zone}, ${stepLabel}`)
+      + (shipYen == null ? '' : ' (weight after our packing allowance)')
+      + markupNote
+      + boxNote
+      + (weightIntervalOpen
+        ? shipHigh == null
+          ? ', between two measured weight points where the price is not monotonic — upper bound unknown'
+          : `, between two measured weight points (¥${shipYen!.toLocaleString('en-US')}–¥${shipHigh!.toLocaleString('en-US')}; we show the lower bound)`
+        : '')
+      + (shipYen == null ? '' : ` — ${spec.days}${spec.tracked ? ', tracked' : ', no tracking'}`),
+    tier: isCourier && shipYen != null
       ? (TIER_STRENGTH[shipTier] < TIER_STRENGTH[DEFAULT_PARCEL_DIMENSIONS_TIER]
         ? shipTier : DEFAULT_PARCEL_DIMENSIONS_TIER)
       : shipTier,
-    isCourier ? (courierRate?.sourceUrl ?? svc.sourceUrl) : (method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL)));
+    sourceUrl:
+      isCourier ? (courierRate?.sourceUrl ?? svc.sourceUrl) : (method === 'ems' ? EMS_SOURCE_URL : POSTAGE_SOURCE_URL),
+    ...(weightIntervalOpen && shipHigh != null
+      ? { amountKind: 'range' as const, amountHighYen: shipHigh,
+        rangeNote: 'low = the measured price at the weight point just below; high = just above' }
+      : {}),
+  };
+  lines.push(intlShippingLine);
+  // **P2 3（オーナー確定）: 宅配便の上限は目的地側の未知の手数料で開いたままにする。**
+  // FedEx は7か国中5か国、DHL は7か国中6か国で清算/立替手数料の計算式が未公表、
+  // UPS は GB・CA を一切公表せず、遠隔地サーチャージの帯は米国宛にしか無い——
+  // このPRで繋いだ国（米国）もこの「未公表」側に入る。額が出せない未取得の費目として
+  // 積む（`unknownCapYen` を置かない＝上限が置けない）ので、`totalRange`/`rankHighFor`
+  // により `Row.total.high` は必ず `null` になる。**日本郵便はこの行を持たない**
+  // （燃油・遠隔地・通関の立替のいずれも無いと確認済み）ので Japan Post の総額は
+  // 閉じたままになる——この対比が P2 3 の主旨そのもの。
+  if (isCourier && shipYen != null) {
+    lines.push(L('courier-destination-fees', 'Destination-side courier fees (unpublished)', null,
+      'clearance/disbursement fee formulas and remote-area surcharges are not published for'
+      + ` this route — ${svc.name} may pass through charges the carrier bills after the fact`,
+      'none'));
+  }
 
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
   lines.push(exportClearanceLine(itemsYen));
@@ -1072,6 +1149,47 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const weightEstimated = items.some((i) => i.weightTier !== 'fixed');
   const approximate = priceEstimated || weightEstimated || lines.some((l) => l.tier === 'estimate');
 
+  // **P2 4（オーナー確定 2026-09-12）。**「待てる利用者のための Surface」を
+  // 既定の行に副次フィールドとして載せる——別行は作らない（1社1行という
+  // ランキングの前提を壊さないため、オーナー明示）。日本郵便の船便2方式と
+  // 社独自の Surface 便のうち、この社が実際に運べて最安のものを選ぶ。
+  // ここに出す額は Surface 便**単体の送料**であって、行全体の総額（手数料・税込み）
+  // ではない——総額まで作り直すには行全体をこの便で組み直す必要があり、今回の
+  // スコープでは「額を隠さない」という指示を満たす最小限に絞った。
+  const COURIER_SURFACE_DAYS: Partial<Record<CourierMethod, string>> = {
+    'courier-surface': 'about 2-3 months',
+  };
+  const surfaceCandidates: { method: PostalMethod | CourierMethod; label: string; low: number;
+    high: number | null; days: string }[] = [
+    ...SURFACE_POSTAL_IDS.map((id) => {
+      const yen = priceAll(id);
+      if (yen == null) return null;
+      const spec2 = POSTAL_METHODS.find((s) => s.id === id)!;
+      return { method: id as PostalMethod | CourierMethod, label: spec2.label, low: yen, high: yen, days: spec2.days };
+    }).filter((x): x is NonNullable<typeof x> => x != null),
+    ...(svc.courier?.['courier-surface']
+      ? (() => {
+          const p = priceCourier('courier-surface');
+          if (!p) return [];
+          return [{
+            method: 'courier-surface' as PostalMethod | CourierMethod,
+            label: svc.courier['courier-surface']!.labelRaw,
+            low: p.low, high: p.high,
+            days: COURIER_SURFACE_DAYS['courier-surface'] ?? 'much slower than air — exact days not published',
+          }];
+        })()
+      : []),
+  ];
+  const cheapestSurface = surfaceCandidates.sort((a, b) => a.low - b.low)[0] ?? null;
+  const surface: Row['surface'] = cheapestSurface ? {
+    method: cheapestSurface.method,
+    label: cheapestSurface.label,
+    shipYen: { low: cheapestSurface.low, high: cheapestSurface.high },
+    days: cheapestSurface.days,
+    note: `not used as the default because it takes ${cheapestSurface.days} — shown separately`
+      + ' for anyone willing to wait',
+  } : null;
+
   const label = variant === 'consolidated' ? `${svc.name}, consolidated`
     : variant === 'default' ? `${svc.name}, default`
     : svc.name;
@@ -1103,6 +1221,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     equivalent: false,
     paysUs: svc.paysUs,
     referralNote: svc.referralNote,
+    surface,
     // 1点だけなら、その社でその出品を直接開く（検証済みの組み合わせのみ）。
     ...(() => {
       const one = items.length === 1 ? outboundFor(svc.id, svc.url, items[0]) : null;
@@ -1118,11 +1237,18 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     notComparableReason: shipYen != null ? null
       : isCourier
         // **未価格の宅配便は「比較不能」として落とす。0円にも安く見せもしない**
-        // （P2 4、これが最重要）。データが無い間は `wanted: 'cheapest'` がこの方式を
-        // 選ばないので、この分岐は利用者が明示的に宅配便を指定したときだけ到達する
-        // （このPRではそのUIは無いので、今日は到達しない）。
-        ? `${svc.name} has not priced this courier for ${COUNTRIES[ctx.cc].name} yet`
-          + ' — we do not invent a price for it'
+        // （P2 4、これが最重要）。理由は郵便と同じ粒度で書き分ける
+        // （P2 2: 売っていない／その国を測っていない、は違う理由）。
+        ? (!courierRate
+          ? `${svc.name} does not offer this courier`
+          : courierRate.unavailableIn?.includes(ctx.cc)
+            ? `${svc.name} does not ship this courier to ${COUNTRIES[ctx.cc].name}`
+          : priceCapExceeded
+            ? `this courier can only be selected under`
+              + ` ¥${courierRate.priceCapJpy!.toLocaleString('en-US')} declared value at this company,`
+              + ' and this cart is over that'
+          : `${svc.name} has not priced this courier for ${COUNTRIES[ctx.cc].name} yet`
+            + ' — we do not invent a price for it')
       : !rate
         ? `${svc.name} does not sell ${spec.label}, so there is no total to compare`
       : rate.unavailableIn?.includes(ctx.cc)
@@ -1472,7 +1598,7 @@ function sensitivityRange(item: Item): [number, number] | null {
  */
 function weightSensitivityFor(
   items: Item[], cc: CompareInput['country'], province: ProvinceCode | null, base: Row[],
-  method: PostalMethod | 'cheapest', storageDays: number,
+  method: PostalMethod | CourierMethod | 'cheapest', storageDays: number,
 ): Record<string, WeightSensitivity> {
   const out: Record<string, WeightSensitivity> = {};
   const baseIds = cheapestIds(base);
