@@ -94,10 +94,12 @@ export function Calculator() {
           />
           {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
               （Neokyo 原文「please select ... as the shipment method」）。
-              既定は EMS で、各社の既定が分かったら変える（`compare()` の `DEFAULT_METHOD`）。 */}
+              既定は `cheapest`（運べる中で最安、Surface を除く）（`compare()` の
+              `DEFAULT_METHOD`、P2 オーナー確定 2026-09-12）。 */}
           <MethodPicker
             value={method}
             onChange={(m) => dispatch({ type: 'method', method: m })}
+            country={country}
           />
           {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
               他国で常に出しておくと、選べない欄が画面に残る。 */}
@@ -165,7 +167,7 @@ export function Calculator() {
             <StabilityNote result={result} onCheckWeights={checkWeights} />
             {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
                 「読んでいない人には言っていない」のと同じになる。 */}
-            <EmsOnlyNote result={result} />
+            <EmsOnlyNote result={result} country={country} />
             {/* **送れるかは一度も見ていない。**同じ理由で同じ場所に、常に出す。
                 酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
             <RestrictedGoodsNote result={result} country={country} />

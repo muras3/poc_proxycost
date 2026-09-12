@@ -5,8 +5,8 @@ import {
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
   DEFAULT_PARCEL_DIMENSIONS_CM, DEFAULT_PARCEL_DIMENSIONS_NOTE, DEFAULT_PARCEL_DIMENSIONS_TIER,
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, courierPriceFor, dimensionsExceedLimit,
-  markupYen, maxGramsFor, postageFor, zoneFor,
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, RANKED_COURIER_METHOD_IDS, courierPriceFor,
+  dimensionsExceedLimit, markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -872,12 +872,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 実際に出す便名ごとに ID を持つ——理由は `types.ts` の `CourierMethod` コメント。
   // `courier-surface` はここに含めない: **順位（`cheapest`）には絶対に選ばれない**
   // （P2 4。1〜3か月かかる便を既定にしない、オーナー決定）——`Row.surface` にだけ出す。
-  const COURIER_METHOD_IDS: readonly CourierMethod[] = [
-    'courier-fedex', 'courier-fedex-economy', 'courier-fedex-priority', 'courier-fedex-lowcost',
-    'courier-fedex-connect-plus', 'courier-ups', 'courier-dhl', 'courier-dhl-green-plus',
-    'courier-dhl-express-1200', 'courier-dhl-express-worldwide', 'courier-sf-express',
-    'courier-ecms', 'courier-ecms-express', 'courier-buyee-air',
-  ];
+  const COURIER_METHOD_IDS: readonly CourierMethod[] = RANKED_COURIER_METHOD_IDS;
   // **P2 4（オーナー確定 2026-09-12）。**Surface はどの経路（日本郵便の公表2方式・
   // 社独自の宅配便）でも既定の解決（`'cheapest'`）から外す——1〜3か月かかる便を
   // 「一番安いから」で既定にしない。額そのものは隠さない、というのが別立ての

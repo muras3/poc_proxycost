@@ -1,5 +1,6 @@
 import type { BoxDimensionsCm, CountryCode, CourierMethod, PostalMethod, Tier } from './types';
 import type { DimensionLimit, MarkupPostageRate, MeasuredPostageRate } from './services';
+import { SERVICES } from './services';
 import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
 
 /**
@@ -431,4 +432,62 @@ export function courierPriceFor(
   }
   if (upper.yen < lower.yen) return { low: lower.yen, high: null }; // この区間だけ単調性が崩れている
   return { low: lower.yen, high: upper.yen };
+}
+
+/**
+ * `compare.ts` の `cheapest` 解決が候補にする宅配便 ID の一覧。**1箇所だけ持つ**
+ * ——ここと `MethodPicker` が別々に一覧を持つと、片方に足し忘れた便が出る。
+ * `courier-surface` はここに入れない（`Row.surface` 専用、`compare.ts` 参照）。
+ */
+export const RANKED_COURIER_METHOD_IDS: readonly CourierMethod[] = [
+  'courier-fedex', 'courier-fedex-economy', 'courier-fedex-priority', 'courier-fedex-lowcost',
+  'courier-fedex-connect-plus', 'courier-ups', 'courier-dhl', 'courier-dhl-green-plus',
+  'courier-dhl-express-1200', 'courier-dhl-express-worldwide', 'courier-sf-express',
+  'courier-ecms', 'courier-ecms-express', 'courier-buyee-air',
+];
+
+/** 画面向けの宅配便1件分。`PostalMethodSpec` と同じ形に合わせて `MethodPicker` から使う。 */
+export interface CourierMethodSpec {
+  id: CourierMethod;
+  /** 原文の便名（`labelRaw`）。訳さない。 */
+  label: string;
+  /** 便名の原文に日数が書いてあれば抜き出す。無ければ「未公表」と正直に言う。 */
+  days: string;
+  tracked: boolean;
+}
+
+/** `labelRaw` の括弧内に日数があれば抜き出す（例: 'DHL EXPRESS 12:00 (2-5 days)' → '2-5 days'）。 */
+function daysFromLabelRaw(labelRaw: string): string | null {
+  const m = labelRaw.match(/\(([^)]*\d[^)]*(?:day|month)s?[^)]*)\)/i);
+  return m ? m[1]!.trim() : null;
+}
+
+/**
+ * **ランキング候補の宅配便すべてを画面向けの形にする。**便名・日数は各社の
+ * `Service.courier[id].labelRaw` から取る——`RANKED_COURIER_METHOD_IDS` の順で、
+ * 同じ ID を最初に持つ社の表記を代表にする（`COURIER_METHOD_NAME_MAP` が
+ * 束ねた組は表記が一致しているので、どの社を代表にしても同じ文字列になる）。
+ */
+export const COURIER_METHODS: readonly CourierMethodSpec[] = RANKED_COURIER_METHOD_IDS.map((id) => {
+  for (const svc of SERVICES) {
+    const rate = svc.courier?.[id];
+    if (rate) {
+      return {
+        id, label: rate.labelRaw,
+        days: daysFromLabelRaw(rate.labelRaw) ?? 'transit time not published',
+        tracked: true,
+      };
+    }
+  }
+  // 到達しないはず（ID は必ずどこかの社の courier に定義がある）だが、型のために置く。
+  return { id, label: id, days: 'transit time not published', tracked: true };
+});
+
+/**
+ * **この宅配便が、この国のどこかの社で価格化されているか。**`MethodPicker` が
+ * 「選べるのに未測定」を作らないために使う——未測定の国では選択肢から外すか、
+ * 選べても理由を添えて無効化する。
+ */
+export function courierMethodAvailable(id: CourierMethod, cc: CountryCode): boolean {
+  return SERVICES.some((svc) => (svc.courier?.[id]?.weightPointsByCountry[cc]?.length ?? 0) > 0);
 }

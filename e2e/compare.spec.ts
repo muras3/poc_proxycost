@@ -761,9 +761,10 @@ test('18b. the shipping method is a control, and picking one moves every total',
   const picker = page.getByLabel('Ship by');
   await expect(picker).toHaveCount(1);
 
-  // **既定は EMS。**「運べる中で最安」を既定にすると最安はたいてい船便（1〜3か月）で、
-  // ほぼ誰も払わない額を総額として出すことになる。
-  await expect(picker).toHaveValue('ems');
+  // **既定は `cheapest`（運べる中で最安。Surface は既定候補から除く）**
+  // （P2 オーナー確定 2026-09-12）。Surface（1〜3か月）は既定にしない——
+  // 誰も払わない額を総額として黙って出すことになるので。
+  await expect(picker).toHaveValue('cheapest');
   // **方式で動くのは送料が乗っている行だけ。**既定の宛先（米国）では Neokyo が
   // 日本郵便を売っていないので、どの方式を選んでもその行に額は付かない
   // ——動かないのが正しい。額の無い行を「安くなっていない」と数えない。
@@ -852,8 +853,8 @@ test('18c. a method too small for the parcel marks every row not comparable, it 
   await expect.poll(async () => (await readRanking(page)).length).toBe(before.length);
 });
 
-test('19. the ranking says which methods are priced, and that couriers are not', async ({ page }) => {
-  await gotoCompare(page);
+test('19. the ranking says which methods are priced, US couriers included, other destinations named as unpriced', async ({ page }) => {
+  await gotoCompare(page); // 既定は US
   const note = emsOnlyNote(page);
 
   // 何も押していない状態で、もう読める。
@@ -865,16 +866,25 @@ test('19. the ranking says which methods are priced, and that couriers are not',
   // (1) 日本郵便の方式は価格化してあり、選べること。
   expect(text).toMatch(/Japan Post methods/);
   expect(text).toMatch(/cheapest that fits/i);
-  // (2) 出せないのは宅配便だけで、それを名指しすること。
-  expect(text).toMatch(/Courier rates are not priced/);
+  // (2) 米国宛は宅配便も価格化してあり、それを名指しすること（Jauce は対象外だと言う）。
+  expect(text).toMatch(/Courier rates are also priced/);
+  expect(text).toMatch(/US only/);
+  expect(text).toMatch(/Jauce has no courier rate grid/);
   expect(text).toMatch(/FedEx/);
   expect(text).toMatch(/DHL/);
   expect(text).toMatch(/UPS/);
-  expect(text).toMatch(/none of them publishes/);
   // (3) **誤差の向きが「安く出ている」の一方向ではないこと。**
   //     宅配便は送料が安いことが多いが通関手数料が高い（スペイン €1.56〜€70）。
   //     「総額は高く出ている」と書けば、片側だけの誤差だと誤解させる。
   expect(text).toMatch(/either direction/);
+
+  // 行き先を未測定国に変えれば「価格化していない」側の文言に切り替わる。
+  await page.getByLabel('Ship to').selectOption('GB');
+  const gbText = (await note.innerText()).replace(/\s+/g, ' ');
+  expect(gbText).toMatch(/Courier rates are not priced for this destination/);
+  expect(gbText).toMatch(/Neokyo|ZenMarket|FROM JAPAN|Buyee/);
+  expect(gbText).toMatch(/we have not priced them for this destination/);
+  await page.getByLabel('Ship to').selectOption('US');
 
   // 5社とも名指しする。1社でも落ちれば「その社は EMS しか無い」と読めてしまう。
   for (const s of ALTERNATIVE_SHIPPING) expect(text).toContain(s.serviceName);

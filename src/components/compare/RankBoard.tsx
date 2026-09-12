@@ -265,6 +265,19 @@ export function RankBoard({
                       excl. {row.excluded.join(', ').toLowerCase()}
                     </span>
                   )}
+                  {/* **P2 4（オーナー確定 2026-09-12）: Surface は隠さず、別行も作らない。**
+                      待てる利用者のための代替として、この社の行の中に副次行で出す
+                      ——別 Row にすると1社が2回現れて5社比較が壊れる（オーナー明示）。
+                      額は Surface 便**単体の送料**（`Row.surface.shipYen` のコメント）。 */}
+                  {row.surface && (
+                    <span
+                      data-testid="surface-alternative"
+                      className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400"
+                    >
+                      Surface option — {row.surface.label}: {totalIntervalText(row.surface.shipYen)}
+                      {' shipping, '}{row.surface.days}. {row.surface.note}.
+                    </span>
+                  )}
                 </span>
                 </span>
 

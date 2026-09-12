@@ -5,54 +5,68 @@ import {
   nameList,
 } from '@/lib/pricing/shipping-methods';
 import { POSTAL_METHODS } from '@/lib/pricing/postage';
+import { courierCoverageFor } from '@/lib/pricing/services';
 import { tierClass, tierTitle } from '@/lib/ui/tiers';
-import type { CompareResult } from '@/lib/pricing/types';
+import type { CompareResult, CountryCode } from '@/lib/pricing/types';
+
+/** `nameList` と同じ並べ方（'A, B and C'）だが、社名の文字列そのものを受け取る版。 */
+function joinNames(names: string[]): string {
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0]!;
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
 
 /**
  * **比べている範囲を、順位の隣で言う。**
  *
- * 以前ここは「EMS でしか比べていない」と言っていた。**2026-09-07 に範囲が狭まった**
- * ——日本郵便の他方式（小形包装物・国際小包の航空/船便）を価格化したので、
- * いま出せないのは**宅配便だけ**。だから開示もそこだけに絞る。
+ * **2026-09-12、宅配便が米国だけ価格化された（P2）。**以前ここは「宅配便は
+ * 一律で価格化していない」と言っていた——米国宛はもう嘘になる。**画面に出す
+ * 対象国で実際に何が価格化されているかを `courierCoverageFor` から見て、
+ * 国ごとに文言を分ける。**
  *
- * **宅配便を出せない理由は3つ同時**（`docs/COMPLETENESS.md` §6）:
- *   ① 料率が非公開（各社が個別交渉。公表された料金表が無い）
- *   ② 通関が別モデル（自社が通関業者になり、郵便の通関手数料が当たらない）
- *   ③ 容積重量課金で、寸法が入力に無い
- * **送料だけ差し替えると、送料は下がり通関は上がるという向きが逆の2つの誤りが
- * 総額に同居する。**だから「まだ出せない」であって「忘れている」ではない。
+ * - 価格化されている社があれば、それを名指しして「選べる・既定にも入りうる」と言う。
+ * - 価格化されていない社があれば、それも名指しする——「まだ調べていない」であって
+ *   「無い」ではない。
+ * - `svc.courier` 自体を持たない社（Jauce）は、国を問わず対象外だと名指しする。
  *
- * **範囲は方式の一覧だけではない。方式の選び方にも範囲がある。**
- * 2026-09-08 の実測（`docs/audit/o2-courier-2026-09-08.md` §2）で、
- * **大きい箱を指定すると見積画面から EMS・航空・船便が消える**ことが分かった。
- * 寸法は額ではなく**可否**として効く。ところが我々が持っているのは重量の上限だけ
- * （`postage.ts` の `maxGramsFor`）で、寸法は入力にすら無い。だから
- * **「cheapest that fits」の fits は重量にしか当たっていない。**それをここで言う。
- *
- * **数値の寸法制限は書かない。**実測で EMS が消えたのは 45cm 立方だが、それは
- * ZenMarket の画面の挙動であって、**日本郵便自身の EMS 制限は遥かに大きい**（長さ1.5m）。
- * 他社の制限を日本郵便の名前で出すのが、このリポジトリが最も避けている誤り。
- * **制限値は未取得**なので、`—` の規律どおり**持っていないことを書く**
- * （docs/TODO-NEXT.md §0b、docs/COMPLETENESS.md §5）。
- *
- * 畳まない・条件を付けない。順位が出ているときは常に出す。原文を読めていない社は
- * 点線で描く（`docs/UI-DESIGN.md` §6）。
+ * **`data-testid="scope-disclosure"` は固定。**文言（「Courier rates are not
+ * priced」等）は国ごとに変わるが、e2e はこの id で開示そのものを掴む
+ * （`e2e/helpers.ts` の `emsOnlyNote`）。
  */
-export function EmsOnlyNote({ result }: { result: CompareResult }) {
+export function EmsOnlyNote({ result, country }: { result: CompareResult; country: CountryCode }) {
   // 順位が無いときは範囲を語る対象も無い。RankBoard と同じ条件で消える。
   if (!result.rows.length) return null;
 
   const verified = nameList(ALTERNATIVE_SHIPPING_VERIFIED);
   const secondHand = nameList(ALTERNATIVE_SHIPPING_SECOND_HAND);
   const priced = POSTAL_METHODS.length;
+  const coverage = courierCoverageFor(country);
+  const anyCourierPriced = coverage.pricedServiceNames.length > 0;
 
   return (
-    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+    <p data-testid="scope-disclosure" className="text-xs text-neutral-600 dark:text-neutral-400">
       Priced across {priced} Japan Post methods — pick one above, or let each service use
       the cheapest that fits{' '}
       <span className="font-medium">by weight; a parcel&rsquo;s size is never checked</span>,
       and an oversize one is refused however light.{' '}
-      <span className="font-medium">Courier rates are not priced.</span> {verified}
+      {anyCourierPriced ? (
+        <span className="font-medium">
+          Courier rates are also priced for {joinNames(coverage.pricedServiceNames)}, US
+          only — ranked alongside the postal methods above.
+        </span>
+      ) : (
+        <span className="font-medium">Courier rates are not priced for this destination.</span>
+      )}{' '}
+      {coverage.unpricedServiceNames.length > 0 && (
+        <>
+          {joinNames(coverage.unpricedServiceNames)} also offer couriers here, but we have
+          not priced them for this destination.{' '}
+        </>
+      )}
+      {coverage.noCourierServiceNames.length > 0 && (
+        <>{joinNames(coverage.noCourierServiceNames)} has no courier rate grid at all.{' '}</>
+      )}
+      {verified}
       {secondHand && (
         <>
           {' — and '}
@@ -62,13 +76,13 @@ export function EmsOnlyNote({ result }: { result: CompareResult }) {
           {' —'}
         </>
       )}{' '}
-      also sell FedEx, DHL and UPS, and none of them publishes what it charges for
-      them (
+      also sell FedEx, DHL and UPS, and where we have not priced them, an order sent that
+      way can land away from the totals below in either direction — the postage is often
+      lower, the customs handling higher (
       <Link href="/sources#ems" className="underline">
         why we leave couriers out
       </Link>
-      ), so an order sent by courier can land away from the totals below in either
-      direction — the postage is often lower, the customs handling higher.
+      ).
     </p>
   );
 }

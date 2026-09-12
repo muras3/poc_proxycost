@@ -1528,3 +1528,36 @@ export const SERVICES: Service[] = [
 ];
 
 export const SERVICE_BY_ID = new Map(SERVICES.map((s) => [s.id, s]));
+
+/**
+ * **P2 UI（2026-09-12）。**「couriers are priced for this country」を1か所から
+ * 導く。`master/courier-rates.json` はまだ US しか無い——ハードコードせず
+ * `Service.courier[*].weightPointsByCountry` を実際に見て判定するので、次の国に
+ * データが入っても書き換え忘れが起きない。
+ *
+ * `pricedServiceNames`: この国でどれか1便でも重量点を持つ社（EMS 等の郵便とは無関係）。
+ * `unpricedServiceNames`: 宅配便そのものを提供しうる社（`svc.courier` を持つ）だが、
+ * この国の重量点が1つも無い社——「調べていない」であって「無い」ではない
+ * （`MeasuredPostageRate.weightPointsByCountry` のコメント参照）。Jauce のように
+ * そもそも `svc.courier` を持たない社はどちらにも入れない
+ * （`noCourierServiceNames` に出す——「対象外」であって「未測定」ではない）。
+ */
+export function courierCoverageFor(cc: CountryCode): {
+  pricedServiceNames: string[];
+  unpricedServiceNames: string[];
+  noCourierServiceNames: string[];
+} {
+  const pricedServiceNames: string[] = [];
+  const unpricedServiceNames: string[] = [];
+  const noCourierServiceNames: string[] = [];
+  for (const svc of SERVICES) {
+    if (!svc.courier || Object.keys(svc.courier).length === 0) {
+      noCourierServiceNames.push(svc.name);
+      continue;
+    }
+    const hasPoints = Object.values(svc.courier)
+      .some((rate) => (rate?.weightPointsByCountry[cc]?.length ?? 0) > 0);
+    (hasPoints ? pricedServiceNames : unpricedServiceNames).push(svc.name);
+  }
+  return { pricedServiceNames, unpricedServiceNames, noCourierServiceNames };
+}
