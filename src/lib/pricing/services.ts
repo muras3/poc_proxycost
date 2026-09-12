@@ -1262,6 +1262,17 @@ export const SERVICES: Service[] = [
     // 「Packages with Charge 1 value under 30,000 yen」are eligible for "Small packets"。
     // ePacket_Light（¥10,000）・ePacket / IPA（$400）・PMI（$2,499.99）はこの計算機が
     // 価格化していない方式なので繋がない（master-sync.test.ts の NOT_IN_CODE に理由あり）。
+    // **米国宛は日本郵便系4方式（EMS/International Parcel/Small Packet/ePacket Light）を
+    // 一切出していない**（2026-09-12実測、`master/courier-rates.json` の
+    // `conclusions.courier_lineup_diffs.us_japan_post_unavailable_tally`）。
+    // `observations.fromjapan_us_japanpost_confirmation_2026_09_12`: US・600g・
+    // 20x15x10cm・¥10,000で methods_shown_total=5（ECMS/UPS/DHL/FedEx-Economy/
+    // FedEx-Priorityのみ）——同社の Terms of Service Article 9 が挙げる9方式中、
+    // 日本郵便系4方式はいずれも選択肢に現れない。ページ自体が「表示されるのは
+    // 利用可能な方式のみ」と注記した上での不在なので `evidence_class: counted_absence`
+    // （宣言メッセージは無いが、フッターまでスクロールした件数の裏付けがある）。
+    // 以前はここに `unavailableIn` が無く、US 向けにも日本郵便5方式が価格化・
+    // 順位付けされていた——実際には売っていない方式に値段を付けていた欠陥。
     postage: {
       'small-packet-surface': {
         kind: 'markup',
@@ -1269,6 +1280,7 @@ export const SERVICES: Service[] = [
         // 上限の出典は料金表（estimate ページ）とは別（en_help.txt）。rate 本体の
         // sourceUrl/checkedOn は料金表のまま変えない。
         priceCapJpy: 30000,
+        unavailableIn: ['US'],
         labelRaw: 'Surface (Small Packet)',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
@@ -1277,6 +1289,7 @@ export const SERVICES: Service[] = [
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
         priceCapJpy: 30000,
+        unavailableIn: ['US'],
         labelRaw: 'AirMail (Small Packet)',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
@@ -1284,6 +1297,7 @@ export const SERVICES: Service[] = [
       'parcel-surface': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        unavailableIn: ['US'],
         labelRaw: 'Surface',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
@@ -1291,6 +1305,7 @@ export const SERVICES: Service[] = [
       'ems': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        unavailableIn: ['US'],
         labelRaw: 'EMS',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
@@ -1298,6 +1313,7 @@ export const SERVICES: Service[] = [
       'parcel-air': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        unavailableIn: ['US'],
         labelRaw: 'AirMail',
         sourceUrl: 'https://www.fromjapan.co.jp/en/estimate/',
         checkedOn: '2026-09-07',
@@ -1649,6 +1665,17 @@ export const SERVICES: Service[] = [
     },
     // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
     // EMS に Recommended バッジが付くが、既定では選択されていない。SAL は小形・小包とも Shipping not available
+    // **米国宛は日本郵便系を一切出していない**（2026-09-12実測、
+    // `master/courier-rates.json` の
+    // `conclusions.courier_lineup_diffs.us_japan_post_unavailable_tally`）。
+    // `observations.buyee_us_japanpost_confirmation_2026_09_12`: US・600g・
+    // 20x15x10cmで methods_shown_total=10（価格表示2件＋Shipping not available表示
+    // 8件）。日本郵便系（EMS・International Parcel Post AIR/SAL/Surface・AIR Packet・
+    // Small Packet AIR/SAL）とFedEx Economyの計7方式が画面上「Shipping not
+    // available」と明示された——`evidence_class: declared`（最も強い証拠。EMSには
+    // "Recommended" バッジが付いたままだったが、それでも利用不可。バッジは可用性を
+    // 意味しない）。以前はここに `unavailableIn` が無く、US 向けにも日本郵便4方式が
+    // 価格化・順位付けされていた——実際には売っていない方式に値段を付けていた欠陥。
     postage: {
       'small-packet-air': {
         kind: 'markup',
@@ -1662,6 +1689,7 @@ export const SERVICES: Service[] = [
           note: 'Buyee shows Small Packet (AIR/SAL)/AIR Packet as max weight 2kg / max length'
             + ' 60cm / sum of 3 sides ≤90cm (2026-09-12 measurement).',
         },
+        unavailableIn: ['US'],
         labelRaw: 'Small Packet (AIR) / Airmail (without tracking)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -1680,6 +1708,7 @@ export const SERVICES: Service[] = [
           note: 'Buyee shows EMS/International Parcel Post (AIR/SAL/Surface Mail)/FedEx as max'
             + ' weight 30kg / max length 1.5m / length+girth ≤3.0m (2026-09-12 measurement).',
         },
+        unavailableIn: ['US'],
         labelRaw: 'International Parcel Post (Surface Mail)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -1692,6 +1721,7 @@ export const SERVICES: Service[] = [
           note: 'Buyee shows EMS/International Parcel Post (AIR/SAL/Surface Mail)/FedEx as max'
             + ' weight 30kg / max length 1.5m / length+girth ≤3.0m (2026-09-12 measurement).',
         },
+        unavailableIn: ['US'],
         labelRaw: 'EMS / Express Mail Service',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -1704,6 +1734,7 @@ export const SERVICES: Service[] = [
           note: 'Buyee shows EMS/International Parcel Post (AIR/SAL/Surface Mail)/FedEx as max'
             + ' weight 30kg / max length 1.5m / length+girth ≤3.0m (2026-09-12 measurement).',
         },
+        unavailableIn: ['US'],
         labelRaw: 'International Parcel Post (AIR)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -1902,6 +1933,13 @@ export const SERVICES: Service[] = [
             + ' displayed figure anyway, which only makes this method look less available than'
             + ' it really is (see master/courier-rates.json for the discrepancy).',
         },
+        // **米国宛の Surface は出していない**（2026-09-12実測でnull、
+        // `observations.jauce_country_600g_20x15x10` のUS行: EMS=4180・Surface=null）。
+        // EMSはUS向けにも提供している（`unavailableIn` を付けない）——「Jauceは米国に
+        // 日本郵便を出していない」という以前の誤った集計（PR #61で訂正済み）を再び
+        // Surfaceの不在から一般化しないこと（`master/courier-rates.json` の
+        // `conclusions.courier_lineup_diffs.jauce_and_zenmarket_offer_japan_post_to_us`）。
+        unavailableIn: ['US'],
         labelRaw: 'Surface',
         observed: '600g +250 / 2,000g +500 / 5,000g +1,250 → いずれも ¥250/kg段',
         sourceUrl: 'https://www.jauce.com/price_check.php',
