@@ -51,17 +51,23 @@ export interface ConfidenceSlice {
  * 日本郵便を売っていないため。`WEIGHT_SHIFT_COUNTRY` の説明を参照）。
  * 割合はほぼ動いていない——欠けているのは1社であって、確度の構造ではない。
  */
+// F07（2026-09-12、payment-fee-rates）: 1位が Neokyo から FROM JAPAN に替わり
+// （FROM JAPAN が新たに計上した3.5%の推定 deposit 込みでも、Neokyo に同じ3.5%が
+// 乗った分だけ Neokyo が押し上げられて逆転した）、estimate の内訳（国内送料 ¥4,000 +
+// FROM JAPAN の推定 deposit ¥1,277）が増えた。fixed（EMS等）・unverified（米国関税）は
+// 変わらない。
 export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
   {
     tier: 'fixed',
     what: 'Published price lists and the Japan Post EMS table — every amount is printed somewhere.'
       + ' The weight we look the EMS rate up with is still ours',
-    yen: 31200, share: '84%',
+    yen: 31200, share: '81%',
   },
   {
     tier: 'estimate',
-    what: 'The fee certainly applies, the amount is our assumption — domestic postage inside Japan',
-    yen: 4000, share: '11%',
+    what: 'The fee certainly applies, the amount is our assumption — domestic postage inside Japan,'
+      + ' plus a deposit fee FROM JAPAN does not publish (we use the 3.5% ZenMarket does publish)',
+    yen: 5277, share: '14%',
   },
   {
     tier: 'unverified',
@@ -96,20 +102,24 @@ export interface CountryConfidenceRow {
   publishedShare: string;
 }
 
+// F07（2026-09-12、payment-fee-rates）: 全7カ国で1位の顔ぶれは変わっていない
+// （US は FROM JAPAN、他6カ国は Neokyo のまま）。動いたのは総額だけ——1位の社が
+// 新たに計上した推定 deposit（3.5%、Neokyo・FROM JAPAN とも会社の公表値ではない）
+// ぶん estimate が増え、総額が上がった。
 export const CONFIDENCE_SPLIT_BY_COUNTRY: CountryConfidenceRow[] = [
-  { country: 'US', totalYen: 37075, fixedYen: 31200, estimateYen: 4000, unverifiedYen: 1875, publishedShare: '84%' },
-  { country: 'GB', totalYen: 40121, fixedYen: 34430, estimateYen: 4000, unverifiedYen: 1691, publishedShare: '86%' },
-  { country: 'DE', totalYen: 42735, fixedYen: 34649, estimateYen: 6724, unverifiedYen: 1362, publishedShare: '81%' },
-  { country: 'FR', totalYen: 43152, fixedYen: 36428, estimateYen: 6724, unverifiedYen: 0, publishedShare: '84%' },
-  { country: 'AU', totalYen: 33950, fixedYen: 29950, estimateYen: 4000, unverifiedYen: 0, publishedShare: '88%' },
+  { country: 'US', totalYen: 38352, fixedYen: 31200, estimateYen: 5277, unverifiedYen: 1875, publishedShare: '81%' },
+  { country: 'GB', totalYen: 41298, fixedYen: 34430, estimateYen: 5177, unverifiedYen: 1691, publishedShare: '83%' },
+  { country: 'DE', totalYen: 43912, fixedYen: 34649, estimateYen: 7901, unverifiedYen: 1362, publishedShare: '79%' },
+  { country: 'FR', totalYen: 44329, fixedYen: 36428, estimateYen: 7901, unverifiedYen: 0, publishedShare: '82%' },
+  { country: 'AU', totalYen: 35181, fixedYen: 29950, estimateYen: 5231, unverifiedYen: 0, publishedShare: '85%' },
   // **外部レビュー⑤-b（2026-09-11）で CA の GST・州税ベースを直し**（国際送料は
   // 除くが、国内送料は含む——CBSA Memorandum D13-3-3/D13-3-4 の duty paid value
   // に揃えた）、**外部レビュー2回目 A-6（2026-09-11）で関税のベースも同じ
   // `items + dom` に揃えた**（以前は関税だけ `items` のみで、GST・州税と
   // ベースが食い違っていた。`compare.ts` の `taxLines` 参照）ので、CA の総額が
   // 動いた。
-  { country: 'CA', totalYen: 36340, fixedYen: 30546, estimateYen: 5794, unverifiedYen: 0, publishedShare: '84%' },
-  { country: 'SG', totalYen: 30836, fixedYen: 24500, estimateYen: 6336, unverifiedYen: 0, publishedShare: '79%' },
+  { country: 'CA', totalYen: 37517, fixedYen: 30546, estimateYen: 6971, unverifiedYen: 0, publishedShare: '81%' },
+  { country: 'SG', totalYen: 31954, fixedYen: 24500, estimateYen: 7454, unverifiedYen: 0, publishedShare: '77%' },
 ];
 
 /**
@@ -129,14 +139,15 @@ export interface ConfidenceTotal {
 }
 
 export const CONFIDENCE_TOTAL: ConfidenceTotal = {
-  // 外部レビュー2回目 A-6（CA の関税ベースを国内送料込みに揃えた）で CA が
-  // +¥90 動いた分、7カ国合計も動いた（¥264,119 → ¥264,209）。
-  totalYen: 264209,
+  // F07（2026-09-12、payment-fee-rates）: 7カ国それぞれの1位が新たに推定 deposit を
+  // 負ったぶん（fixed は動かず、estimate だけ ¥37,578 → ¥45,912 に増えた）、
+  // 7カ国合計が ¥264,209 → ¥272,543 に動いた。
+  totalYen: 272543,
   fixedYen: 221703,
-  estimateYen: 37578,
+  estimateYen: 45912,
   unverifiedYen: 4928,
-  fixedShare: '84%',
-  estimateShare: '14%',
+  fixedShare: '81%',
+  estimateShare: '17%',
   unverifiedShare: '2%',
 };
 
@@ -158,11 +169,13 @@ export interface WeightShiftRow {
 // ⑤-b（外部レビュー、2026-09-11）で CA の GST・州税ベースを直し、外部レビュー
 // 2回目 A-6（2026-09-11）で関税のベースもそれに揃えた（`items + dom`）ので、
 // 4つの重量すべてで総額が動いた（並び・交差重量は動いていない）。
+// F07（2026-09-12、payment-fee-rates）: Neokyo が新たに推定 deposit（3.5%）を負い、
+// 総額が全4重量で上がった（並び・交差重量・cheapest/last の顔ぶれは動いていない）。
 export const WEIGHT_SHIFT: WeightShiftRow[] = [
-  { weight: '200 g', perItemG: 200, totalYen: 30690, delta: '−16%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 36340, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '1,500 g', perItemG: 1500, totalYen: 49840, delta: '+37%', cheapest: 'Neokyo', last: 'Buyee, default' },
-  { weight: '3,000 g', perItemG: 3000, totalYen: 68790, delta: '+89%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
+  { weight: '200 g', perItemG: 200, totalYen: 31662, delta: '−16%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '600 g (our estimate)', perItemG: 600, totalYen: 37517, delta: '0%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '1,500 g', perItemG: 1500, totalYen: 51507, delta: '+37%', cheapest: 'Neokyo', last: 'Buyee, default' },
+  { weight: '3,000 g', perItemG: 3000, totalYen: 71144, delta: '+90%', cheapest: 'FROM JAPAN', last: 'Buyee, default' },
 ];
 
 /**

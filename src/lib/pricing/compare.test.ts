@@ -475,13 +475,16 @@ describe('equal totals get equal rank', () => {
    */
   const midTie = () => compare({ method: 'ems', items: items(1, 1450), country: 'DE', storageDays: 30 }).rows;
   /**
-   * 1点 200 g・¥4,500・楽天・AU。Neokyo と ZenMarket が**1位で**同額になる入力。
+   * 1点 100 g・¥1,000・楽天・CA。ZenMarket と FROM JAPAN が**1位で**同額になる入力。
    *
-   * **外部レビュー⑤-a（入金手数料の課税ベース修正）で数値が動き、以前の
-   * 組み合わせ（450g・¥4,200）の同額が崩れたので、修正後の値で探し直した。**
+   * **F07（2026-09-12）で数値が動き、以前の組み合わせ（200g・¥4,500・楽天・AU、
+   * Neokyo と ZenMarket の同額）が崩れたので、修正後の値で探し直した。**
+   * Neokyo が新たに推定 deposit を負って押し上げられ、ZenMarket との同額が
+   * 全域で崩れたため（`Neokyo`/`ZenMarket` の crossing が消えた）、別の2社
+   * （ZenMarket・FROM JAPAN）が同額になる組み合わせに差し替えた。
    */
   const topTie = () => compare({ method: 'ems',
-    items: items(1, 200, 4500, { site: 'rakuten' }), country: 'AU',
+    items: items(1, 100, 1000, { site: 'rakuten' }), country: 'CA',
   }).rows;
 
   test('two rows with the same total carry the same rank, and the next rank skips', () => {
@@ -515,7 +518,7 @@ describe('equal totals get equal rank', () => {
   test('CHEAPEST goes on **every** row at the lowest total, not on one of them', () => {
     const rows = topTie();
     const leaders = rows.filter((r) => r.cheapest);
-    expect(leaders.map((r) => r.serviceId).sort()).toEqual(['neokyo', 'zenmarket']);
+    expect(leaders.map((r) => r.serviceId).sort()).toEqual(['fromjapan', 'zenmarket']);
     expect(leaders.map((r) => r.rank)).toEqual([1, 1]);
     expect(leaders.map((r) => r.diff)).toEqual([0, 0]);
     expect(new Set(leaders.map((r) => r.total.low)).size).toBe(1);
@@ -534,19 +537,18 @@ describe('equal totals get equal rank', () => {
     }
   });
 
-  test('a tie at the top is not a rank change: stability is judged on the whole bracket', () => {
-    // 1位が {Neokyo, ZenMarket} で、おすすめ枠もその2社。片端では枠が
-    // {ZenMarket, Neokyo（overlapping 3社目に別が入りうる）}、他端で入れ替わる
-    // ——枠の**集合**が変わるので不安定（P1-2、判断2: 枠の集合の完全一致で判定する）。
-    const r = compare({ method: 'ems',
-      items: items(1, 200, 4500, { site: 'rakuten', weightOrigin: 'user' }), country: 'AU',
-    });
-    expect(r.rows.filter((x) => x.cheapest).map((x) => x.serviceId).sort())
-      .toEqual(['neokyo', 'zenmarket']);
-    expect(r.rankStable).toBe(false);
-    expect(r.rankStabilityNote).toContain('is the recommended range');
-    expect(r.rankStabilityNote).toContain('ZenMarket');
-    expect(r.rankStabilityNote).toContain('Neokyo');
+  test('a tie at the top puts both tied companies in the bracket, whether or not the bracket is stable', () => {
+    // F07（2026-09-12）: 以前はここで {Neokyo, ZenMarket} の1位タイが不安定
+    // （×⅓・×3 で枠の集合が変わる）例になっていた。Neokyo が新たに推定 deposit
+    // を負ったことで Neokyo/ZenMarket の同額そのものが崩れ、**この形の「タイなのに
+    // 不安定」という組み合わせは、広く走査しても実カートには1件も見つからなかった**
+    // （1点の価格・重量・サイト・国を総当たりしても再現しない）。この事実自体を
+    // 記録する——「タイなら両方が枠に入る」という主張は `topTie`（ZenMarket・
+    // FROM JAPAN、CA・楽天）で確認できるが、いまはこの入力で安定でもある。
+    const r = topTie();
+    expect(r.filter((x) => x.cheapest).map((x) => x.serviceId).sort())
+      .toEqual(['fromjapan', 'zenmarket']);
+    for (const x of r.filter((row) => row.cheapest)) expect(x.recommended, x.id).toBe(true);
   });
 
   test('a tie below the top never makes the ranking look unstable', () => {
@@ -950,19 +952,24 @@ describe('domestic shipping is charged by every service, and taxed where the bas
   });
 
   test('free shipping does not change the winner, but it can swap rows below it', () => {
-    // 送料は全社に同額で乗るので1位は動かない。動くのは送金額に率で乗る社
-    // （ZenMarket の 3.5%）だけで、そこは順位が入れ替わりうる。
+    // 送料は全社に同額で乗るので1位は動かない。動くのは送金額に率で乗る費目
+    // （F07、5社とも）で、その動く量は社ごとの deposit の値（率・確定額かどうか）が
+    // 違うので、社同士の順位が入れ替わりうる。
     // storageDays: 30 で保管を無料期間の内側に固定する（0d、全社¥0）——
     // ここで検査しているのは送料無料の効きであって保管日数の効きではない。
-    const paid = compare({ method: 'ems', items: items(5, 200), country: 'US', storageDays: 30 }).rows;
+    // **F07（2026-09-12）で5点200g・米国の組み合わせは入れ替わりが起きなく
+    // なった**（ZenMarket が3位のまま動かない）ので、英国・5点1,000g・¥5,500に
+    // 差し替えた——同じ「1位は動かず、下の2社が入れ替わる」形が残る。
+    const paid = compare({ method: 'ems', items: items(5, 1000, 5500), country: 'GB', storageDays: 30 }).rows;
     const free = compare({ method: 'ems',
-      items: items(5, 200, 3000, { freeShipping: true }), country: 'US', storageDays: 30,
+      items: items(5, 1000, 5500, { freeShipping: true }), country: 'GB', storageDays: 30,
     }).rows;
     expect(free[0]!.id).toBe(paid[0]!.id);
-    // **順位が 4→3 から 3→2 に下がったのは Neokyo が米国の盤面から抜けたから。**
-    // 動いた幅（1つ繰り上がる）は同じで、それがこのテストの主張。
+    // ZenMarket と FROM JAPAN の順位が入れ替わる（3位⇄2位）。
     expect(byId(paid, 'zenmarket').rank).toBe(3);
     expect(byId(free, 'zenmarket').rank).toBe(2);
+    expect(byId(paid, 'fromjapan').rank).toBe(2);
+    expect(byId(free, 'fromjapan').rank).toBe(3);
   });
 
   test('a given domestic shipping cost is fixed, an assumed one is an estimate', () => {
@@ -1259,10 +1266,12 @@ describe('one item at a time: whose weight decides the winner', () => {
   });
 
   test('add one item off the table and **two** weights start deciding: the assumed one and the Nendoroid', () => {
-    // **国が米国からドイツに変わった。境界（380–600 g / 500 g–10 kg）も勝者も同じ。**
+    // **国が米国からカナダに変わった。境界（380–600 g / 500 g–10 kg）も勝者も同じ。**
     // この反転は軽い側が Neokyo で、Neokyo は米国宛に日本郵便を売っていないため
-    // 米国では片側が存在しない。ドイツでは同じ荷物が同じ形で反転する。
-    const r = compare({ method: 'ems', items: [...EXAMPLE, assumed('i2')], country: 'DE' });
+    // 米国では片側が存在しない。**F07（2026-09-12）でドイツはこの形を失った**
+    // （Neokyo・FROM JAPAN の新しい推定 deposit で ZenMarket が全域を独占するように
+    // なったため）——同じ形が残るのはカナダ。
+    const r = compare({ method: 'ems', items: [...EXAMPLE, assumed('i2')], country: 'CA' });
     expect(r.rows[0]!.id).toBe('neokyo');
     expect(r.rankStable).toBe(false);
     // 仮置きは 500 g〜10 kg で見る。軽ければ Neokyo、重ければ FROM JAPAN。
@@ -1308,15 +1317,20 @@ describe('one item at a time: whose weight decides the winner', () => {
   });
 
   test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is not indeterminate', () => {
+    // F07（2026-09-12、payment-fee-rates）: 以前はドイツで胴（1,500–7,500 g）が
+    // 単独で枠を動かしていたが、Neokyo/FROM JAPAN の新しい推定 deposit（3.5%）で
+    // 独・英・仏では ZenMarket が全域で1位を独占するようになり、この形が崩れた。
+    // 同じ形（1位 FROM JAPAN が上限不明のまま全域で勝ち、袴の狭い方は動かないが
+    // 胴の広いスプレッドだけで枠が動く）が残るのはカナダ。袴の帯も
+    // 1,500–2,500 g だと胴と一緒に枠を動かしてしまうようになったので、
+    // 1,500–2,000 g に狭めて「動かない」方を保った。
     const r = compare({ method: 'ems',
-      items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
-      // **国が米国からドイツに変わった。**×1/3 側の勝者が Neokyo で、Neokyo は
-      // 米国宛に日本郵便を売っていない。1位も四分位の判定も同じ。
-      country: 'DE',
+      items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2000]), table('tare', 1500, [1500, 1500])],
+      country: 'CA',
     });
     expect(r.rows[0]!.id).toBe('fromjapan');
-    // 胴の spread（1,500–7,500 g）はそれだけで枠（FROM JAPAN・ZenMarket・Buyee
-    // consolidated 系の入れ替わり）を動かすほど広い。袴（1,500–2,500 g）は動かさない。
+    // 胴の spread（1,500–7,500 g）はそれだけで枠（FROM JAPAN・ZenMarket 入れ替わり）を
+    // 動かすほど広い。袴（1,500–2,000 g）は動かさない。
     expect(r.weightSensitivity['do']!.decisive).toBe(true);
     expect(r.weightSensitivity['hakama']!.decisive).toBe(false);
     expect(r.weightSensitivity['tare']).toBeUndefined();
@@ -1438,14 +1452,16 @@ describe('unknown weight falls back to EMS steps', () => {
   });
 
   test('one unknown item: FROM JAPAN leads every band, and the CA total is not indeterminate', () => {
+    // F07（2026-09-12、payment-fee-rates）: Neokyo が新たに負った推定 deposit で
+    // Neokyo が枠から外れ、代わりに ZenMarket が FROM JAPAN と組んで全帯を通しで
+    // 枠に残るようになった——枠の集合が両端で変わらないので、以前の「不安定」から
+    // 「安定」に変わった。「判定不能」ではない、という主張自体は変わっていない。
     const r = unknown(1);
     expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
-    // 代表段（3kg）は FROM JAPAN が1位（総額は上限不明）で、枠は FROM JAPAN・
-    // Neokyo（最大2社）——だが ZenMarket・Jauce・Buyee は閉区間で確定した差が
-    // あるので「同等」にはならない（P1-4、オーナー確定 2026-09-11）。
-    // 「不安定」ではあっても「判定不能」ではない。
-    expect(r.rankStable).toBe(false);
+    expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
+    expect(r.rankStabilityNote).toBe(
+      'In the recommended range at every step from 500 g to 10 kg: FROM JAPAN and ZenMarket.');
     expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
@@ -1541,12 +1557,14 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 外部レビュー2回目 A-2（2026-09-11）: 保管は個口（consolidated では1個口）ではなく
     // **注文単位**（この基準は5点＝5注文）で計算するよう直したので、consolidated の
     // 保管料も5個口ぶんに上がり（¥1,500→¥7,500）、jauce の後ろに落ちた。
+    // F07（2026-09-12）: FROM JAPAN・Buyee が新たに推定 deposit（3.5%）を負ったぶん
+    // 総額が上がった。ZenMarket・Jauce は既に deposit を持っていたので動いていない。
     expect(board('US', 5, 200).map((r) => [r.id, r.total.low])).toEqual([
-      ['fromjapan', 30975],
+      ['fromjapan', 32030],
       ['zenmarket', 32549],
       ['jauce', 34008],
-      ['buyee:consolidated', 39975],
-      ['buyee:default', 54275],
+      ['buyee:consolidated', 41357],
+      ['buyee:default', 56176],
     ]);
     expect(dropped('US', 5, 200).map((r) => r.id)).toEqual(['neokyo']);
   });
@@ -1562,14 +1580,17 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // 揃えた）ので、CA の総額が下がった。
     // 外部レビュー2回目 A-6（2026-09-11）: CA の関税ベースを GST・州税と揃え
     // （`items + dom`、以前は `items` のみ）、全社 +¥90（国内送料への 2% 分）動いた。
+    // F07（2026-09-12）: Neokyo・FROM JAPAN が新たに推定 deposit（3.5%）を負ったぶん
+    // 総額が動いた。3,000g の2位は Neokyo から ZenMarket に替わった——ZenMarket は
+    // 自社公表値のまま動かないが、Neokyo は推定 deposit の分だけ Neokyo 自身の総額が
+    // 押し上げられ、逆転した。
     const top2 = (w: number) => board('CA', 5, w).slice(0, 2).map((r) => [r.id, r.total.low]);
-    expect(top2(600)).toEqual([['neokyo', 36340], ['fromjapan', 37290]]);
-    // ¥50 差。1位の根拠がこの幅しかない、ということ自体が結果の一部。
-    // 為替を直しても両者に同じ通関手数料が乗るだけなので、この ¥50 は動かなかった。
-    expect(top2(1500)).toEqual([['neokyo', 49840], ['fromjapan', 49890]]);
-    expect(top2(3000)).toEqual([['fromjapan', 68790], ['neokyo', 70090]]);
+    expect(top2(600)).toEqual([['neokyo', 37517], ['fromjapan', 38501]]);
+    // 為替を直しても両者に同じ通関手数料が乗るだけなので、この幅は動かなかった。
+    expect(top2(1500)).toEqual([['neokyo', 51507], ['fromjapan', 51558]]);
+    expect(top2(3000)).toEqual([['fromjapan', 71144], ['zenmarket', 71662]]);
     // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
-    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 64896 } });
+    expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 66945 } });
     // 米国では上位2社が3つの重量で1度も入れ替わらない。
     // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
     // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
@@ -1582,11 +1603,13 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
     // 0d: 1点・1個口なので Buyee の保管料は15日ぶん×1個口（¥1,500）だけ乗り、
     // ZenMarket・Jauce を抜いて最後尾に落ちた（以前は2位）。
+    // F07（2026-09-12）: FROM JAPAN・Buyee が新たに推定 deposit を負ったぶん上がった
+    // （ZenMarket・Jauce は既に deposit を持っていたので動いていない）。
     expect(board('US', 1, 500, {}, 5000).map((r) => [r.serviceName, r.total.low])).toEqual([
-      ['FROM JAPAN', 12145],
+      ['FROM JAPAN', 12563],
       ['ZenMarket', 12666],
       ['Jauce', 13507],
-      ['Buyee', 13945],
+      ['Buyee', 14428],
     ]);
     // 以前ここに ['Neokyo', 12295] が2位で入っていた。
     expect(dropped('US', 1, 500).map((r) => r.serviceName)).toEqual(['Neokyo']);
@@ -1596,12 +1619,15 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // Jauce は楽天のサービス料がベータで無料、ZenMarket は楽天が ¥500（ヤフオクは ¥800）、
     // FROM JAPAN はヤフオク限定の ¥200 が消える。0d: Buyee の保管料（既定45日、無料30日
     // 超過15日ぶん）が乗って最後尾になった。
+    // F07（2026-09-12）: FROM JAPAN が新たに推定 deposit を負ったぶん上がり、
+    // ZenMarket（自社公表値の deposit、動いていない）とちょうど同額になった
+    // ——1位が2社の同額タイになった。
     const rows = board('US', 1, 500, { site: 'rakuten' }, 5000);
     expect(rows.map((r) => [r.serviceName, r.total.low])).toEqual([
-      ['FROM JAPAN', 11945],
       ['ZenMarket', 12356],
+      ['FROM JAPAN', 12356],
       ['Jauce', 12675],
-      ['Buyee', 13945],
+      ['Buyee', 14428],
     ]);
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(0);
     expect(line(byId(rows, 'jauce'), 'ad-valorem').amount).toBe(0);
@@ -1644,14 +1670,18 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     //   consolidated の保管料が5倍になり、順位が下がった（各国とも consolidated の
     //   総額が上がる形で並びが変わる）。
     // - A-6: CA の関税ベースを国内送料込みに揃えたので、CA の全行が動いた。
+    // F07（2026-09-12）: Neokyo・Buyee・FROM JAPAN が新たに推定 deposit（3.5%）を
+    // 負ったぶん、その3社の総額が全7カ国で上がった（ZenMarket・Jauce は既に
+    // deposit を持っていたので動いていない）。並びは複数国で動いた——
+    // AU/CA/SG は3位以降が Neokyo→Buyee(consolidated) の逆転を含む形で入れ替わった。
     expect(totals).toEqual({
-      US: [37075, 38870, 40605, 46075, 63325],
-      GB: [40121, 41071, 42155, 44528, 50071, 73756],
-      DE: [42735, 43685, 44528, 47142, 52685, 74912],
-      FR: [43152, 44102, 44879, 47559, 53102, 75833],
-      AU: [33950, 36684, 36740, 40539, 45150, 59250],
-      CA: [36340, 37290, 39020, 40747, 46290, 64896],
-      SG: [30836, 32101, 33457, 35178, 41911, 53410],
+      US: [38352, 38870, 40605, 47678, 65554],
+      GB: [41298, 42155, 42282, 44528, 51609, 75805],
+      DE: [43912, 44528, 44896, 47142, 54223, 76961],
+      FR: [44329, 44879, 45313, 47559, 54640, 77882],
+      AU: [35181, 36684, 38073, 40539, 46788, 61399],
+      CA: [37517, 38501, 39020, 40747, 47828, 66945],
+      SG: [31954, 33265, 33457, 35178, 43431, 55347],
     });
   });
 });
@@ -1693,9 +1723,14 @@ describe('edges', () => {
     });
 
     test('a total built only from published numbers is not approximate', () => {
-      // Neokyo は自社ページで「国際送料に上乗せしない」と書いている唯一の社なので、
-      // EMS 行が公表料金として立つ。
-      const row = byId(compare({ method: 'ems', items: [certain()], country: 'GB' }).rows, 'neokyo');
+      // F07（2026-09-12）: Neokyo は新たに推定 deposit（`tier: 'estimate'`）を負ったので、
+      // 「全行 fixed」の実演には使えなくなった——Neokyo で確定値だけの実例を示すことは、
+      // まさにこの費目が Neokyo にとって推定であるという主張と両立しない。
+      // **Jauce に差し替えた。**Jauce は自社公表値の deposit（`tier: 'unverified'`。
+      // ¥40 の定額と率の組み合わせ方の解釈のみ未確認で、率・ベース自体は公表値。
+      // `estimate` ではないので「我々の推定」扱いの行としては数えない）を持ち、
+      // GB では他に estimate 行も無い。
+      const row = byId(compare({ method: 'ems', items: [certain()], country: 'GB' }).rows, 'jauce');
       expect(row.lines.filter((l) => l.tier === 'estimate')).toEqual([]);
       expect(line(row, 'intl-shipping').tier).toBe('fixed');
       expect(line(row, 'intl-shipping').note).toContain('published rate');
@@ -1707,7 +1742,7 @@ describe('edges', () => {
       // 引いた総額が確定値の顔をする。
       const row = byId(compare({ method: 'ems',
         items: [certain({ weightTier: 'estimate' })], country: 'GB',
-      }).rows, 'neokyo');
+      }).rows, 'jauce');
       expect(line(row, 'intl-shipping').tier).toBe('fixed');
       expect(row.approximate).toBe(true);
     });
@@ -1715,7 +1750,7 @@ describe('edges', () => {
     test('an assumed domestic postage brings it back too', () => {
       const row = byId(compare({ method: 'ems',
         items: [certain({ domesticShippingYen: null })], country: 'GB',
-      }).rows, 'neokyo');
+      }).rows, 'jauce');
       expect(line(row, 'domestic-shipping').tier).toBe('estimate');
       expect(row.approximate).toBe(true);
     });
@@ -1731,8 +1766,12 @@ describe('edges', () => {
         expect(line(row, 'intl-shipping').tier, s.id).toBe('fixed');
       }
       // **`~` が残る社は、国際送料以外に推定を持っている社だけ。**
-      // ZenMarket の入金手数料 3.5% は実請求からの逆算（`services.ts`）で、これは推定のまま。
-      // 「国際送料が確定した」を「行全体が確定した」と読み替えないこと。
+      // ZenMarket は既定のサイト（ヤフオク）のサービス料が estimate（`services.ts`
+      // の `perItemBySiteTier`）で、これは変わらず推定のまま——「国際送料が確定した」
+      // を「行全体が確定した」と読み替えないこと。
+      // **F07（2026-09-12）で ZenMarket の入金手数料自体は自社公表値の確定額
+      // （`tier: 'fixed'`）に上がった**が、Neokyo が新たに推定 deposit を負ったので
+      // 「確定額だけの社」の実例は Jauce に替わった。
       const rows = compare({ method: 'ems', items: [certain()], country: 'GB' }).rows;
       for (const s of SERVICES) {
         const row = byId(rows, s.id);
@@ -1742,8 +1781,9 @@ describe('edges', () => {
           .toBe(otherEstimates.length > 0);
       }
       expect(byId(rows, 'zenmarket').approximate).toBe(true);
-      expect(line(byId(rows, 'zenmarket'), 'deposit').tier).toBe('estimate');
-      expect(byId(rows, 'neokyo').approximate).toBe(false);
+      expect(line(byId(rows, 'zenmarket'), 'service-fee').tier).toBe('estimate');
+      expect(line(byId(rows, 'zenmarket'), 'deposit').tier).toBe('fixed');
+      expect(byId(rows, 'jauce').approximate).toBe(false);
       // 上乗せがある方式を選べば、その行だけが推定に戻る（ZenMarket の小形包装物 +45.2%）。
       const marked = byId(compare({
         items: [certain()], country: 'GB', method: 'small-packet-air',
@@ -2113,10 +2153,11 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // `leadersOverflow`）はコードの構造上保証されるが、実カートのフィクスチャでは
     // 直接は踏めない——`leaders.slice(2)` は2社ちょうどのときと3社のときで
     // 同じコードパスを通るので、ここでの検証は目的に対して十分な代理になる。
-    // ⑤-a の修正で数値が動き、以前の組み合わせ（450g・¥4,200）の同額が崩れたので
-    // 修正後の値で探し直した（`topTie` と同じ入力、`equal totals get equal rank`）。
+    // F07（2026-09-12）で数値が動き、以前の組み合わせ（200g・¥4,500・楽天・AU）の
+    // 同額が崩れたので修正後の値で探し直した（`topTie` と同じ入力、
+    // `equal totals get equal rank`）。
     const rows = compare({ method: 'ems',
-      items: [item({ id: 'a', priceYen: 4500, weightG: 200, site: 'rakuten' })], country: 'AU',
+      items: [item({ id: 'a', priceYen: 1000, weightG: 100, site: 'rakuten' })], country: 'CA',
     }).rows.filter((r) => r.comparable);
     const tiedLow = Math.min(...rows.map((r) => r.total.low));
     const tied = rows.filter((r) => r.total.low === tiedLow);
@@ -2148,7 +2189,10 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
    */
   test('the bracket set changing at even one extreme makes rankStable false', () => {
     // ドイツ・5点600g: 基準の枠は {Neokyo}（単独、重なる社なし）。×3 では
-    // FROM JAPAN が枠に加わり {FROM JAPAN, Neokyo} になる——集合が変わるので false。
+    // 枠が {Neokyo} から {ZenMarket} に変わる——集合が変わるので false。
+    // **F07（2026-09-12）で×3側の顔ぶれが変わった**（以前は {FROM JAPAN, Neokyo}
+    // だったが、Neokyo・FROM JAPAN が新たに負った推定 deposit で押し上げられ、
+    // 自社公表値のまま確定額の ZenMarket 単独に替わった）。
     // （米国の例を避けたのは、米国は FROM JAPAN の上限不明のせいでほぼ常に
     // `rankIndeterminate` になり、この describe の主張——安定 vs 「枠の顔ぶれが
     // 変わる」不安定——を混ぜてしまうため。）
@@ -2158,7 +2202,7 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
     expect(r.rankStable).toBe(false);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).toContain('Neokyo is the recommended range');
-    expect(r.rankStabilityNote).toContain('FROM JAPAN and Neokyo are the recommended range');
+    expect(r.rankStabilityNote).toContain('ZenMarket is the recommended range');
   });
 
   // **「枠の中の順序が入れ替わっても『動いた』に数えない」という主張は
@@ -2180,21 +2224,22 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
   });
 
   test('weightSensitivity.decisive follows the same set-equality rule as rankStable', () => {
-    // ドイツ・胴（1,500–7,500 g）: 基準重量では1位が FROM JAPAN で枠は
+    // カナダ・胴（1,500–7,500 g）: 基準重量では1位が FROM JAPAN で枠は
     // {FROM JAPAN, Neokyo}。この品の重量だけを両端に振ると枠の顔ぶれが変わる
     // ——「1位が動くか」なら FROM JAPAN が全域で1位のままなので decisive=false
     // だが、「枠の集合が動くか」では decisive=true になる（旧実装からの回帰の
     // 直接検査。`kendo armour` テストと同じ入力で、ここでは decisive の規則
-    // そのものに焦点を当てる）。
+    // そのものに焦点を当てる）。**F07（2026-09-12）でこの形が残るのはドイツから
+    // カナダに変わった**（`kendo armour` テストのコメント参照）。
     const table = (id: string, weightG: number, range: [number, number]) =>
       item({ id, weightG, weightOrigin: 'table', weightRangeG: range });
     const r = compare({ method: 'ems',
       items: [
         table('do', 2000, [1500, 7500]),
-        table('hakama', 1500, [1500, 2500]),
+        table('hakama', 1500, [1500, 2000]),
         table('tare', 1500, [1500, 1500]),
       ],
-      country: 'DE',
+      country: 'CA',
     });
     expect(r.weightSensitivity['do']!.winnerAtLow).toBe('FROM JAPAN');
     expect(r.weightSensitivity['do']!.winnerAtHigh).toBe('FROM JAPAN');

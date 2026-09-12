@@ -1135,8 +1135,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     const depositBase = preTaxYen + (prepaid?.amount ?? 0);
     const base = depositBase + svc.deposit.flatYen;
     const fee = svc.deposit.flatYen + (base / (1 - svc.deposit.rate) - base);
+    // **出典は `svc.deposit.sourceUrl` を優先する。**未指定（`undefined`）の社は
+    // 従来どおり `svc.sourceUrl`（自社の公表ページ）にフォールバックするが、`null` を
+    // 明示した社（Buyee/Neokyo/FROM JAPAN——3.5% は我々が置いた暫定値で会社の公表値
+    // ではない）はどの会社ページも出典として示さない。
     lines.push(L('deposit', 'Deposit fee', Math.round(fee), svc.deposit.note,
-      svc.deposit.tier, svc.sourceUrl));
+      svc.deposit.tier, svc.deposit.sourceUrl !== undefined ? svc.deposit.sourceUrl : svc.sourceUrl));
   }
 
   const total = totalRange(lines);

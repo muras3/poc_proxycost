@@ -97,14 +97,17 @@ describe('the duty note says something a buyer can read', () => {
     }
   });
 
-  test('ZenMarket 3.5% deposit fee is our figure — the page says only "from 1%"', () => {
+  test('ZenMarket 3.5% deposit fee is now the company\'s own published base rate (F07, 2026-09-12)', () => {
+    // payment.aspx（2026-09-07 direct_fetch）が「Deposit fee is 3.5% of the total
+    // transaction amount」と明記しているのを発見し、tier を estimate から fixed に
+    // 上げた（`master/fees.json` conclusions.F07_payment_fee_working_treatment）。
+    // fees.aspx の「from 1%」は依然として方法別の内訳が未確認、という別の話として note に残る。
     const zen = rowsFor('US').find((r) => r.serviceId === 'zenmarket')!;
     const deposit = line(zen, 'deposit');
     expect(deposit.amount).toBeGreaterThan(0);
-    expect(deposit.tier).toBe('estimate');
+    expect(deposit.tier).toBe('fixed');
     expect(deposit.note).toContain('from 1%');
-    // 推定が1つでも混ざれば総額に `~` が付く。
-    expect(zen.approximate).toBe(true);
+    expect(deposit.sourceUrl).toBe('https://zenmarket.jp/en/payment.aspx');
   });
 
   test('the country table itself still carries the limit we branch on', () => {
