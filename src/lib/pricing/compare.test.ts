@@ -1000,6 +1000,38 @@ describe('F1: a checkout-collected VAT/GST parcel is never invisible, even when 
     // seller-collects の個口は taxLines() 側で厳密に0円（二重計上防止のコメントどおり）。
     for (let i = 1; i < 6; i++) expect(row.boxes[i]!.tax.vat.yen).toBe(0);
   });
+
+  // **コーディネーター指摘（2026-09-12）への回答として追加。**外部レビューが実際に
+  // 見た症状（3個口・「the other 2 parcels owe none」・首位の逆転）を、3店舗の
+  // 別注文（Buyee default は注文ごとに個口を分ける）で再現する。1店舗だけ
+  // AUD 1,000 超、残り2店舗はそれぞれ単独で閾値未満——均等割りでは絶対に
+  // 起きない構図で、これが実際の運用（買い物は複数店舗にまたがる）で普通に
+  // 起こりうることを示す。
+  test('AU: a 3-order cart reproduces the review\'s exact symptom — before the fix, the missing'
+    + ' checkout tax made Buyee\'s default variant a false #1 ahead of FROM JAPAN', () => {
+    const shopItem = (id: string, shop: string, priceYen: number, weightG: number): Item => item({
+      id, priceYen, weightG, site: 'rakuten', url: `https://item.rakuten.co.jp/${shop}/${id}/`,
+    });
+    const cart = [
+      shopItem('a', 'shop-a', 150_000, 2000), // 1店舗だけ AUD 1,000（≈¥112,550）超。
+      shopItem('b', 'shop-b', 90_000, 1500),  // 残り2店舗は単独で閾値未満。
+      shopItem('c', 'shop-c', 90_000, 1500),
+    ];
+    const rows = compare({ items: cart, country: 'AU' }).rows.filter((r) => r.comparable);
+    const buyee = byId(rows, 'buyee:default');
+    const fj = byId(rows, 'fromjapan');
+    expect(buyee.parcels).toBe(3);
+    // レビューが引用した原文どおりの文言。
+    expect(line(buyee, 'vat').note).toContain('the other 2 parcels owe none (collected at checkout by the service)');
+    // F1修正後: 消えていた決済時徴収分が prepaid-import-tax に出る。
+    const prepaid = line(buyee, 'prepaid-import-tax');
+    expect(prepaid.amount).toBeGreaterThan(0);
+    // 本体の主張: 修正後、Buyee default は FROM JAPAN より高くなる
+    // （消えていた税を足し戻すと、実際には最安ではない）。
+    expect(buyee.total.low).toBeGreaterThan(fj.total.low);
+    // 合計はその行を含めて閉じている。
+    expect(buyee.total.low).toBe(sumLines(buyee));
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
