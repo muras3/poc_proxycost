@@ -27,20 +27,70 @@
         "staleness_warning": "この値は算定週（2026-09-14〜2026-09-20）にのみ有効で、FedExは毎週これを改定する。取得日を過ぎたら再取得が必要。"
       },
       "remote_area_surcharge": {
-        "amount": null,
-        "currency": null,
-        "unit": null,
-        "postcode_list": {
-          "exists": null,
-          "url": null,
-          "format": null
-        },
-        "reason": "上記の通り、HTMLページ上には項目名（地域外配達料ODA・地域外集荷料OPA）の言及はあるが金額の記載がなく、金額が記載されていると思われる公式PDF2件は本ツールでは本文を読み取ることができなかった。数字を推測で埋めることはしていない。",
-        "confidence": null,
-        "tier": "C_unknown",
-        "checked_on": "2026-09-12",
-        "pdf_attempts": [
+        "currency": "JPY",
+        "unit": "per_shipment / per_kg / greater_of（レベルによる）",
+        "origin_scope": "日本発の表（fedex-rates-sur-ja-jp-2026.pdf、ファイル名の『ja-jp』表記および金額が円建てであることから日本発の表と判断）",
+        "oda_by_level": [
           {
+            "level": "A",
+            "amount_per_shipment": 370,
+            "amount_per_kg": null,
+            "greater_of": false,
+            "note": "航空貨物運送状1件につき370円のみ。1kgあたりの選択肢なし。"
+          },
+          {
+            "level": "B",
+            "amount_per_shipment": 2990,
+            "amount_per_kg": 58,
+            "greater_of": true,
+            "note": "1件につき2,990円または1kgあたり58円のいずれか高い方"
+          },
+          {
+            "level": "C",
+            "amount_per_shipment": 3890,
+            "amount_per_kg": 80,
+            "greater_of": true,
+            "note": "1件につき3,890円または1kgあたり80円のいずれか高い方"
+          }
+        ],
+        "opa_by_level": [
+          {
+            "level": "A",
+            "amount_per_shipment": null,
+            "amount_per_kg": null,
+            "greater_of": null,
+            "note": "レベルA: 適用外"
+          },
+          {
+            "level": "B",
+            "amount_per_shipment": 2990,
+            "amount_per_kg": 58,
+            "greater_of": true,
+            "note": "1件につき2,990円または1kgあたり58円のいずれか高い方（ODAレベルBと同額）"
+          },
+          {
+            "level": "C",
+            "amount_per_shipment": 3890,
+            "amount_per_kg": 80,
+            "greater_of": true,
+            "note": "1件につき3,890円または1kgあたり80円のいずれか高い方（ODAレベルCと同額）"
+          }
+        ],
+        "box_exemption": "フェデックス10kg・25kgボックスの貨物には集荷地域外(OPA)・配達地域外(ODA)料金は適用されない。",
+        "postcode_list_url": "https://www.fedex.com/content/dam/fedex/us-united-states/services/ODA_OPA_tiers_codes.xlsx",
+        "postcode_list_format": "XLSX",
+        "postcode_list_found_via": "https://www.fedex.com/ja-jp/customer-support/faq/invoices-and-payments/fuel-and-other-surcharges/out-of-delivery-pick-up-area-surcharge.html （日本語FAQページ内『区分別郵便番号一覧をご確認ください』のリンク先として明記）",
+        "postcode_list_caveat": "URLパス（us-united-states）から、このファイルは米国内の郵便番号のみを対象にしている可能性が高い。日本発でも仕向地が米国以外の場合、レベルA/B/Cの判定に別の国別リストが必要になる可能性があるが、他国分のリストの有無は確認できていない。ファイル自体はXLSXバイナリのため中身は開いておらず（タスク方針通り、存在とURLの確認のみ）、行数・列構成は未確認。",
+        "source": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-sur-ja-jp-2026.pdf",
+        "quote": "地域外集荷料(OPA) レベルA: 適用外 レベルB: 航空貨物運送状1件につき 2,990円 または１ｋｇあたり58円 のどちらか高い方 レベルC: 航空貨物運送状1件につき 3,890円 または１ｋｇあたり80円 のどちらか高い方 / 地域外配達料(ODA) レベルA: 航空貨物運送状1件につき 370円 レベルB: 航空貨物運送状1件につき 2,990円 または１ｋｇあたり58円 のどちらか高い方 レベルC: 航空貨物運送状1件につき 3,890円 または１ｋｇあたり80円 のどちらか高い方 / フェデックスは、自社のクーリエが貨物を集配する地域（集荷地域外および配達地域外）以外への貨物に特別取扱料金をご請求させていただきます。ただし、フェデックス10kg・25kgボックスの貨物には集荷地域外および配達地域外料金は、適用されません。これらのサーチャージが適用される郵便番号は、こちらからご確認いただけます。",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "access_method": "WebFetch（PDFをブラウザではなく直接フェッチしてテキスト化。ユーザーからの明示的な指示により、前回セッションのブラウザ内PDF読み取り不能という制約を別手段で解消した）",
+        "access_method_note": "PDFがブラウザのPDFビューアでは2回の独立したセッションで描画されず（get_page_textが『No text content found』、スクリーンショットも無地グレー）、text抽出も失敗していた。今回はブラウザのPDFビューアを経由せず、WebFetchツールでPDFを直接フェッチしてテキスト化することでこの制約を回避した。この手法の変更が、これまで『読み取り不能』とされていたデータを取得できた決め手である。",
+        "note": "レベルA/B/Cの区分基準（どの郵便番号がどのレベルに該当するか）はこのPDF自体には記載がなく、別途『郵便番号リスト』の参照が必要（上記postcode_list_not_found_reason参照）。",
+        "gap": "レベルA/B/C の郵便番号区分そのものはこのPDFに含まれていない。区分は別のXLSXファイルにあり、そのURLパスに『us-united-states』が含まれるため、米国宛てのみを対象にしている可能性が高い。日本以外の残り6カ国（US以外のDE/GB/FR/AU/CA/SG）向けの郵便番号区分リストが見つかっていない限り、この金額を米国以外の宛先には適用できない。これは未解決のギャップであり、解決済みとして扱わない。",
+        "pdf_check_detail": {
+          "oda_opa_pdf_1": {
             "url": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-sur-ja-jp-2026.pdf",
             "page_count": 5,
             "page_text_extraction_result": "get_page_textツールで『No text content found. Page may contain only images, videos, or canvas-based content.』というエラーが返り、テキストは取得できなかった。",
@@ -51,7 +101,7 @@
             "download_local_path_not_found_reason": "指示に従いchrome://downloadsタブを開いて保存先を確認しようとしたが、本セッションで利用可能なブラウザ自動化ツール（navigate/computer等）はいずれも『chrome://downloads』のようなブラウザ内部URLへのアクセスを明示的に拒否する仕様であり（エラー：'Can't interact with browser-internal or unparseable URLs'）、保存先パスやファイル名を画面上で確認することができなかった。ダウンロード自体が実行されたかどうかも、本ツールからは確認できていない。",
             "checked_on": "2026-09-12"
           },
-          {
+          "oda_opa_pdf_2": {
             "url": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-exp-ja-jp-2026.pdf",
             "page_text_extraction_result": "get_page_textツールで同様に『No text content found』が返り、テキストは取得できなかった。",
             "screenshot_result": "同上の理由でメイン表示ペインは描画されず判読不能だった（詳細確認は1つ目のPDFで十分と判断し、簡略化して確認）。",
@@ -59,9 +109,47 @@
             "download_action_detail": "同様にダウンロードアイコンをクリックした。",
             "download_local_path_confirmed": false,
             "download_local_path_not_found_reason": "1つ目のPDFと同じ理由（chrome://downloadsにアクセスできないツール制約）で確認できなかった。",
-            "checked_on": "2026-09-12"
+            "checked_on": "2026-09-12",
+            "superseded_note": "この時点ではブラウザ内PDF読み取りが不能だったが、後にWebFetchツールでPDFを直接フェッチしテキスト化することに成功した（上位のremote_area_surcharge.quote参照）。"
           }
-        ]
+        },
+        "previous_attempt_superseded": {
+          "amount": null,
+          "currency": null,
+          "unit": null,
+          "postcode_list": {
+            "exists": null,
+            "url": null,
+            "format": null
+          },
+          "reason": "上記の通り、HTMLページ上には項目名（地域外配達料ODA・地域外集荷料OPA）の言及はあるが金額の記載がなく、金額が記載されていると思われる公式PDF2件は本ツールでは本文を読み取ることができなかった。数字を推測で埋めることはしていない。",
+          "confidence": null,
+          "tier": "C_unknown",
+          "checked_on": "2026-09-12",
+          "pdf_attempts": [
+            {
+              "url": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-sur-ja-jp-2026.pdf",
+              "page_count": 5,
+              "page_text_extraction_result": "get_page_textツールで『No text content found. Page may contain only images, videos, or canvas-based content.』というエラーが返り、テキストは取得できなかった。",
+              "screenshot_result": "PDFビューアのサムネイル一覧（左側パネル）には各ページの縮小画像が表示され、文字らしきものが写っているのは確認できたが、非常に小さく判読不能であった。メインの表示ペイン（右側の大きな領域）は、ページ内リンクから開いた直後・サムネイルをクリックした後のいずれもスクリーンショット上で常に無地の暗いグレーの背景のままで、ページ内容が描画されなかった（前回セッションと同様の技術的制約が今回も再現した）。",
+              "download_attempted": true,
+              "download_action_detail": "PDFビューア右上のダウンロードアイコンをマウスでクリックし、ダウンロードを実行した（JS不使用、通常のクリック操作）。",
+              "download_local_path_confirmed": false,
+              "download_local_path_not_found_reason": "指示に従いchrome://downloadsタブを開いて保存先を確認しようとしたが、本セッションで利用可能なブラウザ自動化ツール（navigate/computer等）はいずれも『chrome://downloads』のようなブラウザ内部URLへのアクセスを明示的に拒否する仕様であり（エラー：'Can't interact with browser-internal or unparseable URLs'）、保存先パスやファイル名を画面上で確認することができなかった。ダウンロード自体が実行されたかどうかも、本ツールからは確認できていない。",
+              "checked_on": "2026-09-12"
+            },
+            {
+              "url": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-exp-ja-jp-2026.pdf",
+              "page_text_extraction_result": "get_page_textツールで同様に『No text content found』が返り、テキストは取得できなかった。",
+              "screenshot_result": "同上の理由でメイン表示ペインは描画されず判読不能だった（詳細確認は1つ目のPDFで十分と判断し、簡略化して確認）。",
+              "download_attempted": true,
+              "download_action_detail": "同様にダウンロードアイコンをクリックした。",
+              "download_local_path_confirmed": false,
+              "download_local_path_not_found_reason": "1つ目のPDFと同じ理由（chrome://downloadsにアクセスできないツール制約）で確認できなかった。",
+              "checked_on": "2026-09-12"
+            }
+          ]
+        }
       },
       "customs_disbursement_fee": {
         "$comment": "国ごとに formula = percentage_of_duty_tax と minimum_flat_fee を分けて記録する。値が取れた国は search_snippet 由来のみで、いずれも一次ページの引用符付き原文ではなく検索エンジンの要約からの数値のため search_snippet_no_verbatim_quote とする",
@@ -223,7 +311,11 @@
             "confidence": "direct_fetch",
             "tier": "A_confirmed",
             "note": "Per Shipment: 17.00 USD or 2% of the fiscal charge, if higher",
-            "checked_on": "2026-09-12"
+            "checked_on": "2026-09-12",
+            "service_name": "Duty Tax Paid",
+            "receiver_billed": false,
+            "receiver_billed_note": "「Duty Tax Paid」は関税・税金の請求先を仕向国の受取人以外（発送国／第三国）に切り替えるためのオプション料金であり、本製品が計算対象とする『受取人（買い手）が仕向国で支払う立替手数料』ではない。DHLの公式サイトはこの文言で明示している: 'Billed in country of departure or third country, never in destination country.'",
+            "receiver_billed_fee_status": "missing"
           },
           "GB": {
             "percentage_of_duty_tax": 0.02,
@@ -237,7 +329,11 @@
             "confidence": "direct_fetch",
             "tier": "A_confirmed",
             "note": "Per Shipment: 16.00 GBP or 2% of the fiscal charge, if higher (Duty Tax Paid). 別サービスとして Duty Tax Processing: 12.00 GBP or 2.5%／11.00 GBP or 2.5%(非アカウント保有者向け) も存在するが、C項目としては 'Duty Tax Paid' の値を採用",
-            "checked_on": "2026-09-12"
+            "checked_on": "2026-09-12",
+            "service_name": "Duty Tax Paid",
+            "receiver_billed": false,
+            "receiver_billed_note": "「Duty Tax Paid」は関税・税金の請求先を仕向国の受取人以外（発送国／第三国）に切り替えるためのオプション料金であり、本製品が計算対象とする『受取人（買い手）が仕向国で支払う立替手数料』ではない。DHLの公式サイトはこの文言で明示している: 'Billed in country of departure or third country, never in destination country.'",
+            "receiver_billed_fee_status": "missing"
           },
           "AU": {
             "percentage_of_duty_tax": 0.02,
@@ -251,20 +347,37 @@
             "confidence": "direct_fetch",
             "tier": "A_confirmed",
             "note": "Per Shipment: AUD 30 or 2% of fiscal charges, if higher (Duty Tax Paid). 別サービスの Duty Tax Processing は AUD 21 or 3% だが、C項目としては 'Duty Tax Paid' の値を採用",
-            "checked_on": "2026-09-12"
+            "checked_on": "2026-09-12",
+            "service_name": "Duty Tax Paid",
+            "receiver_billed": false,
+            "receiver_billed_note": "「Duty Tax Paid」は関税・税金の請求先を仕向国の受取人以外（発送国／第三国）に切り替えるためのオプション料金であり、本製品が計算対象とする『受取人（買い手）が仕向国で支払う立替手数料』ではない。DHLの公式サイトはこの文言で明示している: 'Billed in country of departure or third country, never in destination country.'",
+            "receiver_billed_fee_status": "missing"
           },
           "DE": {
-            "percentage_of_duty_tax": null,
-            "minimum_flat_fee": null,
-            "maximum_flat_fee": null,
-            "currency": "EUR",
-            "has_whichever_is_higher_wording": null,
-            "quote": null,
-            "source": null,
-            "confidence": null,
-            "tier": "C_unknown",
-            "note": "https://www.dhl.com/de-en/.../optional-services.html および https://www.dhl.com/de-de/.../optional-services.html はいずれも404（ページ不存在）。de-deサイト内検索（'Verzollungsgebühr'、'Zoll- und Steuervorauslage'）でも該当ページはヒットしなかった。",
-            "checked_on": "2026-09-12"
+            "services": [
+              {
+                "service_name": "Duty Tax Paid",
+                "receiver_billed": false,
+                "percentage_of_duty_tax": 0.02,
+                "minimum_flat_fee": 17.0,
+                "currency": "EUR",
+                "quote": "Duty Tax Paid: 2 % of Duty Tax Amount min. 17.00 EUR — Billed in country of departure or third country, never in destination country."
+              },
+              {
+                "service_name": "Duty Tax Processing",
+                "receiver_billed": true,
+                "percentage_of_duty_tax": 0.02,
+                "minimum_flat_fee": 15.0,
+                "currency": "EUR",
+                "quote": "Duty Tax Processing: 2 % of Duty Tax Amount min. 15.00 EUR — For both export and import services, billed in destination country.",
+                "note": "本製品が計算対象とする『受取人が仕向国で支払う』立替手数料に該当するのはこちら。DEのみ両方の数値が取得できている。"
+              }
+            ],
+            "source": "https://www.dhl.de/en/geschaeftskunden/express/produkte-und-services/duty-billing-services.html",
+            "access_method": "WebFetch（dhl.com配下ではなくドイツ現地法人ドメインdhl.deの英語ページ。WebFetchツールによる直接取得）",
+            "checked_on": "2026-09-12",
+            "confidence": "direct_fetch",
+            "terminology_caveat": "重要：本ページの説明により、DHLの『Duty Tax Paid』は『関税・税金の請求先を仕向国の受取人以外（発送国／第三国）に切り替える』ためのオプション料金であり、US/GB/AUで先に採取した『Duty Tax Paid』の値もこれと同一の性質（第三者請求切替）である可能性が高い。一方『Duty Tax Processing』は仕向国側（＝通常の受取人）に請求される標準的な立替手数料であり、FedExの『支払手数料』やUPSの『支払手数料』とより性質が近いのはこちらの可能性がある。US/GB/AUについてはDuty Tax Processingの値を未取得のため、カテゴリC全体の国間比較に注意が必要（詳細はレポート参照）。"
           },
           "FR": {
             "percentage_of_duty_tax": null,
@@ -276,8 +389,9 @@
             "source": null,
             "confidence": null,
             "tier": "C_unknown",
-            "note": "https://www.dhl.com/fr-en/.../optional-services.html は404（ページ不存在）。時間の制約によりfr-frロケールでのサイト内検索は未実施。",
-            "checked_on": "2026-09-12"
+            "note": "www.dhl.com/fr-en, /fr-fr の当該URLパターンはいずれも404。dhl.de型（現地法人ドメイン）に相当するwww.dhl.frのduty-billing-servicesページはmydhl.express.dhlという別プラットフォームへ302リダイレクトされ、ログインが必要なポータルとみられ料率は取得できなかった。DDP解説ページ(dhl.com/fr-fr/home/expedier/livraison-ddp.html)にも料率記載なし。",
+            "checked_on": "2026-09-12",
+            "receiver_billed_fee_status": "missing"
           },
           "CA": {
             "percentage_of_duty_tax": null,
@@ -289,8 +403,9 @@
             "source": null,
             "confidence": null,
             "tier": "C_unknown",
-            "note": "https://www.dhl.com/ca-en/.../optional-services.html は404。サイト内検索(『Duty Tax Paid』)でも同等の料金表ページはヒットせず、代わりに一般的な国別配送ガイド記事のみがヒットした。",
-            "checked_on": "2026-09-12"
+            "note": "www.dhl.com/ca-en の当該URLパターンは404。dhl.com/discover/en-ca/の一般解説ページ(duties-and-taxes)は仕組みの説明のみで料率非公開。",
+            "checked_on": "2026-09-12",
+            "receiver_billed_fee_status": "missing"
           },
           "SG": {
             "percentage_of_duty_tax": null,
@@ -302,11 +417,14 @@
             "source": null,
             "confidence": null,
             "tier": "C_unknown",
-            "note": "https://www.dhl.com/sg-en/.../optional-services.html は404（ページ不存在）。",
-            "checked_on": "2026-09-12"
+            "note": "www.dhl.com/sg-en の当該URLパターンは404。dhl.com/discover/en-sg/配下の複数ページ、およびdhlexpress.com.sg（現地フランチャイズとみられる別ドメイン）のFAQでも『ADVANCED PAYMENT』サービスの存在記述のみで、具体的な％・最低額は非公開だった。",
+            "checked_on": "2026-09-12",
+            "receiver_billed_fee_status": "missing"
           }
         },
-        "note_on_reliability": "2026-09-12、US/GB/AUは一次ページの原文を direct_fetch で確認済み。DE/FR/CA/SGはDHL自身のロケールパスがいずれも404で、金額を確認できなかった。"
+        "note_on_reliability": "2026-09-12、US/GB/AUは一次ページの原文を direct_fetch で確認済み。DE/FR/CA/SGはDHL自身のロケールパスがいずれも404で、金額を確認できなかった。 2026-09-12の再点検で、US/GB/AUの既存値は『Duty Tax Paid'（発送国/第三国請求）であり、本製品が必要とする受取人請求（Duty Tax Processing）の値ではないと判明した。DEのみ両サービスの数値が確認できている（Paid: 2% min 17.00 EUR / Processing: 2% min 15.00 EUR）。US/GB/AU/FR/CA/SGの receiver-billed（Duty Tax Processing）の数値は依然として欠落している。",
+        "service_naming_caveat": "DHLは同一の『通関立替手数料』カテゴリの中に、請求方向が逆の2つのサービスを持つ: 『Duty Tax Paid』（発送国/第三国の第三者に請求。DEの原文: 'never in destination country'）と 『Duty Tax Processing』（仕向国＝受取人側に請求。DEの原文: 'billed in destination country'）。本製品は宛先国で受取人が関税を支払うモデルを計算するため、必要なのは『Duty Tax Processing』の数値である。しかし2026-09-12時点で取得できているUS/GB/AUの数値は『Duty Tax Paid』であり、これは受取人請求のケースには使えない。受取人請求（Duty Tax Processing）の数値はUS/GB/AUで依然として未取得であり、FR/CA/SGはページ自体が404/未提供で両サービスとも未取得。DEのみ両方の数値がそろっている。この取り違えは今回の再点検で見つかったもので、以後のいかなる集計・比較でもDHLの費目にはservice_name（Duty Tax Paid / Duty Tax Processing）を必ず付記し、混同しないこと。",
+        "cross_carrier_comparison_caveat": "FedExの『支払手数料』は受取人（仕向国側）に請求される費目であり、DHLの『Duty Tax Processing』と比較対象が一致する。一方、現在DHLについて数値が揃っているのは請求方向が逆の『Duty Tax Paid』である。したがって、DHLの『Duty Tax Processing』の数値がUS/GB/AU/FR/CA/SGについて揃うまでは、FedExとDHLの通関立替手数料をそのまま横並びで比較すること（安い/高いの順位付けを含む）は無効。"
       }
     },
     {
@@ -373,17 +491,36 @@
             "whichever_is_higher_is_inference_not_published_text": true
           },
           "DE": {
-            "percentage_of_duty_tax": null,
-            "minimum_flat_fee": null,
-            "maximum_flat_fee": null,
-            "currency": "EUR",
-            "has_whichever_is_higher_wording": null,
-            "quote": null,
-            "source": null,
-            "confidence": null,
-            "tier": "C_unknown",
-            "note": "https://www.ups.com/de/de/shipping/international-shipping/tariffs および https://www.ups.com/de/de/support/international-tools-resources/understanding-customs を確認したが、米国向けページ（JP/GB版）にあったような『最も一般的な仲介手数料』の具体的な内訳（％・最低額）を示すFAQ項目自体が存在しなかった（このFAQセクションは米国のde minimis政策に関する項目のみで構成されており、ドイツ向け宛先の仲介手数料に関する項目は見当たらなかった）。法的文書ページ（Geschäftsbedingungen）内の『Allgemeine Geschäftsbedingungen für Dienstleistungen – PDF』は運送約款PDFであり、料金表ではないと判断し内容確認を断念した（他国分含め全PDFの精読は時間の都合で行っていない）。",
-            "checked_on": "2026-09-12"
+            "service_name": "Disbursement Fee",
+            "low_value_tier": {
+              "threshold_eur": 22,
+              "flat_fee_eur": 7.6,
+              "note": "課税価格 €22以下は一律 €7.60/件"
+            },
+            "above_threshold": {
+              "percentage_of_duty_tax": 0.03,
+              "minimum_flat_fee": 15.7,
+              "currency": "EUR",
+              "has_whichever_is_higher_wording": true
+            },
+            "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:bf147ebe-d3c2-4ca4-9d65-c83ec3030ac3/original/as/additional-service-charge-de-gb-en.pdf",
+            "quote": "€ 7,60 per shipment having an intrinsic value lower or equal to € 22, € 15,70 minimum or 3% of the advanced amount when the intrinsic value of the goods exceed € 22.",
+            "access_method": "WebFetch（PDF直接読み取り）",
+            "checked_on": "2026-09-12",
+            "confidence": "direct_fetch",
+            "version_discrepancy": {
+              "note": "同じくUPS公式の https://www.ups.com/assets/resources/webcontent/de_DE/additional-service-charge-de.pdf では『€7,20/件、最低€14,90、3.00%』と記載されており、上記（『2026 UPS® Additional Services and Charges』とタイトルにある文書、URLにaem:bf147ebe...の資産IDを持つもの）と数字が異なる。ファイル名に『2026』の記載があるほうを現行版とみなしこちらを採用したが、旧版がまだサイト上に残っている状態（キャッシュ/更新遅延の可能性）。",
+              "preferred_document": {
+                "url": "https://assets.ups.com/adobe/assets/urn:aaid:aem:bf147ebe-d3c2-4ca4-9d65-c83ec3030ac3/original/as/additional-service-charge-de-gb-en.pdf",
+                "reason": "ファイル名/文書タイトルに『2026』の記載があるため現行版として採用",
+                "values": "€7.60 (≤€22) / €15.70 min or 3% (>€22)"
+              },
+              "conflicting_document": {
+                "url": "https://www.ups.com/assets/resources/webcontent/de_DE/additional-service-charge-de.pdf",
+                "values": "€7.20 (≤€22) / €14.90 min or 3.00% (>€22)",
+                "status": "unresolved_version_discrepancy — 破棄せず記録のみ残す。どちらが実際に適用されているかは未確定。"
+              }
+            }
           },
           "GB": {
             "percentage_of_duty_tax": null,
@@ -395,34 +532,41 @@
             "source": null,
             "confidence": null,
             "tier": "C_unknown",
-            "note": "https://www.ups.com/gb/en/shipping/international-shipping/tariffs を確認したが、DEと同様に『most common brokerage fees』に相当するFAQ項目が存在しなかった（サイト内検索『brokerage fee』でもUnderstanding Customs等の一般説明ページのみがヒットし、具体的な％・最低額を記載したページは見つからなかった）。",
-            "checked_on": "2026-09-12"
+            "note": "複数の公式文書（tariffs FAQページ、tariff-guide-base-GB.pdf、supplychain/tools/surcharges、cod-faq.pdf）を確認したが、いずれも『Disbursement Fee』というサービス名と『通関時に立て替えた関税・VATに対する手数料』という説明はあるものの、具体的な％・最低額の数字は非公開だった（cod-faq.pdfは『詳細はカスタマーサービスへ問い合わせ』と明記）。DE/FR/AU/SGと同型の『Additional Services & Charges』PDFがUK向けに存在するかは特定できなかった。",
+            "checked_on": "2026-09-12",
+            "status": "unavailable_not_published"
           },
           "FR": {
-            "percentage_of_duty_tax": null,
-            "minimum_flat_fee": null,
-            "maximum_flat_fee": null,
-            "currency": "EUR",
-            "has_whichever_is_higher_wording": null,
-            "quote": null,
-            "source": null,
-            "confidence": null,
-            "tier": "C_unknown",
-            "note": "DE/GBで同型のtariffsページ・customsページを確認した結果、いずれも米国向け仲介手数料の説明に限定されたFAQ構成であることが分かったため、時間の制約上、FR/AU/CA/SGについては個別ページへの遷移・確認を行っていない（未到達）。ページに書かれていない数字を推測で埋めることを避けるため、これら4カ国はすべてnullとした。",
-            "checked_on": "2026-09-12"
+            "service_name": "Disbursement Fee",
+            "low_value_tier": {
+              "threshold_eur": 22,
+              "flat_fee_eur": 8.4
+            },
+            "above_threshold": {
+              "percentage_of_duty_tax": 0.0305,
+              "minimum_flat_fee": 17.5,
+              "currency": "EUR",
+              "has_whichever_is_higher_wording": true
+            },
+            "source": "https://www.ups.com/assets/resources/webcontent/fr_FR/additional-service-charge-fr.pdf",
+            "quote": "€ 8,40 per shipment having an intrinsic value lower or equal to € 22, € 17,50 minimum or 3.05% of the advanced amount when the intrinsic value of the goods exceed € 22.",
+            "access_method": "WebFetch（PDF直接読み取り）",
+            "checked_on": "2026-09-12",
+            "confidence": "direct_fetch"
           },
           "AU": {
-            "percentage_of_duty_tax": null,
-            "minimum_flat_fee": null,
-            "maximum_flat_fee": null,
+            "service_name": "Disbursement Fee",
+            "percentage_of_duty_tax": 0.036,
+            "minimum_flat_fee": 25.0,
+            "flat_fee_note": "A$25 plus GST",
             "currency": "AUD",
-            "has_whichever_is_higher_wording": null,
-            "quote": null,
-            "source": null,
-            "confidence": null,
-            "tier": "C_unknown",
-            "note": "DE/GBで同型のtariffsページ・customsページを確認した結果、いずれも米国向け仲介手数料の説明に限定されたFAQ構成であることが分かったため、時間の制約上、FR/AU/CA/SGについては個別ページへの遷移・確認を行っていない（未到達）。ページに書かれていない数字を推測で埋めることを避けるため、これら4カ国はすべてnullとした。",
-            "checked_on": "2026-09-12"
+            "has_whichever_is_higher_wording": true,
+            "has_whichever_is_higher_wording_quote": "The Disbursement Fee for importation into Australia will be 3.6% of the import duties and taxes, or A$25 plus GST per shipment, whichever is greater.",
+            "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:66f0a740-1be2-41ff-ba82-b1f7ad581b94/original/as/service-guide-au-gb-en.pdf",
+            "quote": "The Disbursement Fee for importation into Australia will be 3.6% of the import duties and taxes, or A$25 plus GST per shipment, whichever is greater.",
+            "access_method": "WebFetch（PDF直接読み取り）",
+            "checked_on": "2026-09-12",
+            "confidence": "direct_fetch"
           },
           "CA": {
             "percentage_of_duty_tax": null,
@@ -434,24 +578,28 @@
             "source": null,
             "confidence": null,
             "tier": "C_unknown",
-            "note": "DE/GBで同型のtariffsページ・customsページを確認した結果、いずれも米国向け仲介手数料の説明に限定されたFAQ構成であることが分かったため、時間の制約上、FR/AU/CA/SGについては個別ページへの遷移・確認を行っていない（未到達）。ページに書かれていない数字を推測で埋めることを避けるため、これら4カ国はすべてnullとした。",
-            "checked_on": "2026-09-12"
+            "note": "UPS Supply Chain Solutionsの公式ブローカレッジ料金ページ（ca/en/supplychain/tools/surcharges/Brokerage-General-Rates.page）には『2027 rate changes for this country/region will be communicated at a later date』と明記されており、現行の料率がサイト上で確認できない状態だった。Canada Rate & Service Guide（rate_guide_ca.pdf）も目次に通関仲介の章はあるが本文の具体的な料率テーブルは提供されなかった。",
+            "checked_on": "2026-09-12",
+            "status": "unavailable_deferred_to_2027"
           },
           "SG": {
-            "percentage_of_duty_tax": null,
-            "minimum_flat_fee": null,
-            "maximum_flat_fee": null,
+            "service_name": "Disbursement Fee",
+            "percentage_of_duty_tax": 0.059,
+            "minimum_flat_fee": 23.6,
+            "maximum_flat_fee": 100.0,
             "currency": "SGD",
-            "has_whichever_is_higher_wording": null,
-            "quote": null,
-            "source": null,
-            "confidence": null,
-            "tier": "C_unknown",
-            "note": "DE/GBで同型のtariffsページ・customsページを確認した結果、いずれも米国向け仲介手数料の説明に限定されたFAQ構成であることが分かったため、時間の制約上、FR/AU/CA/SGについては個別ページへの遷移・確認を行っていない（未到達）。ページに書かれていない数字を推測で埋めることを避けるため、これら4カ国はすべてnullとした。",
-            "checked_on": "2026-09-12"
+            "has_whichever_is_higher_wording": false,
+            "source": "https://www.ups.com/assets/resources/webcontent/en_GB/service_guide_sg.pdf",
+            "quote": "5.9% of the import duties and taxes, subject to a minimum of S$23.60 and maximum of S$100 per shipment.",
+            "access_method": "WebFetch（PDF直接読み取り、2025年版Rate and Service Guideより。2026年版の有無は未確認）",
+            "checked_on": "2026-09-12",
+            "confidence": "direct_fetch",
+            "note": "UPSがシンガポールにのみ上限（S$100）を設ける構造は、FedExのSG『特別取扱手数料』（上限SGD120）と類似。"
           }
         },
-        "note_on_reliability": "2026-09-12、USのみ一次ページの原文を direct_fetch で確認。ページの文言自体には『いずれか高い方』の明示はなく、この解釈は推測（whichever_is_higher_is_inference_not_published_text: true）として明記して残す。DE/GB/FR/AU/CA/SGは同型ページに米国宛て限定のFAQしか存在せず、確認できなかった。"
+        "note_on_reliability": "2026-09-12、USのみ一次ページの原文を direct_fetch で確認。ページの文言自体には『いずれか高い方』の明示はなく、この解釈は推測（whichever_is_higher_is_inference_not_published_text: true）として明記して残す。DE/GB/FR/AU/CA/SGは同型ページに米国宛て限定のFAQしか存在せず、確認できなかった。 2026-09-12の追加取得で、DE（バージョン間で数値が食い違う。両方記録）/FR/AU/SGのDisbursement Fee原文を確認した（DE/FR/AUはWebFetchによるPDF直接取得、SGは2025年版PDFで2026年版の有無は未確認）。GBは『Disbursement Fee』という名称のみ公表されFAQ/PDFとも具体的な％・最低額を欠く。CAは公式ページが『2027年の料率改定は追って通知』としており未公表。",
+        "structural_note_low_value_tier": "UPSはDE/FRで、課税価格が一定額（€22）以下なら定率ではなく定額（低価額貨物向けフラット料金）を課す2段階構造を持つ。FedExの支払手数料にはこの低価額フラット階層は存在しない。",
+        "sg_cap_note": "UPSとFedExはいずれもシンガポールについてのみ手数料に上限を設けている（UPS: S$100、FedEx: SGD120）。他国にはこの上限が見当たらない。"
       }
     },
     {
@@ -553,6 +701,35 @@
         "GB",
         "FR",
         "SG"
+      ]
+    },
+    {
+      "id": "C7_dhl_service_category_confusion_2026_09_12",
+      "text": "DHLは同一の『通関立替手数料』カテゴリの中に、請求方向が逆の2つのサービスを持つ: 『Duty Tax Paid』（発送国/第三国の第三者に請求。DEの原文: 'never in destination country'）と 『Duty Tax Processing』（仕向国＝受取人側に請求。DEの原文: 'billed in destination country'）。本製品は宛先国で受取人が関税を支払うモデルを計算するため、必要なのは『Duty Tax Processing』の数値である。しかし2026-09-12時点で取得できているUS/GB/AUの数値は『Duty Tax Paid』であり、これは受取人請求のケースには使えない。受取人請求（Duty Tax Processing）の数値はUS/GB/AUで依然として未取得であり、FR/CA/SGはページ自体が404/未提供で両サービスとも未取得。DEのみ両方の数値がそろっている。この取り違えは今回の再点検で見つかったもので、以後のいかなる集計・比較でもDHLの費目にはservice_name（Duty Tax Paid / Duty Tax Processing）を必ず付記し、混同しないこと。",
+      "supporting_observations": [
+        "dhl_express.customs_disbursement_fee"
+      ]
+    },
+    {
+      "id": "C8_cross_carrier_comparison_invalid_until_dhl_processing_found",
+      "text": "FedExの『支払手数料』は受取人（仕向国側）に請求される費目であり、DHLの『Duty Tax Processing』と比較対象が一致する。一方、現在DHLについて数値が揃っているのは請求方向が逆の『Duty Tax Paid』である。したがって、DHLの『Duty Tax Processing』の数値がUS/GB/AU/FR/CA/SGについて揃うまでは、FedExとDHLの通関立替手数料をそのまま横並びで比較すること（安い/高いの順位付けを含む）は無効。",
+      "supporting_observations": [
+        "fedex.customs_disbursement_fee",
+        "dhl_express.customs_disbursement_fee"
+      ]
+    },
+    {
+      "id": "C9_fedex_remote_area_amounts_found_tier_list_still_missing",
+      "text": "2026-09-12、ブラウザのPDFビューアを経由せずWebFetchでPDF（fedex-rates-sur-ja-jp-2026.pdf、日本発）を直接フェッチしテキスト化する方法に切り替えたことで、これまで2セッション連続で『読み取り不能』としていた日本発ODA/OPA金額を取得できた（ODA: A=¥370/waybill、B=¥2,990またはkgあたり¥58のいずれか高い方、C=¥3,890またはkgあたり¥80のいずれか高い方。OPA: Aは適用外、B/CはODAと同額。FedEx 10kg/25kgボックス貨物はODA/OPAとも対象外）。ただし、郵便番号ごとにレベルA/B/Cのどれに該当するかを決める区分リストはこのPDFには含まれず、別のXLSXファイル（URLパスに『us-united-states』を含む）にあるとみられ、米国宛てのみを対象にしている可能性が高い。日本以外の6カ国向けの区分リストは見つかっておらず、この金額を米国以外の宛先の見積りに適用することはできない。",
+      "supporting_observations": [
+        "fedex.remote_area_surcharge"
+      ]
+    },
+    {
+      "id": "C10_ups_de_disbursement_fee_version_discrepancy",
+      "text": "UPSドイツのDisbursement Feeについて、2つの公式PDFが異なる数字を掲載している: 文書タイトルに『2026』とある方（アセットID aem:bf147ebe...）は 『€7.60/件(≤€22)、€15.70最低額または3%(>€22)のいずれか高い方』。もう一方の公式PDF （https://www.ups.com/assets/resources/webcontent/de_DE/additional-service-charge-de.pdf）は 『€7.20/件(≤€22)、€14.90最低額または3.00%(>€22)』。マスタは前者を『2026』表記を根拠に採用値としつつ、後者も version_discrepancy として両方記録し、どちらが実運用かは未確定のまま解決済み扱いにしない。",
+      "supporting_observations": [
+        "ups.customs_disbursement_fee"
       ]
     }
   ],
