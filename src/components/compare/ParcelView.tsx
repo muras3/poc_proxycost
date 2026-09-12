@@ -2,23 +2,35 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { singleParcelGrossG } from '@/lib/pricing/compare';
-import { EMS_SOURCE_URL, EMS_ZONE, emsFor } from '@/lib/pricing/ems';
+import { EMS_SOURCE_URL, EMS_ZONE, emsFor, formatStep } from '@/lib/pricing/ems';
+import { maxGramsFor } from '@/lib/pricing/postage';
 import { grams as gramsText, yen } from '@/lib/ui/format';
 import { Glyph } from '@/lib/ui/glyphs';
 import type { CountryCode, Item } from '@/lib/pricing/types';
+import { computeBoxSplit, type SplitBox } from './boxSplit';
 import { PackingBox, type PackedItem } from './PackingBox';
 import { WeightLadder } from './WeightLadder';
 
 /**
  * 箱・段・送料の差分を1つの区画にまとめる。**「詰める」絵ではない。**
- * EMS は重量だけで決まり体積は一切効かないので、箱は「いくら埋まったか」を言わない。
- * この区画が言うのは3つだけ:
+ * EMS は重量だけで決まり体積は一切効かないので、箱の大きさで「いくら埋まったか」は
+ * 言わない（=中身の詰まり具合を面積で見せることはしない）。
+ *
+ * ただし **カートが複数箱に分かれるときは、その分かれ方自体を見せる**
+ * （2026-09-12、オーナー指示）。1箱のときは従来どおり3つ:
  *   1. いま何が入っていて、どれが推定重量か（半透明）
  *   2. その重量が EMS のどの段に立っているか
  *   3. **直前の操作で送料が動いたか。動かなかったなら「+¥0」と書いて静止する**
  *
- * 数字は全部 `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()`
- * ＝日本郵便の公表表から出る。ここで独自に足し引きした数字は無い。
+ * 複数箱に分かれるときは、箱ごとに4つを言う（`computeBoxSplit`、`docs/DESIGN-BOX-SIZE.md`
+ * §2④⑤）: なぜ分かれたか（店舗の切れ目か、EMSの重量上限超えか）・詰めた順（重い順）・
+ * その箱の申告額・その箱の免税しきい値。**代行が実際に箱をどう分けるかは私たちには
+ * 分からない**——この分割は「私たちが仮に置いた前提」であって実測ではない、という
+ * 前提そのものを開示文で先に言う（`SplitDisclosure`）。
+ *
+ * 数字は全部 `singleParcelGrossG()`／`computeBoxSplit()`（どちらも compare() と
+ * 同じ組み立て）と `emsFor()` ＝日本郵便の公表表から出る。ここで独自に足し引きした
+ * 数字は無い。
  */
 
 /** 追加1回の時間軸（ms、prototypes/README.md）。**直列。** */
@@ -113,6 +125,10 @@ export function ParcelView({
 }) {
   const target = useMemo(() => parcelStateFor(items, country), [items, country]);
   const packed = useMemo(() => packedItems(items), [items]);
+  // **箱が複数に分かれるなら、それを見せる。**単箱（または EMS が使えず判定不能）
+  // なら null/長さ1 が返り、その場合は下の従来どおりの単箱表示にフォールバックする。
+  const split = useMemo(() => computeBoxSplit(items, country), [items, country]);
+  const multiBox = split != null && split.length > 1 ? split : null;
   const signature = target
     ? `${target.grams}/${target.stepIndex}/${target.overMax}/${target.yen}/${packed.length}`
     : `none/${packed.length}`;
@@ -216,7 +232,9 @@ export function ParcelView({
     >
       <ParcelHeading />
 
-      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
+      {multiBox && <MultiBoxView boxes={multiBox} items={items} country={country} />}
+
+      <div className={`mt-3 flex flex-col gap-4 sm:flex-row sm:items-start${multiBox ? ' hidden' : ''}`}>
         <div className="min-w-0 flex-1">
           <PackingBox
             stepIndex={shown.stepIndex}
@@ -310,7 +328,7 @@ export function ParcelView({
       {/* 但し書きは箱と目盛りの両方に掛かるので、2つの下に幅いっぱいで置く。
           箱の側の列に入れておくと、縦積み（モバイル）で数字と目盛りのあいだに
           3行の散文が挟まり、**段が最初の視界から押し出される。** */}
-      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <p className={`mt-3 text-xs text-neutral-600 dark:text-neutral-400${multiBox ? ' hidden' : ''}`}>
         EMS is priced by weight alone — volume never enters the price, so this box is not a packing
         simulation. Faded items are weights we estimated, not measured.{' '}
         {/* 点線の輪郭（`drawUnknown`）は「重量表に当たらなかった」の形。箱に居るときだけ
@@ -326,6 +344,155 @@ export function ParcelView({
         </a>
       </p>
     </section>
+  );
+}
+
+/** 箱1つぶんの中身。`box.itemIndices` の順（重い順）をそのまま `order` に写す。 */
+function packedItemsForBox(items: readonly Item[], box: SplitBox): (PackedItem & { order: number })[] {
+  const out: (PackedItem & { order: number })[] = [];
+  let order = 0;
+  for (const idx of box.itemIndices) {
+    const item = items[idx];
+    if (!item) continue;
+    const n = copiesOf(item);
+    for (let k = 0; k < n; k++) {
+      order += 1;
+      out.push({
+        id: item.weightLineId ?? 'unknown',
+        key: `${item.id}#${k}`,
+        label: item.title,
+        estimated: item.weightOrigin !== 'user',
+        order,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * **箱の分かれ方そのものを見せる区画。**
+ * 前提（`docs/DESIGN-BOX-SIZE.md` §5、オーナー確定 #76）を先に言い、箱ごとに
+ * 4つの事実を出す: 分かれた理由・詰めた順（重い順）・その箱の申告額・その箱の
+ * 免税しきい値。すべて文字と数字で言うので `prefers-reduced-motion` でも全部
+ * 読める（この区画自体はアニメーションを使っていない）。
+ */
+function MultiBoxView({
+  boxes,
+  items,
+  country,
+}: {
+  boxes: readonly SplitBox[];
+  items: readonly Item[];
+  country: CountryCode;
+}) {
+  const limit = maxGramsFor('ems', country);
+  return (
+    <div data-testid="parcel-split" className="mt-3 min-w-0">
+      <SplitDisclosure />
+      <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+        {boxes.map((box) => {
+          const boxItems = packedItemsForBox(items, box);
+          return (
+            <div
+              key={box.boxIndex}
+              data-testid="split-box"
+              data-reason={box.reason}
+              data-over-threshold={box.overThreshold ? 'true' : 'false'}
+              className={[
+                'min-w-0 rounded border p-2',
+                box.reason === 'weight-limit'
+                  ? 'border-amber-400 dark:border-amber-700'
+                  : 'border-neutral-300 dark:border-neutral-700',
+              ].join(' ')}
+            >
+              <p
+                data-testid="split-box-reason"
+                className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+              >
+                Box {box.boxIndex + 1} of {boxes.length}
+                {' — '}
+                {box.reason === 'weight-limit'
+                  ? `split: this shop's parcel was over EMS's ${formatStep(limit)} limit`
+                  : 'split: a different shop'}
+              </p>
+
+              <PackingBox
+                stepIndex={0}
+                items={boxItems}
+                label={`Box ${box.boxIndex + 1} of ${boxes.length}, ${boxItems.length} item${
+                  boxItems.length === 1 ? '' : 's'
+                }, packed heaviest first, declared value ${yen(box.declaredYen)}`}
+                renderGlyph={(p) => (
+                  <div className="relative">
+                    <span
+                      data-testid="pack-order"
+                      className="absolute -left-1 -top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-bold text-white dark:bg-neutral-200 dark:text-neutral-900"
+                      aria-hidden="true"
+                    >
+                      {(p as PackedItem & { order: number }).order}
+                    </span>
+                    <Glyph lineId={p.id} label={p.label} estimated={p.estimated} size={44} />
+                  </div>
+                )}
+              />
+
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                <dt className="text-neutral-600 dark:text-neutral-400">Packed order</dt>
+                <dd className="num">heaviest first (1 = heaviest)</dd>
+                <dt className="text-neutral-600 dark:text-neutral-400">Declared value</dt>
+                <dd data-testid="split-box-declared" className="num">
+                  {yen(box.declaredYen)}{' '}
+                  <span className="text-neutral-500">sum of what is actually in this box</span>
+                </dd>
+                <dt className="text-neutral-600 dark:text-neutral-400">Duty-free threshold</dt>
+                <dd data-testid="split-box-threshold" className="num">
+                  {box.dutyFreeThresholdYen == null ? (
+                    'no threshold for this destination'
+                  ) : (
+                    <>
+                      ~{yen(box.dutyFreeThresholdYen)}{' '}
+                      <span
+                        data-testid="split-box-threshold-state"
+                        className={
+                          box.overThreshold
+                            ? 'font-semibold text-amber-700 dark:text-amber-400'
+                            : 'font-semibold text-emerald-700 dark:text-emerald-400'
+                        }
+                      >
+                        {box.overThreshold ? 'OVER' : 'under'}
+                      </span>
+                    </>
+                  )}
+                </dd>
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+        Each box is priced and duty-checked separately from the others.
+      </p>
+    </div>
+  );
+}
+
+/** 開示文。**owner が確定した文言をそのまま使う（#76）。書き換えない。** */
+function SplitDisclosure() {
+  return (
+    <div
+      data-testid="split-disclosure"
+      className="rounded bg-neutral-100 p-2 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+    >
+      <p className="font-semibold">
+        箱を何個に分けるかは代行会社が決めます。私たちはそれを知ることができないため、次の前提で仮に分けて計算しています。
+      </p>
+      <ul className="mt-1 list-disc pl-4">
+        <li>配送方式の上限を超えたら箱を増やす</li>
+        <li>重い商品から順に詰める</li>
+        <li>各口の申告額は、その口に入っている商品の合計金額（全体を均等に割ってはいません）</li>
+      </ul>
+      <p className="mt-1">実際の分け方が違えば、関税・消費税も変わります。</p>
+    </div>
   );
 }
 
