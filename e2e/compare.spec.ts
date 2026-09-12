@@ -10,6 +10,7 @@ import {
   DECIDES,
   emptyCart,
   emsOnlyNote,
+  findRow,
   freeShippingDomesticNote,
   gotoCompare,
   headerCells,
@@ -80,9 +81,13 @@ const first = (rows: RankRow[]) => priced(rows)[0]!;
 /** 行の開示文から報酬の有無を読む。'pays us nothing' 以外は我々に報酬を払う社。 */
 const paysUs = (r: RankRow) => !/pays us nothing/.test(r.text);
 
-/** 社名（と variant）で順位を引く。居なければ、探した対象と実際にあった行を並べて落とす。 */
+/**
+ * 社名（と variant）で順位を引く。`findRow`（helpers.ts）が、そもそも variant を
+ * 持たない社に variant を渡す**書き間違い**をその場で例外にする。見つからない
+ * だけなら、探した対象と実際にあった行を並べて落とす。
+ */
 function rankOf(rows: RankRow[], name: string, variant: string | null = null): number {
-  const row = rows.find((r) => r.name === name && r.variant === variant);
+  const row = findRow(rows, name, variant);
   const wanted = `${name}${variant ? `/${variant}` : ''}`;
   const present = rows.map((r) => `${r.name}${r.variant ? `/${r.variant}` : ''}`).join(', ') || '(no rows)';
   expect(row, `rankOf: looked for ${wanted} but the ranking has: ${present}`).toBeTruthy();
@@ -261,9 +266,14 @@ test('3b. two figures we did not read from the source are drawn as such (T17)', 
   await expect(dutyAmount).toBeVisible();
   expect((await dutyAmount.innerText()).trim()).toMatch(/^~¥/);
 
-  const buyee = rows.findIndex((r) => r.name === 'Buyee');
-  expect(buyee, 'Buyee が順位に居ない').toBeGreaterThanOrEqual(0);
-  const buyeeLi = await openRankRow(page, buyee);
+  // **既定のカートは2点なので、Buyee は default／consolidated の2行に分かれる。**
+  // variant を指定せず `name === 'Buyee'` だけで引くと、そのときの並び順（総額の
+  // 安い方）でどちらを掴むかが決まってしまう——`svc.deposit` のパーセンテージは
+  // 変種で変わらないので今日はどちらでも通るが、それは「たまたま」であって
+  // 「そう検査している」ことにはならない。consolidated 行だと決め打って引く。
+  const buyee = findRow(rows, 'Buyee', 'consolidated');
+  expect(buyee, 'Buyee/consolidated が順位に居ない').toBeTruthy();
+  const buyeeLi = await openRankRow(page, buyee!.rank - 1);
 
   const depositRow = costRow(buyeeLi, /^Deposit fee/);
   await expect(depositRow).toHaveCount(1);
@@ -601,13 +611,17 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
     .toEqual(priced(before).map((r) => `${r.name}/${r.variant}`));
   expect(isNonDecreasing(after.map((r) => r.total))).toBe(true);
 
-  // 全社が同じ国内送料（~¥800 × 5点）のぶん下がる。総額は ¥100 丸めなので誤差を許す。
-  // variant は `data-row-id` から構造的に読んでいる（helpers.ts の readRanking）ので、
-  // 名前＋variant でそのまま引ける。
+  // 全社が同じ国内送料（~¥800 × 5点）のぶん下がる。variant は `data-row-id` から
+  // 構造的に読んでいる（helpers.ts の readRanking）ので、名前＋variant でそのまま
+  // 引ける——`findRow` が、variant を持たない社に variant を渡す書き間違いを
+  // その場で例外にする（実例: 以前ここで `dropOf('FROM JAPAN', 'default')` と
+  // 書いていた。FROM JAPAN の `data-row-id` は常に `'fromjapan'` で variant を
+  // 持たないのに、旧・部分一致検出の名残りで 'default' を渡していた——CI が
+  // "FROM JAPAN/default disappeared from the ranking" で発見）。
   const DOMESTIC = 4000;
   const dropOf = (name: string, variant: string | null) => {
-    const b = priced(before).find((r) => r.name === name && r.variant === variant);
-    const a = after.find((r) => r.name === name && r.variant === variant);
+    const b = findRow(priced(before), name, variant);
+    const a = findRow(after, name, variant);
     expect(b && a, `${name}${variant ? `/${variant}` : ''} disappeared from the ranking`).toBeTruthy();
     return b!.total - a!.total;
   };
@@ -623,7 +637,7 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // **2026-09-12、FROM JAPAN が米国宛にEMSを売っていないため courier
   // （ECMS）で比較されるようになり、総額が上がったぶん自身の推定 deposit
   // （3.5%グロスアップ）の絶対額も少し増え、しきい値を ¥100 だけ超えた。**
-  expect(dropOf('FROM JAPAN', 'default')).toBeLessThanOrEqual(DOMESTIC + 200);
+  expect(dropOf('FROM JAPAN', null)).toBeLessThanOrEqual(DOMESTIC + 200);
 });
 
 test('8. editing a price marks that number as ours, not theirs', async ({ page }) => {
