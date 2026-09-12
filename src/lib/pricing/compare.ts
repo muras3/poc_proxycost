@@ -14,14 +14,15 @@ import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
   EXPORT_DECLARATION_FEE_YEN, SERVICES, type Service,
 } from './services';
-import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
+import { groupByShop, isPerListingSite, oneOrderPerItem, shopIdFor, type ShopGrouping } from './shops';
 import { splitByWeightLimit, type PackableItem, type ParcelPack } from './parcels';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import { alcoholItems } from './restricted-goods';
 import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
 import type {
   CourierMethod, PostalMethod,
-  Band, CompareInput, CompareResult, Item, Line, ProvinceCode, Row, Tier, WeightSensitivity,
+  Band, CompareInput, CompareResult, Item, Line, ParcelBox, ParcelSplitReason, ProvinceCode, Row, Tier,
+  WeightSensitivity,
 } from './types';
 
 // 出品ページに重量は書いていない。以下は仮定であって実測ではない。
@@ -1075,6 +1076,48 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const parcels = finalBoxes.length;
   const parcelItemIndices: number[][] = finalBoxes.map((b) => b.indices);
   const parcelGross: number[] = finalBoxes.map((b) => grossG(b.totalWeightG));
+  // **`Row.boxes`（オーナー確定 2026-09-12）: この行が実際に使った個口の内訳を、
+  // 捨てずに公開する。**UI 側（`ParcelView`、当時の `boxSplit.ts`——後に削除）が Row 抜きにこの
+  // 分解を自前で再計算しようとするたびに、この行が実際に選んだ方式・下地と
+  // 食い違うバグを繰り返した（EMS の上限を無条件に使う／店舗の切れ目を
+  // 一律に適用する、の2種）。ここで一度だけ計算し、そのまま Row に載せる。
+  //
+  // `finalBoxes` の各箱は、必ずどれか1つの `baseGroups` の部分集合になる
+  // （`splitByWeightLimit` は下地の**内側**でしか分けず、下地をまたいで
+  // 混ぜない）。そこで箱の先頭商品の添字から、元の下地番号を逆引きする。
+  const groupOfItemIndex = new Map<number, number>();
+  baseGroups.forEach((g, gi) => g.forEach((idx) => groupOfItemIndex.set(idx, gi)));
+  const boxCountByGroup = new Map<number, number>();
+  finalBoxes.forEach((b) => {
+    const gi = groupOfItemIndex.get(b.indices[0]!)!;
+    boxCountByGroup.set(gi, (boxCountByGroup.get(gi) ?? 0) + 1);
+  });
+  /**
+   * ある下地（`baseGroups[gi]`）が他の下地と別である理由。**この4つは対称ではない**
+   * （`ParcelSplitReason` の doc comment、`shops.ts` 参照）。下地の代表商品
+   * （`g[0]`——`split` が true のときは同じ下地内の全商品が同じ判定になる、
+   * `groupByShop` が店舗 ID の一致でしか束ねないため）で判定する。
+   */
+  function groupReason(gi: number): ParcelSplitReason {
+    const rep = items[baseGroups[gi]![0]!]!;
+    const shop = shopIdFor(rep);
+    if (shop != null) return 'identified-shop';
+    if (isPerListingSite(rep.site)) return 'per-listing';
+    return 'unresolved-shop';
+  }
+  const boxes: ParcelBox[] = finalBoxes.map((b) => {
+    const gi = groupOfItemIndex.get(b.indices[0]!)!;
+    // その下地から2箱以上できていれば、重量上限で増やした箱（§2④）。
+    // 1箱のままなら、下地そのものの理由（店舗の切れ目、`split` のときだけ意味を持つ）。
+    const reason: ParcelSplitReason =
+      (boxCountByGroup.get(gi) ?? 1) > 1 ? 'weight-limit' : split ? groupReason(gi) : 'weight-limit';
+    return {
+      itemIndices: b.indices,
+      declaredYen: b.declaredYen,
+      weightG: grossG(b.totalWeightG),
+      reason,
+    };
+  });
   // **`parcels > 1` の理由は2つある**（両方が同時に効くこともある）:
   // 店舗ごとの別送（`split`）と、選ばれた方式の重量上限による分割（§2④）。
   // 表示は理由を問わず「個口が複数ある」ことだけを言う。
@@ -1416,6 +1459,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     rankHigh,
     excluded,
     parcels,
+    boxes,
     rank: 0,
     diff: 0,
     cheapest: false,

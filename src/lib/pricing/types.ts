@@ -320,6 +320,49 @@ export interface Row {
     days: string;
     note: string;
   } | null;
+  /**
+   * **この行が実際に価格を計算した個口の内訳。**`parcels` は個数（`number`）
+   * だけだったので、どの商品がどの箱に入ったか・箱ごとの申告額・なぜ他の箱と
+   * 別なのかは `buildRow` の中で計算されて捨てられていた（2026-09-12、
+   * `ParcelView`、当時の `boxSplit.ts`（後に削除）の複数版のレビューで指摘——UI 側がこれを
+   * 再計算しようとするたびに、この行が実際に使った方式・グルーピングと
+   * 食い違うバグを繰り返した。表示側は Row を再計算せず、この配列をそのまま
+   * 描くこと）。
+   *
+   * `parcels === boxes.length` は常に成り立つ。`boxes` は既存の `parcels`
+   * を置き換えない（既存の呼び出し側はそのまま動く）——追加のフィールド。
+   */
+  boxes: ParcelBox[];
+}
+
+/**
+ * ある個口が他の個口と別である理由。**4つは対称ではない**（`shops.ts` 参照）:
+ *   - `'identified-shop'`  … 店舗 ID が判明していて、実際に別の店舗だと分かっている
+ *   - `'per-listing'`      … 出品ごとに1注文（オークション/メルカリ/ラクマ。
+ *                            `isPerListingSite`）。これは Buyee の公表規約どおりの
+ *                            正しい挙動であって、保守的な仮定ではない。
+ *   - `'unresolved-shop'`  … 店舗を読み取れなかった（URL から店舗が引けない等）。
+ *                            まとめない代わりに、合計額は高めに出る、と
+ *                            `compare.ts` 自身が開示している。**4つのうちここだけ
+ *                            が「こちらの数字が高めに外れているかもしれない」と
+ *                            知りながら出している値**——最もユーザーに見せる価値がある。
+ *   - `'weight-limit'`     … 配送方式の重量上限（`maxGramsFor`）を超えたため増やした箱
+ *                            （docs/DESIGN-BOX-SIZE.md §2④）。
+ * `'unresolved-shop'` を `'identified-shop'`（"a different shop"）のように見せては
+ * いけない——知らないことを知っているかのように主張することになる。
+ */
+export type ParcelSplitReason = 'identified-shop' | 'per-listing' | 'unresolved-shop' | 'weight-limit';
+
+export interface ParcelBox {
+  /** この箱に入っている商品の元の `items` 配列における添字。**重い順**
+   *  （`packHeaviestFirst` の詰め順、docs/DESIGN-BOX-SIZE.md §2⑤）。 */
+  itemIndices: number[];
+  /** この箱の申告額 = 実際にこの箱に入っている商品の代金の合計。均等割りではない。 */
+  declaredYen: number;
+  /** 梱包後重量（g）。`compare.ts` の `grossG` と同じ式。 */
+  weightG: number;
+  /** この箱がなぜ他の箱と別なのか。上の `ParcelSplitReason` 参照。 */
+  reason: ParcelSplitReason;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */

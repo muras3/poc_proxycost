@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { singleParcelGrossG } from '@/lib/pricing/compare';
-import { EMS_SOURCE_URL, EMS_ZONE, emsFor, formatStep } from '@/lib/pricing/ems';
-import { maxGramsFor } from '@/lib/pricing/postage';
+import { COUNTRIES } from '@/lib/pricing/countries';
+import { EMS_SOURCE_URL, EMS_ZONE, emsFor } from '@/lib/pricing/ems';
+import { rateFor } from '@/lib/pricing/rates';
 import { grams as gramsText, yen } from '@/lib/ui/format';
 import { Glyph } from '@/lib/ui/glyphs';
-import type { CountryCode, Item } from '@/lib/pricing/types';
-import { computeBoxSplit, type SplitBox } from './boxSplit';
+import type { CountryCode, Item, ParcelBox, ParcelSplitReason, Row } from '@/lib/pricing/types';
 import { PackingBox, type PackedItem } from './PackingBox';
 import { WeightLadder } from './WeightLadder';
 
@@ -22,21 +22,31 @@ import { WeightLadder } from './WeightLadder';
  *   2. その重量が EMS のどの段に立っているか
  *   3. **直前の操作で送料が動いたか。動かなかったなら「+¥0」と書いて静止する**
  *
- * 複数箱に分かれるときは、箱ごとに言う（`computeBoxSplit`、`docs/DESIGN-BOX-SIZE.md`
- * §2④⑤）: なぜ分かれたか・詰めた順（重い順）・その箱の申告額・その箱の免税しきい値。
- * **「なぜ分かれたか」は今は EMS の重量上限超えしか出さない。**店舗の切れ目による
- * 分割は `compare.ts` の `buildRow` が既に計算しているが `Row` の外に出ておらず
- * （`Row.parcels` は個数のみ）、しかも実際に効くのは Buyee の default 変種だけ
- * ——この区画は特定の `Row` に紐付いていないので、店舗分割を一律に見せると
- * 「価格の根拠にしていない分かれ方」を見せることになる（`boxSplit.ts` の doc
- * comment 参照、2026-09-12 オーナー指摘で一度実装して撤回）。
+ * 複数箱に分かれるときは、箱ごとに言う: なぜ分かれたか・詰めた順（重い順）・
+ * その箱の申告額・その箱の免税しきい値。**箱の内訳（`row.boxes`）は一切ここで
+ * 再計算しない。**`compare()`/`buildRow`（`src/lib/pricing/compare.ts`）が
+ * その行に実際に選んだ方式・グルーピングで計算した `Row.boxes` を、そのまま
+ * 描くだけ（2026-09-12、オーナー確定）。
+ *
+ * **経緯（同じ欠陥を3回作った）**: 最初はこの区画が独自に `groupByShop` や
+ * `splitByWeightLimit` を呼び直していた。1回目は店舗が分からない商品を1点ずつ
+ * 別箱にする版で、ほぼ全カートが常に「店舗で分割」して見えた。2回目はそれを
+ * 緩めて店舗不明をまとめる版にしたが、今度は実際の課金（1点＝1注文で高めに
+ * 計算される）と絵（1箱）が食い違った。3回目は店舗分割を諦めて EMS の重量上限
+ * だけを見せたが、選ばれた方式が EMS でない行（例: DE/3点×600g/cheapest は
+ * `small-packet-air`）では上限が実際と違い、箱数・申告額が計算と食い違ったまま
+ * だった。**3回とも同じ形の欠陥——計算はしているが Row の外に出していない値を、
+ * 画面側が当てずっぽうで再現しようとした。**`Row.boxes` を追加して、この区画は
+ * それを受け取るだけの純粋な描画にした。これで箱の内訳が「その行が実際に使った
+ * もの」からズレることは構造的に無くなる。
+ *
  * **代行が実際に箱をどう分けるかは私たちには分からない**——この分割は「私たちが
  * 仮に置いた前提」であって実測ではない、という前提そのものを開示文で先に言う
  * （`SplitDisclosure`）。
  *
- * 数字は全部 `singleParcelGrossG()`／`computeBoxSplit()`（どちらも compare() と
- * 同じ組み立て）と `emsFor()` ＝日本郵便の公表表から出る。ここで独自に足し引きした
- * 数字は無い。
+ * `row` が渡されない、または `row.boxes.length <= 1`（分かれていない）ときは、
+ * 従来どおりの単箱プレビュー（`singleParcelGrossG()`／`emsFor()` ＝日本郵便の
+ * 公表表）にフォールバックする。
  */
 
 /** 追加1回の時間軸（ms、prototypes/README.md）。**直列。** */
@@ -123,18 +133,25 @@ function packedItems(items: readonly Item[]): PackedItem[] {
 export function ParcelView({
   items,
   country,
+  row = null,
   className = '',
 }: {
   items: readonly Item[];
   country: CountryCode;
+  /**
+   * この行に実際に価格が計算された `Row`（`compare()` の結果）。渡すと
+   * `row.boxes` をそのまま描き、複数箱ならその分かれ方を見せる。渡さない、
+   * または `row.boxes.length <= 1` なら、従来どおりの単箱プレビューになる。
+   * **ここでは箱の内訳を再計算しない**——上のモジュール doc comment 参照。
+   */
+  row?: Row | null;
   className?: string;
 }) {
   const target = useMemo(() => parcelStateFor(items, country), [items, country]);
   const packed = useMemo(() => packedItems(items), [items]);
-  // **箱が複数に分かれるなら、それを見せる。**単箱（または EMS が使えず判定不能）
-  // なら null/長さ1 が返り、その場合は下の従来どおりの単箱表示にフォールバックする。
-  const split = useMemo(() => computeBoxSplit(items, country), [items, country]);
-  const multiBox = split != null && split.length > 1 ? split : null;
+  // **箱が複数に分かれるなら、それを見せる。**`row` が無い、または1箱のままなら
+  // 下の従来どおりの単箱表示にフォールバックする。
+  const multiBox = row && row.boxes.length > 1 ? row.boxes : null;
   const signature = target
     ? `${target.grams}/${target.stepIndex}/${target.overMax}/${target.yen}/${packed.length}`
     : `none/${packed.length}`;
@@ -362,7 +379,7 @@ export function ParcelView({
 }
 
 /** 箱1つぶんの中身。`box.itemIndices` の順（重い順）をそのまま `order` に写す。 */
-function packedItemsForBox(items: readonly Item[], box: SplitBox): (PackedItem & { order: number })[] {
+function packedItemsForBox(items: readonly Item[], box: ParcelBox): (PackedItem & { order: number })[] {
   const out: (PackedItem & { order: number })[] = [];
   let order = 0;
   for (const idx of box.itemIndices) {
@@ -384,49 +401,79 @@ function packedItemsForBox(items: readonly Item[], box: SplitBox): (PackedItem &
 }
 
 /**
+ * 箱がなぜ他の箱と別なのかの文言。**`ParcelSplitReason` の4種は対称ではない**
+ * （`src/lib/pricing/types.ts` の doc comment 参照）——特に `'unresolved-shop'` を
+ * `'identified-shop'`（"a different shop"）のように書いてはいけない。知らないことを
+ * 知っているかのように主張することになる。
+ */
+const REASON_TEXT: Record<ParcelSplitReason, string> = {
+  'identified-shop': 'a different shop',
+  'per-listing': 'a separate listing — this site bills one order per listing',
+  'unresolved-shop': "we couldn't tell if this is the same shop as another box, so we kept it "
+    + 'separate — this can push the total higher than the real one',
+  'weight-limit': "over this shipping method's weight limit",
+};
+
+/** 免税しきい値の判定。**円換算と比較だけ**——箱の中身・分割の理由には触れない、
+ *  国のマスタデータ（`COUNTRIES`）を declaredYen に当てはめるだけの表示用計算。 */
+function dutyFreeCheck(country: CountryCode, declaredYen: number): { thresholdYen: number | null; over: boolean } {
+  const c = COUNTRIES[country];
+  if (!Number.isFinite(c.dutyFreeLimit)) return { thresholdYen: null, over: false };
+  const thresholdYen = Math.round(c.dutyFreeLimit * rateFor(c.ccy));
+  return { thresholdYen, over: declaredYen > thresholdYen };
+}
+
+/**
  * **箱の分かれ方そのものを見せる区画。**
  * 前提（`docs/DESIGN-BOX-SIZE.md` §5、オーナー確定 #76）を先に言い、箱ごとに
  * 4つの事実を出す: 分かれた理由・詰めた順（重い順）・その箱の申告額・その箱の
  * 免税しきい値。すべて文字と数字で言うので `prefers-reduced-motion` でも全部
  * 読める（この区画自体はアニメーションを使っていない）。
+ * **`boxes` はそのまま `row.boxes`（`compare()` の出力）を描くだけ。** 分割・
+ * グルーピングの計算はここには一切無い。
  */
 function MultiBoxView({
   boxes,
   items,
   country,
 }: {
-  boxes: readonly SplitBox[];
+  boxes: readonly ParcelBox[];
   items: readonly Item[];
   country: CountryCode;
 }) {
-  const limit = maxGramsFor('ems', country);
   return (
     <div data-testid="parcel-split" className="mt-3 min-w-0">
       <SplitDisclosure />
       <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
-        {boxes.map((box) => {
+        {boxes.map((box, boxIndex) => {
           const boxItems = packedItemsForBox(items, box);
+          const { thresholdYen, over } = dutyFreeCheck(country, box.declaredYen);
           return (
             <div
-              key={box.boxIndex}
+              key={boxIndex}
               data-testid="split-box"
               data-reason={box.reason}
-              data-over-threshold={box.overThreshold ? 'true' : 'false'}
-              className="min-w-0 rounded border border-amber-400 p-2 dark:border-amber-700"
+              data-over-threshold={over ? 'true' : 'false'}
+              className={[
+                'min-w-0 rounded border p-2',
+                box.reason === 'weight-limit'
+                  ? 'border-amber-400 dark:border-amber-700'
+                  : 'border-neutral-300 dark:border-neutral-700',
+              ].join(' ')}
             >
               <p
                 data-testid="split-box-reason"
                 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
               >
-                Box {box.boxIndex + 1} of {boxes.length}
+                Box {boxIndex + 1} of {boxes.length}
                 {' — '}
-                split: this shipment was over EMS&apos;s {formatStep(limit)} limit
+                split: {REASON_TEXT[box.reason]}
               </p>
 
               <PackingBox
                 stepIndex={0}
                 items={boxItems}
-                label={`Box ${box.boxIndex + 1} of ${boxes.length}, ${boxItems.length} item${
+                label={`Box ${boxIndex + 1} of ${boxes.length}, ${boxItems.length} item${
                   boxItems.length === 1 ? '' : 's'
                 }, packed heaviest first, declared value ${yen(box.declaredYen)}`}
                 renderGlyph={(p) => (
@@ -453,20 +500,20 @@ function MultiBoxView({
                 </dd>
                 <dt className="text-neutral-600 dark:text-neutral-400">Duty-free threshold</dt>
                 <dd data-testid="split-box-threshold" className="num">
-                  {box.dutyFreeThresholdYen == null ? (
+                  {thresholdYen == null ? (
                     'no threshold for this destination'
                   ) : (
                     <>
-                      ~{yen(box.dutyFreeThresholdYen)}{' '}
+                      ~{yen(thresholdYen)}{' '}
                       <span
                         data-testid="split-box-threshold-state"
                         className={
-                          box.overThreshold
+                          over
                             ? 'font-semibold text-amber-700 dark:text-amber-400'
                             : 'font-semibold text-emerald-700 dark:text-emerald-400'
                         }
                       >
-                        {box.overThreshold ? 'OVER' : 'under'}
+                        {over ? 'OVER' : 'under'}
                       </span>
                     </>
                   )}

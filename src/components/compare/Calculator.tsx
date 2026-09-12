@@ -132,7 +132,15 @@ export function Calculator() {
         * 横に並べるぶん順位表は押し下がらない。
         */}
       <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
-        <ParcelView items={priced} country={country} className="lg:w-[32rem] lg:shrink-0" />
+        {/* **どの Row の箱を見せるか。**最安（`cheapest`）行——利用者が実際に選ぶ
+            可能性が最も高い行の、実際に計算された個口を見せる。他の行は方式や
+            グルーピングが違いうるので、複数の行を混ぜて1つの箱の絵にはしない。 */}
+        <ParcelView
+          items={priced}
+          country={country}
+          row={result.rows.find((r) => r.cheapest) ?? null}
+          className="lg:w-[32rem] lg:shrink-0"
+        />
         <ItemList
           items={items}
           readOn={readOn}

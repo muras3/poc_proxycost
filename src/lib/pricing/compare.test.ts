@@ -1414,6 +1414,93 @@ describe('§2④: adding a box when a method\'s own limit is exceeded', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// **`Row.boxes`（オーナー確定 2026-09-12）**: `buildRow` が実際に使った個口の
+// 内訳を、捨てずに公開する。これが無いあいだ、UI 側（`ParcelView`、当時の `boxSplit.ts`——後に削除）
+// はこの分解を自前で再計算しようとして、この行が実際に選んだ方式・下地と
+// 食い違うバグを2種類作った（EMSの上限を無条件に使う／店舗の切れ目を一律に
+// 適用する）。ここで固定するのは「Row を見ればいい」が成り立つこと。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Row.boxes: the per-parcel breakdown this row actually used', () => {
+  test('**回帰フィクスチャ**: DE/3点×600g/cheapest は Buyee の方式を ems ではなく'
+    + ' small-packet-air に決める（#85）——boxes は small-packet-air の上限（2kg）'
+    + ' で計算されていて、EMS の30kg基準の絵とは箱数・申告額が違って当然', () => {
+    const rows = compare({ items: items(3, 600), country: 'DE', method: 'cheapest' }).rows;
+    const split = byId(rows, 'buyee:default');
+    const together = byId(rows, 'buyee:consolidated');
+    expect(split.method).toBe('small-packet-air');
+    expect(together.method).toBe('small-packet-air');
+
+    // split（店ごと=商品ごと、yahoo-auctions は per-listing）: 3個口、
+    // どれも小形包装物の2kg上限（600g×1.2+300=1,020g）を大きく下回るので
+    // 重量では分かれない——箱ごとの理由は per-listing。
+    expect(split.boxes).toHaveLength(3);
+    expect(split.boxes.every((b) => b.reason === 'per-listing')).toBe(true);
+    expect(split.boxes.every((b) => b.itemIndices.length === 1)).toBe(true);
+    expect(split.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(9000); // 保全
+
+    // consolidated（店の下地が無い=1グループ）: 3点まとめて梱包後
+    // 1,800g×1.2+300=2,460g が小形包装物の2kg上限を超えるので、
+    // **重量上限で**2箱に分かれる——店舗とは無関係な理由。
+    expect(together.boxes.length).toBeGreaterThan(1);
+    expect(together.boxes.every((b) => b.reason === 'weight-limit')).toBe(true);
+    expect(together.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(9000); // 保全
+    expect(together.boxes.length).toBe(together.parcels);
+    expect(split.boxes.length).toBe(split.parcels);
+  });
+
+  test('identified-shop: two items resolved to the same rakuten shop share one box'
+    + ' and are told apart from a per-listing singleton in the same cart', () => {
+    const cart = [
+      item({
+        id: 's1', priceYen: 2000, weightG: 300,
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/s1/',
+      }),
+      item({
+        id: 's2', priceYen: 3000, weightG: 300,
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/s2/',
+      }),
+      item({ id: 'auction', priceYen: 4000, weightG: 300, site: 'yahoo-auctions' }),
+    ];
+    const row = byId(compare({ items: cart, country: 'DE', method: 'small-packet-air' }).rows, 'buyee:default');
+    expect(row.boxes).toHaveLength(2);
+    const shopBox = row.boxes.find((b) => b.itemIndices.length === 2)!;
+    const auctionBox = row.boxes.find((b) => b.itemIndices.length === 1)!;
+    expect(shopBox.reason).toBe('identified-shop');
+    expect(shopBox.declaredYen).toBe(5000); // s1+s2 の合計、均等割りではない
+    expect(auctionBox.reason).toBe('per-listing');
+    expect(auctionBox.declaredYen).toBe(4000);
+  });
+
+  test('unresolved-shop: a listing we cannot read a shop from is its own box,'
+    + ' labeled as unresolved — not claimed to be a known different shop', () => {
+    // 2点以上ないと Buyee の default/consolidated 変種自体が生まれない
+    // （`rowsFor`——1点だけなら変種の区別が無い `null` variant になり、店舗分割
+    // 自体が効かない）。もう1点は識別できる店（rakuten）にして、同じカートの中で
+    // 'unresolved-shop' と他の理由が混ざらないことも一緒に見る。
+    const cart = [
+      item({ id: 'mystery', priceYen: 1000, weightG: 300, site: 'other' }),
+      item({
+        id: 'known', priceYen: 2000, weightG: 300,
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/known/',
+      }),
+    ];
+    const row = byId(compare({ items: cart, country: 'DE', method: 'small-packet-air' }).rows, 'buyee:default');
+    expect(row.boxes).toHaveLength(2);
+    const mysteryBox = row.boxes.find((b) => b.declaredYen === 1000)!;
+    const knownBox = row.boxes.find((b) => b.declaredYen === 2000)!;
+    expect(mysteryBox.reason).toBe('unresolved-shop');
+    expect(knownBox.reason).toBe('identified-shop');
+  });
+
+  test('a row with no shop split at all (variant: null, single item) still reports'
+    + ' its box(es) via Row.boxes, conserving the cart total', () => {
+    const row = byId(compare({ items: items(1, 600), country: 'DE', method: 'small-packet-air' }).rows, 'buyee');
+    expect(row.boxes.length).toBe(row.parcels);
+    expect(row.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(3000);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 重量不明。1つの数字を押し付けず、EMS の段ごとに出す。
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
