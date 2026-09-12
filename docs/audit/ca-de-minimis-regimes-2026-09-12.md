@@ -106,17 +106,17 @@ CAD 20 で一致するため、単一値のままで両方を正しくカバー�
 - **`direct_fetch`（原文をそのまま読み、verbatim quote あり）**: 郵便/宅配便/CUSMA の
   3帯の金額と条件（`cbsa-asfc.gc.ca/services/cusma-aceum/lvs-efv-eng.html` から）。
   課税ベースが value for duty である旨の1文も同じ確認。
-- **`direct_fetch`（verbatim quote は検索結果由来の要約からで、ページ本文を直接引用した
-  わけではない）**: CLVS プログラムの CAD 3,300 という数字自体は D17-4-0 のページを
-  `curl -L` で取得（HTTP 200）できたが、本文からの逐語引用はこのメモには含めていない
-  （ページ本文中の該当箇所を直接読めば `direct_fetch` に格上げできる。次の一歩として残す）。
+- **`direct_fetch`（本文から逐語引用済み）**: CLVS プログラムの CAD 3,300 という数字は
+  D17-4-0 のページ本文（"Updates made to this D-memo" 節）に
+  `amend the low value shipment (LVS) threshold to $3,300 Canadian dollars (CAD), which
+  came into effect July 1, 2020` という一文があり、ここから逐語引用した（`curl -L` で
+  ページ全体を取得、HTTP 200、リダイレクトなし）。
 - 州との非依存性の結論は、上記 `direct_fetch` の同一ページに州の言及が一切無いことの
   消極的確認（"counted_absence" に近いが、ページが述べる分岐軸が原産国のみと明示されて
   いるため、単なる見落としではないと判断できる）。
 
 ## 次の一歩（未確定のまま残すもの）
 
-- D17-4-0 本文からの CAD 3,300 の逐語引用（現状は要約経由）。
 - CUSMA 側の一次法文（CUSMA Article 7.8(1)(f) 原文）そのものへの直接あたり。今回は
   CBSA 自身の実施ページ（施行済みの解釈）を一次情報として採用しており、条文原文までは
   読んでいない。数字自体は CBSA ページと条文で一致するはずだが、確認はしていない。

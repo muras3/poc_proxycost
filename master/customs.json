@@ -878,8 +878,9 @@
           "purpose": "duty_free_threshold_ではない。CLVS（Courier Low Value Shipment）プログラムの対象上限＝簡易通関手続き（インボイス省略等）が使える上限で、免税としきい値の性質が異なる。CAD 3,300 以下は簡易搬入・翌月26日までの会計処理などが認められるだけで、duty/tax 自体は上の各帯に従って課される。",
           "tier": "A_confirmed",
           "source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d17/d17-4-0-eng.html",
+          "quote": "amend the low value shipment (LVS) threshold to $3,300 Canadian dollars (CAD), which came into effect July 1, 2020",
           "checked_on": "2026-09-12",
-          "note": "CUSMA 施行時に旧 CAD 20 から CAD 3,300 へ引き上げ。docs/audit/ca-de-minimis-regimes.md 参照。"
+          "note": "CUSMA 施行時に旧 CAD 20 から CAD 3,300 へ引き上げ。docs/audit/ca-de-minimis-regimes-2026-09-12.md 参照。"
         },
         "provincial_interaction": {
           "finding": "courier/CLVS のしきい値自体は州によって変わらない（連邦制度・全国一律）。州税（GST/HST の州分・QST）は `CA_PROVINCES`（src/lib/pricing/countries.ts）が別に持つ既存の仕組みで、しきい値を跨いで課税対象になった後にどの州税率を掛けるかという別レイヤーの話。しきい値と州税率は独立で、しきい値側に province 依存は無い。",
