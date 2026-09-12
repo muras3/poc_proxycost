@@ -833,6 +833,65 @@
         "why_unknown": "一次情報（CBSA Memorandum D5-1-1）は手数料の額しか書かず、**その手数料に GST/HST が乗るかを一切述べていない**。以前このマスタは『Canada Post 公式は C$9.95＋5% GST』を B_inferred で持ち、実請求（手数料への GST 行が無い）と矛盾していると記録していたが、2026-09-07 に原文を読んだところ**公式はそもそも +5% を言っていなかった**。矛盾していたのは公式と実請求ではなく、マスタの推論と実請求。唯一の観測（実請求）は GST 無しなので、推論を消して C_unknown に落とす。",
         "only_observation": "ca-canadapost-forum の実請求に手数料への GST 行が無い（99.44+139.21+9.95=248.60）",
         "checked_on": "2026-09-07"
+      },
+      "de_minimis_regimes": {
+        "$comment": "docs/audit/ca-de-minimis-regimes.md の調査結果。src/lib/pricing/countries.ts の CA.dutyFreeLimit=20 は単一値だが、実際は経路（郵便／宅配便）と原産国（米墨／それ以外）で3つの別制度がある。ここでは事実を記録するだけで、しきい値の分割実装はスコープ外（別PR）。",
+        "postal": {
+          "duty_threshold": 20,
+          "tax_threshold": 20,
+          "currency": "CAD",
+          "measured_on": "value_for_duty",
+          "applies_to_japan_origin": true,
+          "tier": "A_confirmed",
+          "source": "https://www.cbsa-asfc.gc.ca/services/cusma-aceum/lvs-efv-eng.html",
+          "quote": "For a shipment imported by mail, the following still applies: $20 and under: duty and tax free when imported from any country / Above $20: duties and taxes apply when imported from any country, including the US and Mexico",
+          "checked_on": "2026-09-12"
+        },
+        "courier_non_us_mx": {
+          "duty_threshold": 20,
+          "tax_threshold": 20,
+          "currency": "CAD",
+          "measured_on": "value_for_duty",
+          "applies_to_japan_origin": true,
+          "tier": "A_confirmed",
+          "source": "https://www.cbsa-asfc.gc.ca/services/cusma-aceum/lvs-efv-eng.html",
+          "quote": "For a shipment imported by courier: Imported from any country (other than the US and Mexico) — Up to $20: duty and tax free / Above $20: duties and taxes apply, excluding the US and Mexico",
+          "checked_on": "2026-09-12",
+          "note": "日本発の宅配便（FedEx/DHL/UPS）は米墨以外からの輸入にあたるため、この帯が適用される。**しきい値は郵便と同じ CAD 20 で、duty と tax も同額。**したがって現行の単一 dutyFreeLimit=20 は、日本発の宅配便に対しても値として誤っていない——ただし『郵便のルールを宅配便に流用した結果たまたま一致』ではなく、CBSA 自身がこの帯を郵便と別立てで明記している点は区別して残す（規定の出どころが違うだけで数値は同じ、という記録）。"
+        },
+        "cusma_us_mx_courier": {
+          "duty_threshold": 40,
+          "tax_threshold_low": 40,
+          "tax_threshold_high": 150,
+          "currency": "CAD",
+          "measured_on": "value_for_duty",
+          "applies_to_japan_origin": false,
+          "tier": "A_confirmed",
+          "source": "https://www.cbsa-asfc.gc.ca/services/cusma-aceum/lvs-efv-eng.html",
+          "quote": "Imported from the US and Mexico — Up to $40: duty and tax free / Above $40 to $150: duty free, but taxes still apply / Above $150: duties and taxes apply",
+          "checked_on": "2026-09-12",
+          "why_not_applicable": "CUSMA の引き上げられた de minimis（CAD 40 / 150）は、原文が『Imported from the US and Mexico』とだけ書いており、CBSA の一般案内ページ（https://www.cbsa-asfc.gc.ca/services/cusma-aceum/overview-survol-eng.html）も CUSMA の恩恵を米墨からの輸入・宅配便に限定する枠組みとして説明している。この計算機が比較する5社の輸送経路は日本発なので、**CUSMA の de minimis はそもそも我々のユースケースに適用されない。**適用されないものとして記録するのが正しい結論であり、CAD 40/150 を CA の一般しきい値として実装してはならない。"
+        },
+        "clvs_program_threshold": {
+          "value": 3300,
+          "currency": "CAD",
+          "purpose": "duty_free_threshold_ではない。CLVS（Courier Low Value Shipment）プログラムの対象上限＝簡易通関手続き（インボイス省略等）が使える上限で、免税としきい値の性質が異なる。CAD 3,300 以下は簡易搬入・翌月26日までの会計処理などが認められるだけで、duty/tax 自体は上の各帯に従って課される。",
+          "tier": "A_confirmed",
+          "source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d17/d17-4-0-eng.html",
+          "quote": "amend the low value shipment (LVS) threshold to $3,300 Canadian dollars (CAD), which came into effect July 1, 2020",
+          "checked_on": "2026-09-12",
+          "note": "CUSMA 施行時に旧 CAD 20 から CAD 3,300 へ引き上げ。docs/audit/ca-de-minimis-regimes-2026-09-12.md 参照。"
+        },
+        "provincial_interaction": {
+          "finding": "courier/CLVS のしきい値自体は州によって変わらない（連邦制度・全国一律）。州税（GST/HST の州分・QST）は `CA_PROVINCES`（src/lib/pricing/countries.ts）が別に持つ既存の仕組みで、しきい値を跨いで課税対象になった後にどの州税率を掛けるかという別レイヤーの話。しきい値と州税率は独立で、しきい値側に province 依存は無い。",
+          "tier": "A_confirmed",
+          "source": "https://www.cbsa-asfc.gc.ca/services/cusma-aceum/lvs-efv-eng.html",
+          "checked_on": "2026-09-12"
+        },
+        "schema_gap": {
+          "finding": "現行 `countries.ts` の `dutyFreeLimit`（1値）+ `clearanceBands` では、この3制度のうち postal と courier_non_us_mx は表現できる（両方とも CAD 20 で一致するため単一値のままで正しい）。しかし CUSMA 帯（courier_us_mx）を将来サポートする場合は、`dutyFreeLimit` を単一値のままにはできない——duty のしきい値（40）と tax のしきい値（40〜150、二段階）が異なり、かつ経路（postal/courier）と原産国（JP vs US/MX）の組で分岐する。今回の日本発ユースケースでは CUSMA 帯が『適用されない』で確定するため、現行スキーマを変える必要は無い。将来 US/MX 発を扱うことになった場合は、しきい値を { duty_threshold, tax_threshold_low, tax_threshold_high } の3値組にし、経路×原産国のキーで持つ形が必要になる。",
+          "action": "スコープ外（別PR）。実装は行わない。"
+        }
       }
     },
     {
