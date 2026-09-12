@@ -5,7 +5,7 @@ import {
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
   DEFAULT_PARCEL_DIMENSIONS_CM, DEFAULT_PARCEL_DIMENSIONS_NOTE, DEFAULT_PARCEL_DIMENSIONS_TIER,
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, courierPriceFor, dimensionsExceedCube,
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, courierPriceFor, dimensionsExceedLimit,
   markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
@@ -831,9 +831,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     if (rate.unavailableIn?.includes(ctx.cc)) return null;  // その国へは出していない
     // F30: 商品価格（Charge 1）がこの方式の上限を超えたら選べない。重量や国とは別の理由。
     if (rate.priceCapJpy != null && itemsYen > rate.priceCapJpy) return null;
-    // P2 3: 寸法による「送れない」（額ではなく可否）。既定の箱は全方式の上限を
-    // 下回るので、いまはここで常に false になる（`dimensionsExceedCube` のコメント）。
-    if (dimensionsExceedCube(m, parcelDims)) return null;
+    // P2 3: 寸法による「送れない」（額ではなく可否）。社・方式ごとの公式の制限値
+    // （`rate.dimensionLimit`）で判定する。既定の箱はどの制限も下回るので、
+    // いまはここで常に false になる（`dimensionsExceedLimit` のコメント）。
+    if (dimensionsExceedLimit(parcelDims, rate.dimensionLimit)) return null;
     const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
     if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
     // **上乗せは個口ごとに足す。**1kg 段の定額なので、個口を分ければその数だけ乗る。
@@ -915,9 +916,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : priceCapExceeded
         ? `not eligible above ¥${rate.priceCapJpy!.toLocaleString('en-US')} declared value`
       // P2 3: 寸法による「送れない」。額ではなく可否——理由が違うので文言も分ける。
-      : dimensionsExceedCube(method as PostalMethod, parcelDims)
-        ? `over our assumed ${Math.max(parcelDims.lengthCm, parcelDims.widthCm, parcelDims.heightCm)}cm`
-          + " box side — outside this method's size limit (estimate)"
+      : dimensionsExceedLimit(parcelDims, rate.dimensionLimit)
+        ? "over our assumed box size — outside this method's size limit"
+          + (rate.dimensionLimit!.tier === 'estimate' ? ' (estimate)' : '')
       : overMax
         ? `over ${formatStep(maxGramsFor(method as PostalMethod, ctx.cc))} — outside this method's table`
         : split
@@ -1130,9 +1131,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : priceCapExceeded
         ? `${spec.label} can only be selected under ¥${rate.priceCapJpy!.toLocaleString('en-US')}`
           + ' declared value at this company, and this cart is over that'
-      : dimensionsExceedCube(method as PostalMethod, parcelDims)
+      : dimensionsExceedLimit(parcelDims, rate.dimensionLimit)
         ? `${spec.label} has no published rate for our assumed box size — outside this method's`
-          + ' size limit (estimate)'
+          + ' size limit' + (rate.dimensionLimit!.tier === 'estimate' ? ' (estimate)' : '')
         : `${spec.label} has no published rate above ${formatStep(maxGramsFor(method as PostalMethod, ctx.cc))}`
           + ' in our table, so this total is missing its largest line',
   };

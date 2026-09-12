@@ -2739,6 +2739,41 @@
         "surface_vs_official_note": "日本郵便公表額(2,500)そのまま。上乗せ無し"
       },
       "finding": "EMSは両社とも日本郵便の公表額そのまま(¥3,400)で一致するが、SurfaceはJauceが公表額+¥250、Buyeeが公表額±0と、社によって上乗せの有無・額が違うことが実測で裏づけられた。これは我々の `markup` モデル（日本郵便5方式＝公表額＋社ごとの上乗せ）の前提——『上乗せは社ごとに違いうる』——そのものを支持する実測。"
+    },
+    "dimension_limits_2026_09_12": {
+      "summary": "コードの MAX_CUBE_SIDE_CM（立方体の一辺・全社共通1個の上限）を、社・方式ごとの公式の制限値（maxLengthCm/maxLengthPlusGirthCm/maxSumCm）に置き換えた（claude/dimension-limits）。実測はドイツ・600g、立方体の一辺を20→50cmで走査（2026-09-12）。",
+      "displayed_limits_used": {
+        "buyee": {
+          "small-packet-air": "Small Packet(AIR/SAL)・AIR Packet: max weight 2kg / max length 60cm / sum of 3 sides <=90cm",
+          "ems_parcel-air_parcel-surface": "EMS・International Parcel Post(AIR/SAL/Surface Mail)・FedEx/FedEx Economy: max weight 30kg / max length 1.5m / length+girth <=3.0m"
+        },
+        "zenmarket": {
+          "small-packet-air_ECMS_EXPRESS": "max length 60cm / 2nd side <=40cm / 3rd side <=40cm / max weight 30kg",
+          "unmapped": "NOVA GLOBAL / DHL(GREEN+) / FEDEX(-LOWCOST) / UPS はZenMarketの自社ブランド名で、我々の4方式(small-packet-air/ems/parcel-air/parcel-surface)のどれに当たるか画面のラベルからは決められないため対応付けていない。実測でこの4方式は50cmの立方体でも消えていないため、対応付けないことによる実害は無い。"
+        },
+        "jauce": {
+          "ems_parcel-surface": "EMS/SAL/Surfaceの3方式とも同じ表示: max weight 30,000g / max length 105cm / length+girth 200cm"
+        },
+        "neokyo": {
+          "note": "画面に方式ごとの数値は一切出ない(固定表示「Weight 30kg max」「Dimensions 150cm per side max」のみ)。実測挙動(45cmでAirmail/Surfaceが消えEMSは残る)が日本郵便の公式制限と完全一致するため、公式制限を estimate として当てた: 国際小包(parcel-air/parcel-surface)=最大長105cm・長さ+胴回り200cm、EMS=最大長150cm・長さ+胴回り300cm。"
+        }
+      },
+      "jauce_display_vs_actual": {
+        "displayed": "max length 105cm / length+girth 200cm",
+        "actual": "実測では225cm(45cm立方体)でも生存し、250cm(50cm立方体)で初めてNot availableになった。真の閾値は225〜250cmのどこか。",
+        "decision": "指示どおり画面の表示値(105/200cm)をそのまま使う。過小評価になるので安全側——実際には送れる荷物を「送れない」と出すことはあっても、その逆(送れない荷物を送れると出す)は起きない。"
+      },
+      "buyee_ems_parcel_discrepancy": {
+        "observed": "2026-09-12の実測ではBuyeeのEMS・国際小包(国際小包post AIR/Surface)も45cmの立方体で全滅したと記録されている(Buyee Air Delivery のみ残存)。",
+        "displayed": "max length 1.5m(150cm) / length+girth <=3.0m(300cm)",
+        "problem": "45cmの立方体は最長辺+胴回り=45+2×(45+45)=225cm<300cmで、表示された制限値だけでは45cmでの消滅を説明できない。Jauceと向きが逆(表示値のほうが実際より緩く見える)の食い違い。",
+        "decision": "指示(表示値を使え)どおり、コードにはBuyeeの表示値(150cm/300cm)をそのまま入れた。この食い違いは未解決のまま残す——オーナー判断待ち。既定の箱(最長辺20cm)はどちらにしても影響を受けないので、このPRの結果には効かない。"
+      },
+      "nova_global_display_format_changes_with_input": {
+        "observed": "ZenMarketのNOVA GLOBALの制限表示が、入力した立方体の一辺によって形式ごと変わった: 20〜35cmの画面では「最大長61cm/2番目<=44cm/3番目<=37cm/最大20kg」、40〜50cmの画面では「長さ+胴回り<=250cm/最大長100cm/最大30kg」。",
+        "decision": "どちらの形式も採用していない——NOVA GLOBAL自体を我々の4方式のどれにも対応付けられない(zenmarket.postageのコメント参照)ため、採用の可否を判断する前提が無い。次にNOVA GLOBALを価格化する作業者のために、両方の表示形式をここに記録しておく。"
+      },
+      "default_box_unaffected": "既定の箱(20x15x10cm。3辺の和45cm、最長辺+胴回り70cm)は、ここに入れたどの社・方式の上限(最も厳しいBuyeeの小形包装物でも60cm/90cm)も下回るため、この置き換えで総額・順位・rankIndeterminateは1円も動かない(courier-postage.test.tsで確認)。"
     }
   }
 }

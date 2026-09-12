@@ -1,45 +1,125 @@
 import { describe, expect, test } from 'vitest';
 import {
-  DEFAULT_PARCEL_DIMENSIONS_CM, MAX_CUBE_SIDE_CM,
-  billableWeightG, courierPriceFor, dimensionsExceedCube, volumetricWeightG,
+  DEFAULT_PARCEL_DIMENSIONS_CM,
+  billableWeightG, courierPriceFor, dimensionsExceedLimit, volumetricWeightG,
 } from './postage';
-import type { MeasuredPostageRate } from './services';
+import { SERVICES, type MeasuredPostageRate } from './services';
+import type { BoxDimensionsCm } from './types';
 
-// P2: 器そのものの単体テスト。**このPR時点でどの社にも実データを入れていない**
-// （コーディネーターの指示——データ取り込みは別PR）ので、ここは全部フィクスチャ。
+// P2: 器そのものの単体テスト。**このPR時点でどの社にも宅配便の実データを入れていない**
+// （コーディネーターの指示——データ取り込みは別PR）ので、`courierPriceFor` 系は
+// 引き続きフィクスチャ。寸法上限（`dimensionLimit`）は方式ごとの実データが入ったので、
+// ここでは `SERVICES` 本体を使い、2026-09-12 の実測（社ごとに一辺を5cm刻みで走査した
+// ドイツ・600g）を再現する。
+
+const cube = (sideCm: number): BoxDimensionsCm =>
+  ({ lengthCm: sideCm, widthCm: sideCm, heightCm: sideCm });
+
+const findService = (id: string) => {
+  const svc = SERVICES.find((s) => s.id === id);
+  if (!svc) throw new Error(`fixture bug: no service ${id}`);
+  return svc;
+};
 
 describe('DEFAULT_PARCEL_DIMENSIONS_CM ── 既定の箱', () => {
-  test('20×15×10cm。最大辺は日本郵便のどの寸法上限（30/40cm）も下回る', () => {
+  test('20×15×10cm。既知の寸法上限をすべて下回る（3辺の和45cm・最長辺+胴回り70cm）', () => {
     expect(DEFAULT_PARCEL_DIMENSIONS_CM).toEqual({ lengthCm: 20, widthCm: 15, heightCm: 10 });
-    const maxSide = Math.max(
-      DEFAULT_PARCEL_DIMENSIONS_CM.lengthCm,
-      DEFAULT_PARCEL_DIMENSIONS_CM.widthCm,
-      DEFAULT_PARCEL_DIMENSIONS_CM.heightCm,
-    );
-    for (const cap of Object.values(MAX_CUBE_SIDE_CM)) {
-      expect(maxSide, 'default box must stay under every known cap').toBeLessThan(cap!);
+    for (const svc of SERVICES) {
+      for (const rate of Object.values(svc.postage)) {
+        expect(
+          dimensionsExceedLimit(DEFAULT_PARCEL_DIMENSIONS_CM, rate?.dimensionLimit),
+          `${svc.id}/${rate?.labelRaw}`,
+        ).toBe(false);
+      }
     }
   });
 });
 
-describe('dimensionsExceedCube ── 寸法による「送れない」（額ではなく可否）', () => {
-  test('既定の箱では、寸法上限を持つどの方式でも false（今日の挙動を変えない理由）', () => {
-    for (const m of Object.keys(MAX_CUBE_SIDE_CM) as (keyof typeof MAX_CUBE_SIDE_CM)[]) {
-      expect(dimensionsExceedCube(m, DEFAULT_PARCEL_DIMENSIONS_CM), m).toBe(false);
+describe('dimensionsExceedLimit ── 寸法による「送れない」（額ではなく可否）', () => {
+  test('上限を持たない社・方式は常に false ── 未確認を送れないに倒さない', () => {
+    expect(dimensionsExceedLimit(cube(200), undefined)).toBe(false);
+  });
+
+  test('maxLengthCm / maxLengthPlusGirthCm / maxSumCm を独立に判定する', () => {
+    expect(dimensionsExceedLimit(cube(50), { maxLengthCm: 40, tier: 'fixed', note: '' })).toBe(true);
+    expect(dimensionsExceedLimit(cube(40), { maxLengthCm: 40, tier: 'fixed', note: '' })).toBe(false);
+    // 30cm立方体: 3辺の和90cm ── ちょうど上限
+    expect(dimensionsExceedLimit(cube(30), { maxSumCm: 90, tier: 'fixed', note: '' })).toBe(false);
+    expect(dimensionsExceedLimit({ lengthCm: 31, widthCm: 30, heightCm: 30 },
+      { maxSumCm: 90, tier: 'fixed', note: '' })).toBe(true);
+    // 45cm立方体: 最長辺+胴回り = 45+2×(45+45) = 225cm
+    expect(dimensionsExceedLimit(cube(45), { maxLengthPlusGirthCm: 225, tier: 'fixed', note: '' }))
+      .toBe(false);
+    expect(dimensionsExceedLimit(cube(45), { maxLengthPlusGirthCm: 224, tier: 'fixed', note: '' }))
+      .toBe(true);
+  });
+
+  test('maxSecondLongestCm / maxShortestCm（ZenMarket ECMS の「2番目/3番目」表示専用）', () => {
+    const limit = { maxLengthCm: 60, maxSecondLongestCm: 40, maxShortestCm: 40, tier: 'fixed' as const, note: '' };
+    expect(dimensionsExceedLimit({ lengthCm: 60, widthCm: 40, heightCm: 40 }, limit)).toBe(false);
+    expect(dimensionsExceedLimit({ lengthCm: 60, widthCm: 41, heightCm: 40 }, limit)).toBe(true);
+  });
+
+  // --- ここから2026-09-12実測の再現。「まだ送れた一辺」で false、「消えた一辺」で true。---
+
+  test('Buyee: Small Packet (AIR) は30cmで残り35cmで消える（3辺の和≤90cm）', () => {
+    const rate = findService('buyee').postage['small-packet-air']!;
+    expect(dimensionsExceedLimit(cube(30), rate.dimensionLimit)).toBe(false);
+    expect(dimensionsExceedLimit(cube(35), rate.dimensionLimit)).toBe(true);
+  });
+
+  test('Buyee: EMS・国際小包は40cmで残り、表示上の上限(150/300cm)は45cmでもまだ満たす', () => {
+    // **注意**: 2026-09-12実測ではBuyeeのEMS・国際小包も45cmで全滅したと記録されているが、
+    // 表示された制限値（最大長150cm・長さ+胴回り300cm）だけからは45cmでの消滅を説明できない
+    // （45+2×90=225cm < 300cm）。指示どおり画面の表示値をそのまま使うため、このテストは
+    // 「表示値による判定」を縛るもので、45cmの実測消滅そのものは再現できない
+    // （`docs/ROADMAP.md` P2 に食い違いとして記録済み）。
+    for (const id of ['ems', 'parcel-air', 'parcel-surface'] as const) {
+      const rate = findService('buyee').postage[id]!;
+      expect(dimensionsExceedLimit(cube(40), rate.dimensionLimit), id).toBe(false);
+      expect(dimensionsExceedLimit(cube(45), rate.dimensionLimit), id).toBe(false);
     }
   });
 
-  test('実測の bulky 相当（60×50×40）は EMS・国際小包・小形包装物のいずれも超える', () => {
-    const bulky = { lengthCm: 60, widthCm: 50, heightCm: 40 };
-    expect(dimensionsExceedCube('ems', bulky)).toBe(true);
-    expect(dimensionsExceedCube('parcel-air', bulky)).toBe(true);
-    expect(dimensionsExceedCube('parcel-surface', bulky)).toBe(true);
-    expect(dimensionsExceedCube('small-packet-air', bulky)).toBe(true);
+  test('ZenMarket: ECMS EXPRESS(small-packet-air)は40cmで残り45cmで消える（2番目/3番目≤40cm）', () => {
+    const rate = findService('zenmarket').postage['small-packet-air']!;
+    expect(dimensionsExceedLimit(cube(40), rate.dimensionLimit)).toBe(false);
+    expect(dimensionsExceedLimit(cube(45), rate.dimensionLimit)).toBe(true);
   });
 
-  test('上限を持たない方式（small-packet-surface）は常に false ── 未確認を送れないに倒さない', () => {
-    expect(dimensionsExceedCube('small-packet-surface', { lengthCm: 200, widthCm: 200, heightCm: 200 }))
-      .toBe(false);
+  test('ZenMarket: ems / parcel-air / parcel-surface はブランド名を対応付けていないので寸法上限なし', () => {
+    for (const id of ['ems', 'parcel-air', 'parcel-surface'] as const) {
+      const rate = findService('zenmarket').postage[id]!;
+      expect(rate.dimensionLimit, id).toBeUndefined();
+    }
+  });
+
+  test('Neokyo: parcel-air / parcel-surface は40cmで残り45cmで消える（推定・日本郵便公式の国際小包制限）', () => {
+    for (const id of ['parcel-air', 'parcel-surface'] as const) {
+      const rate = findService('neokyo').postage[id]!;
+      expect(rate.dimensionLimit?.tier, id).toBe('estimate');
+      expect(dimensionsExceedLimit(cube(40), rate.dimensionLimit), id).toBe(false);
+      expect(dimensionsExceedLimit(cube(45), rate.dimensionLimit), id).toBe(true);
+    }
+  });
+
+  test('Neokyo: EMSは45cm・50cmでも残る（推定・日本郵便公式のEMS制限）', () => {
+    const rate = findService('neokyo').postage['ems']!;
+    expect(rate.dimensionLimit?.tier).toBe('estimate');
+    expect(dimensionsExceedLimit(cube(45), rate.dimensionLimit)).toBe(false);
+    expect(dimensionsExceedLimit(cube(50), rate.dimensionLimit)).toBe(false);
+  });
+
+  test('Jauce: EMS・Surfaceは表示値(105/200cm)では45cmで既に「送れない」と出る（過小評価・安全側）', () => {
+    // 実測ではJauceのEMS/SAL/Surfaceは45cm・50cmでも生き残り（50cmで初めてNot available）、
+    // 実際の閾値は225〜250cmのどこかにある。だが指示どおり画面の表示値（105/200cm）を
+    // そのまま使うので、このコードは45cmの時点で「送れない」と判定する——
+    // 過小評価（安全側）であって実測の再現ではない。食い違いはコメントとROADMAPに記録済み。
+    for (const id of ['ems', 'parcel-surface'] as const) {
+      const rate = findService('jauce').postage[id]!;
+      expect(dimensionsExceedLimit(cube(40), rate.dimensionLimit), id).toBe(false);
+      expect(dimensionsExceedLimit(cube(45), rate.dimensionLimit), id).toBe(true);
+    }
   });
 });
 

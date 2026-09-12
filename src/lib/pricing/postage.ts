@@ -1,5 +1,5 @@
 import type { BoxDimensionsCm, CountryCode, PostalMethod, Tier } from './types';
-import type { MarkupPostageRate, MeasuredPostageRate } from './services';
+import type { DimensionLimit, MarkupPostageRate, MeasuredPostageRate } from './services';
 import { EMS_ZONE, EMS_MAX_GRAMS, emsFor } from './ems';
 
 /**
@@ -262,48 +262,64 @@ export const DEFAULT_PARCEL_DIMENSIONS_NOTE =
   + ' your own dimensions';
 
 /**
- * **日本郵便の方式が送れる立方体の一辺（cm）の上限。**額ではなく可否
- * （`docs/audit/o2-courier-2026-09-08.md` §2）。「大きすぎて送れない」を、
- * 「重すぎて送れない」（`maxGramsFor`）・「売っていない」（`unavailableIn`）と
- * 並ぶ**別の理由**として持たせる。
+ * **旧・立方体の一辺の上限（2026-09-08実測、廃止）。**
  *
- * 実測（ZenMarket 2026-09-08、立方体を 5cm 刻みで走査）: 小形包装物
- * （Airmail 小型、ID 1）は 30cm で送れて 35cm で選択肢から消えた。EMS・
- * Airmail 標準・船便（ID 0/2/15）は 40cm で送れて 45cm で消えた。
- * **閾値は「まだ送れた辺」と「消えた辺」の間のどこかとしか分からない**ので、
- * まだ送れることが確認できた側の値を上限として置く（tier `estimate`。
- * 5cm 刻みの粗さゆえ、実際の閾値はこの値より高いことがある——安全側＝
- * 「まだ送れる」と言い過ぎない側に丸めている）。
+ * 以前はここに `MAX_CUBE_SIDE_CM`（`small-packet-air: 30`, `ems/parcel-air/parcel-surface: 40`）
+ * という「日本郵便の方式ごとに1つ、全社共通」の一辺の上限を置いていた。30cm という数字は
+ * 偶然ではなく、**小形包装物の公式の制限「3辺の和 ≤90cm」を立方体に当てはめた値**
+ * （30×3=90 でちょうど上限）だった。
  *
- * `small-packet-surface` は同じ実測で対象になっていない（走査は Airmail
- * 便のIDのみ）ので、ここに含めない——確認していないものを確認済みとして
- * 書かない、という開示原則（`FeeModel` 冒頭のコメントと同じ規律）。
+ * だがこれは2つの点で誤っていた:
+ *   1. **制限は方式ごとに違う公式（最大長・長さ+胴回り・3辺の和）で決まっており、
+ *      「立方体の一辺」という1個の数字には本来落とせない。**国際小包（航空・船便・SAL）は
+ *      「最大長105cm・長さ+胴回り200cm」、EMS は「最大長150cm・長さ+胴回り300cm」と、
+ *      公式そのものが違う。
+ *   2. **全社共通ではなく、社ごとに違う。**2026-09-12 の実測（ドイツ・600g、立方体を
+ *      20→50cmで走査）で、同じ「日本郵便の小形包装物」でも Buyee は35cmで消え、
+ *      Neokyo/ZenMarket(ECMS)は45cmで消え、FROM JAPANは40cm以上でも生存し50cmで
+ *      初めて消えるという、社ごとに違う挙動が確認された
+ *      （`master/courier-rates.json` の `conclusions.max_cube_side_cm_cross_check`）。
+ *      **一律の上限では、この社ごとの差を表せない。**
+ *
+ * 置き換えた先は `services.ts` の `DimensionLimit`（`PostageRateCommon.dimensionLimit`）
+ * ——社・方式ごとに、画面に表示された公式の制限値（`maxLengthCm` /
+ * `maxLengthPlusGirthCm` / `maxSumCm` など）をそのまま持つ。判定は
+ * `dimensionsExceedLimit` が行う。
  */
-export const MAX_CUBE_SIDE_CM: Partial<Record<PostalMethod, number>> = {
-  'small-packet-air': 30,
-  ems: 40,
-  'parcel-air': 40,
-  'parcel-surface': 40,
-};
-export const MAX_CUBE_SIDE_TIER: Tier = 'estimate';
-export const MAX_CUBE_SIDE_SOURCE_URL =
-  'https://zenmarket.jp/en/calc.aspx';
-export const MAX_CUBE_SIDE_CHECKED_ON = '2026-09-08';
 
 /**
- * この方式が、この寸法の個口を（額ではなく可否として）送れないか。
- * 上限を持たない方式（表に無いキー）は常に false——**「分からない」を
- * 「送れない」に倒さない**、既存の開示原則と同じ向き。
+ * この寸法の個口が、その社・その方式の寸法上限を（額ではなく可否として）超えるか。
  *
- * `DEFAULT_PARCEL_DIMENSIONS_CM`（20×15×10。最大辺 20cm）は
- * `MAX_CUBE_SIDE_CM` のどの上限（30/40cm）も下回るので、**この既定の箱を
- * 使っているかぎりこの関数は常に false を返す**——寸法の軸を配管したことが、
- * 今日の挙動を1円も変えない理由の一つ（他の理由は寸法非依存の実測）。
+ * `limit` が無ければ（その社・方式で寸法上限を確認していなければ）常に false——
+ * **「分からない」を「送れない」に倒さない**、既存の開示原則と同じ向き。
+ *
+ * 3つの数字を独立に判定する（指定された項目だけ）:
+ *   - `maxLengthCm`: 3辺のうち最長の辺
+ *   - `maxLengthPlusGirthCm`: 最長辺 + 胴回り（胴回り = 2×(2番目に長い辺 + 最短辺)）
+ *   - `maxSumCm`: 3辺の和
+ *   - `maxSecondLongestCm` / `maxShortestCm`: 2番目に長い辺・最も短い辺の個別上限
+ *     （ZenMarket の ECMS EXPRESS のような「最大長／2番目／3番目」表示専用）
+ * 1つでも超えたら送れない。
+ *
+ * `DEFAULT_PARCEL_DIMENSIONS_CM`（20×15×10cm）は、3辺の和45cm・
+ * 最長辺+胴回り 20+2×(15+10)=70cm で、ここに入れたどの社・方式の上限
+ * （最も厳しい Buyee の小形包装物でも 60cm・90cm）も下回るので、**この既定の箱を
+ * 使っているかぎりこの関数は常に false を返す**——寸法の軸を方式ごとの公式に
+ * 置き換えたことが、今日の挙動を1円も変えない理由の一つ。
  */
-export function dimensionsExceedCube(method: PostalMethod, dims: BoxDimensionsCm): boolean {
-  const cap = MAX_CUBE_SIDE_CM[method];
-  if (cap == null) return false;
-  return Math.max(dims.lengthCm, dims.widthCm, dims.heightCm) > cap;
+export function dimensionsExceedLimit(
+  dims: BoxDimensionsCm, limit: DimensionLimit | undefined,
+): boolean {
+  if (!limit) return false;
+  const [longest, second, shortest] =
+    [dims.lengthCm, dims.widthCm, dims.heightCm].sort((a, b) => b - a);
+  if (limit.maxLengthCm != null && longest! > limit.maxLengthCm) return true;
+  if (limit.maxSumCm != null && longest! + second! + shortest! > limit.maxSumCm) return true;
+  if (limit.maxLengthPlusGirthCm != null
+    && longest! + 2 * (second! + shortest!) > limit.maxLengthPlusGirthCm) return true;
+  if (limit.maxSecondLongestCm != null && second! > limit.maxSecondLongestCm) return true;
+  if (limit.maxShortestCm != null && shortest! > limit.maxShortestCm) return true;
+  return false;
 }
 
 // ---------------------------------------------------------------------------
