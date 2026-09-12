@@ -33,7 +33,7 @@
 | `rule.type` の語彙 | 33 種 |
 | `catalog`（F01〜、欠番なし） | 41 |
 | `customs.json` の国 | 9 |
-| └ 通関経路 | 36 |
+| └ 通関経路 | 48 |
 
 会社ごとの行数：zenmarket 20 / fromjapan 19 / jauce 16 / buyee 15 / neokyo 10
 <!-- generated:END counts -->
@@ -114,14 +114,14 @@
 <!-- generated:BEGIN countries -->
 | 国 | 関税 | VAT/GST | 通関手数料（経路ごと） |
 |---|---|---|---|
-| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 ／ FedEx 2.5% ／ UPS 2.5% / USD 17.5 ／ ECMS 3% |
-| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 ／ ECMS 3% |
-| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 14.88 ／ UPS EUR None ／ ECMS None |
-| **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 ／ UPS EUR None ／ ECMS None |
+| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 ／ FedEx 2.5% ／ DHL Express None ／ UPS 2.5% / USD 17.5 ／ ECMS 3% |
+| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 ／ DHL Express None ／ ECMS 3% |
+| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 15.0 ／ UPS EUR None ／ ECMS None |
+| **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 ／ DHL Express None ／ FedEx（frais d'avance / avance de douane） 2.5% ／ UPS EUR None ／ ECMS None |
 | **ES** | EUR 3† | 21% | Correos（事前に自分で払う） EUR 1.29 ／ Correos（配達時・現金） EUR 6 ／ FedEx 3% / EUR 15 ／ DHL EUR 21 ／ UPS 28.3% ／ FedEx 30% |
-| **AU** | 1000 以下は免税‡ | 10% | ABF（Import Processing Charge） AUD 〜1000:0・〜10000:50・上限なし:152 ／ UPS 3.6% ／ ECMS None |
-| **CA** | 20 以下は免税‡ | 5% | Canada Post CAD 9.95 ／ UPS / FedEx / DHL CAD 10〜50 ／ UPS 3.7% ／ ECMS None |
-| **SG** | 0% | 9% | SingPost SGD 0 ／ SingPost SGD 10.9 ／ UPS 5.6% / SGD 22.5 ／ ECMS 3% |
+| **AU** | 1000 以下は免税‡ | 10% | ABF（Import Processing Charge） AUD 〜1000:0・〜10000:50・上限なし:152 ／ DHL Express None ／ FedEx（Disbursement Fee/Advancement Fee） 2.9% ／ UPS 3.6% ／ ECMS None |
+| **CA** | 20 以下は免税‡ | 5% | Canada Post CAD 9.95 ／ UPS / FedEx / DHL CAD 10〜50 ／ DHL Express None ／ FedEx（Disbursement Fee） 3.1% ／ UPS 3.7% ／ ECMS None |
+| **SG** | 0% | 9% | SingPost SGD 0 ／ SingPost SGD 10.9 ／ DHL Express None ／ FedEx（Disbursement Fee/Advancement Fee） 5% ／ UPS 5.6% / SGD 22.5 ／ ECMS 3% |
 | **TW** | 2000 以下は免税† | 5%† | 快遞（代引き） TWD 30 |
 
 † 推論（`inference_basis` あり）　‡ 未取得
@@ -255,24 +255,36 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
 <!-- generated:BEGIN validator -->
 ```
 == 1. スキーマ ==
-  費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 36
+  費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 48
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
-  rule.type 評価カバレッジ: 通関経路 36 件中 22 件が eval_clearance() で評価可能、**14 件は宣言のみで未評価**
+  rule.type 評価カバレッジ: 通関経路 48 件中 22 件が eval_clearance() で評価可能、**26 件は宣言のみで未評価**
   未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:
     - US/FedEx(courier_brokerage): rule.type='greater_of' ── eval_clearance() 未対応
+    - US/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
     - US/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
+    - GB/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
+    - GB/FedEx(courier_brokerage): rule.type='unknown' ── eval_clearance() 未対応
     - GB/UPS(ups_disbursement): rule.type='unknown' ── eval_clearance() 未対応
     - DE/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
+    - DE/FedEx（Aufwendungspauschale/Disbursement Fee）(fedex): rule.type='unknown' ── eval_clearance() 未対応
     - DE/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
     - DE/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - FR/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
+    - FR/FedEx（frais d'avance / avance de douane）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
     - FR/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
     - FR/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - AU/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
+    - AU/FedEx（Disbursement Fee/Advancement Fee）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
     - AU/UPS(ups_disbursement): rule.type='greater_of' ── eval_clearance() 未対応
     - AU/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
     - CA/UPS / FedEx / DHL(courier): rule.type='range' ── eval_clearance() 未対応
+    - CA/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
+    - CA/FedEx（Disbursement Fee）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
     - CA/UPS(ups_disbursement): rule.type='greater_of_by_service' ── eval_clearance() 未対応
     - CA/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - SG/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
+    - SG/FedEx（Disbursement Fee/Advancement Fee）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
     - SG/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min_and_max' ── eval_clearance() 未対応
 
 == 2. 実請求の再現（customs.json の rule を評価する） ==
