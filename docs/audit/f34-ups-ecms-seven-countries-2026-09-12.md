@@ -193,6 +193,17 @@ rule.type 評価カバレッジ: 通関経路 36 件中 22 件が eval_clearance
 今後 `eval_clearance()` に分岐を足す際は `master/validate.py` 冒頭のコメントの通り
 `EVAL_HANDLED_TYPES` も必ず更新すること。
 
+**これは「検証器のカバレッジの穴」であって「価格計算の欠落」ではない。** `eval_clearance()` は
+`master/validate.py` の中だけで使われ、`es-zenmarket-ups-2023-07-26` 等の実請求fixtureに対して
+マスタの数値をクロスチェックするための関数であり、**実際の価格計算パス（TypeScript側の
+`countries.ts` の `clearanceBands` 等）ではない。** したがって今回見つかった「48件中26件が
+`eval_clearance()` 未対応」は、**サイトが利用者に間違った金額を出しているという意味ではない。**
+意味することは、**「一次資料から書き写しただけで、一度も実請求と突き合わせていない行が
+48件中26件（54%）ある」**ということ──転記ミスや構造の読み違いがあっても、この検証では
+見つからないまま通ってしまう、ということ。これはこのリポジトリが最も重視している種類の
+チェック（マスタと実請求の整合性）が、データの半分以上で事実上オフになっている、という
+発見であり、今回の`rule.type`カバレッジ報告がなければ見えないままだった。
+
 ## 検証
 
 - `python3 master/validate.py` → **矛盾0件**（既存の再現4件は変更前と同じ結果のまま）。
@@ -212,18 +223,21 @@ DHL（#99、7/7ヶ国がA_confirmed、公式レートガイドから逐語引用
 国ではなく業者で分かれている**ことが分かる。実装をどの粒度で始めるかの判断材料として、
 セルごとに `tier: 'fixed'`（原文の数値をそのまま使える）と言えるかどうかを示す:
 
-| destination | UPS | ECMS | FedEx（#98想定） | DHL（#99想定） |
+| destination | UPS | ECMS | FedEx（#98、実測） | DHL（#99、実測） |
 |---|---|---|---|---|
-| US | B_inferred（本文未読、二次情報一致） | **A_confirmed** | B_inferred（WAF） | A_confirmed |
-| GB | **C_unknown**（本文未読、#81と同じ壁） | **A_confirmed** | B_inferred（WAF） | A_confirmed |
-| DE | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
+| US | B_inferred（本文未読、二次情報一致） | **A_confirmed** | B_inferred（tiered構造ではない単純式、WAF） | A_confirmed |
+| GB | **C_unknown**（本文未読、#81と同じ壁） | **A_confirmed** | **C_unknown**（tiered構造、`raw_findings`にschema_gap） | A_confirmed |
+| DE | **A_confirmed** | counted_absence（法人なし） | **C_unknown**（tiered構造、`raw_findings`にschema_gap） | A_confirmed |
 | FR | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
 | AU | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
 | CA | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
 | SG | **A_confirmed** | **A_confirmed** | B_inferred（WAF） | A_confirmed |
 
-（FedEx/DHL列は並行PRの内容に基づく想定であり、このPRが検証したのはUPS/ECMS列のみ。
-確定はそれぞれのPRのマージ後に再確認すること。）
+（この表はmainマージ後に`master/customs.json`の実際の値を読んで確認した実測値。**当初コーディネーターの
+指示文はFedExを7カ国とも一律B_inferredとしていたが、実際にはGB/DEは`tier: 'C_unknown'`だった**
+── FedEx自身の一次資料が3段階の帯構造を持つことが分かり、単純なrate/flatに落とし込めず
+`raw_findings.schema_gap: true` として保留されているため。US/FR/AU/CA/SGは単純な
+`greater_of`/`unknown`構造でB_inferredのまま。この食い違いは修正して反映済み。）
 
 **読み方**: UPSは5/7がA_confirmed（GBのみ0、USのみB_inferred）。ECMSは実在する3法人が
 全てA_confirmed、残り4カ国はそもそも法人が無いという意味でのcounted_absence（「調べたが
