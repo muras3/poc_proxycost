@@ -120,3 +120,92 @@ GB Royal Mail/Parcelforce 等）も含む全経路の実数。24行→48行と�
 - `python3 master/render-docs.py` → 生成節を書き戻し、`--check` → 一致確認済み。
 - `npx vitest run` → **904 件 pass**（`main` の基準値と同数、何も失われていない）。
 - `master/customs.json` の既存の記録値（金額・rate・min・max等）は一切変更していない。
+  変更したのは `rate_of_import_charges_with_min_variants` を持つ6行（US/GB/FR/AU/CA/SG
+  DHL Express）に `variant_applicability` フィールドを追加したことのみ（下記）。
+
+## 追記（コーディネーター指摘への対応）── どちらの DHL variant が本サイトの利用者に適用されるか
+
+**答え: `non_account_holder`。** `master/customs.json` の6行（`rate_of_import_charges_with_min_variants`
+を持つ DHL Express の DTX 行）すべてに `variant_applicability` フィールドを追加し、根拠の逐語引用と
+`confidence: reasoned_judgement_unconfirmed` を記録した。**金額（rate/min/max）自体は一切変更していない。**
+
+### 根拠
+
+CA の一次資料の定義文が、口座の有無を **shipper（代行業者）ではなく importer（宛先で課金される側）**
+に紐づけていることを、逐語で確認できる:
+
+> account_holder: "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can
+> accelerate clearance. A service charge is applied and collected on all imports of a non-document
+> shipment for which DHL Express (Canada) prepares a Customs entry. **Importers with a DHL Brokerage
+> account on file.**"
+>
+> non_account_holder: "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL
+> processes import duties, taxes, or other regulatory charges on behalf of **customers who do not hold
+> a DHL account number**."
+
+これに加え、この費目自体が DTX（Duty Tax Processing = **受取人が請求される**方）であり、
+`dtp_for_contrast` フィールドが「DTP（出発国/第三国のDHLアカウントに請求＝shipper側）」と
+明確に対比されている。DTX の「customer」「importer」は受取人を指す、という読みと整合する。
+
+このサイトが想定する利用者（日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人）は
+DHLの法人ブローカレッジ口座を持たない。したがって **`non_account_holder` の rate/min が
+適用される**、という結論になる。
+
+**ただし確度は `reasoned_judgement_unconfirmed` に留める**: DHL自身の一次資料が「個人輸入の
+受取人にどちらが適用されるか」を名指しで書いているわけではなく、定義文（shipperではなく
+importer/customerの口座有無で分岐する、という構造）から読み込んだ結論だから。DHLに直接
+確認できていない。
+
+### #101 との食い違い
+
+`src/lib/pricing/courier-clearance.ts`（#101）は「率・最低額とも高い方を機械的に採用する」
+という方針を取っており、これは今回の結論（`non_account_holder` を一貫して採る）と
+食い違う国がある:
+
+| country | account_holder (rate/min) | non_account_holder (rate/min) | #101 が実際に使っている値 | 結果 |
+|---|---|---|---|---|
+| GB | 0.025 / £12.00 | 0.025 / £11.00 | rate 0.025, **min £12.00** | **過大**（正しくは£11.00。rateは元々同一なので差は最低額のみ、差額 £1.00） |
+| FR | 0.02 / €15.30 | 0.018 / €16.67 | **rate 0.02**, min €16.67 | **過大**（正しくは rate 0.018。0.02は0.018の約1.11倍＝rate起因の金額が約11%過大） |
+| CA | 0.0275 / C$12.00 | 0.0275 / C$18.00 | rate 0.0275, min C$18.00 | **一致**（CAはmin側の大小関係がGB/FRと逆で、`non_account_holder`の方が高いため、「高い方を採る」方針が結果的に正しい変種と一致した） |
+| US | 0.02 / $17.50 | 0.02 / $17.50 | 同一 | 差なし（両variantが同額） |
+| AU | 0.03 / A$23.00 | 0.03 / A$23.00 | 同一 | 差なし |
+| SG | 0.05 / S$20.00 | 0.05 / S$20.00 | 同一 | 差なし |
+
+**結論: GBとFRのDHL行は#101のポリシーにより過大計上になっている可能性が高い**（rate/minのどちらか
+一方だけが `account_holder` 側の値になっている）。CAはたまたま一致しているだけで、
+「高い方を機械的に採る」というポリシー自体が今回の結論とは独立に正しいわけではない
+── CAで高い方＝non_account_holderだったのは偶然（GB/FRとは大小関係が逆）で、
+コーディネーターの指摘通り「2つのラベルがすべての国で同じ意味とは限らない」ことを裏付けている。
+
+**`src/` は変更していない。** この食い違いの修正判断・実装はコーディネーターに委ねる。
+
+## この監査で見つかった「独立fixtureが埋めるべき穴」の具体的な姿
+
+**4/41 という数字は、このリポジトリが最も重視するクロスチェックが、通関手数料データの
+90%で事実上オフになっている、ということ。** 実例: DE DHLの`€14.88`（paketda.deという
+二次情報）は`A_confirmed`のまま記録されていたが、#99でDHL自身のPDFの`€15.00 + VAT`に
+訂正されている。これは独立fixtureが無ければ気づけなかった種類の誤りで、
+`eval_clearance()`があっても実請求と突き合わせない限り検出できない。
+
+**次にこのgapを埋める人が探すべき invoice の具体的な姿:**
+
+- **destination**: GB / FR / CA のいずれか（DHL DTXのaccount/non-account variantの差が
+  最も大きく出る国。誤りがあれば最も見つけやすい）。
+- **carrier**: DHL Express（今回評価器を追加した`rate_of_import_charges_with_min_variants`型、
+  および CA の UPS `greater_of_by_service` 型も同様に有力）。
+- **必要なフィールド**:
+  1. 申告価格（goods value）と、課された関税・VAT（duty/tax）の実額 ── `import_tax`として
+     `eval_clearance()`に渡す値。
+  2. DHLが実際に請求した通関手数料（Duty Tax Processing相当）の実額 ── これを`fee`として
+     rate×import_tax vs minと比較する。
+  3. **その請求書上または配送依頼上に、受取人がDHLの法人口座を持っていたかどうか**が
+     分かる記述（無ければ「個人が代行経由で受け取った」という文脈だけでも
+     non_account_holder適用の傍証にはなる）。
+  4. 出典（URL・投稿日・スクリーンショット等）と、マスタの数値と**別系統の出典であること**
+     （`source_same_as_master: false`に相当）。
+  5. 通貨・per-parcel/per-shipmentの別（複数口をまとめて1回で通関したか）。
+
+現状 `master/fixtures.json` にはこの型に対応する実請求が1件もない。ZenMarket/Buyee等の
+利用者が実際に受け取ったDHL Express経由のUPS/DHLインボイスのスクリーンショットや
+明細（特にGB/FR/CA向け）があれば、この26件のうち最大6件（DHL DTX型の全国）を
+一気に独立クロスチェック可能にできる。
