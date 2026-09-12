@@ -22,11 +22,17 @@ import { WeightLadder } from './WeightLadder';
  *   2. その重量が EMS のどの段に立っているか
  *   3. **直前の操作で送料が動いたか。動かなかったなら「+¥0」と書いて静止する**
  *
- * 複数箱に分かれるときは、箱ごとに4つを言う（`computeBoxSplit`、`docs/DESIGN-BOX-SIZE.md`
- * §2④⑤）: なぜ分かれたか（店舗の切れ目か、EMSの重量上限超えか）・詰めた順（重い順）・
- * その箱の申告額・その箱の免税しきい値。**代行が実際に箱をどう分けるかは私たちには
- * 分からない**——この分割は「私たちが仮に置いた前提」であって実測ではない、という
- * 前提そのものを開示文で先に言う（`SplitDisclosure`）。
+ * 複数箱に分かれるときは、箱ごとに言う（`computeBoxSplit`、`docs/DESIGN-BOX-SIZE.md`
+ * §2④⑤）: なぜ分かれたか・詰めた順（重い順）・その箱の申告額・その箱の免税しきい値。
+ * **「なぜ分かれたか」は今は EMS の重量上限超えしか出さない。**店舗の切れ目による
+ * 分割は `compare.ts` の `buildRow` が既に計算しているが `Row` の外に出ておらず
+ * （`Row.parcels` は個数のみ）、しかも実際に効くのは Buyee の default 変種だけ
+ * ——この区画は特定の `Row` に紐付いていないので、店舗分割を一律に見せると
+ * 「価格の根拠にしていない分かれ方」を見せることになる（`boxSplit.ts` の doc
+ * comment 参照、2026-09-12 オーナー指摘で一度実装して撤回）。
+ * **代行が実際に箱をどう分けるかは私たちには分からない**——この分割は「私たちが
+ * 仮に置いた前提」であって実測ではない、という前提そのものを開示文で先に言う
+ * （`SplitDisclosure`）。
  *
  * 数字は全部 `singleParcelGrossG()`／`computeBoxSplit()`（どちらも compare() と
  * 同じ組み立て）と `emsFor()` ＝日本郵便の公表表から出る。ここで独自に足し引きした
@@ -406,12 +412,7 @@ function MultiBoxView({
               data-testid="split-box"
               data-reason={box.reason}
               data-over-threshold={box.overThreshold ? 'true' : 'false'}
-              className={[
-                'min-w-0 rounded border p-2',
-                box.reason === 'weight-limit'
-                  ? 'border-amber-400 dark:border-amber-700'
-                  : 'border-neutral-300 dark:border-neutral-700',
-              ].join(' ')}
+              className="min-w-0 rounded border border-amber-400 p-2 dark:border-amber-700"
             >
               <p
                 data-testid="split-box-reason"
@@ -419,9 +420,7 @@ function MultiBoxView({
               >
                 Box {box.boxIndex + 1} of {boxes.length}
                 {' — '}
-                {box.reason === 'weight-limit'
-                  ? `split: this shop's parcel was over EMS's ${formatStep(limit)} limit`
-                  : 'split: a different shop'}
+                split: this shipment was over EMS&apos;s {formatStep(limit)} limit
               </p>
 
               <PackingBox

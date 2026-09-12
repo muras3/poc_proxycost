@@ -4,7 +4,11 @@ import { addByHand, emptyCart, gotoCompare, openCart, weightBox } from './helper
 /**
  * 箱が分かれるカートの E2E。
  * オーナー確定の4つの事実がすべて画面に出ているかを固定する:
- *   1. なぜ分かれたか（店舗の切れ目 / EMS の重量上限超え）
+ *   1. なぜ分かれたか（**今は EMS の重量上限超えしか出さない**——店舗の切れ目は
+ *      2026-09-12 に一度実装して撤回した。`boxSplit.ts` の doc comment 参照。
+ *      理由: 店舗分割が実際に効くのは Buyee の default 変種だけで、この区画は
+ *      特定の Row に紐付いていないため、一律に適用すると価格の根拠にしていない
+ *      分かれ方を見せることになる）
  *   2. 重い順に詰めた順序
  *   3. 箱ごとの申告額（その箱の中身の合計）
  *   4. 箱ごとの免税しきい値
@@ -43,10 +47,11 @@ test('splitting a shipment shows why it split, the pack order, each box\'s decla
   const boxes = page.getByTestId('split-box');
   await expect(boxes).toHaveCount(2);
 
-  // fact 1: 分割の理由が画面に出ている。同じ店舗の5点が重量上限で分かれたので weight-limit。
+  // fact 1: 分割の理由が画面に出ている（今は EMS の重量上限超えのみ）。
   await expect(boxes.first()).toHaveAttribute('data-reason', 'weight-limit');
   await expect(boxes.nth(1)).toHaveAttribute('data-reason', 'weight-limit');
   await expect(boxes.first().getByTestId('split-box-reason')).toContainText("over EMS's");
+  await expect(boxes.first().getByTestId('split-box-reason')).toContainText('30 kg');
 
   // fact 2: 重い順の詰め順が番号として見える。
   const orderBadges = boxes.first().getByTestId('pack-order');
@@ -85,7 +90,16 @@ test('prefers-reduced-motion: all four facts are still readable with motion off'
   await expect(boxes.first().getByTestId('split-box-threshold')).toBeVisible();
 });
 
-test('a cart split across different shops says so, not "weight limit"', async ({ page }) => {
+/**
+ * **回帰テスト（2026-09-12）**: 店舗が違うだけでは箱を分けない。
+ * 一度 `groupByShop`／緩めた `groupForDisplay` のどちらの版でも、店舗が
+ * 違う・店舗が分からない商品を独自に別の箱に分けてしまい、価格計算が
+ * 実際に使っている個口数と食い違うバグを作った（コーディネーターの
+ * レビューで指摘）。この区画はどの `Row` にも紐付いていないので、
+ * 店舗分割を安全に見せられるようになるまでは、複数店舗のカートでも
+ * 1箱のまま（重量が上限内なら）であるべき。
+ */
+test('different shops alone do not split a light cart (regression: shop-splitting is not shown until tied to a real Row)', async ({ page }) => {
   await gotoCompare(page);
   await emptyCart(page);
   await addByHand(page, 'Shop A item', 3000, 'suruga-ya');
@@ -94,10 +108,9 @@ test('a cart split across different shops says so, not "weight limit"', async ({
   await weightBox(page, 'Shop A item').fill('300');
   await weightBox(page, 'Shop B item').fill('300');
 
-  const boxes = page.getByTestId('split-box');
-  await expect(boxes).toHaveCount(2);
-  await expect(boxes.first()).toHaveAttribute('data-reason', 'shop');
-  await expect(boxes.first().getByTestId('split-box-reason')).toContainText('a different shop');
+  // 軽いカートなので重量上限にも掛からない——1箱のまま。分割区画そのものが出ない。
+  await expect(page.getByTestId('parcel-split')).toHaveCount(0);
+  await expect(page.getByTestId('packing-box-scene')).toHaveCount(1);
 });
 
 test('no horizontal overflow at 412px wide with a split cart', async ({ page }) => {
