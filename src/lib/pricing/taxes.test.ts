@@ -13,7 +13,7 @@ function items(n: number, priceYen = 3000, weightG = 600): Item[] {
 }
 
 const rowsFor = (cc: CountryCode, priceYen = 3000, n = 1) =>
-  compare({ items: items(n, priceYen), country: cc }).rows;
+  compare({ method: 'ems', items: items(n, priceYen), country: cc }).rows;
 const line = (row: Row, key: string) =>
   row.lines.find((l) => l.key === key)
   ?? (() => { throw new Error(`no line ${key} in ${row.id}`); })();
@@ -80,7 +80,7 @@ describe('the duty note says something a buyer can read', () => {
     // **以前ここは null（「—」）だった。**関税は VAT の課税ベースに入るので、
     // null が 0 に畳まれて VAT まで縮み、**商品代が上がると総額が下がる**区間があった。
     const at = (cc: CountryCode, perItemYen: number) => {
-      const rows = compare({ items: items(5, perItemYen, 600), country: cc }).rows;
+      const rows = compare({ method: 'ems', items: items(5, perItemYen, 600), country: cc }).rows;
       const row = rows.find((r) => r.comparable)!;
       return { total: row.total.low, duty: line(row, 'duty') };
     };

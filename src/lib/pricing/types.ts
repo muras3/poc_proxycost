@@ -26,12 +26,46 @@ export type PostalMethod =
  * `master/courier-rates.json` を取っている（`docs/audit/o2-courier-2026-09-08.md`
  * の便ID一覧に対応）。データが入るまで、この型に値は存在しても選ばれない。
  */
+/**
+ * **2026-09-12 拡大。**「1社1本の代表値」に潰さず、**各社の画面に出る便名ごとに ID を持つ**
+ * （オーナー確定）。理由は2つ、どちらも実測で分かった:
+ *
+ * 1. **同じブランド名でも便で順位が入れ替わる。**ZenMarket の FEDEX と FEDEX LOWCOST は
+ *    5,000g/10,000g/20,000g で2回順位が入れ替わる。「安い方だけを代表にする」と、
+ *    条件によって中身が違う同じ ID になり、まさに直そうとしている不安定さを持ち込む。
+ * 2. **所要日数が違い、それは利用者が選ぶ軸であって、こちらが潰していい軸ではない。**
+ *    FedEx Economy は5〜7日、Priority は2〜3日。
+ *
+ * 便名から ID を作る対応表は `postage.ts` の `COURIER_METHOD_NAME_MAP` に**1箇所だけ**
+ * 持つ（次のデータ取り込みの検査に使う）。**別の社が別の表記で印字していても、
+ * 同じ便だと断定できる根拠が無ければ ID を分けたままにする**（Buyee の「ECMS」と
+ * FROM JAPAN の「ECMS」は表記が一致するので束ねたが、ZenMarket の無印「FEDEX」が
+ * FROM JAPAN の Economy/Priority のどちらに当たるかは未確定 —— 分けたまま、
+ * `COURIER_METHOD_NAME_MAP` に「未解決の組」として注記する）。
+ */
 export type CourierMethod =
   | 'courier-fedex'
+  | 'courier-fedex-economy'
+  | 'courier-fedex-priority'
+  | 'courier-fedex-lowcost'
+  | 'courier-fedex-connect-plus'
   | 'courier-ups'
   | 'courier-dhl'
+  | 'courier-dhl-green-plus'
+  | 'courier-dhl-express-1200'
+  | 'courier-dhl-express-worldwide'
   | 'courier-sf-express'
-  | 'courier-ecms';
+  | 'courier-ecms'
+  | 'courier-ecms-express'
+  | 'courier-buyee-air'
+  /**
+   * **各社が「Surface」と印字する自社便。**日本郵便の公表表（`PostalMethod` の
+   * `small-packet-surface`/`parcel-surface`）とは別物 —— 画面の値がその表と一致しない
+   * （ZenMarket US 600g は自社 SURFACE ¥3,300、日本郵便の小形包装物船便は表の対象外
+   * ＝ 600g では価格化できない）。**順位（`cheapest`）には入れない**
+   * （所要1〜3か月、オーナー決定 P2 4）が、`Row.surface` に額を出す。
+   */
+  | 'courier-surface';
 
 export type CountryCode = 'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG';
 
@@ -261,6 +295,31 @@ export interface Row {
    * ならない。`comparable` が false の行は常に false。
    */
   equivalent: boolean;
+  /**
+   * **P2 4（オーナー確定 2026-09-12）。**この社が売っている「Surface」便のうち最安のもの
+   * ——日本郵便の船便2方式（`small-packet-surface`/`parcel-surface`）と、社が自社便として
+   * 出す `courier-surface` の両方を候補にする。**既定（`method`）には絶対に選ばれない**
+   * （1〜3か月かかるので、`DEFAULT_METHOD` の解決からは常に除外——`compare.ts` 参照）。
+   * だが額そのものは隠さない、というのがオーナーの明示の指示——**待てる利用者は
+   * この額を読めなければならない。**
+   *
+   * `null` = この社にはこの国・この重量で価格化できる Surface 便が無い。
+   *
+   * **これは別行（別 Row）ではない。**ランキングは「社」を比べるものなので、1社が
+   * 2行に化けると5社比較が壊れる（オーナー確定）。既定の行に載る副次フィールド。
+   *
+   * `shipYen` はこの Surface 便**単体の送料**（他の費目・税を含まない生の額）。
+   * 総額まで作り直すには行全体をこの便で組み直す必要があり、このPRのスコープでは
+   * 送料そのものの可視化だけに絞った——`docs/audit/` に理由を残す。
+   */
+  surface: {
+    method: PostalMethod | CourierMethod;
+    label: string;
+    shipYen: { low: number; high: number | null };
+    /** 例: '1–3 months'。画面はここをそのまま出す——「除外した」ではなく理由を書く。 */
+    days: string;
+    note: string;
+  } | null;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */
@@ -366,8 +425,13 @@ export interface CompareInput {
    *
    * 以前は EMS 固定だった。EMS は日本郵便の中で**どの重量でも最安ではない**ので、
    * 既定を EMS にすることは「一番高い郵便」を黙って選ぶことだった。
+   *
+   * **2026-09-12、`CourierMethod` も指定できるようにした（P2 1）。**宅配便に
+   * データが入ったので、日本郵便の方式と同じ枠で明示的に選べる——UI がまだこの
+   * 選択肢を出していなくても、`compare()` を直接呼ぶ側（テスト・将来の UI）は
+   * 選べる。
    */
-  method?: PostalMethod | 'cheapest';
+  method?: PostalMethod | CourierMethod | 'cheapest';
   /**
    * カナダ宛のときの州。**未指定でも州税は出す**（発生が確実なので `—` にしない）。
    * 未指定なら人口加重の代表値を tier estimate で、「州を選ぶと確定する」と note に書く。
