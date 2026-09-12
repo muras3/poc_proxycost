@@ -638,6 +638,55 @@ const NOT_IN_CODE: NotInCodeEntry[] = [
       expect(svc('zenmarket').deposit!.flatYen).toBe(0);
     },
   },
+  // ── F07（2026-09-12、payment-fee-rates）: Buyee/Neokyo/FROM JAPAN の
+  // 「非公表・未取得」行そのものは、コードには繋がない ──────────────────────
+  // この3行の rule は `{ type: 'not_included' }`——「この会社の実際の方法別料率は
+  // 分かっていない」という**事実そのもの**を記録した行であって、額を持たない。
+  // オーナー決定（`master/fees.json` conclusions.F07_payment_fee_working_treatment）で
+  // コードに計上したのは「この行の値」ではなく、**別の会社（ZenMarket）が公表している
+  // 3.5%を暫定的に借りてきた値**——この3行の「非公表・未取得」という事実は変わらない
+  // ままなので、この行自体はMAPPEDにはできない（一致させるべき額が無い）。
+  // 借用の経緯・出典は `svc(...).deposit.note` にコード側で書いてある
+  // （`services.test.ts` の 'every fee line carries the page it came from' が検査）。
+  {
+    id: 'F07', company: 'buyee', name: '入金・決済手数料（方法別、非公表）',
+    reason: 'マスタのこの行は「Buyee は方法別の入金・決済手数料を公表していない」という'
+      + '事実の記録（rule.type: not_included、direct_fetchで確認済み）であって額を持たない。'
+      + 'コードの deposit（3.5%, tier: estimate）はこの行の値ではなく、ZenMarketが公表する'
+      + '3.5%をオーナー決定で暫定的に借用した値（conclusions.F07_payment_fee_working_treatment）。',
+    assertNotInCode: () => {
+      // 借りてきた値であって Buyee 自身の公表値ではないことが tier に必ず残ること。
+      expect(svc('buyee').deposit!.tier).toBe('estimate');
+      expect(svc('buyee').deposit!.sourceUrl).toBeNull();
+    },
+  },
+  {
+    id: 'F07', company: 'neokyo', name: '入金・決済手数料（方法別、非公表・処理会社任せ）',
+    reason: 'マスタのこの行は「Neokyoは決済プロバイダ(PayPal/Stripe/Wise)自身の手数料に'
+      + '委ねており、会社レベルの単一料率という前提自体が成り立たない」という事実の記録'
+      + '（rule.type: not_included、direct_fetch）であって額を持たない。コードの deposit'
+      + '（3.5%, tier: estimate）はZenMarketの公表値を借用した近似値'
+      + '（conclusions.F07_payment_fee_working_treatment）。',
+    assertNotInCode: () => {
+      expect(svc('neokyo').deposit!.tier).toBe('estimate');
+      expect(svc('neokyo').deposit!.sourceUrl).toBeNull();
+      // 決済プロバイダ次第で本質的に変動するという構造上の注記がコードに残ること。
+      expect(svc('neokyo').deposit!.note).toContain('PayPal');
+    },
+  },
+  {
+    id: 'F07', company: 'fromjapan', name: '入金・決済手数料（方法別、この環境では未取得）',
+    reason: 'マスタのこの行は「FROM JAPANの該当ページはこの環境から終始403で、公表の有無'
+      + 'そのものを確認できなかった」という第三の状態の記録（rule.type: not_included、'
+      + 'confidence: null）であって額を持たない。コードの deposit（3.5%, tier: estimate）は'
+      + 'ZenMarketの公表値を借用した暫定値（conclusions.F07_payment_fee_working_treatment）。',
+    assertNotInCode: () => {
+      expect(svc('fromjapan').deposit!.tier).toBe('estimate');
+      expect(svc('fromjapan').deposit!.sourceUrl).toBeNull();
+      // 「非公表と確認できた」ではなく「未検証」という区別がコードのnoteに残ること。
+      expect(svc('fromjapan').deposit!.note).toContain('403');
+    },
+  },
   // ── T-F5（解消）: F02とF12は別の¥500×2ではなく同一の¥500 ─────────────────
   // 2026-09-11 に https://www.fromjapan.co.jp/translate/en_help.txt を再取得。
   // help_fee_120「Handling Fees」→ help_fee_130「Product Protection Plan」→

@@ -75,10 +75,42 @@ export function parseYen(text: string): number {
   return Number(m[0].replace(/,/g, ''));
 }
 
+/** その要素の中心が実際にその要素自身に落ちるか（別の要素に取られていないか）。 */
+async function pointerLandsOnSelf(locator: Locator): Promise<{ ok: boolean; hit: string | null }> {
+  const box = await locator.boundingBox();
+  if (!box) return { ok: false, hit: null };
+  const page = locator.page();
+  const hit = await page.evaluate(
+    ({ x, y }) => document.elementFromPoint(x, y)?.outerHTML.slice(0, 200) ?? null,
+    { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+  );
+  const self = await locator.evaluate((el) => el.outerHTML.slice(0, 200));
+  return { ok: hit === self, hit };
+}
+
 /**
  * 同意バナーが出るのを待ってから選ぶ。
  * バナーは useEffect でしか出ないので、**出たこと自体が hydration 完了の証拠**になる。
  * SSR された順位リストは押しても動かない時間帯があるため、この待ちを全テストの入口にする。
+ *
+ * **タッチエミュレーション（mobile project）下で不安定だった**（実測: CI の
+ * shard 3/4・4/4 で `assumed-weights.spec.ts` 以降の全モバイルテストが
+ * 60秒ぴったりで失敗し続け、ジョブの `timeout-minutes: 15` に達して
+ * `cancelled` として打ち切られた——並列実行の設定ではなく、ここが実際に
+ * 壊れて時間を食いつぶしていた）。
+ *
+ * 直したのは3点:
+ *   1. **バナーの出現を待った直後にクリックへ突撃しない。**ボタン自身が
+ *      「見えている」だけでなく「クリック先が実際にそのボタン自身に落ちる」
+ *      （他の要素に奪われていない）ところまで待ってから押す。
+ *   2. **バナーが出ないこと自体を即座に壊れているとは扱わない。**同意が
+ *      既に決まっている（バナーを出す条件が成り立たない）状態と、
+ *      hydration が本当に終わっていない状態を区別する——後者だけを壊れて
+ *      いるとみなす。
+ *   3. **失敗したら、素の Playwright タイムアウトのまま投げない。**
+ *      「バナーが最後まで出なかった」「ボタンは見えたがクリック先を別の
+ *      要素に奪われ続けた（奪っていた要素を名指しする）」のどちらで詰まったかを
+ *      メッセージに残す——次にここが壊れたとき、原因を推測させない。
  */
 export async function gotoCompare(
   page: Page,
@@ -86,12 +118,58 @@ export async function gotoCompare(
 ): Promise<void> {
   await page.goto('/');
   const banner = page.getByRole('dialog', { name: 'Cookie consent' });
-  await expect(banner).toBeVisible();
-  const choice = opts.consent ?? 'denied';
-  if (choice !== 'leave') {
-    await banner.getByRole('button', { name: choice === 'denied' ? 'Reject' : 'Accept' }).click();
-    await expect(banner).toBeHidden();
+
+  // **出現とハイドレーションを別々に待つ。**バナーが出なくても、順位が既に
+  // 出ていれば「同意済みで最初から出さない」という正常な状態でありうる。
+  const appeared = await banner.waitFor({ state: 'visible', timeout: 15_000 })
+    .then(() => true).catch(() => false);
+
+  if (!appeared) {
+    const hydrated = await rankButtons(page).first().isVisible().catch(() => false);
+    if (!hydrated) {
+      throw new Error(
+        'gotoCompare: the cookie consent banner never appeared, and the ranking is not '
+        + 'visible either — hydration did not complete within 15s (neither a fresh consent '
+        + 'prompt nor an already-decided, already-priced page showed up).',
+      );
+    }
+    return; // 同意済みでバナー自体が出ない、正常な状態。
   }
+
+  const choice = opts.consent ?? 'denied';
+  if (choice === 'leave') {
+    await expect(rankButtons(page).first()).toBeVisible();
+    return;
+  }
+
+  const label = choice === 'denied' ? 'Reject' : 'Accept';
+  const button = banner.getByRole('button', { name: label });
+  await expect(button, `gotoCompare: the "${label}" button never appeared in the banner`)
+    .toBeVisible({ timeout: 15_000 });
+
+  // **見えているだけでは押せる保証にならない。**クリック先が実際にこのボタン
+  // 自身に落ちるまで、短い間隔でポーリングする——同じ愚直な `.click()` を
+  // 60秒黙って再試行させるより、詰まっている理由（何に奪われているか）を
+  // 拾って途中で名指しできる。
+  let lastHit: string | null = null;
+  let landed = false;
+  for (let i = 0; i < 30 && !landed; i++) {
+    const check = await pointerLandsOnSelf(button);
+    landed = check.ok;
+    lastHit = check.hit;
+    if (!landed) await page.waitForTimeout(500);
+  }
+  if (!landed) {
+    throw new Error(
+      `gotoCompare: the "${label}" button is visible but its click point is intercepted by `
+      + `another element, not itself, for 15s straight — intercepting element: `
+      + `${lastHit ?? '(none — element not found at that point)'}`,
+    );
+  }
+
+  await button.click();
+  await expect(banner, 'gotoCompare: clicked the banner button but the banner never closed')
+    .toBeHidden();
   await expect(rankButtons(page).first()).toBeVisible();
 }
 
@@ -174,6 +252,17 @@ export function costRow(li: Locator, label: string | RegExp): Locator {
   return li.getByRole('row').filter({ has: li.page().getByRole('cell', { name: label }) });
 }
 
+/**
+ * 開いた行の2列比較から、費目の内部キー（`Line.key`、`RowBreakdown.tsx` の
+ * `data-cost-key`）で1行を引く。**同じ label 文字列を持つ行が2本以上ありうる
+ * 費目（例: 国境側の `vat` 行と、社側の前払いをまとめる `prepaid-import-tax` 行は
+ * どちらもラベルが "VAT"／"VAT collected at checkout" で始まる）は、
+ * 文言ではなくこちらで引く。**
+ */
+export function costRowByKey(li: Locator, key: string): Locator {
+  return li.locator(`tr[data-cost-key="${key}"]`);
+}
+
 /** 表の1行を、セルの文字列の配列にする。 */
 export async function rowCells(row: Locator): Promise<string[]> {
   const cells = row.getByRole('cell');
@@ -202,7 +291,7 @@ export function isNonDecreasing(xs: number[]): boolean {
  * 順位が出ているあいだは畳まれも消えもしない、という約束をここで引く。
  */
 export function emsOnlyNote(page: Page): Locator {
-  return page.locator('p').filter({ hasText: /Courier rates are not priced/ });
+  return page.getByTestId('scope-disclosure');
 }
 
 /**

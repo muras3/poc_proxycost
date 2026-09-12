@@ -18,10 +18,19 @@ const PREPAY = 'US import prepayment (Zonos) fee — not published';
 const CHECKOUT_GST = 'GST collected at checkout';
 
 async function shipTo(page: Page, code: string): Promise<void> {
-  const before = (await readRanking(page))[0]!.total;
+  const first = (await readRanking(page))[0]!;
+  const before = { total: first.total, name: first.name, variant: first.variant };
   await page.getByLabel('Ship to').selectOption(code);
   // 行き先が変われば EMS の地帯も税も変わる。総額が動くまで待つ。
-  await expect.poll(async () => (await readRanking(page))[0]!.total).not.toBe(before);
+  // **総額だけでは見ない。**画面の総額は ¥100 丸めなので、別の国の別の社の
+  // 総額と偶然同じ丸め値になることがある（実測: 米国既定の ZenMarket
+  // 「~¥27,900 or more」とシンガポールの FROM JAPAN「~¥27,900」が同じ表示に
+  // 丸まった——実額も上限の有無も別物）。**1位の総額と1位の社の両方**を見て、
+  // どちらかが変わるまで待つ——丸めの偶然一致だけでは「動いていない」と誤診しない。
+  await expect.poll(async () => {
+    const r = (await readRanking(page))[0]!;
+    return { total: r.total, name: r.name, variant: r.variant };
+  }).not.toEqual(before);
 }
 
 test('the US board admits the Zonos prepayment fee it cannot price', async ({ page }) => {

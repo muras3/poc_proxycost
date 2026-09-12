@@ -5,7 +5,7 @@ import { compare, DEFAULT_STORAGE_DAYS } from '@/lib/pricing/compare';
 import { weightFieldsFor } from '@/lib/pricing/weights';
 import { siteById } from '@/lib/search/sites';
 import type {
-  CompareResult, CountryCode, Item, PostalMethod, ProvinceCode, SiteId,
+  CompareResult, CountryCode, CourierMethod, Item, PostalMethod, ProvinceCode, SiteId,
 } from '@/lib/pricing/types';
 
 export interface Draft {
@@ -29,8 +29,14 @@ interface State {
    * 未選択でも compare() は人口加重の代表値を tier estimate で出す。
    */
   province: ProvinceCode | null;
-  /** 国際配送の方式。既定は EMS（`compare()` の `DEFAULT_METHOD` と同じ）。 */
-  method: PostalMethod | 'cheapest';
+  /**
+   * 国際配送の方式。**既定は `cheapest`**（`compare()` の `DEFAULT_METHOD` と同じ、
+   * P2 オーナー確定 2026-09-12）——郵便4方式・価格化した宅配便のうち運べて
+   * 最安のものを行ごとに選ぶ（Surface は既定候補から除く）。**以前はここが
+   * `'ems'` に固定されていて、`compare()` 自身の既定が変わった後も UI だけ
+   * 一番高い郵便を黙って選び続けていた。**
+   */
+  method: PostalMethod | CourierMethod | 'cheapest';
   /**
    * 倉庫に置く日数（F21、0d）。既定は `DEFAULT_STORAGE_DAYS`（45日、我々の仮定）。
    * 利用者が変えたら即座に `compare()` を呼び直し、再ランキングする。
@@ -52,7 +58,7 @@ type Action =
   | { type: 'patch'; id: string; patch: Partial<Item> }
   | { type: 'country'; country: CountryCode }
   | { type: 'province'; province: ProvinceCode | null }
-  | { type: 'method'; method: PostalMethod | 'cheapest' }
+  | { type: 'method'; method: PostalMethod | CourierMethod | 'cheapest' }
   | { type: 'storageDays'; storageDays: number };
 
 function itemFromDraft(draft: Draft, id: string): Item {
@@ -138,7 +144,7 @@ function initial(): State {
   let seq = 0;
   const items = EXAMPLES.map((d) => itemFromDraft(d, `i${seq++}`));
   return {
-    items, country: 'US', province: null, method: 'ems', storageDays: DEFAULT_STORAGE_DAYS,
+    items, country: 'US', province: null, method: 'cheapest', storageDays: DEFAULT_STORAGE_DAYS,
     seq, unpriced: [],
   };
 }

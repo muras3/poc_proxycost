@@ -55,6 +55,14 @@ export interface DepositFee {
   rate: number;
   tier: Tier;
   note: string;
+  /**
+   * この費目の出典。**省略すると `svc.sourceUrl`（会社のトップの料金ページ）にフォール
+   * バックする**——だがそれは「この社が自分の額を公表している」場合だけ正しい。
+   * F07（`master/fees.json` conclusions.F07_payment_fee_working_treatment）のように
+   * **我々が置いた暫定値**（会社は公表していない）を計上するときは、`null` を明示して
+   * 会社の公表ページを出典として誤って示さないようにする——出典は note に文章で書く。
+   */
+  sourceUrl?: string | null;
 }
 
 /**
@@ -475,7 +483,23 @@ export const SERVICES: Service[] = [
     // item within the same Buy Request, this fee is only applied once.」も明記。
     fee: { perItemYen: 350, chargedPerDistinctItem: true, tier: 'fixed' },
     domesticIncluded: false,
-    deposit: null,
+    // F07（2026-09-12、`master/fees.json` conclusions.F07_payment_fee_working_treatment）。
+    // Neokyo は自社ページで「the above-mentioned payment providers collect their own
+    // transaction fee at checkout」と明記しており、決済プロバイダ（PayPal/Stripe/Wise）
+    // ごとに手数料が決まる構造で、そもそも会社レベルの単一料率という前提自体が
+    // Neokyo には成り立たない。3.5% はその変動する実額の**近似**として置く暫定値
+    // （唯一公表している ZenMarket の基本率を借りているだけで、Neokyo 自身の数字ではない）。
+    // tier は必ず `estimate`。出典は Neokyo 自身のページではなく master の結論に留める。
+    deposit: {
+      flatYen: 0, rate: 0.035, tier: 'estimate',
+      note: 'assumed 3.5% of the whole payment — this is our own placeholder, not a rate'
+        + ' Neokyo publishes. Neokyo explicitly defers to the payment processor\'s own fee'
+        + ' (PayPal / Stripe / Wise), so a single company-level rate does not exist for it at'
+        + ' all; 3.5% stands in for something that genuinely varies by processor. Borrowed from'
+        + ' the one company that does publish this rate (ZenMarket) — see master/fees.json'
+        + ' conclusions.F07_payment_fee_working_treatment',
+      sourceUrl: null,
+    },
     packing: { perParcelYen: 500, perKgYen: 150, freeUpToG: 2000, mandatory: true, tier: 'fixed' },
     parcelDefault: 'one',
     parcelVerified: true,
@@ -669,14 +693,22 @@ export const SERVICES: Service[] = [
       tier: 'fixed',
     },
     domesticIncluded: false,
+    // **2026-09-12 payment-fee-rates 調査でこの前提が古くなった。** fees.aspx は
+    // 「Funds Deposit Fee (from 1%)」としか書いていないが、ZenMarket 自身の別ページ
+    // （payment.aspx、2026-09-07 direct_fetch）が「Deposit fee is 3.5% of the total
+    // transaction amount」と明記している——3.5% はもはや我々の逆算（台湾の実請求
+    // ¥10,363 から 10000/(1-0.035)=¥10,362.7 と1円差で当てた値、docs/DESIGN-NOTES.md
+    // §3）ではなく、会社自身が公表している基本料率。tier を `estimate` から `fixed` に
+    // 上げ、出典も payment.aspx に差し替える（`master/fees.json`
+    // conclusions.F07_payment_fee_working_treatment の G1_zenmarket_direct_confirmation）。
+    // 方法別の内訳（fees.aspx の「from 1%」の中身）は要ログインで依然未確認——
+    // カード決済に限定した場合に 3.5% のままでよいかは別途の再評価事項として残る。
     deposit: {
-      // **公表値は 3.5% ではない。** 料金ページ（Arquivo.pt 2025-11-27 の写し、
-      // 2026-09-06 読了）は「Funds Deposit Fee (**from 1%**)」としか書いておらず、
-      // 支払方法ごとの率を出していない。3.5% は台湾の利用者が公開した実請求
-      // ¥10,363 から我々が逆算した値（10000/(1-0.035) = ¥10,362.7 と1円差、
-      // docs/DESIGN-NOTES.md §3）。**逆算は我々の推定なので estimate。**
-      flatYen: 0, rate: 0.035, tier: 'estimate',
-      note: '3.5% of the whole payment — the page says only "from 1%"',
+      flatYen: 0, rate: 0.035, tier: 'fixed',
+      note: '3.5% of the total transaction amount — ZenMarket\'s own published base rate'
+        + ' (the per-method breakdown behind fees.aspx\'s "from 1%" is still unconfirmed,'
+        + ' requires login)',
+      sourceUrl: 'https://zenmarket.jp/en/payment.aspx',
     },
     packing: null,
     parcelDefault: 'one',
@@ -942,7 +974,22 @@ export const SERVICES: Service[] = [
       tier: 'fixed',
     },
     domesticIncluded: false,
-    deposit: null,
+    // F07（2026-09-12、`master/fees.json` conclusions.F07_payment_fee_working_treatment）。
+    // FROM JAPAN の該当ページはこのセッションの環境から終始 403（AWS WAF）で、公表の
+    // 有無そのものを確認できなかった——Buyee/Neokyo の「確認できた非公表」とは違い、
+    // 「見ることができなかった」というだけの状態（未検証であって非公表と確認済みではない）。
+    // 3.5% は唯一公表している ZenMarket の基本率を借りた暫定値。tier は必ず `estimate`。
+    // 出典は FROM JAPAN 自身のページではなく master の結論に留める。
+    deposit: {
+      flatYen: 0, rate: 0.035, tier: 'estimate',
+      note: 'assumed 3.5% of the whole payment — this is our own placeholder, not a rate FROM'
+        + ' JAPAN publishes. FROM JAPAN\'s payment page returned 403 (AWS WAF) from this'
+        + ' environment at the time of research (2026-09-12); we could not confirm whether it'
+        + ' publishes its own rate at all, which is a weaker claim than "confirmed unpublished".'
+        + ' Borrowed from the one company that does publish this rate (ZenMarket) — see'
+        + ' master/fees.json conclusions.F07_payment_fee_working_treatment',
+      sourceUrl: null,
+    },
     packing: null,
     parcelDefault: 'one',
     parcelVerified: true,
@@ -1169,7 +1216,19 @@ export const SERVICES: Service[] = [
       perOrderYen: 500, protectionPlanPerOrderYen: 500, ordersGroupedByShop: true, tier: 'fixed',
     },
     domesticIncluded: false,
-    deposit: null,
+    // F07（2026-09-12、`master/fees.json` conclusions.F07_payment_fee_working_treatment）。
+    // Buyee の Payment Methods ページ・Fees ページのどちらにも方法別のパーセンテージ／
+    // 固定額は無く、非公表と確認済み（direct_fetch）。3.5% は唯一公表している ZenMarket
+    // の基本率を借りた暫定値——Buyee 自身の数字ではないので tier は必ず `estimate`。
+    // 出典は Buyee 自身のページではなく master の結論に留める。
+    deposit: {
+      flatYen: 0, rate: 0.035, tier: 'estimate',
+      note: 'assumed 3.5% of the whole payment — this is our own placeholder, not a rate Buyee'
+        + ' publishes. Buyee\'s Payment Methods and Fees pages don\'t publish a per-method fee at'
+        + ' all (confirmed). Borrowed from the one company that does publish this rate'
+        + ' (ZenMarket) — see master/fees.json conclusions.F07_payment_fee_working_treatment',
+      sourceUrl: null,
+    },
     packing: null,
     // 5社で Buyee だけが外れ値。既定で注文ごとに別送し、申請すると無料で同梱する。
     parcelDefault: 'per-order',
@@ -1469,3 +1528,36 @@ export const SERVICES: Service[] = [
 ];
 
 export const SERVICE_BY_ID = new Map(SERVICES.map((s) => [s.id, s]));
+
+/**
+ * **P2 UI（2026-09-12）。**「couriers are priced for this country」を1か所から
+ * 導く。`master/courier-rates.json` はまだ US しか無い——ハードコードせず
+ * `Service.courier[*].weightPointsByCountry` を実際に見て判定するので、次の国に
+ * データが入っても書き換え忘れが起きない。
+ *
+ * `pricedServiceNames`: この国でどれか1便でも重量点を持つ社（EMS 等の郵便とは無関係）。
+ * `unpricedServiceNames`: 宅配便そのものを提供しうる社（`svc.courier` を持つ）だが、
+ * この国の重量点が1つも無い社——「調べていない」であって「無い」ではない
+ * （`MeasuredPostageRate.weightPointsByCountry` のコメント参照）。Jauce のように
+ * そもそも `svc.courier` を持たない社はどちらにも入れない
+ * （`noCourierServiceNames` に出す——「対象外」であって「未測定」ではない）。
+ */
+export function courierCoverageFor(cc: CountryCode): {
+  pricedServiceNames: string[];
+  unpricedServiceNames: string[];
+  noCourierServiceNames: string[];
+} {
+  const pricedServiceNames: string[] = [];
+  const unpricedServiceNames: string[] = [];
+  const noCourierServiceNames: string[] = [];
+  for (const svc of SERVICES) {
+    if (!svc.courier || Object.keys(svc.courier).length === 0) {
+      noCourierServiceNames.push(svc.name);
+      continue;
+    }
+    const hasPoints = Object.values(svc.courier)
+      .some((rate) => (rate?.weightPointsByCountry[cc]?.length ?? 0) > 0);
+    (hasPoints ? pricedServiceNames : unpricedServiceNames).push(svc.name);
+  }
+  return { pricedServiceNames, unpricedServiceNames, noCourierServiceNames };
+}

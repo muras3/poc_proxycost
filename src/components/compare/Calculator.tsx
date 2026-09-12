@@ -94,10 +94,12 @@ export function Calculator() {
           />
           {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
               （Neokyo 原文「please select ... as the shipment method」）。
-              既定は EMS で、各社の既定が分かったら変える（`compare()` の `DEFAULT_METHOD`）。 */}
+              既定は `cheapest`（運べる中で最安、Surface を除く）（`compare()` の
+              `DEFAULT_METHOD`、P2 オーナー確定 2026-09-12）。 */}
           <MethodPicker
             value={method}
             onChange={(m) => dispatch({ type: 'method', method: m })}
+            country={country}
           />
           {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
               他国で常に出しておくと、選べない欄が画面に残る。 */}
@@ -152,7 +154,18 @@ export function Calculator() {
         </p>
       ) : (
         <>
-          <div className="mt-8 space-y-2 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+          {/* **2026-09-12、courier-ui で押し出された。**`EmsOnlyNote` が宅配便の
+              価格化状況を社名つきで言うようになった分（P2）だけこのブロックが
+              伸び、Ranking セクションの開始位置が画面外へ出た（実測
+              908 > 900、e2e/parcel.spec.ts）。文言は削れない（各文言は
+              e2e/compare.spec.ts の 19番などが一言一句で掴んでいる）ので、
+              **ここの余白を詰めて吸収する。**社名の入り方（今の米国の形）は
+              残り6か国が価格化されても変わらない——`courierCoverageFor` は
+              「価格化済み」「未価格化」「グリッド自体が無い」の3集合に振り分ける
+              だけで、価格化が進むほど集合の中身が動くだけで文の数は増えない。
+              今すでに一番埋まった形（1位に出る米国）を基準に詰めているので、
+              残り6か国が同じ形に育っても再びここが壊れることはない。 */}
+          <div className="mt-6 space-y-1.5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
             {/* 黙って外すと総額が安く見える。外したことを総額の隣で言う。 */}
             {unpriced.length > 0 && (
               <p className={`text-xs ${tierClass.none}`}>
@@ -165,7 +178,7 @@ export function Calculator() {
             <StabilityNote result={result} onCheckWeights={checkWeights} />
             {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
                 「読んでいない人には言っていない」のと同じになる。 */}
-            <EmsOnlyNote result={result} />
+            <EmsOnlyNote result={result} country={country} />
             {/* **送れるかは一度も見ていない。**同じ理由で同じ場所に、常に出す。
                 酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
             <RestrictedGoodsNote result={result} country={country} />
@@ -178,7 +191,7 @@ export function Calculator() {
             <FreeShippingDomesticNote result={result} items={items} />
           </div>
 
-          <div className="mt-4">
+          <div className="mt-3">
             <RankBoard result={result} onFocusMethod={focusMethod} />
             <TierLegend className="mt-3" />
           </div>

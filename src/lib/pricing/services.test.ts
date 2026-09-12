@@ -44,18 +44,32 @@ describe('the service table itself', () => {
   });
 
   test('every fee line carries the page it came from, so a wrong number can be traced', () => {
+    // F07（2026-09-12）: 3.5% を我々が置いた暫定値として計上する deposit 行
+    // （Buyee/Neokyo/FROM JAPAN）は、会社のページを出典として示さない
+    // （`svc.deposit.sourceUrl: null`）——出典を空欄にすることそのものが、
+    // 「この数字は会社の公表値ではない」という事実を隠さないための意図的な設計。
+    // その3社の deposit だけは、この行の「出所が必ずある」チェックから除く。
+    const ourOwnAssumedDeposit = new Set(['buyee', 'neokyo', 'fromjapan']);
     for (const s of SERVICES) {
       const row = one(s.id);
       // items / domestic-shipping は我々の入力と仮定なので出所は無い。社が請求する行には必ず出所が要る。
       const ours = new Set(['items', 'domestic-shipping']);
       for (const l of row.lines) {
         if (ours.has(l.key)) continue;
+        if (l.key === 'deposit' && ourOwnAssumedDeposit.has(s.id)) continue;
         expect(l.sourceUrl, `${s.id} / ${l.key}`).toBeTruthy();
       }
       const feeKeys = ['service-fee', 'purchase-fee', 'protection-plan', 'ad-valorem',
-        'bank-fee', 'payment-inside-jp', 'packing', 'deposit'];
+        'bank-fee', 'payment-inside-jp', 'packing'];
       for (const l of row.lines.filter((x) => feeKeys.includes(x.key))) {
         expect(l.sourceUrl, `${s.id} / ${l.key}`).toBe(s.sourceUrl);
+      }
+      // deposit だけは会社ごとに出典が変わりうる（ZenMarket は自社の別ページ
+      // payment.aspx、Jauce は自社ページのまま、Buyee/Neokyo/FROM JAPAN は無し）。
+      const deposit = row.lines.find((l) => l.key === 'deposit');
+      if (deposit && ourOwnAssumedDeposit.has(s.id)) {
+        expect(deposit.sourceUrl, s.id).toBeNull();
+        expect(deposit.note, s.id).toContain('master/fees.json');
       }
     }
   });
@@ -193,8 +207,19 @@ describe('the service table itself', () => {
     expect(SERVICES.filter((s) => s.domesticIncluded).map((s) => s.id)).toEqual([]);
   });
 
-  test('only ZenMarket and Jauce take a cut of the money you send them', () => {
-    expect(SERVICES.filter((s) => s.deposit).map((s) => s.id)).toEqual(['zenmarket', 'jauce']);
+  test('all five services now carry a deposit fee line (F07, 2026-09-12)', () => {
+    // 以前は ZenMarket・Jauce の2社だけが deposit を持ち、Buyee/Neokyo/FROM JAPAN は
+    // `deposit: null` で F07 の行自体が計上されていなかった（compare.ts の
+    // `if (svc.deposit)` に else が無く、欠落が可視化されない状態だった）。
+    // オーナー決定（`master/fees.json` conclusions.F07_payment_fee_working_treatment）で
+    // 3.5% を5社共通の暫定値として全社に計上する——ZenMarket・Jauce は自社公表値のまま、
+    // Buyee/Neokyo/FROM JAPAN は estimate として新規に追加。
+    expect(SERVICES.filter((s) => s.deposit).map((s) => s.id))
+      .toEqual(['neokyo', 'zenmarket', 'fromjapan', 'buyee', 'jauce']);
+    // 自社公表値で確定できているのは ZenMarket（payment.aspx）と Jauce（自社ページ）のみ。
+    expect(SERVICES.filter((s) => s.deposit?.tier === 'fixed').map((s) => s.id)).toEqual(['zenmarket']);
+    expect(SERVICES.filter((s) => s.deposit?.tier === 'estimate').map((s) => s.id))
+      .toEqual(['neokyo', 'fromjapan', 'buyee']);
     expect(SERVICES.filter((s) => s.packing?.mandatory).map((s) => s.id)).toEqual(['neokyo', 'jauce']);
   });
 
@@ -524,9 +549,20 @@ describe('Neokyo — ¥350 per item, charged on top of the domestic shipping', (
     expect(pack(5000)).toBe(1250); // gross 6,300 g → 5 kg 超過
   });
 
-  test('no deposit fee at Neokyo', () => {
-    expect(svc('neokyo').deposit).toBeNull();
-    expect(one('neokyo').lines.some((l) => l.key === 'deposit')).toBe(false);
+  test('Neokyo now carries an assumed 3.5% deposit fee (F07, 2026-09-12)', () => {
+    // Neokyo は自社の一次ページで「the above-mentioned payment providers collect their own
+    // transaction fee at checkout」と明記しており、決済プロバイダ (PayPal/Stripe/Wise) 次第で
+    // 実際には変動する——単一の会社レベルの料率は存在しない構造的な理由がある。それでも
+    // オーナー決定で3.5%を暫定値として計上する（`master/fees.json`
+    // conclusions.F07_payment_fee_working_treatment）。tier は必ず estimate、出典は
+    // Neokyo自身のページではない（null）。
+    const deposit = svc('neokyo').deposit;
+    expect(deposit).not.toBeNull();
+    expect(deposit!.rate).toBe(0.035);
+    expect(deposit!.tier).toBe('estimate');
+    expect(deposit!.sourceUrl).toBeNull();
+    expect(deposit!.note).toContain('PayPal');
+    expect(one('neokyo').lines.some((l) => l.key === 'deposit')).toBe(true);
   });
 });
 

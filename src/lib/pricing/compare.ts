@@ -5,8 +5,8 @@ import {
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
   DEFAULT_PARCEL_DIMENSIONS_CM, DEFAULT_PARCEL_DIMENSIONS_NOTE, DEFAULT_PARCEL_DIMENSIONS_TIER,
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, courierPriceFor, dimensionsExceedLimit,
-  markupYen, maxGramsFor, postageFor, zoneFor,
+  POSTAGE_SOURCE_URL, POSTAL_METHODS, RANKED_COURIER_METHOD_IDS, courierPriceFor,
+  dimensionsExceedLimit, markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -872,12 +872,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 実際に出す便名ごとに ID を持つ——理由は `types.ts` の `CourierMethod` コメント。
   // `courier-surface` はここに含めない: **順位（`cheapest`）には絶対に選ばれない**
   // （P2 4。1〜3か月かかる便を既定にしない、オーナー決定）——`Row.surface` にだけ出す。
-  const COURIER_METHOD_IDS: readonly CourierMethod[] = [
-    'courier-fedex', 'courier-fedex-economy', 'courier-fedex-priority', 'courier-fedex-lowcost',
-    'courier-fedex-connect-plus', 'courier-ups', 'courier-dhl', 'courier-dhl-green-plus',
-    'courier-dhl-express-1200', 'courier-dhl-express-worldwide', 'courier-sf-express',
-    'courier-ecms', 'courier-ecms-express', 'courier-buyee-air',
-  ];
+  const COURIER_METHOD_IDS: readonly CourierMethod[] = RANKED_COURIER_METHOD_IDS;
   // **P2 4（オーナー確定 2026-09-12）。**Surface はどの経路（日本郵便の公表2方式・
   // 社独自の宅配便）でも既定の解決（`'cheapest'`）から外す——1〜3か月かかる便を
   // 「一番安いから」で既定にしない。額そのものは隠さない、というのが別立ての
@@ -1135,8 +1130,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     const depositBase = preTaxYen + (prepaid?.amount ?? 0);
     const base = depositBase + svc.deposit.flatYen;
     const fee = svc.deposit.flatYen + (base / (1 - svc.deposit.rate) - base);
+    // **出典は `svc.deposit.sourceUrl` を優先する。**未指定（`undefined`）の社は
+    // 従来どおり `svc.sourceUrl`（自社の公表ページ）にフォールバックするが、`null` を
+    // 明示した社（Buyee/Neokyo/FROM JAPAN——3.5% は我々が置いた暫定値で会社の公表値
+    // ではない）はどの会社ページも出典として示さない。
     lines.push(L('deposit', 'Deposit fee', Math.round(fee), svc.deposit.note,
-      svc.deposit.tier, svc.sourceUrl));
+      svc.deposit.tier, svc.deposit.sourceUrl !== undefined ? svc.deposit.sourceUrl : svc.sourceUrl));
   }
 
   const total = totalRange(lines);
