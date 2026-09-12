@@ -506,7 +506,7 @@ function packedItemsForBox(items: readonly Item[], box: ParcelBox): (PackedItem 
 }
 
 /**
- * 箱がなぜ他の箱と別なのかの文言。**`ParcelSplitReason` の4種は対称ではない**
+ * 箱がなぜ他の箱と別なのかの文言。**`ParcelSplitReason` の5種は対称ではない**
  * （`src/lib/pricing/types.ts` の doc comment 参照）——特に `'unresolved-shop'` を
  * `'identified-shop'`（"a different shop"）のように書いてはいけない。知らないことを
  * 知っているかのように主張することになる。
@@ -517,6 +517,11 @@ const REASON_TEXT: Record<ParcelSplitReason, string> = {
   'unresolved-shop': "we couldn't tell if this is the same shop as another box, so we kept it "
     + 'separate — this can push the total higher than the real one',
   'weight-limit': "over this shipping method's weight limit",
+  // 現状 `MultiBoxView` は `boxes.length > 1` のときしか描かない（下の呼び出し
+  // 側）ので `'single'` はここでは出ない——それでも `Record` を網羅する
+  // ため、そして将来 1箱しかない場面をここが描くようになっても嘘を
+  // 言わないために用意しておく。
+  single: 'not split',
 };
 
 /**
