@@ -1,10 +1,11 @@
 import { describe, expect, test } from 'vitest';
-import { compare } from './compare';
+import { compare, JAPAN_POST_ONLY_LINE_KEYS } from './compare';
 import { SERVICES } from './services';
-import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE, PROVINCE_CODES } from './countries';
+import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE, COUNTRIES, PROVINCE_CODES } from './countries';
 import { EMS_MAX_GRAMS, UNKNOWN_WEIGHT_STEPS_G } from './ems';
 import { rateFor } from './rates';
 import { weightFieldsFor } from './weights';
+import { RANKED_COURIER_METHOD_IDS } from './postage';
 import type { CompareInput, CountryCode, Item, ProvinceCode, Row } from './types';
 
 const COUNTRIES_ALL: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
@@ -25,6 +26,8 @@ const byId = (rows: Row[], id: string): Row =>
   rows.find((r) => r.id === id) ?? (() => { throw new Error(`no row ${id}`); })();
 const line = (row: Row, key: string) =>
   row.lines.find((l) => l.key === key) ?? (() => { throw new Error(`no line ${key}`); })();
+/** その行に指定キーの費目が**存在しない**ことを確かめる（F3: 消えるべき行が本当に消えたか）。 */
+const row_lines_without = (row: Row, key: string) => !row.lines.some((l) => l.key === key);
 const sumLines = (row: Row) => row.lines.reduce((a, l) => a + (l.amount ?? 0), 0);
 /** 比較可能な行のうち1位。**表の外に出た行を1位に数えたら順位が嘘になる。** */
 const winnerOf = (rows: Row[]) => rows.find((r) => r.comparable);
@@ -1372,7 +1375,7 @@ describe('Buyee splits parcels by order', () => {
     expect(consolidated.tag).toContain('you must request this');
   });
 
-  test('splitting costs more on the courier — but not on the US clearance fee, which is zero here', () => {
+  test('splitting costs more on the courier — and the courier row carries no USPS clearance fee at all', () => {
     // **method を EMS からBuyeeの実測宅配便（`courier-buyee-air`）に変更した**
     // （2026-09-12）。Buyee は米国宛に EMS（日本郵便）を一切出していないと確認済み
     // （`master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線）ので、
@@ -1384,11 +1387,17 @@ describe('Buyee splits parcels by order', () => {
     const dflt = byId(rows, 'buyee:default');
     expect(line(consolidated, 'intl-shipping').amount).toBe(4607);
     expect(line(dflt, 'intl-shipping').amount).toBe(13578);
-    // **3点×¥3,000 は $2,500 の事前納付帯の中**。Zonos で関税が事前納付されるので
-    // 配達時に徴収するものが無く、USPS の手数料も立たない（IMM 712.11）。
-    // 個口を増やしても 0 のまま——**個口が効くのは手数料が立つ帯だけ**。
-    expect(line(consolidated, 'clearance').amount).toBe(0);
-    expect(line(dflt, 'clearance').amount).toBe(0);
+    // **F3（`docs/audit/fable-review-2026-09-12.md`）修正後の姿。**この行の `clearance`
+    // 費目は USPS が郵便物の配達時に徴収する窓口手数料（IMM 712.11）で、Buyee-Air は
+    // 宅配便であって日本郵便経由の郵便物ではないので、そもそも成立しない
+    // ——以前はここで「$2,500 の事前納付帯なので 0 円」というアサーションを
+    // 置いていたが、それは「調べた上でゼロだった」という誤りで、正しくは
+    // 行そのものが無い（`filterJapanPostOnlyLines()`）。目的地側の未知の費用は
+    // 別行 `courier-destination-fees`（null、`total.high` を開く）が持つ。
+    expect(row_lines_without(consolidated, 'clearance')).toBe(true);
+    expect(row_lines_without(dflt, 'clearance')).toBe(true);
+    expect(line(dflt, 'courier-destination-fees').amount).toBeNull();
+    expect(dflt.total.high).toBeNull();
     expect(dflt.total.low).toBeGreaterThan(consolidated.total.low);
   });
 
@@ -2779,5 +2788,126 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
     expect(r.weightSensitivity['do']!.winnerAtLow).toBe('FROM JAPAN');
     expect(r.weightSensitivity['do']!.winnerAtHigh).toBe('FROM JAPAN');
     expect(r.weightSensitivity['do']!.decisive).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F3（docs/audit/fable-review-2026-09-12.md）再発防止。
+//
+// 郵便物（日本郵便）だけに条件付けられた費目——F26 輸出通関料・宛先郵便事業者の
+// 窓口手数料（Royal Mail / Canada Post / USPS）・米国向け Zonos 事前納付——が、
+// 実際に解決した配送方式を見ずに宅配便の行にまで足されていた。`compare.ts` は
+// `JAPAN_POST_ONLY_LINE_KEYS`（構造的な単一の一覧）に載るキーを宅配便の行から
+// 一括して落とす。**この一覧に次の郵便限定費目を足すだけで、このテストは
+// そのキーも自動でカバーする**——個別の費目名をこのテストに書き足す必要はない。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('F3: Japan-Post-only fees must not appear on courier-resolved rows', () => {
+  // **2026-09-12 追加是正: `clearance` は一律ではない。**AU の Import Processing
+  // Charge は税関（ABF）自身の費用で、宅配便にも立つ（`countries.ts` の
+  // `COUNTRIES.AU.clearanceCarrierScope === 'any-carrier'`）。他の国は郵便事業者
+  // 自身の窓口手数料（`'postal-only'`）。このテストは `COUNTRIES` を直接見て、
+  // どちらの主張を検証すべきかを国ごとに切り替える——`JAPAN_POST_ONLY_LINE_KEYS`
+  // には `clearance` を**入れていない**ので、その Set の内容を当てにしない。
+  test('every courier method, every country: JAPAN_POST_ONLY_LINE_KEYS never appears', () => {
+    const countries: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
+    const priceVariants = [3000, 250_000];
+    for (const cc of countries) {
+      for (const courierMethod of RANKED_COURIER_METHOD_IDS) {
+        for (const priceYen of priceVariants) {
+          const rows = compare({
+            method: courierMethod,
+            items: items(1, 3000, priceYen),
+            country: cc,
+          }).rows;
+          for (const row of rows) {
+            if (row.method !== courierMethod) continue;
+            for (const l of row.lines) {
+              expect(JAPAN_POST_ONLY_LINE_KEYS.has(l.key),
+                `${cc} ${row.id} ${row.method} carries Japan-Post-only line "${l.key}"`)
+                .toBe(false);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  test('duty-prepayment (US Zonos) never appears on a courier-resolved row', () => {
+    const priceVariants = [3000, 250_000];
+    for (const courierMethod of RANKED_COURIER_METHOD_IDS) {
+      for (const priceYen of priceVariants) {
+        const rows = compare({
+          method: courierMethod, items: items(1, 3000, priceYen), country: 'US',
+        }).rows;
+        for (const row of rows) {
+          if (row.method !== courierMethod) continue;
+          expect(row.lines.some((l) => l.key === 'duty-prepayment'),
+            `US ${row.id} ${row.method} carries duty-prepayment (Zonos)`).toBe(false);
+        }
+      }
+    }
+  });
+
+  test("'clearance' on a courier row: absent where postal-only, present where the country's clearance is a customs charge (AU)", () => {
+    const countries: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
+    const priceVariants = [3000, 250_000];
+    for (const cc of countries) {
+      const scope = COUNTRIES[cc].clearanceCarrierScope;
+      for (const courierMethod of RANKED_COURIER_METHOD_IDS) {
+        for (const priceYen of priceVariants) {
+          const rows = compare({
+            method: courierMethod, items: items(1, 3000, priceYen), country: cc,
+          }).rows;
+          for (const row of rows) {
+            if (row.method !== courierMethod) continue;
+            const hasClearance = row.lines.some((l) => l.key === 'clearance');
+            if (scope === 'postal-only') {
+              expect(hasClearance,
+                `${cc} ${row.id} ${row.method} carries a postal-operator clearance fee`)
+                .toBe(false);
+            } else {
+              // 'any-carrier'（今のところ AU のみ）: 税関の申告費用は宅配便にも立つ
+              // ——消してはいけない。
+              expect(hasClearance,
+                `${cc} ${row.id} ${row.method} lost its any-carrier customs charge`)
+                .toBe(true);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  test('the same fees still appear on postal (EMS) rows — this is not a blanket removal', () => {
+    // US・高額カート: F26 とクリアランス（USPSは事前納付帯なので0円）は EMS では立つ。
+    const rowsHighValue = compare({ method: 'ems', items: items(1, 600, 250_000), country: 'US' }).rows;
+    const buyeeHigh = byId(rowsHighValue, 'buyee');
+    expect(line(buyeeHigh, 'export-clearance').amount).toBe(2800);
+    expect(line(buyeeHigh, 'clearance')).toBeTruthy();
+
+    // GB: Royal Mail の £8 は EMS では立つ。
+    const rowsGb = compare({ method: 'ems', items: items(1, 3000, 30_000), country: 'GB' }).rows;
+    const buyeeGb = byId(rowsGb, 'buyee');
+    expect(line(buyeeGb, 'clearance').amount).toBeGreaterThan(0);
+    expect(line(buyeeGb, 'clearance').note).toContain('Royal Mail');
+
+    // CA: Canada Post の CAD 9.95 は EMS では立つ。
+    const rowsCa = compare({ method: 'ems', items: items(1, 3000, 30_000), country: 'CA' }).rows;
+    const buyeeCa = byId(rowsCa, 'buyee');
+    expect(line(buyeeCa, 'clearance').amount).toBeGreaterThan(0);
+    expect(line(buyeeCa, 'clearance').note).toContain('Canada Post');
+  });
+
+  test('AU: the Import Processing Charge is identical on a postal row and a courier row (customs charge, not a postal fee)', () => {
+    // AU だけの確認: EMS（郵便）と宅配便で同じ額・同じ note が立つはず——
+    // 「税関自身の費用で、運び手によらない」という主張そのものの検査。
+    const items1 = items(1, 3000, 200_000);
+    const postalRows = compare({ method: 'ems', items: items1, country: 'AU' }).rows;
+    const courierRows = compare({ method: 'courier-ecms', items: items1, country: 'AU' }).rows;
+    const postal = byId(postalRows, 'buyee');
+    const courier = byId(courierRows, 'buyee');
+    expect(courier.method).toBe('courier-ecms');
+    expect(line(courier, 'clearance').amount).toBe(line(postal, 'clearance').amount);
+    expect(line(courier, 'clearance').note).toBe(line(postal, 'clearance').note);
   });
 });

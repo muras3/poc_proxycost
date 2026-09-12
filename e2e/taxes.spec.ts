@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   addByHand, costRow, emptyCart, gotoCompare, openRankRow, parseYen, rankButtons, readRanking,
-  rowCells,
+  rowCells, setMethod,
 } from './helpers';
 import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE } from '../src/lib/pricing/countries';
 import {
@@ -33,21 +33,64 @@ async function shipTo(page: Page, code: string): Promise<void> {
   }).not.toEqual(before);
 }
 
-test('the US board admits the Zonos prepayment fee it cannot price', async ({ page }) => {
+const DEST_UNKNOWN = 'Destination-side courier fees (unpublished)';
+
+test('the US board admits the Zonos prepayment fee on postal rows, and the courier '
+  + "equivalent's absence of a published rate on courier rows — never both, never neither", async ({ page }) => {
+  // **F3是正（2026-09-12）で書き直した。**以前はこのテストが「どの行にも Zonos が
+  // 出る」と決め打ちしていたが、それ自体が F3 のバグ（Zonos は日本郵便が米国宛の
+  // 引受条件として課すもので、宅配便の行には成立しない）を固定するテストになっていた
+  // ——このアサーションのほうを直す（`setMethod` で固定するのではなく、既定の
+  // 籠が実際に何を見せているかを検査する。#90 の言う「デフォルト行が利用者に何を
+  // 見せるか」の主張なので、ピン留めではなく新しい正しい姿へ書き換える）。
+  //
+  // 既定の籠（#92 以降）は US 宛で6行中5行が宅配便に解決する（`docs/audit/
+  // fable-review-2026-09-12.md` F5 の観測どおり）。宅配便の行は Zonos ではなく
+  // 「目的地側の未公表費用」を、郵便の行（Jauce の EMS）は Zonos を出す——
+  // **どちらの行も、必ずどちらか一方の「額を出せない」開示は持つ**（無言にはしない）。
   await gotoCompare(page);
 
-  // 順位のどの行にも「総額から抜けている費目」として名前が出る。
-  for (const row of await readRanking(page)) {
-    expect(row.text.toLowerCase(), row.name).toContain(PREPAY.toLowerCase());
+  const rows = await readRanking(page);
+  let sawPostalZonos = 0;
+  let sawCourierUnknown = 0;
+  for (const row of rows) {
+    const lower = row.text.toLowerCase();
+    const hasZonos = lower.includes(PREPAY.toLowerCase());
+    const hasCourierUnknown = lower.includes(DEST_UNKNOWN.toLowerCase());
+    // 同じ行が両方を名乗ることはない——Zonos は郵便の行だけ、宅配便側の未知は
+    // 宅配便の行だけ。**どちらも無い行があってはいけない**（無言の欠落は F3 と同じ形）。
+    expect(hasZonos && hasCourierUnknown, `${row.name}: both Zonos and courier-unknown`).toBe(false);
+    expect(hasZonos || hasCourierUnknown, `${row.name}: neither Zonos nor courier-unknown`).toBe(true);
+    if (hasZonos) sawPostalZonos++;
+    if (hasCourierUnknown) sawCourierUnknown++;
   }
+  // 既定の籠は両方の種類の行を持つ（郵便1行・宅配便5行、F5の観測）。
+  // 将来カートの中身や配送料表が変わっても構わないように、**両方が最低1行ずつ
+  // 存在すること**だけを固定する——構成比の数字までは決め打ちしない。
+  expect(sawPostalZonos, 'no postal (Zonos) row in the default cart').toBeGreaterThan(0);
+  expect(sawCourierUnknown, 'no courier (destination-unknown) row in the default cart').toBeGreaterThan(0);
 
-  // 内訳を開くと費目として並び、金額は「—」。**¥0 ではない。**
-  const li = await openRankRow(page, 0);
-  const fee = costRow(li, PREPAY);
+  // Jauce（既定の籠で唯一の郵便行）を開くと、Zonos が費目として並び、金額は「—」。
+  // **¥0 ではない。**
+  const jauceIndex = rows.findIndex((r) => r.name === 'Jauce');
+  expect(jauceIndex, 'Jauce not found in the default ranking').toBeGreaterThanOrEqual(0);
+  const jauceLi = await openRankRow(page, jauceIndex);
+  const fee = costRow(jauceLi, PREPAY);
   await expect(fee).toHaveCount(1);
   const cells = await rowCells(fee);
   expect(cells[1]).toBe('—');
   expect(cells.slice(1)).not.toContain('¥0');
+
+  // 宅配便の行（Jauce 以外）を開くと、Zonos は出ず、代わりに目的地側の未知の
+  // 費用が「—」で立つ。
+  const courierIndex = rows.findIndex((r) => r.name !== 'Jauce');
+  expect(courierIndex, 'no courier row in the default ranking').toBeGreaterThanOrEqual(0);
+  const courierLi = await openRankRow(page, courierIndex);
+  await expect(costRow(courierLi, PREPAY)).toHaveCount(0);
+  const destFee = costRow(courierLi, DEST_UNKNOWN);
+  await expect(destFee).toHaveCount(1);
+  const destCells = await rowCells(destFee);
+  expect(destCells[1]).toBe('—');
 });
 
 test('Australia shows the checkout GST every service publishes', async ({ page }) => {
@@ -195,6 +238,13 @@ test('picking Ontario turns the estimate into HST 13%, and Alberta into a real z
 test('the Canada Post handling fee is on the bill, per parcel, with its own figure', async ({ page }) => {
   await gotoCompare(page);
   await shipTo(page, 'CA');
+  // **F3是正（2026-09-12）で `'ems'` に固定した。**この手数料は Canada Post
+  // 自身の窓口手数料で、宅配便（FedEx/UPS/DHL/ECMS）の荷物には構造的に立たない
+  // （`src/lib/pricing/countries.ts` の `COUNTRIES.CA.clearanceCarrierScope`）。
+  // #92 以降、CAの既定順位の1位は宅配便に化ることがあるため、`cheapest` のままだと
+  // このテストの主張（郵便の手数料の振る舞い）が「たまたま郵便が勝っている」に
+  // 依存してしまう——明示的に郵便へ固定し、何を検査しているかをテスト自身に語らせる。
+  await setMethod(page, 'ems');
 
   const li = await openRankRow(page, 0);
   const fee = await rowCells(costRow(li, 'Customs clearance fee').first());

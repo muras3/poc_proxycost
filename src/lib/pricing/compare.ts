@@ -289,6 +289,19 @@ function taxLines(
    * `null` = そういう任意徴収を確認していない社。
    */
   companyCollectsBelow: number | null = null,
+  /**
+   * F3（`docs/audit/fable-review-2026-09-12.md`、2026-09-12 の是正）。
+   *
+   * **関税・VAT/GST 自体は社の識別子を見ない**——ここまでの `taxLines()` の設計
+   * どおり、国とカートだけで決まる（コメント冒頭の P1-4 参照）。
+   * だが「その税をどう徴収するか」の手数料行（`clearanceBands`/`dutyPrepayment`）
+   * は話が別: `Country.clearanceCarrierScope`（`countries.ts` 参照）が国ごとに
+   * 「郵便事業者だけの窓口手数料」か「税関自身の申告手数料（宅配便にも立つ）」かを
+   * 記録しているので、それを引くために行を解決した配送方式の情報が要る。
+   * 関税・VAT/GST の判定ロジックには一切使わない——`clearance`/`duty-prepayment`
+   * の2行だけがこれを見る。
+   */
+  isCourier = false,
 ): { lines: Line[]; perParcel: ParcelTaxVerdict[] } {
   const c = COUNTRIES[cc];
   const rate = rateFor(c.ccy);
@@ -504,48 +517,66 @@ function taxLines(
   // 未取得は帯そのものを持たないことで表す（そのときだけ null＝「—」）。
   // **手数料も個口ごとに帯を引く。**申告額が個口ごとに違えば、帯も個口ごとに違いうる
   // （例: 高額な個口だけ上の帯に乗り、他の個口は0のまま）。
-  const clearanceSrc = c.clearanceSourceUrl ?? c.sourceUrl;
-  const bandsPerParcel = perParcel.map((p, i) => ({
-    band: c.clearanceBands?.find((b) => p.declaredP <= b.upTo),
-    sellerCollectsP: vatPerParcel[i]!.kind === 'seller-collects',
-  }));
-  // **手数料は税の徴収に従属する。**5カ国の原文が同じことを言っている
-  // （GB「If there is no duty or tax to pay, you will not be charged a handling fee」／
-  //  DE Auslagepauschale ／ FR frais de gestion ／ SG SingPost ／
-  //  US IMM 712.11「each item on which customs duty ... is collected」）。
-  // 決済時に払い済みなら国境で徴収するものが無く、手数料も立たない。
-  if (bandsPerParcel.some((b) => !b.band)) {
-    // P1-4: 帯そのものが無いことは国の制度の話で、どの社を使っても同じ。
-    out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl,
-      'shared'));
+  //
+  // **F3 是正（2026-09-12）: `clearanceBands` は国によって性質が違う。**
+  // `Country.clearanceCarrierScope`（`countries.ts` のコメント参照）が
+  // `'postal-only'`（郵便事業者自身の窓口手数料——宅配便には構造的に立たない）か
+  // `'any-carrier'`（税関自身が申告に課す費用——AUのみ、誰が運んで来たかによらず立つ）
+  // かを国ごとに記録しているので、それに従う。**ここを一律「宅配便には出さない」に
+  // してしまうと、AU の Import Processing Charge（実在する税関の費用）を消して
+  // 総額を過小に見せてしまう**——F3自体と逆方向の、より危険な誤りになる。
+  if (isCourier && c.clearanceCarrierScope === 'postal-only') {
+    // **消すのであって 0 にはしない。**この手数料は宛先の郵便事業者（Royal Mail /
+    // Canada Post / SingPost / USPS / Deutsche Post）が窓口で徴収するもので、
+    // 宅配便の荷物はその窓口を通らないので構造的に発生し得ない——「調べた上で
+    // ゼロだった」でも「調べていない」でもなく「この行自体が成立しない」。
+    // 宅配便自身の目的地側の未知の費用（例: FedEx の Disbursement Fee）は、
+    // 呼び出し側が別行 `courier-destination-fees`（null、`total.high` を開く）で
+    // 既に持っている。
   } else {
-    const withBand = bandsPerParcel as { band: NonNullable<typeof bandsPerParcel[0]['band']>; sellerCollectsP: boolean }[];
-    const paidCount = withBand.filter((b) => b.sellerCollectsP && b.band.amount > 0).length;
-    const zeroCount = withBand.filter((b) => !b.sellerCollectsP && b.band.amount === 0).length;
-    const chargedParcels = withBand.filter((b) => !b.sellerCollectsP && b.band.amount > 0);
-    const clearanceYen = chargedParcels.reduce((a, b) => a + b.band.amount, 0) * rateFor(c.clearanceCcy);
-    if (chargedParcels.length === 0) {
-      const note = paidCount > 0
-        ? 'nothing is collected at delivery — the tax was paid at checkout, and the fee is'
-          + ' charged only on parcels the carrier has to collect tax on'
-        : withBand[0]!.band.note;
-      out.push(L('clearance', 'Customs clearance fee', 0, note, c.clearanceTier, clearanceSrc));
+    const clearanceSrc = c.clearanceSourceUrl ?? c.sourceUrl;
+    const bandsPerParcel = perParcel.map((p, i) => ({
+      band: c.clearanceBands?.find((b) => p.declaredP <= b.upTo),
+      sellerCollectsP: vatPerParcel[i]!.kind === 'seller-collects',
+    }));
+    // **手数料は税の徴収に従属する。**5カ国の原文が同じことを言っている
+    // （GB「If there is no duty or tax to pay, you will not be charged a handling fee」／
+    //  DE Auslagepauschale ／ FR frais de gestion ／ SG SingPost ／
+    //  US IMM 712.11「each item on which customs duty ... is collected」）。
+    // 決済時に払い済みなら国境で徴収するものが無く、手数料も立たない。
+    if (bandsPerParcel.some((b) => !b.band)) {
+      // P1-4: 帯そのものが無いことは国の制度の話で、どの社を使っても同じ。
+      out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl,
+        'shared'));
     } else {
-      const sameAmount = chargedParcels.every((b) => b.band.amount === chargedParcels[0]!.band.amount);
-      const notes: string[] = [];
-      if (sameAmount) {
-        // **単一の帯が全課金個口に一律で乗る（最も多いケース）は、以前と同じ書式にする**
-        // ——個口数が1なら以前とバイト同一の文言。
-        notes.push(`${c.clearanceCcy} ${chargedParcels[0]!.band.amount}`
-          + ` × ${plural(chargedParcels.length, 'parcel')} — ${chargedParcels[0]!.band.note}`);
+      const withBand = bandsPerParcel as { band: NonNullable<typeof bandsPerParcel[0]['band']>; sellerCollectsP: boolean }[];
+      const paidCount = withBand.filter((b) => b.sellerCollectsP && b.band.amount > 0).length;
+      const zeroCount = withBand.filter((b) => !b.sellerCollectsP && b.band.amount === 0).length;
+      const chargedParcels = withBand.filter((b) => !b.sellerCollectsP && b.band.amount > 0);
+      const clearanceYen = chargedParcels.reduce((a, b) => a + b.band.amount, 0) * rateFor(c.clearanceCcy);
+      if (chargedParcels.length === 0) {
+        const note = paidCount > 0
+          ? 'nothing is collected at delivery — the tax was paid at checkout, and the fee is'
+            + ' charged only on parcels the carrier has to collect tax on'
+          : withBand[0]!.band.note;
+        out.push(L('clearance', 'Customs clearance fee', 0, note, c.clearanceTier, clearanceSrc));
       } else {
-        // **個口ごとに違う帯にまたがる混在ケース。**申告額が個口ごとに違うので起こりうる。
-        notes.push(chargedParcels.map((b) => `${c.clearanceCcy} ${b.band.amount}`).join(' + '));
+        const sameAmount = chargedParcels.every((b) => b.band.amount === chargedParcels[0]!.band.amount);
+        const notes: string[] = [];
+        if (sameAmount) {
+          // **単一の帯が全課金個口に一律で乗る（最も多いケース）は、以前と同じ書式にする**
+          // ——個口数が1なら以前とバイト同一の文言。
+          notes.push(`${c.clearanceCcy} ${chargedParcels[0]!.band.amount}`
+            + ` × ${plural(chargedParcels.length, 'parcel')} — ${chargedParcels[0]!.band.note}`);
+        } else {
+          // **個口ごとに違う帯にまたがる混在ケース。**申告額が個口ごとに違うので起こりうる。
+          notes.push(chargedParcels.map((b) => `${c.clearanceCcy} ${b.band.amount}`).join(' + '));
+        }
+        if (paidCount > 0) notes.push(`${plural(paidCount, 'parcel')} already paid tax at checkout`);
+        if (zeroCount > 0) notes.push(`${plural(zeroCount, 'parcel')} under the fee-free band`);
+        out.push(L('clearance', 'Customs clearance fee', Math.round(clearanceYen),
+          notes.join('; '), c.clearanceTier, clearanceSrc));
       }
-      if (paidCount > 0) notes.push(`${plural(paidCount, 'parcel')} already paid tax at checkout`);
-      if (zeroCount > 0) notes.push(`${plural(zeroCount, 'parcel')} under the fee-free band`);
-      out.push(L('clearance', 'Customs clearance fee', Math.round(clearanceYen),
-        notes.join('; '), c.clearanceTier, clearanceSrc));
     }
   }
 
@@ -572,8 +603,14 @@ function taxLines(
   // 「そんな費目は無い」という嘘になる。excluded に名前が載るのが目的。
   // 閾値は郵便物1個の内容品価格なので、個口に割ってから測る。割り切れない分は
   // **費目を出す側に倒す**（持っている情報を隠すより、余分に開示するほうが安全）。
+  // **F3 是正: この事前納付は日本郵便自身が米国宛の引受条件として課すもの**
+  // （`dp.note`/`countries.ts` の `dutyPrepayment` コメント参照——出典は日本郵便
+  // 自身のページ）なので、郵便を使わない宅配便には成立しない。ここは
+  // `Country.clearanceCarrierScope` のような国ごとの分岐ではなく常に郵便限定
+  // ——`dutyPrepayment` という制度自体が「日本郵便がこの国にどう荷物を出すか」の
+  // 条件だから。宅配便自身の目的地側の未知の費用は `courier-destination-fees` へ。
   const dp = c.dutyPrepayment;
-  if (dp && perParcel.some((p) => p.declaredP <= dp.upTo)) {
+  if (!isCourier && dp && perParcel.some((p) => p.declaredP <= dp.upTo)) {
     // P1-4: Zonos の前払い利用料は日本郵便が米国宛に課す条件で、どの社を使っても
     // 同じようにかかる——輸入側の話。scope: 'shared'。
     out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl, 'shared'));
@@ -587,13 +624,62 @@ function taxLines(
 }
 
 /**
+ * F3（`docs/audit/fable-review-2026-09-12.md`）の再発防止。
+ *
+ * `taxLines()` と `exportClearanceLine()` はもともと「郵便物」だけを前提に書かれた
+ * 費目を、行が実際に解決した配送方式を見ずに全行へ一律に足していた。
+ *
+ * **2026-09-12 の是正で分かったこと: 一律に「宅配便には立たない」キーの集合には
+ * できない。**`clearanceBands`（`clearance` キー）は国によって性質が違う——
+ * GB/CA/DE/FR/SG/USは宛先の郵便事業者自身の窓口手数料（宅配便には構造的に立たない）
+ * だが、**AUだけは税関（ABF）自身が輸入申告に課す費用**で、誰が運んで来たかに
+ * よらず立つ（`countries.ts` の `Country.clearanceCarrierScope`、
+ * `master/customs.json` AU `clearance[].carrier: "ABF（Import Processing Charge）"`
+ * 参照）。だから `clearance` はこの Set に**入れない**——`taxLines()` 内で
+ * `clearanceCarrierScope` を見て国ごとに判定する（`isCourier` 引数のコメント参照）。
+ * 同じ理由で `duty-prepayment`（米国向け Zonos）も `taxLines()` 内で直接
+ * `!isCourier` を見て判定する——この制度自体が「日本郵便がこの国にどう荷物を
+ * 出すか」の条件で、国ごとの分岐が要らない（常に郵便限定）分、Setに入れるまでもない。
+ *
+ * **ここに載るのは「常に・無条件に日本郵便限定」で、かつ国ごとの分岐が要らない
+ * キーだけ。**そういう費目を次に足すときは、この Set にキーを1つ足すだけでよい。
+ * 国によって性質が変わりうる費目（`clearance` のような）は、ここではなく
+ * その費目の生成箇所で `Country` の該当フィールドを見て判定すること——
+ * キー名だけで一括して弾くと、AU の例のように実在する費目を消してしまう。
+ */
+export const JAPAN_POST_ONLY_LINE_KEYS: ReadonlySet<string> = new Set([
+  // export-clearance: F26。「日本郵便の全便を対象に、日本郵便が輸出通関で徴収する」
+  // 費目（`master/fees.json` F26 `when.carrier_in: ["JapanPost_all"]`）。
+  // 国によらず常に日本郵便限定なので、国ごとの分岐は要らない。
+  'export-clearance',
+]);
+
+/**
+ * 宅配便（`isCourier`）の行から、常に・無条件に日本郵便限定の行を落とす。
+ * （国によって性質が変わる `clearance` はここを通らない——上のコメント参照。）
+ *
+ * **「無い」と「知らない」を混同しない。** これらの費目は宅配便には構造的に
+ * 「発生しない」（category error の反対側）ので、0円の行や null 行を残すのではなく
+ * 行そのものを消す——0円の行を残すと「調べた上でゼロだった」という別の嘘になる。
+ * 宅配便の目的地側の未知の費用は、既存の `courier-destination-fees`（null・
+ * `total.high` を開く）が別に持っている。ここで消しても「調べていない」への
+ * すり替えにはならない。
+ */
+function filterJapanPostOnlyLines(lines: Line[], isCourier: boolean): Line[] {
+  if (!isCourier) return lines;
+  return lines.filter((l) => !JAPAN_POST_ONLY_LINE_KEYS.has(l.key));
+}
+
+/**
  * F26 輸出通関手数料。**日本郵便の費目であって代行の費目ではない**ので、
  * 5社すべてに同額・同条件で出す（`EXPORT_DECLARATION_FEE_YEN` のコメント参照）。
  *
  * 条件は行の商品代合計（`itemsYen`）が ¥200,000 を超えるかどうかだけ。
  * **個口の数では倍にしない**（同じ受取人あてに2個以上は「全ての梱包を合わせて1件」）。
  * よって行につき1回。発生しないとき（¥200,000 以下）も額 0 の行を出す——
- * 消すと「調べていない」と区別が付かない。
+ * 消すと「調べていない」と区別が付かない。**この行自体が宅配便では立たない
+ * ことは呼び出し側で `filterJapanPostOnlyLines()` により弾く（この関数はまだ
+ * `isCourier` を知らないので、ここでは判定しない）。**
  */
 function exportClearanceLine(itemsYen: number): Line {
   const over = itemsYen > EXPORT_DECLARATION_FEE_THRESHOLD_JPY;
@@ -1363,7 +1449,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   }
 
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
-  lines.push(exportClearanceLine(itemsYen));
+  // **宅配便の行では立たない**——`filterJapanPostOnlyLines()` 参照。
+  lines.push(...filterJapanPostOnlyLines([exportClearanceLine(itemsYen)], isCourier));
 
   // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
   // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
@@ -1397,7 +1484,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **その社がこの国で自分で税を取るか。**閾値は intrinsic value（商品代）で測る
   // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declaredP` と同じ。
   const ownPrepaid = svc.prepaidImportTax?.[ctx.cc];
-  const taxResult = taxLines(ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null);
+  // **`isCourier` を渡す。**関税・VAT/GST の判定そのものには使われない
+  // （引き続き国とカートだけで決まる）が、`clearance`/`duty-prepayment` の2行は
+  // どの配送方式に解決したかで成立するかどうかが変わる——F3是正、`taxLines` 冒頭の
+  // コメント参照。
+  const taxResult = taxLines(
+    ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null, isCourier);
   lines.push(...taxResult.lines);
   // **`ParcelBox[]` はここで初めて完成する。**分割の理由（`boxReasons`）は
   // 上で決めてあり、箱ごとの関税・VAT/GST の判定（`taxResult.perParcel`）は
