@@ -86,13 +86,32 @@
         },
         {
           "route": "courier_brokerage",
-          "carrier": "DHL / FedEx",
+          "carrier": "FedEx",
           "rule": {
-            "type": "unknown"
+            "type": "greater_of",
+            "flat": 17.5,
+            "rate": 0.025,
+            "base": "duty_tax_and_mpf",
+            "currency": "USD",
+            "note": "FedEx の Disbursement Fee（Advancement Fee）。名称: 出発国・宛先国どちらでも同じ費目名だが、宛先国（米国）で FedEx が請求人に立替分を課す行にあたる ── docs/ROADMAP.md が警告した『DHLの Duty Tax Paid/Processing 取り違え』と同種の誤りを避けるため、DHL 側の2費目に対応させると本行は Processing 側（宛先国で課される方）に相当する。"
           },
-          "tier": "C_unknown",
-          "source": "—",
-          "note": "米国の courier brokerage は未取得"
+          "amount_tier": "search_snippet",
+          "tier": "B_inferred",
+          "inference_basis": "FedEx自身の一次ページはこの環境のWAFに阻まれ本文を取得できなかった（下記 source_fetch_result）。式（greater of $17.50 or 2.5% of duty+tax+MPF、2026-07-20発効）は独立した複数の二次情報源（ShipScience 等の料金改定まとめ）が一致して伝えており、FedExが同時期に他の複数の運賃・手数料を公表改定していること（fedex.com/en-us/shipping/rate-changes 自体は実在し200を返す）と整合するため、reasoned_judgementより確度は高いが、FedEx自身の逐語引用ではないためA_confirmedにはしない。",
+          "source": "https://www.fedex.com/en-us/shipping/rate-changes/additional-shipping-fees.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "この環境からは終始 200 だが本文は FedEx 自社 WAF の代替失敗ページ（『We're sorry, we can't process your request right now. It appears you don't have permission to view this webpage.』インシデント番号つき）── HTTPステータスは200でも本文は取得できていない。同じ結果が https://www.fedex.com/content/dam/fedex/us-united-states/services/surcharge_and_fee_changes_2026.pdf と https://www.fedex.com/en-us/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html でも再現。archive.org 経由の代替取得もこの環境のegressポリシーで塞がれている（`Blocked by egress policy`）。したがって『$17.50 or 2.5%、whichever is higher』はFedEx自身の一次ページの逐語引用として確認できていない。",
+          "corroborating_search_snippets": [
+            "ShipScience: 'the greater of $17.50 or 2.5% of duty, tax, and merchandise processing fee charges', effective 2026-07-20, up from 'the greater of $15 or 2% of duty, tax, and merchandise processing fee charges'"
+          ],
+          "verbatim_quote_available": false,
+          "prior_repo_evidence": {
+            "source": "Neokyo 自社ページ（代行会社によるFedEx料金の転記、FedEx自身の一次ページではない）",
+            "quote": "Flat Fedex Broker Fee: 2% of the Base Tax or 15USD, whichever is higher.",
+            "captured_in": "docs/audit/gaps.md（G2 節）",
+            "note": "**この2%/15USDは2026-07-20のFedEx改定前の旧料率と一致する（新料率は2.5%/17.50USD）。**Neokyoページの取得日が明記されておらず、改定前の値が転記時点でそのまま古くなっている可能性と、Neokyoが単に自社ページを更新していない可能性の両方があり得る。いずれにせよ Neokyo の記述はFedExの一次資料そのものではなく、代行会社による二次的な言い換えなので、これを『FedExの一次情報を取得済み』の根拠にはできない。"
+          },
+          "note": "**`docs/ROADMAP.md` の『US FedEx DDP の課税式は一次情報を取得済み』は、このマスタが直前まで保持していた `courier_brokerage: {rule: unknown, tier: C_unknown, source: \"—\"}` という記録と矛盾する ── マスタ側には一次情報を取得した形跡が無かった。今回 `whichever is higher` を明記する『greater of』構造の式自体は複数の独立した二次情報源（ShipScience 等）で一致しており reasoned_judgement を超える確度はあるが、FedEx自身のページ本文はこの環境のWAFに阻まれ逐語引用できていないため、`tier` は A_confirmed ではなく B_inferred、`amount_tier` は `search_snippet` に留める。"
         }
       ],
       "carrier_availability": {
