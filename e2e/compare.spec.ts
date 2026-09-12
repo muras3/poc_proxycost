@@ -510,27 +510,30 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   for (const name of HANDMADE) await tellWeight(page, name, 200);
 
   const before = await readRanking(page);
-  // **2026-09-12、courier-ui で Neokyo にも実測宅配便運賃が付いた。**以前は
-  // 「Neokyo は米国宛に日本郵便を売っていない」ので6行中5行しか額が付かなかったが、
-  // いまは6行とも比較可能。
-  // **さらに同日、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
-  // を配線した結果、FROM JAPAN・Buyee・Neokyo とも米国宛に日本郵便（EMS等）を
-  // 売っていないと確認済みだったと分かり、この3社は方式が `cheapest` のときも
-  // 郵便より高い宅配便で比較されるようになった**——1位は Neokyo に替わった
-  // （実測の並び: Neokyo → Buyee consolidated → FROM JAPAN → ZenMarket → Jauce
+  // **2026-09-12、F34（通関手数料・業者軸、`courier-clearance.ts`）の配線でこの並びが
+  // また動いた。**以前は宅配便の目的地側清算/立替手数料が全社¥0（未計算）のまま
+  // だったので、Neokyo（DHL、per-parcel）と FROM JAPAN（UPS、per-shipment）が
+  // 1位・3位に来ていた。**いまはこの2社の手数料が最低額の床（DHL/UPS とも
+  // 概ね$17.50相当＝¥2,734、このカートの実際の関税・税額 [約¥1,867] を大きく
+  // 上回るので床が効く）で決まり、床を持たない ECMS（3%のみ、最低額0）を使う
+  // Buyee/ZenMarket より高くつくようになった**——これは実額を計算した結果の
+  // 正しい入れ替わりで、退行ではない（`compare()` を直接叩いて確認済み。
+  // 通関手数料を除けば元の並び Neokyo→Buyee consolidated→FROM JAPAN→ZenMarket→Jauce
+  // →Buyee default に戻ることも確認済み）。
+  // （実測の新しい並び: Buyee consolidated → ZenMarket → Neokyo → FROM JAPAN → Jauce
   // → Buyee default）。
   expect(before).toHaveLength(6);
   expect(priced(before)).toHaveLength(6);
-  expect(first(before).name).toBe('Neokyo');
-  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(2);
-  expect(rankOf(before, 'FROM JAPAN')).toBe(3);
-  expect(rankOf(before, 'ZenMarket', 'default')).toBe(4);
+  expect(first(before).name).toBe('Buyee');
+  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(1);
+  expect(rankOf(before, 'ZenMarket')).toBe(2);
+  expect(rankOf(before, 'Neokyo')).toBe(3);
+  expect(rankOf(before, 'FROM JAPAN')).toBe(4);
   expect(rankOf(before, 'Jauce')).toBe(5);
 
   // 国内送料が無くなる前の内訳。仮定の ~¥800 × 5点。
-  // **1位（Neokyo）は国内送料をサービス料に含めている社なので、その行では
-  // 「Domestic shipping」が確定した ¥0 になり、この推定額を示せない。**
-  // 推定額を持つ2位（FROM JAPAN）の行で確かめる。
+  // **1位（Buyee consolidated）は同梱の都合で内訳の出方が違うことがあるため、
+  // 単一小口の2位（ZenMarket）の行で確かめる。**
   const liBefore = await openRankRow(page, 1);
   expect((await rowCells(costRow(liBefore, /^Domestic shipping/)))[1]).toBe('~¥4,000');
   await openRankRow(page, 1); // 閉じる
@@ -546,25 +549,24 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   const after = priced(await readRanking(page));
 
   // 国内送料は消えた。**「未取得」ではなく確定した ¥0** として出る。
-  const liAfter = await openRankRow(page, 0);
+  // **1位（Buyee consolidated）は複数注文をまとめる変種で、国内送料の確度自体が
+  // `estimate` のままなので `~¥0` と出る（0円自体は確定だが、確度の印は残る）。**
+  // 確度が `fixed` に落ちる単一小口の2位（ZenMarket）の行で「確定した¥0」を確かめる。
+  const liAfter = await openRankRow(page, 1);
   expect((await rowCells(costRow(liAfter, /^Domestic shipping/)))[1]).toBe('¥0');
-  await openRankRow(page, 0);
+  await openRankRow(page, 1);
 
-  // **1位は動かない。**5社とも国内送料は別建てなので、送料込み出品は全社に
-  // 等しく効く（docs/DESIGN-NOTES.md §1「逆転条件」）。
+  // **1位は動かない。**この主張自体はF34（宅配便の通関/立替手数料が%×duty+taxで
+  // 決まる、`courier-clearance.ts`）を配線した後もそのまま成り立つ——のは自明では
+  // ない点を明記しておく。**国内送料は US では課税ベース（FOB）に入らない**
+  // （`countries.ts` の `Country.base`）ので、国内送料をゼロにしても各社の
+  // duty/tax、ひいては通関手数料の額そのものは変わらない。だから一律¥4,000の
+  // 控除が全社の総額を同じだけ下げ、順位は保たれる——CIF国（GB/DE/FR/SG）でこの
+  // 同じテストを組んだ場合は、国内送料が課税ベースに乗るぶん通関手数料も動き、
+  // この不変条件が成り立つとは限らない（`compare()`で直接確認し、この行は崩れて
+  // いないことを確かめた上でここに書いている）。
   expect(after[0]!.name, 'seller-paid shipping moved the cheapest row').toBe(first(before).name);
-  expect(after[0]!.name).toBe('Neokyo');
-  // **2026-09-12、courier-ui でここの前提が変わった。**Neokyo に実測宅配便運賃が
-  // 付いたことで6社すべてが常に比較可能になり（以前は Neokyo が米国宛に日本郵便を
-  // 売っておらず、送料込み出品で1位が入れ替わって見えていたのは実際には
-  // Neokyo が盤面を抜けたことによる繰り上がりだった）。
-  // **さらに同日、courier_lineup_diffs の配線で FROM JAPAN・Buyee も米国宛に
-  // 日本郵便を売っていないと確認済みだったと分かり、この2社も宅配便で
-  // 比較されるようになった**——それでも、下の1点あたり¥800の一律控除では
-  // 現在の総額の差（各社間で最低でも¥400以上）を越えず、順位は1本たりとも
-  // 入れ替わらない（`src/lib/pricing` で広く走査して確認）。**これは欠陥ではない**
-  // ——「送料込みは全社に等しく効く」という主張自体はそのまま成り立っており、
-  // 並び自体が完全に保たれることを見る。
+  expect(after[0]!.name).toBe('Buyee');
   expect(after.map((r) => `${r.name}/${r.variant}`))
     .toEqual(priced(before).map((r) => `${r.name}/${r.variant}`));
   expect(isNonDecreasing(after.map((r) => r.total))).toBe(true);

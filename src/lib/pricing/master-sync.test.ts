@@ -39,6 +39,8 @@ import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVI
 import type { Service } from './services';
 import { compare } from './compare';
 import type { Item } from './types';
+import { COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN } from './courier-clearance';
+import type { CountryCode } from './types';
 
 // ── マスタ読み込み ──────────────────────────────────────────────
 const FEES_JSON_PATH = path.join(__dirname, '../../../master/fees.json');
@@ -1020,5 +1022,247 @@ describe('display ── マスタの `display` 分類がコードに効いて�
     const buyee = compare({ items: [free], country: 'US' }).rows.find((r) => r.serviceId === 'buyee')!;
     const dom = buyee.lines.find((l) => l.key === 'domestic-shipping')!;
     expect(dom.amount).toBe(0);
+  });
+});
+
+// ============================================================================
+// F34（通関手数料・業者軸）── `master/customs.json#clearance` と
+// `courier-clearance.ts` の `COURIER_CLEARANCE`/`COURIER_CLEARANCE_UNKNOWN` の
+// 突き合わせ。
+//
+// **`services.ts`/`countries.ts` と同じパターン**（マスタの値を `src/` に
+// 転記し、この test がマスタから読み直して突き合わせる）を、`clearance` にも
+// 適用する。以前は `courier-clearance.ts` が転記した48行のうち28行（7か国×4社）に
+// 対応する突き合わせが1件も無く、`master/customs.json` を書き換えても何も
+// 落ちない状態だった——#95（F26のcarrier_in条件をコードが見ていなかった）や
+// T-F0の発端（Fableが見つけた「マスタを読まない検証器」）と同じ形の欠陥。
+//
+// **対象は7か国（US/GB/DE/FR/AU/CA/SG）× 4社（FedEx/UPS/DHL Express/ECMS）の
+// 28セルだけ**（3本の監査ノート `docs/audit/f34-*-seven-countries-2026-09-12.md`
+// がこの28セルをスコープにしている）。郵便側の `clearance`（USPS/Royal Mail等）と、
+// CA の古い一括レンジ行（`carrier: "UPS / FedEx / DHL"`、個社に分解済みのため
+// 現在は参照していない）はこの28セルに含まれず、対象外——理由をここに明記して
+// おく（黙って除外しない）。
+// ============================================================================
+const CUSTOMS_JSON_PATH = path.join(__dirname, '../../../master/customs.json');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const customsMaster = JSON.parse(fs.readFileSync(CUSTOMS_JSON_PATH, 'utf8')) as { countries: any[] };
+
+const F34_COUNTRIES = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'] as const;
+const F34_CARRIERS = ['FedEx', 'UPS', 'DHL', 'ECMS'] as const;
+type F34Carrier = typeof F34_CARRIERS[number];
+
+function f34Key(cc: CountryCode, carrier: F34Carrier): string {
+  return `${cc}::${carrier}`;
+}
+
+/** その国の `clearance[]` から、この社1本を厳密一致で拾う（`UPS / FedEx / DHL` の
+ * ような一括レンジ行は `carrier === 'UPS'` に一致しないので自動的に除外される）。 */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function findClearanceRow(cc: CountryCode, carrier: F34Carrier): any | undefined {
+  const country = customsMaster.countries.find((c) => (c.code ?? c.country) === cc);
+  if (!country) throw new Error(`customs.json に国 ${cc} が無い`);
+  const rows = (country.clearance ?? []).filter((r: { carrier?: string }) => {
+    const c = r.carrier ?? '';
+    if (carrier === 'DHL') return c === 'DHL Express';
+    if (carrier === 'FedEx') return c.startsWith('FedEx');
+    return c === carrier; // UPS / ECMS は厳密一致
+  });
+  if (rows.length > 1) {
+    throw new Error(`customs.json ${cc} に ${carrier} 行が複数ある（鍵の選び方を直すこと）`);
+  }
+  return rows[0];
+}
+
+/** master の rule から、`courier-clearance.ts` が持つべき rate/min/max/currency を
+ * 動的に導く（ベタ書きしない）。account/non-account の2系統は、コード側の方針
+ * 「率・最低額とも高い方を採用（過小計上しない）」と同じ式で再導出する。 */
+function expectedRuleFrom(row: { rule: Record<string, unknown> }): {
+  kind: string; rate?: number; minLocal?: number; maxLocal?: number;
+  valueLteLocal?: number; flatLocal?: number; aboveRate?: number; aboveMinLocal?: number;
+  currency?: string;
+} {
+  const rule = row.rule as Record<string, unknown>;
+  const type = rule.type as string;
+  switch (type) {
+    case 'greater_of':
+    case 'rate_of_import_charges_with_min':
+      // 'greater_of' はSG FedExだけ `max` フィールドも持つ（上限つき）——
+      // その場合は rate_min_max として扱う（rate_of_import_charges_with_min_and_max と同型）。
+      if (rule.max != null) {
+        return {
+          kind: 'rate_min_max', rate: rule.rate as number,
+          minLocal: (rule.flat ?? rule.min) as number, maxLocal: rule.max as number,
+          currency: rule.currency as string,
+        };
+      }
+      return {
+        kind: 'rate_min', rate: rule.rate as number,
+        minLocal: (rule.flat ?? rule.min) as number, currency: rule.currency as string,
+      };
+    case 'rate_of_import_charges_with_min_and_max':
+      return {
+        kind: 'rate_min_max', rate: rule.rate as number, minLocal: rule.min as number,
+        maxLocal: rule.max as number, currency: rule.currency as string,
+      };
+    case 'rate_of_import_charges':
+      // ECMSの3%のみ（最低額そのものが無い＝0）。マスタはこの型に currency を持たない
+      // （率だけの費目に通貨は意味を持たないため）——ここでも currency は突き合わせない。
+      return { kind: 'rate_min', rate: rule.rate as number, minLocal: 0 };
+    case 'rate_of_import_charges_with_min_variants': {
+      const variants = rule.variants as Record<string, { rate: number; min: number; currency: string }>;
+      const vs = Object.values(variants);
+      const currencies = new Set(vs.map((v) => v.currency));
+      expect(currencies.size, 'account/non-account variants must share one currency').toBe(1);
+      return {
+        kind: 'rate_min',
+        rate: Math.max(...vs.map((v) => v.rate)),
+        minLocal: Math.max(...vs.map((v) => v.min)),
+        currency: vs[0]!.currency,
+      };
+    }
+    case 'greater_of_by_service': {
+      const minByService = rule.min_by_service as Record<string, number>;
+      return {
+        kind: 'rate_min', rate: rule.rate as number,
+        minLocal: Math.max(...Object.values(minByService)), currency: rule.currency as string,
+      };
+    }
+    case 'banded_by_value_mixed': {
+      const bands = rule.bands as Array<{
+        value_lte?: number; value_gt?: number;
+        rule: { type: string; amount?: number; rate?: number; min?: number };
+      }>;
+      const low = bands.find((b) => b.value_lte != null)!;
+      const high = bands.find((b) => b.value_gt != null)!;
+      return {
+        kind: 'banded_value_mixed', currency: rule.currency as string,
+        valueLteLocal: low.value_lte, flatLocal: low.rule.amount,
+        aboveRate: high.rule.rate, aboveMinLocal: high.rule.min,
+      };
+    }
+    default:
+      throw new Error(`未対応の rule.type: ${type}（master-sync.test.ts の expectedRuleFrom に追加すること）`);
+  }
+}
+
+/** master row → 期待する per-parcel/per-shipment。「per_shipment」と明記されている
+ * ときだけ per_shipment、それ以外（未確認の推論・記述なし）は per_parcel——これは
+ * マスタの転記ではなく、`courier-clearance.ts` 冒頭コメントに書いた**こちらの方針**
+ * （箱分割で過小計上しない側に倒す）なので、ここでは「方針どおりコードがそうなって
+ * いること」を確認する（マスタの生の値をそのまま真似するのではない）。 */
+function expectedPerFrom(row: { per?: string; per_parcel_or_shipment?: string; unit?: string }): 'per_parcel' | 'per_shipment' {
+  const raw = row.per ?? row.per_parcel_or_shipment ?? row.unit;
+  return raw === 'per_shipment' ? 'per_shipment' : 'per_parcel';
+}
+
+describe('F34 MAPPED ── master/customs.json#clearance と courier-clearance.ts が一致しなければならない行', () => {
+  for (const cc of F34_COUNTRIES) {
+    for (const carrier of F34_CARRIERS) {
+      const row = findClearanceRow(cc, carrier);
+      if (!row || row.tier !== 'A_confirmed' && row.tier !== 'B_inferred') continue;
+      it(`${f34Key(cc, carrier)}: tier/rule/per が一致する（master tier=${row.tier}）`, () => {
+        const code = COURIER_CLEARANCE[cc]?.[carrier];
+        expect(code, `${f34Key(cc, carrier)} が COURIER_CLEARANCE に無い`).toBeDefined();
+        // tier: A_confirmed→fixed、B_inferred→estimate
+        expect(code!.tier).toBe(row.tier === 'A_confirmed' ? 'fixed' : 'estimate');
+        const expectedRule = expectedRuleFrom(row);
+        expect(code!.rule.kind).toBe(expectedRule.kind);
+        if (expectedRule.rate != null && 'rate' in code!.rule) {
+          expect(code!.rule.rate).toBeCloseTo(expectedRule.rate, 10);
+        }
+        if ('minLocal' in code!.rule && expectedRule.minLocal != null) {
+          // DE DHL だけ VAT 込みに換算している（#99・courier-clearance.ts のコメント参照）。
+          const vatMultiplier = cc === 'DE' && carrier === 'DHL' && row.rule.min_plus_vat ? 1.19 : 1;
+          expect((code!.rule as { minLocal: number }).minLocal)
+            .toBeCloseTo(expectedRule.minLocal * vatMultiplier, 10);
+        }
+        if ('maxLocal' in code!.rule && expectedRule.maxLocal != null) {
+          expect((code!.rule as { maxLocal: number }).maxLocal).toBeCloseTo(expectedRule.maxLocal, 10);
+        }
+        if (expectedRule.kind === 'banded_value_mixed') {
+          const r = code!.rule as {
+            valueLteLocal: number; flatLocal: number; aboveRate: number; aboveMinLocal: number;
+          };
+          expect(r.valueLteLocal).toBe(expectedRule.valueLteLocal);
+          expect(r.flatLocal).toBe(expectedRule.flatLocal);
+          expect(r.aboveRate).toBeCloseTo(expectedRule.aboveRate!, 10);
+          expect(r.aboveMinLocal).toBeCloseTo(expectedRule.aboveMinLocal!, 10);
+        }
+        if (expectedRule.currency != null) expect(code!.currency).toBe(expectedRule.currency);
+        expect(code!.per).toBe(expectedPerFrom(row));
+      });
+    }
+  }
+});
+
+describe('F34 DELIBERATELY_UNPRICED ── C_unknown/schema_gap は点推定を出さない', () => {
+  // マスタが `tier: 'C_unknown'` で、かつ「法人自体が無い」(counted_absence) では
+  // ない行（= 一次資料が取得できなかった／既存スキーマで表現できない、のどちらか）。
+  // これらは COURIER_CLEARANCE に値を持たず、代わりに COURIER_CLEARANCE_UNKNOWN に
+  // 説明を持つ——「意図的に価格化していない」ことをここで assert する。
+  const cases: Array<{ cc: CountryCode; carrier: F34Carrier }> = [
+    { cc: 'GB', carrier: 'FedEx' }, // schema_gap（3段帯）
+    { cc: 'GB', carrier: 'UPS' },   // C_unknown（一次資料未達）
+    { cc: 'DE', carrier: 'FedEx' }, // schema_gap（3段帯）
+  ];
+  for (const { cc, carrier } of cases) {
+    it(`${f34Key(cc, carrier)}: master が C_unknown ⇒ コードは意図的に未価格化`, () => {
+      const row = findClearanceRow(cc, carrier);
+      expect(row, `${f34Key(cc, carrier)} が customs.json に無い`).toBeDefined();
+      expect(row.tier).toBe('C_unknown');
+      // 「無いから未接続」ではなく「見つけた上で価格化を諦めた」ことを示す証跡が
+      // マスタ側にあること（schema_gap フラグか、逐語引用が取れていない旨の記述）。
+      expect(
+        row.schema_gap === true || row.verbatim_quote_available === false,
+        `${f34Key(cc, carrier)}: C_unknownの根拠（schema_gap または未逐語確認）が row に無い`,
+      ).toBe(true);
+      expect(COURIER_CLEARANCE[cc]?.[carrier]).toBeUndefined();
+      expect(COURIER_CLEARANCE_UNKNOWN[cc]?.[carrier]).toBeTruthy();
+    });
+  }
+});
+
+describe('F34 NO_LINE (counted_absence) ── 法人が確認できない業者は行そのものを出さない', () => {
+  // ECMS の DE/FR/AU/CA。「無いと確認した」のではなく「探したが法人・T&Cが
+  // 見つからなかった」——DELIBERATELY_UNPRICEDとは違うので別バケットにする
+  // （こちらは COURIER_CLEARANCE にも COURIER_CLEARANCE_UNKNOWN にも入らない）。
+  const cases: CountryCode[] = ['DE', 'FR', 'AU', 'CA'];
+  for (const cc of cases) {
+    it(`${f34Key(cc, 'ECMS')}: master が counted_absence ⇒ コードは行を出さない（未価格化行とも別扱い）`, () => {
+      const row = findClearanceRow(cc, 'ECMS');
+      expect(row, `${f34Key(cc, 'ECMS')} が customs.json に無い`).toBeDefined();
+      expect(row.tier).toBe('C_unknown');
+      expect(row.evidence_class).toBe('counted_absence');
+      expect(COURIER_CLEARANCE[cc]?.ECMS).toBeUndefined();
+      // DELIBERATELY_UNPRICED（schema_gap/一次資料未達）とは異なり、
+      // 「額不明」の注意書きすら持たない——法人がそもそも無いので費目自体が無い。
+      expect(COURIER_CLEARANCE_UNKNOWN[cc]?.ECMS).toBeUndefined();
+    });
+  }
+});
+
+describe('F34 網羅性 ── 7か国×4社=28セルすべてが3つのバケット（MAPPED/UNPRICED/NO_LINE）のどれかに入る', () => {
+  it('customs.json 側の tier/evidence_class から見て、28セルすべてに対応が付く', () => {
+    const seen = new Set<string>();
+    for (const cc of F34_COUNTRIES) {
+      for (const carrier of F34_CARRIERS) {
+        const key = f34Key(cc, carrier);
+        const row = findClearanceRow(cc, carrier);
+        expect(row, `${key}: customs.json にこのセルが無い（監査が確認した28セルの前提が崩れている）`).toBeDefined();
+        seen.add(key);
+        if (row.evidence_class === 'counted_absence') {
+          expect(COURIER_CLEARANCE[cc]?.[carrier]).toBeUndefined();
+          expect(COURIER_CLEARANCE_UNKNOWN[cc]?.[carrier]).toBeUndefined();
+        } else if (row.tier === 'C_unknown') {
+          expect(COURIER_CLEARANCE[cc]?.[carrier]).toBeUndefined();
+          expect(COURIER_CLEARANCE_UNKNOWN[cc]?.[carrier]).toBeTruthy();
+        } else {
+          // A_confirmed / B_inferred
+          expect(COURIER_CLEARANCE[cc]?.[carrier], `${key} は価格化されているはず`).toBeDefined();
+        }
+      }
+    }
+    expect(seen.size).toBe(F34_COUNTRIES.length * F34_CARRIERS.length); // 28
   });
 });
