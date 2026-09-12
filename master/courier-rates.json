@@ -122220,7 +122220,7 @@
         "FROM JAPAN の International ePacket Light / ECMS / SF Express は寸法走査で額が動かず、重量カーブでのみ変化する。容積重量の対象かどうか、今回のデータからは判定できない。"
       ],
       "supersedes": "2026-09-08 監査（docs/audit/o2-courier-2026-09-08.md §5）が出した実効除数 9.5 / 11.9 は、その監査自身が自己申告した通り、寸法を `blank` にして実重量カーブを取得したため、全点がその社の既定の箱ぶん高く出ていたことが原因。今回の実測（実際の寸法を入力したdimension_scanと、DEの重量カーブの突き合わせ）でこの診断が正しかったことが裏づけられた。docs/audit/o2-courier-2026-09-08.md 自体は当時の記録として書き換えない。docs/ROADMAP.md P2側に「後の実測で解決した」旨を記載する。 ただし、この『除数5000』が裏づけられたのは FROM JAPAN のみである。他社（Buyeeを含む）に一般化してはならない（scope_warning 参照）。",
-      "scope_warning": "この除数5000・0.5kg切り上げのルールは FROM JAPAN のデータだけから確定した。全社共通の結論として扱ってはならない（2026-09-11のPR #50はこの限定を明記せずに『実測で確定』と書いてしまった。コーディネーターの誤り）。Buyee のデータ（下記 contradicting_evidence_buyee）はこの規則を満たさない。社ごとに確かめるまで、他社に流用しない。",
+      "scope_warning": "この除数5000・0.5kg切り上げのルールは FROM JAPAN のデータから確定した。**切り上げの挙動（0.5kg単位）はFROM JAPAN固有であり、他社に流用してはならない。** 2026-09-11のPR #50はこの限定を明記せずに『実測で確定』と書いてしまった（コーディネーターの誤り）。除数の値5000自体はBuyeeでも独立に確認されている（下記 resolution_buyee_2026_09_12）が、Buyeeは0.5kgへの切り上げを行わない点でFROM JAPANと異なる。『除数5000』という数値の一致を『同じ規則』の一致と混同しないこと。社ごとに確かめるまで、切り上げ規則を含む挙動の全体を他社に流用しない。",
       "contradicting_evidence_buyee": {
         "basis": "observations.buyee_verified_2026_09_12.germany_dimension_scan_600g（DE / 600g / FedEx）。除数5000なら体積の単調増加に対応して価格が単調に上がるはずだが、そうなっていない。",
         "table": [
@@ -122290,7 +122290,35 @@
           "縦＋（横+高さ）×2（＝胴回り、girth）を一定にしたまま形状だけ変える走査（運送会社がよく使う『長さ＋胴回り』課金の可能性を切り分ける）",
           "同じ寸法セットをDE以外の国（US・GBなど）でも走査し、規則が国に依存しないか確認する",
           "FedEx以外の方式（EMS・Air Parcel等の日本郵便系）でも同じ寸法セットを走査し、Buyeeの日本郵便方式が本当に寸法非依存かを再確認する（今回のデータでは日本郵便系は10x10x10〜40x40x40まで不変だった）"
-        ]
+        ],
+        "superseded_by": "conclusions.volumetric_divisor.resolution_buyee_2026_09_12. **この observation 自体は削除・書き換えしない**（実際に観測された生データであり、それが指し示すように見えた誤った結論だけを下記で訂正する）。"
+      },
+      "resolution_buyee_2026_09_12": {
+        "date": "2026-09-12",
+        "verified_by": "59b65abf-buyee_shipping_measurements_v2.json（observations.buyee_us_grid_v2_2026_09_12 / buyee_six_countries_v2_2026_09_12 として取り込み済み）。",
+        "confidence": "direct_fetch",
+        "confidence_note": "推測ではなく、Buyeeの計算機自身が画面に表示した `weight_volumetric_g`（容積重量そのもの）を直接読んだ。ただし検証範囲は下記 scope の通り: 6カ国(US/GB/FR/AU/CA/SG)、1カ国につき1つの配送先郵便番号、2026-09-12時点、実測した寸法・重量グリッドの範囲内。DEはこの新グリッドの対象外（sources参照）。",
+        "what_was_wrong": "上記 contradicting_evidence_buyee は、Buyeeの価格を『体積』に対して単調であるはずという仮定で検査していた。実際にBuyeeが課金の基準にしているのは『実重量と容積重量のうち大きい方（chargeable weight）』であり、体積そのものではない。30×20×10cm(体積6,000cm3)が20×20×20cm(体積8,000cm3)より高いのは、除数5000のもとでの容積重量が30×20×10cmで1,200g・20×20×20cmで1,600gと、体積の大小と逆転するケースがあるため（例: 米国 30×20×10cm→容積重量1,200g・ECMS ¥2,790、20×20×20cm→容積重量1,600g・ECMS ¥3,290 と、容積重量基準では単調に一致する）。加えて、Buyeeの元データの `measurement_policy`（fede91d0-proxy_shipping_measurement_addendum_2026-09-12.json）に『Invalid Buyee batch output was discarded.』とあり、DE計測の一部が汚染バッチの影響を受けた時期のものだった。",
+        "divisor_check": {
+          "method": "dims_cm と weight_volumetric_g の両方を持つ全観測について、volume_cm3 ÷ 5000 × 1000 [g] を weight_volumetric_g と比較。",
+          "rows_checked": 668,
+          "exceptions": 0,
+          "countries_covered": ["US", "GB", "FR", "AU", "CA", "SG"],
+          "result": "668行全てで一致（誤差0）。除数5000がBuyee自身の画面表示から直接確認された。"
+        },
+        "rounding_check": {
+          "claim": "FROM JAPANと異なり、Buyeeは容積重量を0.5kg単位に切り上げない。",
+          "example": "25x25x25cm（体積15,625cm3）→ weight_volumetric_g=3125（3,125g）。0.5kg単位切り上げなら3,500gになるはずだが、そうなっていない。",
+          "verified": true
+        },
+        "monotonicity_check": {
+          "method": "各国×各配送方式の寸法走査を、chargeable weight = max(weight_actual_g, weight_volumetric_g) の昇順に並べ替え、価格が非減少であることを確認。",
+          "series_checked": 36,
+          "violations": 0,
+          "result": "36系列すべてでchargeable weightに対して価格は非減少。体積そのものに対しては非単調に見えても、chargeable weightに対しては矛盾がない。"
+        },
+        "residual_open_item": "旧DE実測（observations.buyee_de_2026_09_12 / 548b615f-buyee_shipping_verified_2026-09-12.json の germany_dimension_curve_600g）は `weight_volumetric_g` を画面表示していない価格のみのデータで、FedExの価格が10x10x10cmと20x20x20cmで同額(¥4,612)のまま、30x20x10cmで初めて¥6,194に上がる。これは上記の新グリッド(US)で同条件(600g固定, 10x10x10→20x20x20)にFedEx相当の速達便(Buyee Air Delivery)の価格が¥4,526→¥5,405と実際に上がっているのと矛盾する。DEのこのデータ自体は削除しないが、容積重量の直接表示を伴わない価格のみの観測であり、今回の668行の直接検証（own-screen figures）の対象には含まれていない。DEについて容積重量表示付きの再走査を行うまで、DEのFedEx分だけは未解決の疑問として残る。",
+        "conclusion": "Buyeeの容積重量の除数は5000であることが、Buyee自身の画面表示（weight_volumetric_g）から直接確認された。ただし0.5kg単位への切り上げは行わない点でFROM JAPANと異なる。原則3（1社の確認を他社に一般化しない）はここでも維持する: 除数の値が5000で一致したのは偶然の一致ではなく各社別々に確認された事実だが、切り上げ規則までは一致しないことが明確になった。"
       }
     },
     "postal_methods_flat_across_dimensions": {
@@ -122524,7 +122552,7 @@
     "zenmarket_dimensional_weight_validation": {
       "confirmed": true,
       "basis": "observations.zenmarket_2026_09_12.cross_check.dimensional_weight_validation。FEDEX LOWCOST・FEDEX・UPS・DHL(GREEN+)は体積重量(cm3/5000)と実重量(600g)の大きい方を基準に課金しており、複数の独立条件間で厳密に一致した（40x30x20cm[体積重量4.8kg]≡5000g、20x20x20cm[体積重量1.6kg]≡2000gがFEDEX LOWCOST/FEDEX/UPSで完全一致。DHL(GREEN+)も40x30x20cm≡5000gで一致）。",
-      "relation_to_volumetric_divisor": "この『除数5000』は conclusions.volumetric_divisor がFROM JAPANについて確定したのと同じ除数だが、ZenMarketで別途独立に確認できた事実であり、FROM JAPANの確認をZenMarketに流用したものではない。両社で除数5000が個別に裏づけられたことになる。一方、conclusions.volumetric_divisor.contradicting_evidence_buyee の通りBuyeeはこの規則に従わない。したがって『除数5000は複数社（FROM JAPAN・ZenMarket）で確認されているが、全社共通ではない（Buyeeが反例）』というのが現時点で言える範囲であり、それ以上（例:『業界標準』等）に一般化してはならない。ZenMarketのNOVA GLOBAL/ECMS EXPRESS/日本郵便系についてはこの検証の対象外（今回の dimensional_weight_validation はFEDEX LOWCOST/FEDEX/UPS/DHL(GREEN+)の4方式のみを扱っている）。"
+      "relation_to_volumetric_divisor": "この『除数5000』は conclusions.volumetric_divisor がFROM JAPANについて確定したのと同じ除数だが、ZenMarketで別途独立に確認できた事実であり、FROM JAPANの確認をZenMarketに流用したものではない。2026-09-12の再検証（conclusions.volumetric_divisor.resolution_buyee_2026_09_12）でBuyeeも除数5000そのものは満たすことがBuyee自身の画面表示（weight_volumetric_g）から直接確認され、FROM JAPAN・ZenMarket・Buyeeの3社で除数5000（の値そのもの）が個別に裏づけられたことになる。**ただし『除数の値が同じ』と『規則全体が同じ』は別**: Buyeeは容積重量を0.5kg単位に切り上げない点でFROM JAPANと異なり（この切り上げの有無はZenMarketでは未確認）、この差はconclusions.volumetric_divisor.resolution_buyee_2026_09_12に記録している。したがって『除数5000という数値は複数社（FROM JAPAN・ZenMarket・Buyee）で確認されているが、切り上げなど規則の細部までは会社ごとに異なりうる』というのが現時点で言える範囲であり、それ以上（例:『業界標準』等）に一般化してはならない。ZenMarketのNOVA GLOBAL/ECMS EXPRESS/日本郵便系についてはこの検証の対象外（今回の dimensional_weight_validation はFEDEX LOWCOST/FEDEX/UPS/DHL(GREEN+)の4方式のみを扱っている）。"
     },
     "zenmarket_blank_dimensions_not_zero_volumetric": {
       "confirmed": true,
