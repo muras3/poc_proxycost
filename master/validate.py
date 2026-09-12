@@ -108,6 +108,30 @@ print(f"  費目 {len(fees['rows'])} 行 / rule.type {len(VOCAB)} 種 / catalog 
 print("  display 内訳: " + " / ".join(f"{k} {display_counts.get(k, 0)}" for k in
       ("total", "engine_only", "optional", "warning_only", "hidden")))
 
+# --- clearance[].rule.type のうち eval_clearance() が評価できるものはどれか ---
+# 「型は宣言されているが計算しない」は無言で許してはならない（Fable R1と同種の失敗パターン）。
+# ここで書く EVAL_HANDLED は下の eval_clearance() の if 分岐と手で同期させる。
+# ズレたら「評価される」と報告した型が実は評価されない、という嘘になるので、
+# eval_clearance() に分岐を足したら必ずここにも足すこと。
+EVAL_HANDLED_TYPES = {
+    "fixed_per_parcel", "fixed_plus_vat", "rate_of_import_charges",
+    "rate_of_value_with_min", "fixed_min", "fixed_per_parcel_plus_gst",
+    "banded_by_value",
+}
+unevaluated = []
+for cc, c in CO.items():
+    for r in c["clearance"]:
+        t = r["rule"]["type"]
+        if t not in EVAL_HANDLED_TYPES:
+            unevaluated.append((cc, r.get("carrier"), r.get("route"), t))
+print(f"\n  rule.type 評価カバレッジ: 通関経路 {sum(len(c['clearance']) for c in CO.values())} 件中"
+      f" {sum(len(c['clearance']) for c in CO.values()) - len(unevaluated)} 件が eval_clearance() で評価可能、"
+      f"**{len(unevaluated)} 件は宣言のみで未評価**")
+if unevaluated:
+    print("  未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:")
+    for cc, carrier, route, t in unevaluated:
+        print(f"    - {cc}/{carrier}({route}): rule.type='{t}' ── eval_clearance() 未対応")
+
 # =============================================================== 2. 再現検証
 print("\n== 2. 実請求の再現（customs.json の rule を評価する） ==")
 

@@ -152,6 +152,47 @@ ECMSは per-parcel/shipment の別自体がT&Cに書かれておらず `"per": "
 いずれも「1社の1カ国限定の構造」であり、他社・他国に一般化できるかは未確認（原則3: 1社で
 確認したことを一般則にしない）。
 
+### 宣言されているが評価されない（declared-but-not-evaluated）── 沈黙を許さない
+
+**型が存在する＝計算される、ではない。** 上記3つの新型を含め、`master/customs.json` の
+`clearance[].rule.type` には `eval_clearance()`（`master/validate.py`）が評価できない型が
+複数ある。今回のレビューで「型を宣言しただけで評価ロジックを足さないと、次に読む人が
+`rule.type` を見て『計算されている』と誤解する」という指摘を受け、**`master/validate.py`
+自体に、通常の検証出力の中でこれを毎回明示的に報告するコードを追加した**（`master/validate.py`
+実行のたびに `== 1. スキーマ ==` の直後に出る）:
+
+```
+rule.type 評価カバレッジ: 通関経路 36 件中 22 件が eval_clearance() で評価可能、**14 件は宣言のみで未評価**
+未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:
+    - US/FedEx(courier_brokerage): rule.type='greater_of' ── eval_clearance() 未対応
+    - US/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
+    - GB/UPS(ups_disbursement): rule.type='unknown' ── eval_clearance() 未対応
+    - DE/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
+    - DE/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
+    - DE/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - FR/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
+    - FR/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - AU/UPS(ups_disbursement): rule.type='greater_of' ── eval_clearance() 未対応
+    - AU/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - CA/UPS / FedEx / DHL(courier): rule.type='range' ── eval_clearance() 未対応
+    - CA/UPS(ups_disbursement): rule.type='greater_of_by_service' ── eval_clearance() 未対応
+    - CA/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - SG/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min_and_max' ── eval_clearance() 未対応
+```
+
+**選んだ対応: 「実装ではなく、通常の検証出力に必ず現れる明示レポート行」。** `validate.py` を
+未評価型があるだけで `exit(1)` させる案は選ばなかった。理由は、この14件のうち11件は**今回のPRより
+前から`main`に存在していた行**（`greater_of` を使うUS FedEx行や `rate_of_import_charges_with_min`
+を使うDE DHL Express行など）で、これらは`docs/audit/f34-clearance-fee-by-route-2026-09-12.md`の
+時点で既にA_confirmed/B_inferredとしてマスタに乗っている「正当に未実装なだけの行」。ここでビルドを
+落とすと、今回のPRとは無関係の既存データまで「壊れている」ように見えてしまい、原因の切り分けを
+かえって難しくする。**カバレッジ報告は`validate.py`の通常出力に常に表示される**ため、
+`python3 master/validate.py` を実行する誰もこれを見逃せない（ドキュメントだけに書いて終わりにしない、
+という要求を満たす）。次に `eval_clearance()` へ分岐を追加する人は、この一覧をそのままTODOとして
+使える。**`EVAL_HANDLED_TYPES` 集合と `eval_clearance()` の if 分岐は手で同期させる方式**なので、
+今後 `eval_clearance()` に分岐を足す際は `master/validate.py` 冒頭のコメントの通り
+`EVAL_HANDLED_TYPES` も必ず更新すること。
+
 ## 検証
 
 - `python3 master/validate.py` → **矛盾0件**（既存の再現4件は変更前と同じ結果のまま）。
@@ -163,6 +204,35 @@ ECMSは per-parcel/shipment の別自体がT&Cに書かれておらず `"per": "
 ## この監査中に見つけた、他社の行に関する疑問（編集はしていない）
 
 特に無し。FedEx/DHLの既存行には触れていない。
+
+## 確度はカ国ではなく「業者」で分かれている
+
+このPR単体（UPS/ECMS）に、並行PRのFedEx（#98、6/7ヶ国がB_inferred、WAFで本文未読）・
+DHL（#99、7/7ヶ国がA_confirmed、公式レートガイドから逐語引用）を並べると、**確度の差は
+国ではなく業者で分かれている**ことが分かる。実装をどの粒度で始めるかの判断材料として、
+セルごとに `tier: 'fixed'`（原文の数値をそのまま使える）と言えるかどうかを示す:
+
+| destination | UPS | ECMS | FedEx（#98想定） | DHL（#99想定） |
+|---|---|---|---|---|
+| US | B_inferred（本文未読、二次情報一致） | **A_confirmed** | B_inferred（WAF） | A_confirmed |
+| GB | **C_unknown**（本文未読、#81と同じ壁） | **A_confirmed** | B_inferred（WAF） | A_confirmed |
+| DE | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
+| FR | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
+| AU | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
+| CA | **A_confirmed** | counted_absence（法人なし） | B_inferred（WAF） | A_confirmed |
+| SG | **A_confirmed** | **A_confirmed** | B_inferred（WAF） | A_confirmed |
+
+（FedEx/DHL列は並行PRの内容に基づく想定であり、このPRが検証したのはUPS/ECMS列のみ。
+確定はそれぞれのPRのマージ後に再確認すること。）
+
+**読み方**: UPSは5/7がA_confirmed（GBのみ0、USのみB_inferred）。ECMSは実在する3法人が
+全てA_confirmed、残り4カ国はそもそも法人が無いという意味でのcounted_absence（「調べたが
+分からなかった」ではなく「調べたら存在自体が無かった」）。DHLは7/7がA_confirmed。FedExは
+0/7がA_confirmed（全てWAFに阻まれた二次情報一致）。**したがって「国単位でA/Bを線引きする」
+という設計はミスリードで、実装を業者別に区切るなら「UPS・DHLは`tier: 'fixed'`前提でほぼ
+全国できる、FedExは全国が推定値前提、ECMSは法人が存在する3カ国のみ確定値」という3段構えに
+なる。** 全業者を同じ確度で扱う実装（例えば全部を`tier: 'fixed'`とみなすUI表現）は、FedExの
+列だけ実態と乖離する。
 
 ## 次にやるべきこと
 

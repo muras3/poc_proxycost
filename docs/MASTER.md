@@ -258,6 +258,23 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
   費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 36
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
+  rule.type 評価カバレッジ: 通関経路 36 件中 22 件が eval_clearance() で評価可能、**14 件は宣言のみで未評価**
+  未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:
+    - US/FedEx(courier_brokerage): rule.type='greater_of' ── eval_clearance() 未対応
+    - US/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
+    - GB/UPS(ups_disbursement): rule.type='unknown' ── eval_clearance() 未対応
+    - DE/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
+    - DE/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
+    - DE/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - FR/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
+    - FR/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - AU/UPS(ups_disbursement): rule.type='greater_of' ── eval_clearance() 未対応
+    - AU/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - CA/UPS / FedEx / DHL(courier): rule.type='range' ── eval_clearance() 未対応
+    - CA/UPS(ups_disbursement): rule.type='greater_of_by_service' ── eval_clearance() 未対応
+    - CA/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
+    - SG/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min_and_max' ── eval_clearance() 未対応
+
 == 2. 実請求の再現（customs.json の rule を評価する） ==
   [PASS    ] es-zenmarket-ups-2023-07-26  (循環（率をこの請求書から導いている）)
              IVA 56.10(算出)/56.15(実請求) 手数料 15.89/15.9 手数料VAT 3.34/3.34 合計 342.51/342.52
