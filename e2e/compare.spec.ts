@@ -526,7 +526,12 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   expect(priced(before)).toHaveLength(6);
   expect(first(before).name).toBe('Buyee');
   expect(rankOf(before, 'Buyee', 'consolidated')).toBe(1);
-  expect(rankOf(before, 'ZenMarket')).toBe(2);
+  // **ZenMarket は 'default' を渡す必要がある。**readRanking は variant を部分一致で
+  // 拾うため、ZenMarket の行にある Surface 案内文「not used as the default because
+  // it takes 1-3 months」の "default" に引きずられて variant: 'default' と読まれる
+  // （helpers.ts の既知の制約、行末のコメント参照）。variant: null で探すと見つからず
+  // 「ZenMarket is not in the ranking」で落ちる——実際に real Chromium で確認済み。
+  expect(rankOf(before, 'ZenMarket', 'default')).toBe(2);
   expect(rankOf(before, 'Neokyo')).toBe(3);
   expect(rankOf(before, 'FROM JAPAN')).toBe(4);
   expect(rankOf(before, 'Jauce')).toBe(5);
