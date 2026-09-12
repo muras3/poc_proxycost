@@ -111,7 +111,10 @@
             "captured_in": "docs/audit/gaps.md（G2 節）",
             "note": "**この2%/15USDは2026-07-20のFedEx改定前の旧料率と一致する（新料率は2.5%/17.50USD）。**Neokyoページの取得日が明記されておらず、改定前の値が転記時点でそのまま古くなっている可能性と、Neokyoが単に自社ページを更新していない可能性の両方があり得る。いずれにせよ Neokyo の記述はFedExの一次資料そのものではなく、代行会社による二次的な言い換えなので、これを『FedExの一次情報を取得済み』の根拠にはできない。"
           },
-          "note": "**`docs/ROADMAP.md` の『US FedEx DDP の課税式は一次情報を取得済み』は、このマスタが直前まで保持していた `courier_brokerage: {rule: unknown, tier: C_unknown, source: \"—\"}` という記録と矛盾する ── マスタ側には一次情報を取得した形跡が無かった。今回 `whichever is higher` を明記する『greater of』構造の式自体は複数の独立した二次情報源（ShipScience 等）で一致しており reasoned_judgement を超える確度はあるが、FedEx自身のページ本文はこの環境のWAFに阻まれ逐語引用できていないため、`tier` は A_confirmed ではなく B_inferred、`amount_tier` は `search_snippet` に留める。"
+          "note": "**`docs/ROADMAP.md` の『US FedEx DDP の課税式は一次情報を取得済み』は、このマスタが直前まで保持していた `courier_brokerage: {rule: unknown, tier: C_unknown, source: \"—\"}` という記録と矛盾する ── マスタ側には一次情報を取得した形跡が無かった。今回 `whichever is higher` を明記する『greater of』構造の式自体は複数の独立した二次情報源（ShipScience 等）で一致しており reasoned_judgement を超える確度はあるが、FedEx自身のページ本文はこの環境のWAFに阻まれ逐語引用できていないため、`tier` は A_confirmed ではなく B_inferred、`amount_tier` は `search_snippet` に留める。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-us/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "dhl_express",
@@ -421,7 +424,10 @@
             "WebSearch要約: 'FedEx UK's Disbursement Fee structure effective 12 January 2026 is tiered based on duty/tax amounts: if duty/tax is £0.01–£43.00, the fee is 30% of the duty/tax with a minimum of £10.50; if £43.00–£524.00, the fee is £12.90; if £524.00 or more, the fee is 2.5% of the duty/tax.'（検索結果の要約文であり、FedEx一次ページの逐語引用ではない）"
           ],
           "verbatim_quote_available": false,
-          "note": "宛先国（英国）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意、DHL Duty Tax Paid/Processing と同型のリスク）。"
+          "note": "宛先国（英国）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意、DHL Duty Tax Paid/Processing と同型のリスク）。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-gb/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "ups_disbursement",
@@ -644,7 +650,10 @@
             "別のWebSearch要約（ShipScience、汎欧州の別説と食い違う）: 'Europe: Flat €15.00 minimum, 2.5% of duty & tax for all countries'（適用開始日・国範囲は特定できず）"
           ],
           "verbatim_quote_available": false,
-          "note": "**矛盾の記録**: 上記2つの二次情報は同じ『€15』という数字を含むが位置づけが違う——1つは『600ユーロまでの帯の定額15ユーロ』、もう1つは『欧州共通の最低額15ユーロ（2.5%との greater_of）』。帯構造そのものが二次情報でしか確認できていないため、どちらが正しいか、あるいは両方とも古い/新しい料率の混在かは一次情報なしに判定できない。GB の帯構造（30%/下限10.50・定額12.90・2.5%）と DE の帯構造（30%/下限5・定額15・2.5%）はしきい値と通貨単位こそ違うが形が同一で、FedExが『下限付き率→定額→率のみ』という共通テンプレートを国ごとに数値だけ変えて適用している可能性を示唆する——次にUPS/DHLの同型行を集める際にも同じテンプレートを想定して検索するとよい。宛先国（ドイツ）の受取人に課される費目として扱う。"
+          "note": "**矛盾の記録**: 上記2つの二次情報は同じ『€15』という数字を含むが位置づけが違う——1つは『600ユーロまでの帯の定額15ユーロ』、もう1つは『欧州共通の最低額15ユーロ（2.5%との greater_of）』。帯構造そのものが二次情報でしか確認できていないため、どちらが正しいか、あるいは両方とも古い/新しい料率の混在かは一次情報なしに判定できない。GB の帯構造（30%/下限10.50・定額12.90・2.5%）と DE の帯構造（30%/下限5・定額15・2.5%）はしきい値と通貨単位こそ違うが形が同一で、FedExが『下限付き率→定額→率のみ』という共通テンプレートを国ごとに数値だけ変えて適用している可能性を示唆する——次にUPS/DHLの同型行を集める際にも同じテンプレートを想定して検索するとよい。宛先国（ドイツ）の受取人に課される費目として扱う。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/de-de/ancillary-clearance-service.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "ups_disbursement",
@@ -692,7 +701,10 @@
           "source_checked_on": "2026-09-12",
           "inference_basis": "ECMS Expressが法人として営業している国のリスト（自社サイト・二次情報）にドイツが含まれない。ドイツ向けT&C文書もサイト内検索で発見できなかった。",
           "verbatim_quote_available": false,
-          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
+          "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
+          "zero_when_no_tax_confidence": "counted_absence",
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がDE向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
         }
       ],
       "clearance_fee_vat": {
@@ -879,7 +891,10 @@
             "別のWebSearch要約（ShipScience、汎欧州の別説）: 'Europe: Flat €15.00 minimum, 2.5% of duty & tax for all countries'"
           ],
           "verbatim_quote_available": false,
-          "note": "**矛盾の記録**: フォーラム投稿は最低額 €18（TTC）、別の二次情報（ShipScience、欧州共通の記述）は最低額 €15。どちらもFedEx一次ページの逐語引用ではなく、時期（改定前後）や対象（フランス個別 vs 欧州共通の代表値）の違いで説明できる可能性があるが、一次情報が無いため判定できない。区間の両端としてどちらも捨てずに記録する。宛先国（フランス）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意）。zero_duty_condition・per-parcel/per-shipmentの区別は情報源に記述なし（C_unknown）。"
+          "note": "**矛盾の記録**: フォーラム投稿は最低額 €18（TTC）、別の二次情報（ShipScience、欧州共通の記述）は最低額 €15。どちらもFedEx一次ページの逐語引用ではなく、時期（改定前後）や対象（フランス個別 vs 欧州共通の代表値）の違いで説明できる可能性があるが、一次情報が無いため判定できない。区間の両端としてどちらも捨てずに記録する。宛先国（フランス）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意）。zero_duty_condition・per-parcel/per-shipmentの区別は情報源に記述なし（C_unknown）。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/fr-fr/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "ups_disbursement",
@@ -927,7 +942,10 @@
           "source_checked_on": "2026-09-12",
           "inference_basis": "ECMS自身が『フランスなど拡大を検討中』と伝えられる二次情報があり、現時点でフランス向けの法人・T&C文書は存在しないとみられる。",
           "verbatim_quote_available": false,
-          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
+          "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
+          "zero_when_no_tax_confidence": "counted_absence",
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がFR向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
         }
       ],
       "user_action": {
@@ -1248,7 +1266,10 @@
             "別のWebSearch要約（fedex-customs-clearance-surcharge-july2026.pdf の検索結果の要約、本文は未取得）: 'For Australia specifically, this fee is applicable when FedEx has processed any applicable duties, taxes and/or other regulatory charges on behalf of customers who do not have a FedEx account number.'"
           ],
           "verbatim_quote_available": false,
-          "note": "**ABF Import Processing Charge（税関当局が課す帯）とは別の費目**。この行はFedEx自身が請求人（宛先国=オーストラリアの受取人）に課す立替手数料で、ABFの帯に上乗せされる想定。二次情報は『FedExアカウントを持たない受取人に適用』という条件を伝えており、これは`zero_when_no_tax`とは別の軸（口座の有無）。**税ゼロ時に課すか、per-parcel/per-shipmentのどちらかは情報源に記述なし（C_unknown）**。"
+          "note": "**ABF Import Processing Charge（税関当局が課す帯）とは別の費目**。この行はFedEx自身が請求人（宛先国=オーストラリアの受取人）に課す立替手数料で、ABFの帯に上乗せされる想定。二次情報は『FedExアカウントを持たない受取人に適用』という条件を伝えており、これは`zero_when_no_tax`とは別の軸（口座の有無）。**税ゼロ時に課すか、per-parcel/per-shipmentのどちらかは情報源に記述なし（C_unknown）**。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-au/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "ups_disbursement",
@@ -1282,7 +1303,10 @@
           "source_checked_on": "2026-09-12",
           "inference_basis": "二次情報ではAU向け配送に言及があるが、AU向けの独立したT&C文書・法人ページをサイト内検索で発見できなかった（US/UK/SG/NL/HK版のみ発見）。",
           "verbatim_quote_available": false,
-          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
+          "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
+          "zero_when_no_tax_confidence": "counted_absence",
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がAU向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
         }
       ],
       "clearance_fee_vat": {
@@ -1462,7 +1486,10 @@
             "WebSearch要約: 'FedEx will increase the Disbursement Fee from 3.10% of the total duty and tax advanced or $11.40 CAD, whichever is greater, to 3.10% of the total duty and tax advanced or $12.00 CAD, whichever is greater.' effective 2026-08-03"
           ],
           "verbatim_quote_available": false,
-          "note": "上の `route: courier`（CA$10〜50、業者名なし・時期不明の帯）とこの行は別の一次系統の情報。この行は業者を FedEx に特定し、発効日 2026-08-03 まで持つ点で情報が濃いが、それでも FedEx 自身の一次ページ本文には未到達。CA$10〜50 の帯の下限（CA$10）は FedEx の CA$12.00 とほぼ一致し、上限（CA$50〜）は本行の 3.10% 側で高額貨物なら届き得る範囲。宛先国（カナダ）の受取人に課される費目として扱う。**per-parcel/per-shipment、税ゼロ時の扱いはいずれも情報源に記述なし（C_unknown）**。"
+          "note": "上の `route: courier`（CA$10〜50、業者名なし・時期不明の帯）とこの行は別の一次系統の情報。この行は業者を FedEx に特定し、発効日 2026-08-03 まで持つ点で情報が濃いが、それでも FedEx 自身の一次ページ本文には未到達。CA$10〜50 の帯の下限（CA$10）は FedEx の CA$12.00 とほぼ一致し、上限（CA$50〜）は本行の 3.10% 側で高額貨物なら届き得る範囲。宛先国（カナダ）の受取人に課される費目として扱う。**per-parcel/per-shipment、税ゼロ時の扱いはいずれも情報源に記述なし（C_unknown）**。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-ca/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "ups_disbursement",
@@ -1503,7 +1530,10 @@
           "source_checked_on": "2026-09-12",
           "inference_basis": "ECMS Expressが法人として営業している国のリスト（自社サイト・二次情報）にカナダが含まれない。カナダ向けT&C文書もサイト内検索で発見できなかった。",
           "verbatim_quote_available": false,
-          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
+          "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
+          "zero_when_no_tax_confidence": "counted_absence",
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がCA向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
         }
       ],
       "real_invoice": {
@@ -1743,7 +1773,10 @@
             "同じ検索結果内、旧版PDFの要約: '5% of GST amount with a minimum charge of SGD 12.00 and a maximum charge of SGD 120.00 per shipment (from 2022 documents)' / '...SGD 20.00... (from 2023 documents)'"
           ],
           "verbatim_quote_available": false,
-          "note": "singpost の S$400 以下 $0 帯（免税帯そのもの）とは別経路。FedEx行は宅配便に限られ、免税帯での扱い（zero_when_no_tax）は情報源に記述なし（C_unknown）。宛先国（シンガポール）の受取人に課される費目として扱う。"
+          "note": "singpost の S$400 以下 $0 帯（免税帯そのもの）とは別経路。FedEx行は宅配便に限られ、免税帯での扱い（zero_when_no_tax）は情報源に記述なし（C_unknown）。宛先国（シンガポール）の受取人に課される費目として扱う。",
+          "zero_when_no_tax": "unknown",
+          "zero_when_no_tax_confidence": "input_rejected",
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-sg/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
         },
         {
           "route": "ups_disbursement",
