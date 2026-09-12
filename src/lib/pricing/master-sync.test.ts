@@ -1075,9 +1075,18 @@ function findClearanceRow(cc: CountryCode, carrier: F34Carrier): any | undefined
 }
 
 /** master の rule から、`courier-clearance.ts` が持つべき rate/min/max/currency を
- * 動的に導く（ベタ書きしない）。account/non-account の2系統は、コード側の方針
- * 「率・最低額とも高い方を採用（過小計上しない）」と同じ式で再導出する。 */
-function expectedRuleFrom(row: { rule: Record<string, unknown> }): {
+ * 動的に導く（ベタ書きしない）。account/non-account の2系統は、**row 自身が持つ
+ * `variant_applicability.answer`（#102、DHLの一次資料から「どちらが適用されるか」を
+ * 決着させた結論）に従って1つを選ぶ**——「高い方を機械的に採用する」という#101の
+ * ヘッジは廃止済みなので、ここでも再導入しない。`variant_applicability.answer` が
+ * 無いか、その値が variants のキーに存在しない行に出会ったら、このテストは例外を
+ * 投げて落ちる（サイレントに「高い方」へフォールバックしない——それは撤回された
+ * 挙動を密輸することになる）。 */
+function expectedRuleFrom(row: {
+  rule: Record<string, unknown>;
+  variant_applicability?: { answer?: string };
+  carrier?: string;
+}): {
   kind: string; rate?: number; minLocal?: number; maxLocal?: number;
   valueLteLocal?: number; flatLocal?: number; aboveRate?: number; aboveMinLocal?: number;
   currency?: string;
@@ -1114,11 +1123,23 @@ function expectedRuleFrom(row: { rule: Record<string, unknown> }): {
       const vs = Object.values(variants);
       const currencies = new Set(vs.map((v) => v.currency));
       expect(currencies.size, 'account/non-account variants must share one currency').toBe(1);
+      const answer = row.variant_applicability?.answer;
+      if (!answer || !(answer in variants)) {
+        // #101の「高い方を採用」ヘッジは撤回済み（#102参照）。ここへフォールバックする
+        // 代わりに、その撤回された挙動が密輸されないよう例外で落とす。
+        throw new Error(
+          `${row.carrier ?? '(carrier不明)'}: rate_of_import_charges_with_min_variants だが `
+          + `variant_applicability.answer が無いか variants のキーに一致しない（answer=${String(answer)}）。`
+          + ' master/customs.json 側に variant_applicability を追加するか、既存の値を修正すること'
+          + '——「高い方を採用」への先祖返りは禁止（#101の欠陥、#102で撤回）。',
+        );
+      }
+      const chosen = variants[answer]!;
       return {
         kind: 'rate_min',
-        rate: Math.max(...vs.map((v) => v.rate)),
-        minLocal: Math.max(...vs.map((v) => v.min)),
-        currency: vs[0]!.currency,
+        rate: chosen.rate,
+        minLocal: chosen.min,
+        currency: chosen.currency,
       };
     }
     case 'greater_of_by_service': {
@@ -1194,6 +1215,29 @@ describe('F34 MAPPED ── master/customs.json#clearance と courier-clearance.
       });
     }
   }
+});
+
+describe('F34 CA DHL ── 変種の大小関係がGB/FRと逆で、「高い方」でも偶然一致していたケースを固定する', () => {
+  // CAはnon_account_holderの方がaccount_holderより高い（GB/FRは逆）。#101の「高い方」
+  // ヘッジは撤回されたが、CAだけは撤回前も撤回後も同じ値(min=18.0)を返す——これは
+  // 「たまたま」であって「正しい理由で」ではなかった、という事実そのものをここで
+  // 固定する。将来どちらかの変種の数字が変わって大小関係が入れ替わっても、この
+  // テストは「non_account_holderの値」を追いかけ続けるので、偶然の一致に頼った
+  // 実装へ静かに戻ることはできない。
+  it('CA::DHL: variant_applicabilityはnon_account_holder、その値min=18.0/rate=0.0275が採用される', () => {
+    const row = findClearanceRow('CA', 'DHL');
+    expect(row, 'CA::DHL が customs.json に無い').toBeDefined();
+    expect(row.variant_applicability?.answer).toBe('non_account_holder');
+    const variants = row.rule.variants as Record<string, { rate: number; min: number; currency: string }>;
+    // 大小関係がGB/FRと逆であることそのものを確認する（このテストの存在理由）。
+    expect(variants.non_account_holder!.min).toBeGreaterThan(variants.account_holder!.min);
+    expect(variants.non_account_holder!.min).toBe(18.0);
+    expect(variants.non_account_holder!.rate).toBe(0.0275);
+    const code = COURIER_CLEARANCE.CA?.DHL;
+    expect(code, 'CA::DHL が COURIER_CLEARANCE に無い').toBeDefined();
+    expect((code!.rule as { minLocal: number }).minLocal).toBeCloseTo(18.0, 10);
+    expect((code!.rule as { rate: number }).rate).toBeCloseTo(0.0275, 10);
+  });
 });
 
 describe('F34 DELIBERATELY_UNPRICED ── C_unknown/schema_gap は点推定を出さない', () => {
