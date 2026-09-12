@@ -190,10 +190,47 @@ export type PostageMarkup =
   | { kind: 'observed'; points: readonly (readonly [grams: number, addYen: number])[] };
 
 /**
+ * **その社・その方式が送れる寸法の上限。**「立方体の一辺」ではなく、
+ * **方式ごとの公式の制限値**（2026-09-12 の実測で判明。`docs/ROADMAP.md` P2、
+ * `master/courier-rates.json` の `conclusions.dimension_limits_2026_09_12`）。
+ *
+ * 基本の3つ（社・方式によって使う数字が違う）:
+ *   maxLengthCm            … 最大の1辺
+ *   maxLengthPlusGirthCm   … 長さ + 胴回り（胴回り = 2×(2番目に長い辺 + 最短辺)）
+ *   maxSumCm               … 3辺の和（小形包装物系の表示はこちら）
+ *
+ * ZenMarket の ECMS EXPRESS だけ「最大長／2番目に長い辺／3番目に長い辺」を個別に
+ * 表示していて、上の3つに正確には落とせない（`maxSumCm` で近似すると、立方体以外で
+ * 誤判定する——2026-09-12 の実測で判明）。そのため2辺個別の上限も持てるようにした:
+ *   maxSecondLongestCm     … 2番目に長い辺
+ *   maxShortestCm          … 最も短い辺（3番目に長い辺）
+ * 指定した項目だけ判定する（無い項目は無制限）。1つでも超えたら送れない。
+ */
+export interface DimensionLimit {
+  maxLengthCm?: number;
+  maxLengthPlusGirthCm?: number;
+  maxSumCm?: number;
+  maxSecondLongestCm?: number;
+  maxShortestCm?: number;
+  /** 画面にどう表示されていたかの確度。表示値をそのまま使えば `fixed`、
+   *  挙動から公式制限を当てただけ（Neokyo）なら `estimate`。 */
+  tier: Tier;
+  /** 表示（または類推の根拠）そのままの一言。画面の note に使う。 */
+  note: string;
+}
+
+/**
  * `MarkupPostageRate` と `MeasuredPostageRate` に共通のフィールド。
  * どちらも「その社がその方式・その国を売っているか」「額の確度」「出典」を持つ。
  */
 interface PostageRateCommon {
+  /**
+   * **その社・その方式の寸法上限。**「大きすぎて送れない」の理由（額ではなく可否）を
+   * 「売っていない」（`unavailableIn`）・「重すぎる」（`maxGramsFor`）と区別して持たせる。
+   * 無ければ寸法での制限を確認していない（＝制限なしとして扱う——`postage.ts` の
+   * `dimensionsExceedLimit` のコメント参照）。
+   */
+  dimensionLimit?: DimensionLimit;
   /**
    * **その社がその国へこの方式を出していない国。**「売っていない」であって
    * 「重すぎる」ではない。上限超と同じ扱い（額を付けず行を比較不能にする）だが、
@@ -443,6 +480,21 @@ export const SERVICES: Service[] = [
         // すべてに「Not available or suspended in your country.」と返す。
         // 同じ計算機で `country_to=DE` は3方式とも額を返す（2026-09-07 確認）。
         unavailableIn: ['US'],
+        // **画面には寸法の数字が一切出ない**（入力フォームの固定表示
+        // 「Dimensions 150cm per side max」だけで、方式ごとの数値は結果画面に出ない）。
+        // だが実測（2026-09-12、DE 600g、立方体を20→50cmで走査）で
+        // Airmail・Surface が45cmで消え EMS だけ残るという挙動が確認でき、これは
+        // **日本郵便の公式の方式別制限（国際小包＝最大長105cm・長さ+胴回り200cm）と
+        // 完全に一致する**（45cmの立方体は45+2×(45+45)=225>200で消える。40cmなら
+        // 40+2×(40+40)=200でちょうど収まり、生き残ることも実測と整合）。
+        // **画面表示ではなく、挙動と公式制限の一致から当てた値**なので tier は
+        // `estimate` に落とす。
+        dimensionLimit: {
+          maxLengthCm: 105, maxLengthPlusGirthCm: 200, tier: 'estimate',
+          note: 'Neokyo shows no per-method size limit — inferred from the 2026-09-12 measurement'
+            + ' (Airmail/Surface vanish at 45cm) matching Japan Post\'s official international'
+            + ' parcel limit (max length 105cm, length+girth 200cm), not a displayed figure',
+        },
         labelRaw: 'Japan Post / Surface (2-4 months)',
         sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
         checkedOn: '2026-09-07',
@@ -454,6 +506,16 @@ export const SERVICES: Service[] = [
         // すべてに「Not available or suspended in your country.」と返す。
         // 同じ計算機で `country_to=DE` は3方式とも額を返す（2026-09-07 確認）。
         unavailableIn: ['US'],
+        // EMS だけは45cm・50cmの立方体でも消えなかった（2026-09-12実測）。
+        // 日本郵便公式の EMS 制限（最大長150cm・長さ+胴回り300cm）は50cmの立方体
+        // （50+2×100=250）でも余裕で収まり、実測と整合する。同じく画面表示ではなく
+        // 挙動からの類推なので `estimate`。
+        dimensionLimit: {
+          maxLengthCm: 150, maxLengthPlusGirthCm: 300, tier: 'estimate',
+          note: 'Neokyo shows no per-method size limit — inferred from the 2026-09-12 measurement'
+            + ' (EMS survives even at 50cm) matching Japan Post\'s official EMS limit'
+            + ' (max length 150cm, length+girth 300cm), not a displayed figure',
+        },
         labelRaw: 'Japan Post / EMS (2-5 days)',
         sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
         checkedOn: '2026-09-07',
@@ -465,6 +527,13 @@ export const SERVICES: Service[] = [
         // すべてに「Not available or suspended in your country.」と返す。
         // 同じ計算機で `country_to=DE` は3方式とも額を返す（2026-09-07 確認）。
         unavailableIn: ['US'],
+        // `parcel-surface` と同じ理由・同じ値（airmail/surface で同一の実測挙動）。
+        dimensionLimit: {
+          maxLengthCm: 105, maxLengthPlusGirthCm: 200, tier: 'estimate',
+          note: 'Neokyo shows no per-method size limit — inferred from the 2026-09-12 measurement'
+            + ' (Airmail/Surface vanish at 45cm) matching Japan Post\'s official international'
+            + ' parcel limit (max length 105cm, length+girth 200cm), not a displayed figure',
+        },
         labelRaw: 'Japan Post / Airmail (6-10 days)',
         sourceUrl: 'https://neokyo.com/en/shipping-rates-estimate',
         checkedOn: '2026-09-07',
@@ -553,6 +622,18 @@ export const SERVICES: Service[] = [
     consolidationOnRequest: false,
     // 2026-09-07 に公開計算機で実測（`docs/O2-CALCULATOR-RUN.md` フェーズ1、DE 600g）。
     // 船便の小形包装物は出していない。NOVA GLOBAL・ECMS EXPRESS は自社独自方式で未価格化
+    //
+    // **寸法制限（2026-09-12実測）: ECMS EXPRESS だけ `small-packet-air` に対応付けた。**
+    // 他4方式（NOVA GLOBAL・DHL(GREEN+)・FEDEX/FEDEX LOWCOST・UPS）はブランド名で、
+    // 我々が売っている4つの日本郵便方式（small-packet-air/ems/parcel-air/parcel-surface）の
+    // どれに当たるか画面のラベル（AIRMAIL (AVIA)/SURFACE/EMS）からは決められないので
+    // **意図的に対応付けない**（`docs/ROADMAP.md` P2 に記録。対応付けないことによる実害は
+    // 無い——実測でこの4方式は50cmの立方体でも消えていない）。
+    // NOVA GLOBAL の表示形式が入力欄の値で変わった件（立方体20〜35cmでは
+    // 「最大長61cm/2番目≤44cm/3番目≤37cm/最大20kg」、40〜50cmでは
+    // 「長さ+胴回り≤250cm/最大長100cm/最大30kg」の形式に切り替わった）も、NOVA GLOBAL
+    // 自体を対応付けていないのでどちらの形式も採用していない——採用しなかった理由は
+    // 上記の対応付け不能。次に NOVA GLOBAL を価格化する作業者のためにここへ記録する。
     postage: {
       'small-packet-air': {
         kind: 'markup',
@@ -565,6 +646,16 @@ export const SERVICES: Service[] = [
           SG: { kind: 'observed', points: [[600, 572], [2000, 824]] },
         },
         tier: 'estimate',
+        // 画面に表示された寸法制限（2026-09-12実測、ECMS EXPRESS の表示）: 最大長60cm・
+        // 2番目に長い辺≤40cm・3番目に長い辺≤40cm・最大重量30kg。実測で45cmの立方体
+        // （2番目・3番目とも45cmで40cm超）だけがここで消え、他4方式（NOVA GLOBAL・
+        // DHL GREEN+・FEDEX・UPS）は50cmでも残るという挙動と整合する——表示値を
+        // そのまま3フィールドで正確に表せる（`maxSecondLongestCm`/`maxShortestCm`）。
+        dimensionLimit: {
+          maxLengthCm: 60, maxSecondLongestCm: 40, maxShortestCm: 40, tier: 'fixed',
+          note: 'ZenMarket shows ECMS EXPRESS as max length 60cm / 2nd side ≤40cm / 3rd side'
+            + ' ≤40cm (2026-09-12 measurement).',
+        },
         labelRaw: 'AIRMAIL (AVIA) Small Parcel',
         observed: '600g/2,000g の2点。DE +637/+1,015、US +1,281/+2,142、SG +572/+824。'
           + '**国でも重量でも動く。**率にすると DE +45.2%/+25.8%、US +90.9%/+54.5%、SG +58.4%/+31.0%',
@@ -851,6 +942,15 @@ export const SERVICES: Service[] = [
       'small-packet-air': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        // 画面表示（2026-09-12実測）「Small Packet (AIR/SAL)・AIR Packet: 最大重量2kg /
+        // 最大長さ60cm / 縦+横+高さの合計90cm以内」。実測で35cmの立方体
+        // （35×3=105>90）からこの方式が選択肢から消えた——ちょうど公式の3辺の和90cmの
+        // ルールどおり（30×3=90はぎりぎり収まる）。
+        dimensionLimit: {
+          maxLengthCm: 60, maxSumCm: 90, tier: 'fixed',
+          note: 'Buyee shows Small Packet (AIR/SAL)/AIR Packet as max weight 2kg / max length'
+            + ' 60cm / sum of 3 sides ≤90cm (2026-09-12 measurement).',
+        },
         labelRaw: 'Small Packet (AIR) / Airmail (without tracking)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -858,6 +958,17 @@ export const SERVICES: Service[] = [
       'parcel-surface': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        // 画面表示（2026-09-12実測）「EMS・International Parcel Post (AIR/SAL/Surface
+        // Mail)・FedEx/FedEx Economy: 最大重量30kg / 最大長さ1.5m / 長さ+胴回り3.0m以内」。
+        // Surface Mail はこのグループに含まれる。実測で45cmの立方体でも国際小包は消えた
+        // （45+2×90=225cm はこの上限300cmの範囲内のはずだが、実測は45cmで全滅と記録
+        // されている——Buyeeの実測消滅サイズは寸法制限ではなく別要因の可能性があるが、
+        // **画面に表示された制限値をそのまま使う**という指示どおりこの値を採用する）。
+        dimensionLimit: {
+          maxLengthCm: 150, maxLengthPlusGirthCm: 300, tier: 'fixed',
+          note: 'Buyee shows EMS/International Parcel Post (AIR/SAL/Surface Mail)/FedEx as max'
+            + ' weight 30kg / max length 1.5m / length+girth ≤3.0m (2026-09-12 measurement).',
+        },
         labelRaw: 'International Parcel Post (Surface Mail)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -865,6 +976,11 @@ export const SERVICES: Service[] = [
       'ems': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        dimensionLimit: {
+          maxLengthCm: 150, maxLengthPlusGirthCm: 300, tier: 'fixed',
+          note: 'Buyee shows EMS/International Parcel Post (AIR/SAL/Surface Mail)/FedEx as max'
+            + ' weight 30kg / max length 1.5m / length+girth ≤3.0m (2026-09-12 measurement).',
+        },
         labelRaw: 'EMS / Express Mail Service',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -872,6 +988,11 @@ export const SERVICES: Service[] = [
       'parcel-air': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        dimensionLimit: {
+          maxLengthCm: 150, maxLengthPlusGirthCm: 300, tier: 'fixed',
+          note: 'Buyee shows EMS/International Parcel Post (AIR/SAL/Surface Mail)/FedEx as max'
+            + ' weight 30kg / max length 1.5m / length+girth ≤3.0m (2026-09-12 measurement).',
+        },
         labelRaw: 'International Parcel Post (AIR)',
         sourceUrl: 'https://buyee.jp/helpcenter/guide/shipping-fees?lang=en',
         checkedOn: '2026-09-07',
@@ -964,6 +1085,22 @@ export const SERVICES: Service[] = [
       'ems': {
         kind: 'markup',
         markup: { kind: 'none' }, tier: 'fixed',
+        // 画面表示（2026-09-12実測、EMS/SAL/Surfaceの3方式とも同じ表示）:
+        // 「最大重量30,000g / 最大長105cm / 長さ+胴回り200cm」。
+        // **食い違いを記録する**: 実測では立方体45cm（45+2×90=225cm、この上限を超える）
+        // でも全方式が生存し、50cm（50+2×100=250cm）で初めて Not available になった。
+        // 表示値どおりなら45cmで既に落ちているはずで、実際には225〜250cmのどこかが
+        // 真の閾値。**それでも表示値をそのまま使う**（過小評価＝安全側になる。
+        // オーナー方針、`master/courier-rates.json` の
+        // `conclusions.dimension_limits_2026_09_12.jauce_display_vs_actual` に詳細）。
+        dimensionLimit: {
+          maxLengthCm: 105, maxLengthPlusGirthCm: 200, tier: 'fixed',
+          note: 'Jauce shows EMS/SAL/Surface as max weight 30,000g / max length 105cm /'
+            + ' length+girth 200cm (2026-09-12 measurement). Known to under-state the real limit'
+            + ' (methods actually survived up to 225cm of length+girth in testing) — we use the'
+            + ' displayed figure anyway, which only makes this method look less available than'
+            + ' it really is (see master/courier-rates.json for the discrepancy).',
+        },
         labelRaw: 'EMS',
         sourceUrl: 'https://www.jauce.com/price_check.php',
         checkedOn: '2026-09-07',
@@ -974,6 +1111,15 @@ export const SERVICES: Service[] = [
         // 率で見ると 10.0% → 16.1% → 25.5% と動くが、kg段で割ると全部 250。
         // 率で持っていた 10% は 600g でしか合わず、5kg で ¥760 の過少だった。
         markup: { kind: 'per-kg-step', yen: 250 }, tier: 'fixed',
+        // EMS と同じ表示・同じ食い違い（上のコメント参照）。
+        dimensionLimit: {
+          maxLengthCm: 105, maxLengthPlusGirthCm: 200, tier: 'fixed',
+          note: 'Jauce shows EMS/SAL/Surface as max weight 30,000g / max length 105cm /'
+            + ' length+girth 200cm (2026-09-12 measurement). Known to under-state the real limit'
+            + ' (methods actually survived up to 225cm of length+girth in testing) — we use the'
+            + ' displayed figure anyway, which only makes this method look less available than'
+            + ' it really is (see master/courier-rates.json for the discrepancy).',
+        },
         labelRaw: 'Surface',
         observed: '600g +250 / 2,000g +500 / 5,000g +1,250 → いずれも ¥250/kg段',
         sourceUrl: 'https://www.jauce.com/price_check.php',
