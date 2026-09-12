@@ -147,10 +147,14 @@ describe('the US prepayment fee is disclosed as a cost we cannot price', () => {
       expect(row.total.low, row.id).toBe(row.lines.reduce((a, l) => a + (l.amount ?? 0), 0));
     }
     // **比較不能になる行があるとしても、理由は前払手数料ではない。**
-    // 米国で落ちるのは Neokyo の1行だけで、その理由は日本郵便を売っていないこと。
+    // 米国で EMS を明示指定すると、Neokyo に加えて FROM JAPAN・Buyee も落ちる
+    // （2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線: 3社とも米国宛には日本郵便系を一切出していないと実測で確認済み——
+    // 以前はこの `unavailableIn` が無く、実際には売っていない米国向けEMSに
+    // 値段を付けて比較していた欠陥）。落ちる理由はいずれも日本郵便を売っていないこと。
     // 「額を出せない費目を開示しても盤面は壊れない」という主張はそのまま生きている。
     const blocked = rows.filter((r) => !r.comparable);
-    expect(blocked.map((r) => r.serviceId)).toEqual(['neokyo']);
+    expect(blocked.map((r) => r.serviceId).sort()).toEqual(['buyee', 'fromjapan', 'neokyo']);
     for (const row of blocked) {
       expect(row.notComparableReason, row.id).toContain('does not ship');
       expect(row.notComparableReason, row.id).not.toContain(PREPAY_LABEL);

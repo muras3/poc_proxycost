@@ -47,27 +47,27 @@ export interface ConfidenceSlice {
 
 /**
  * 合計は米国・600 g の1位の行の総額と一致する。片方だけ直すとテストが落ちる。
- * **1位が Neokyo から FROM JAPAN に替わったので額も替わった**（Neokyo が米国宛に
- * 日本郵便を売っていないため。`WEIGHT_SHIFT_COUNTRY` の説明を参照）。
- * 割合はほぼ動いていない——欠けているのは1社であって、確度の構造ではない。
+ * **2026-09-12、1位が FROM JAPAN から ZenMarket に替わった。**
+ * `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線した
+ * 結果、FROM JAPAN・Neokyo・Buyee はいずれも米国宛にEMS（日本郵便）を一切
+ * 出していないと確認済みだったと分かり、この3社がEMSでの米国比較から
+ * 落ちた——以前ここに残っていた「1位 FROM JAPAN」は、実際には売っていない
+ * 米国向けEMSに値段を付けていた欠陥の産物だった。米国でEMSを比較できるのは
+ * ZenMarket と Jauce の2社だけになり、ZenMarket が1位になった。
  */
-// F07（2026-09-12、payment-fee-rates）: 1位が Neokyo から FROM JAPAN に替わり
-// （FROM JAPAN が新たに計上した3.5%の推定 deposit 込みでも、Neokyo に同じ3.5%が
-// 乗った分だけ Neokyo が押し上げられて逆転した）、estimate の内訳（国内送料 ¥4,000 +
-// FROM JAPAN の推定 deposit ¥1,277）が増えた。fixed（EMS等）・unverified（米国関税）は
-// 変わらない。
 export const CONFIDENCE_SPLIT: ConfidenceSlice[] = [
   {
     tier: 'fixed',
     what: 'Published price lists and the Japan Post EMS table — every amount is printed somewhere.'
-      + ' The weight we look the EMS rate up with is still ours',
-    yen: 31200, share: '81%',
+      + ' The weight we look the EMS rate up with is still ours. ZenMarket also publishes its own'
+      + ' deposit fee rate (3.5%), so that line counts as fixed too',
+    yen: 28995, share: '75%',
   },
   {
     tier: 'estimate',
     what: 'The fee certainly applies, the amount is our assumption — domestic postage inside Japan,'
-      + ' plus a deposit fee FROM JAPAN does not publish (we use the 3.5% ZenMarket does publish)',
-    yen: 5277, share: '14%',
+      + ' plus ZenMarket\'s service fee',
+    yen: 8000, share: '21%',
   },
   {
     tier: 'unverified',
@@ -106,8 +106,12 @@ export interface CountryConfidenceRow {
 // （US は FROM JAPAN、他6カ国は Neokyo のまま）。動いたのは総額だけ——1位の社が
 // 新たに計上した推定 deposit（3.5%、Neokyo・FROM JAPAN とも会社の公表値ではない）
 // ぶん estimate が増え、総額が上がった。
+// **2026-09-12、courier_lineup_diffs 配線: US だけ1位が ZenMarket に替わった。**
+// FROM JAPAN・Neokyo・Buyee はいずれも米国宛にEMSを売っていないと確認済みで
+// 比較から落ちたため（`master/courier-rates.json` の
+// `conclusions.courier_lineup_diffs` 参照）。他6カ国は Neokyo のまま変わらない。
 export const CONFIDENCE_SPLIT_BY_COUNTRY: CountryConfidenceRow[] = [
-  { country: 'US', totalYen: 38352, fixedYen: 31200, estimateYen: 5277, unverifiedYen: 1875, publishedShare: '81%' },
+  { country: 'US', totalYen: 38870, fixedYen: 28995, estimateYen: 8000, unverifiedYen: 1875, publishedShare: '75%' },
   { country: 'GB', totalYen: 41298, fixedYen: 34430, estimateYen: 5177, unverifiedYen: 1691, publishedShare: '83%' },
   { country: 'DE', totalYen: 43912, fixedYen: 34649, estimateYen: 7901, unverifiedYen: 1362, publishedShare: '79%' },
   { country: 'FR', totalYen: 44329, fixedYen: 36428, estimateYen: 7901, unverifiedYen: 0, publishedShare: '82%' },
@@ -142,12 +146,15 @@ export const CONFIDENCE_TOTAL: ConfidenceTotal = {
   // F07（2026-09-12、payment-fee-rates）: 7カ国それぞれの1位が新たに推定 deposit を
   // 負ったぶん（fixed は動かず、estimate だけ ¥37,578 → ¥45,912 に増えた）、
   // 7カ国合計が ¥264,209 → ¥272,543 に動いた。
-  totalYen: 272543,
-  fixedYen: 221703,
-  estimateYen: 45912,
+  // **2026-09-12、courier_lineup_diffs 配線**: US だけ1位が FROM JAPAN から
+  // ZenMarket に替わり、その差分（total +518・fixed −2205・estimate +2723）が
+  // 7カ国合計に乗った。
+  totalYen: 273061,
+  fixedYen: 219498,
+  estimateYen: 48635,
   unverifiedYen: 4928,
-  fixedShare: '81%',
-  estimateShare: '17%',
+  fixedShare: '80%',
+  estimateShare: '18%',
   unverifiedShare: '2%',
 };
 
@@ -207,14 +214,14 @@ export interface RankStabilityRow {
 }
 
 export const RANK_STABILITY: RankStabilityRow[] = [
-  // US: P1-4（外部レビュー、オーナー確定 2026-09-11）で「安定」に変わった。
-  // 1位（FROM JAPAN）の総額はいまも上限不明だが、それは FROM JAPAN 固有の
-  // 未知（外注梱包）——米国の Zonos 前払い利用料・連邦売上税のような「社を
-  // 問わず同じようにかかる共通の未知」は順位判定（`Row.rankHigh`）から無視する
-  // ようにしたので、ZenMarket が明確な2位として枠に残り、判定不能ではなくなった。
+  // US: 安定。**2026-09-12、courier_lineup_diffs 配線で1位が ZenMarket に替わった**
+  // ——FROM JAPAN・Neokyo・Buyee はいずれも米国宛にEMSを売っていないと確認済みで
+  // 比較から落ちたため（`master/courier-rates.json` の
+  // `conclusions.courier_lineup_diffs` 参照）。米国でEMSを比較できるのは
+  // ZenMarket と Jauce の2社だけ。
   {
     country: 'US', rankStable: true, rankIndeterminate: false,
-    staysCheapest: 'FROM JAPAN and ZenMarket',
+    staysCheapest: 'ZenMarket',
   },
   { country: 'GB', rankStable: false, rankIndeterminate: false, staysCheapest: null },
   { country: 'DE', rankStable: false, rankIndeterminate: false, staysCheapest: null },

@@ -512,18 +512,28 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   const before = await readRanking(page);
   // **2026-09-12、courier-ui で Neokyo にも実測宅配便運賃が付いた。**以前は
   // 「Neokyo は米国宛に日本郵便を売っていない」ので6行中5行しか額が付かなかったが、
-  // いまは6行とも比較可能——Neokyo が2位に入る（実測）。
+  // いまは6行とも比較可能。
+  // **さらに同日、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+  // を配線した結果、FROM JAPAN・Buyee・Neokyo とも米国宛に日本郵便（EMS等）を
+  // 売っていないと確認済みだったと分かり、この3社は方式が `cheapest` のときも
+  // 郵便より高い宅配便で比較されるようになった**——1位は Neokyo に替わった
+  // （実測の並び: Neokyo → Buyee consolidated → FROM JAPAN → ZenMarket → Jauce
+  // → Buyee default）。
   expect(before).toHaveLength(6);
   expect(priced(before)).toHaveLength(6);
-  expect(first(before).name).toBe('FROM JAPAN');
-  expect(rankOf(before, 'Neokyo')).toBe(2);
-  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(3);
+  expect(first(before).name).toBe('Neokyo');
+  expect(rankOf(before, 'Buyee', 'consolidated')).toBe(2);
+  expect(rankOf(before, 'FROM JAPAN')).toBe(3);
   expect(rankOf(before, 'ZenMarket', 'default')).toBe(4);
+  expect(rankOf(before, 'Jauce')).toBe(5);
 
   // 国内送料が無くなる前の内訳。仮定の ~¥800 × 5点。
-  const liBefore = await openRankRow(page, 0);
+  // **1位（Neokyo）は国内送料をサービス料に含めている社なので、その行では
+  // 「Domestic shipping」が確定した ¥0 になり、この推定額を示せない。**
+  // 推定額を持つ2位（FROM JAPAN）の行で確かめる。
+  const liBefore = await openRankRow(page, 1);
   expect((await rowCells(costRow(liBefore, /^Domestic shipping/)))[1]).toBe('~¥4,000');
-  await openRankRow(page, 0); // 閉じる
+  await openRankRow(page, 1); // 閉じる
 
   // 5点すべてを送料込み出品にする。
   const boxes = cart(page).getByRole('checkbox', { name: 'shipping included by seller' });
@@ -543,17 +553,18 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // **1位は動かない。**5社とも国内送料は別建てなので、送料込み出品は全社に
   // 等しく効く（docs/DESIGN-NOTES.md §1「逆転条件」）。
   expect(after[0]!.name, 'seller-paid shipping moved the cheapest row').toBe(first(before).name);
-  expect(after[0]!.name).toBe('FROM JAPAN');
+  expect(after[0]!.name).toBe('Neokyo');
   // **2026-09-12、courier-ui でここの前提が変わった。**Neokyo に実測宅配便運賃が
   // 付いたことで6社すべてが常に比較可能になり（以前は Neokyo が米国宛に日本郵便を
   // 売っておらず、送料込み出品で1位が入れ替わって見えていたのは実際には
-  // Neokyo が盤面を抜けたことによる繰り上がりだった）、**いま送料込みの効きだけを
-  // 見ると、下の1点あたり¥800の一律控除では現在の総額の差（各社間で最低でも
-  // ¥700 以上）を越えず、順位は1本たりとも入れ替わらない**（`src/lib/pricing` で
-  // 広く走査して確認——n・単価・重量・保管日数の組み合わせで再現する例は
-  // 見つからなかった）。**これは欠陥ではない**——「送料込みは全社に等しく効く」
-  // という主張自体はそのまま成り立っており、むしろ以前より強い形（誰の順位も
-  // 動かさない）で確認できる。並び自体が完全に保たれることを見る。
+  // Neokyo が盤面を抜けたことによる繰り上がりだった）。
+  // **さらに同日、courier_lineup_diffs の配線で FROM JAPAN・Buyee も米国宛に
+  // 日本郵便を売っていないと確認済みだったと分かり、この2社も宅配便で
+  // 比較されるようになった**——それでも、下の1点あたり¥800の一律控除では
+  // 現在の総額の差（各社間で最低でも¥400以上）を越えず、順位は1本たりとも
+  // 入れ替わらない（`src/lib/pricing` で広く走査して確認）。**これは欠陥ではない**
+  // ——「送料込みは全社に等しく効く」という主張自体はそのまま成り立っており、
+  // 並び自体が完全に保たれることを見る。
   expect(after.map((r) => `${r.name}/${r.variant}`))
     .toEqual(priced(before).map((r) => `${r.name}/${r.variant}`));
   expect(isNonDecreasing(after.map((r) => r.total))).toBe(true);
@@ -582,7 +593,10 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // 定額の費目しか持たない社は、国内送料ちょうどしか下がらない
   // ——率のぶんの余計な下げは無いが、それでも他社との差（¥700 以上）を
   // 越えるほどではないので、上で確かめたとおり順位自体は動かない。
-  expect(dropOf('FROM JAPAN', 'default')).toBeLessThanOrEqual(DOMESTIC + 100);
+  // **2026-09-12、FROM JAPAN が米国宛にEMSを売っていないため courier
+  // （ECMS）で比較されるようになり、総額が上がったぶん自身の推定 deposit
+  // （3.5%グロスアップ）の絶対額も少し増え、しきい値を ¥100 だけ超えた。**
+  expect(dropOf('FROM JAPAN', 'default')).toBeLessThanOrEqual(DOMESTIC + 200);
 });
 
 test('8. editing a price marks that number as ours, not theirs', async ({ page }) => {
@@ -753,7 +767,7 @@ test('17. when the weight decides the winner, the note says so and takes you to 
 /** 表に当たる、軽くて安い1点（漫画1冊、P25–P75 は 200–250 g）。 */
 const MANGA = 'One Piece manga volume 1';
 
-test('18. a single item: the winner never changes, and the US total is not indeterminate (P1-4)', async ({ page }) => {
+test('18. a single item: the US total is not indeterminate, even though the bracket now moves (P1-4)', async ({ page }) => {
   // **2026-09-12、courier-ui で fixture を差し替えた。**以前はここで PLUSH
   // （表に当たらない仮置き 1,000 g固定）を使っていたが、この PR で Buyee に
   // 実測宅配便運賃を配線した結果（P2「wire measured courier rates into the
@@ -765,10 +779,17 @@ test('18. a single item: the winner never changes, and the US total is not indet
   // 入れ替わる）。**これは欠陥ではなく実測運賃を新たに載せたことの正しい効果**——
   // 「重量が分からない1点は1位が揺れうる」という、まさに T-17 が伝えたい話その
   // ものになった（この揺れは 5番・17番のテストが仮置き重量の側で確かめる）。
+  //
+  // **2026-09-12、さらに `master/courier-rates.json` の
+  // `conclusions.courier_lineup_diffs` を配線した結果、表に当たる軽い1点
+  // （漫画、200–250 g）でも安定は成り立たなくなった。**FROM JAPAN は米国宛に
+  // EMS（日本郵便）を売っていないと確認済みで、この重量帯ではEMSを使えない
+  // ぶん FROM JAPAN の「その社にとって一番安い方式」（=宅配便ECMS）が軽い荷物
+  // では割高になり、1/3の重量では枠から外れる（3倍の重量では戻る）。
   // この18番が守りたいのは別の話——**「重量さえ分かっていれば、1点だけの
   // カートで判定不能（indeterminate）にはならない」**（P1-4）という不変条件で、
-  // それは仮置きである必要が無い。表に当たる軽い1点（漫画、200–250 g）に
-  // 差し替えても同じ不変条件を確かめられ、かつ実測（同上）でいまも安定している。
+  // それは「枠の顔ぶれが重量で動かない」こととは別物。不安定であっても
+  // 判定不能ではないことを、ここでは確かめる。
   await gotoCompare(page);
   await emptyCart(page);
   await addByHand(page, MANGA, 800);
@@ -779,20 +800,15 @@ test('18. a single item: the winner never changes, and the US total is not indet
   await expect(li.getByRole('link', { name: /manga volume/i })).toBeVisible();
   await expect(li.locator('[aria-label="edited by you"]')).toHaveCount(0);
 
-  await expect(page.getByText(
-    /FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight/,
-  )).toBeVisible();
+  // 枠は重量で動く（不安定）が、「判定不能」ではない——同等の印は出ない。
+  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
   await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
-  await expect(li.getByText(DECIDES)).toHaveCount(0);
-  // 枠が動かない（安定）ので「重量を確かめろ」の導線はもう出ない。
-  await expect(page.getByRole('button', { name: 'Check the weights in your cart' })).toHaveCount(0);
 
-  // それでも直せる。直せば総額は動く（1位は動かない——600 g は同じ安定帯の中）。
+  // それでも直せる。直せば総額は動く。
   const before = await readRanking(page);
   await weightBox(page, MANGA).fill('600');
   await expect.poll(async () => first(await readRanking(page)).total)
     .toBeGreaterThan(first(before).total);
-  expect(first(await readRanking(page)).name).toBe(first(before).name);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -835,20 +851,17 @@ test('18b. the shipping method is a control, and picking one moves every total',
   await expect.poll(async () => first(await readRanking(page)).total)
     .not.toBe([...before.values()][0]);
   const after = priced(await readRanking(page));
-  // Neokyo は日本郵便を売っていないので、明示的な方式選択では盤面から抜ける。
-  expect(before.size - after.length).toBe(1);
-  expect([...before.keys()].filter((k) => !after.some((r) => keyOf(r) === k))).toEqual(['Neokyo']);
-  // **Buyee の2行（同梱／既定）だけは例外。**`cheapest` のとき、Buyee の実測
-  // 宅配便運賃（P2 で配線）が船便より安いので、船便を明示すると総額はむしろ
-  // 上がる——「安いほうを自動で選んでいた」のが「利用者の指定に従う」に変わった、
-  // まさにこのテストが言いたい「方式は利用者が選ぶコントロール」の効きそのもの
-  // （実測 `src/lib/pricing`）。それ以外の行は船便のほうが安いので、素直に下がる。
+  // **2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+  // を配線した結果、国際小包(船便)を米国宛に出していない社が Neokyo だけでは
+  // なくなった。**FROM JAPAN・Buyee は米国宛に日本郵便を一切出していないと確認済み
+  // （以前はこの `unavailableIn` が無く、実際には売っていない米国向け国際小包に
+  // 値段を付けていた欠陥）。さらに Jauce も米国宛の Surface だけは提供していないと
+  // 実測済み（EMSは提供）。ZenMarket だけが米国向けに国際小包(船便)を売っている。
+  expect(before.size - after.length).toBe(5);
+  expect([...before.keys()].filter((k) => !after.some((r) => keyOf(r) === k)).sort()).toEqual(
+    ['Buyee/consolidated', 'Buyee/default', 'FROM JAPAN', 'Jauce', 'Neokyo']);
+  // それ以外の行（ZenMarketだけ）は船便のほうが安いので、素直に下がる。
   for (const r of after) {
-    if (r.name === 'Buyee') {
-      expect(r.total, `Buyee, ${r.variant} は船便で安くなるはずがない（実測は宅配便のほうが安い）`)
-        .toBeGreaterThan(before.get(keyOf(r))!);
-      continue;
-    }
     expect(r.total, `${keyOf(r)} が船便で安くなっていない`).toBeLessThan(before.get(keyOf(r))!);
   }
 
