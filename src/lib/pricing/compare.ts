@@ -587,13 +587,58 @@ function taxLines(
 }
 
 /**
+ * F3（`docs/audit/fable-review-2026-09-12.md`）の再発防止。
+ *
+ * `taxLines()` と `exportClearanceLine()` はもともと「郵便物」だけを前提に書かれた
+ * 費目——輸出通関料（F26）・通関手数料（Royal Mail / Canada Post / USPS の窓口手数料）・
+ * 関税事前納付（米国向け Zonos）——を、行が実際に解決した配送方式を見ずに全行へ
+ * 一律に足していた。マスタ（`master/fees.json` F26 の `when.carrier_in`、
+ * `master/customs.json` の各国 `clearance[].route`/`carrier`）はどれも
+ * 「日本郵便の窓口で徴収される」条件を明記しており、宅配便（FedEx/UPS/DHL/ECMS）の
+ * 荷物は日本郵便にもRoyal Mail/Canada Post/USPSにも渡らないので、構造的に発生し得ない。
+ *
+ * **ここに載せたキーだけが日本郵便限定。**次に郵便限定の費目を足すときは、
+ * 費目ごとに `if (isCourier)` を増やすのではなく、この Set にキーを1つ足すだけでよい。
+ * `filterJapanPostOnlyLines()` がキー一致だけで一括して弾く。
+ */
+export const JAPAN_POST_ONLY_LINE_KEYS: ReadonlySet<string> = new Set([
+  // clearance: GB Royal Mail £8 / CA Canada Post CAD9.95 / US USPS $9.35（いずれも
+  // 郵便物を配達する郵便事業者自身の窓口手数料。宅配便はこの経路を通らない）。
+  'clearance',
+  // export-clearance: F26。「日本郵便の全便を対象に、日本郵便が輸出通関で徴収する」
+  // 費目（`master/fees.json` F26 `when.carrier_in: ["JapanPost_all"]`）。
+  'export-clearance',
+  // duty-prepayment: 米国向け Zonos 前払い利用料。日本郵便が米国宛の引受条件として
+  // 課すもので、日本郵便を使わない宅配便には成立しない前提（「Postal Service has
+  // nothing to collect」という文言自体が郵便を前提にしている）。
+  'duty-prepayment',
+]);
+
+/**
+ * 宅配便（`isCourier`）の行から、日本郵便限定の行を落とす。
+ *
+ * **「無い」と「知らない」を混同しない。** これらの費目は宅配便には構造的に
+ * 「発生しない」（category error の反対側）ので、0円の行や null 行を残すのではなく
+ * 行そのものを消す——0円の行を残すと「調べた上でゼロだった」という別の嘘になる。
+ * 宅配便の目的地側の未知の費用は、既存の `courier-destination-fees`（null・
+ * `total.high` を開く）が別に持っている。ここで消しても「調べていない」への
+ * すり替えにはならない。
+ */
+function filterJapanPostOnlyLines(lines: Line[], isCourier: boolean): Line[] {
+  if (!isCourier) return lines;
+  return lines.filter((l) => !JAPAN_POST_ONLY_LINE_KEYS.has(l.key));
+}
+
+/**
  * F26 輸出通関手数料。**日本郵便の費目であって代行の費目ではない**ので、
  * 5社すべてに同額・同条件で出す（`EXPORT_DECLARATION_FEE_YEN` のコメント参照）。
  *
  * 条件は行の商品代合計（`itemsYen`）が ¥200,000 を超えるかどうかだけ。
  * **個口の数では倍にしない**（同じ受取人あてに2個以上は「全ての梱包を合わせて1件」）。
  * よって行につき1回。発生しないとき（¥200,000 以下）も額 0 の行を出す——
- * 消すと「調べていない」と区別が付かない。
+ * 消すと「調べていない」と区別が付かない。**この行自体が宅配便では立たない
+ * ことは呼び出し側で `filterJapanPostOnlyLines()` により弾く（この関数はまだ
+ * `isCourier` を知らないので、ここでは判定しない）。**
  */
 function exportClearanceLine(itemsYen: number): Line {
   const over = itemsYen > EXPORT_DECLARATION_FEE_THRESHOLD_JPY;
@@ -1322,7 +1367,8 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   }
 
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
-  lines.push(exportClearanceLine(itemsYen));
+  // **宅配便の行では立たない**——`filterJapanPostOnlyLines()` 参照。
+  lines.push(...filterJapanPostOnlyLines([exportClearanceLine(itemsYen)], isCourier));
 
   // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
   // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。
@@ -1357,7 +1403,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declaredP` と同じ。
   const ownPrepaid = svc.prepaidImportTax?.[ctx.cc];
   const taxResult = taxLines(ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null);
-  lines.push(...taxResult.lines);
+  // **`clearance`（郵便事業者の窓口手数料）と `duty-prepayment`（米国向け Zonos）は
+  // 宅配便の行では立たない**——`filterJapanPostOnlyLines()` 参照。`taxLines()` 自身は
+  // 社の識別子（`isCourier` を含む）を見ない関数のままにしておく（P1-4 のコメント通り、
+  // 輸入側の判定は国とカートだけで決まるべきで、社の情報を混ぜない）ので、フィルタは
+  // ここ呼び出し側でかける。
+  lines.push(...filterJapanPostOnlyLines(taxResult.lines, isCourier));
   // **`ParcelBox[]` はここで初めて完成する。**分割の理由（`boxReasons`）は
   // 上で決めてあり、箱ごとの関税・VAT/GST の判定（`taxResult.perParcel`）は
   // たった今 `taxLines` が出したもの——**どちらも計算をやり直さず、既にある
