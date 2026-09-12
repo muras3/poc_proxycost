@@ -1359,10 +1359,18 @@ test.describe('mobile layout', () => {
       // 単語ごとの折り返しに壊れると、左列の幅がほぼ0まで潰れ、行の高さが
       // 行数ぶん異常に伸びる。**幅と高さの両方**を縛ることで、片方だけを
       // 通す偶然の実装を防ぐ。
+      //
+      // 上限は 260 → 300 に引き上げた（このコミット）。260 は afcca4f
+      // （P1-3 追修正、この崩れを塞いだ時点）で決めた値で、当時 row-info には
+      // Surface 代替行が無かった。その後 f794b20（P2 UI）で `Row.surface` の
+      // 「Surface option — …」行が row-info に追加され、正常な（潰れていない）
+      // 内訳を持つ行の実測高さが 264px になった——300 はこの正当な追加行を
+      // 通しつつ、単語ごとの折り返し崩れ（コメント通り「行数ぶん異常に伸びる」
+      // ので数百px単位で跳ね上がる）はまだ確実に検出できる値。
       expect(infoBox.width, `row ${i}: 左列が潰れている（${Math.round(infoBox.width)}px）`)
         .toBeGreaterThan(rowBox.width * 0.5);
       expect(rowBox.height, `row ${i}: 行の高さが異常（${Math.round(rowBox.height)}px）`)
-        .toBeLessThan(260);
+        .toBeLessThan(300);
     }
   });
 

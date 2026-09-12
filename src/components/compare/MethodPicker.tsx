@@ -33,13 +33,13 @@ export function MethodPicker({
   country: CountryCode;
 }) {
   return (
-    <label className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+    <label className="flex min-w-0 items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
       Ship by
       <select
         id="ship-by-select"
         value={value}
         onChange={(e) => onChange(e.target.value as PostalMethod | CourierMethod | 'cheapest')}
-        className="max-w-full rounded border border-neutral-300 bg-transparent px-2 py-1 text-xs dark:border-neutral-700"
+        className="min-w-0 max-w-full rounded border border-neutral-300 bg-transparent px-2 py-1 text-xs dark:border-neutral-700"
       >
         {/* **既定ではないが隠さない。**総額を一番小さくする選び方を知りたい人は多いはず。
             行ごとに「運べる中で最安」を選ぶので、社によって違う方式になりうる。 */}
