@@ -151,7 +151,15 @@
             "quote": "At Customer's request, DHL clears the shipment at destination and arranges for the applicable import duties, taxes and regulatory charges to be invoiced to a specified DHL account at origin or third country, rather than the receiver of the shipment being billed at destination.",
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
-          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
+          "variant_applicability": {
+            "answer": "non_account_holder",
+            "confidence": "reasoned_judgement_unconfirmed",
+            "basis": "このサイトが想定する利用者は、日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人であり、DHLの法人（ブローカレッジ）口座を持たない。CA一次資料の定義文が『account holder＝Importers with a DHL Brokerage account on file』『non-account holder＝customers who do not hold a DHL account number』と、口座の有無をshipperではなくimporter（宛先で課金される側＝受取人）に紐づけて定義している。DTX（Duty Tax Processing）自体が『受取人が請求される』方の費目（dtp_for_contrastが明記する『shipper/third partyが請求されるDTP』との対比）であることと合わせると、このサイトの利用者には non_account_holder 側のrate/min が適用される、と読める。ただしDHLの一次資料自体が『個人輸入の受取人にどちらが適用されるか』を名指しで書いているわけではなく、定義文からの読み込みであるため reasoned_judgement_unconfirmed に留める。",
+            "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
+            "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+            "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
+          }
         },
         {
           "route": "ups_disbursement",
@@ -362,7 +370,15 @@
             "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
-          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
+          "variant_applicability": {
+            "answer": "non_account_holder",
+            "confidence": "reasoned_judgement_unconfirmed",
+            "basis": "このサイトが想定する利用者は、日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人であり、DHLの法人（ブローカレッジ）口座を持たない。CA一次資料の定義文が『account holder＝Importers with a DHL Brokerage account on file』『non-account holder＝customers who do not hold a DHL account number』と、口座の有無をshipperではなくimporter（宛先で課金される側＝受取人）に紐づけて定義している。DTX（Duty Tax Processing）自体が『受取人が請求される』方の費目（dtp_for_contrastが明記する『shipper/third partyが請求されるDTP』との対比）であることと合わせると、このサイトの利用者には non_account_holder 側のrate/min が適用される、と読める。ただしDHLの一次資料自体が『個人輸入の受取人にどちらが適用されるか』を名指しで書いているわけではなく、定義文からの読み込みであるため reasoned_judgement_unconfirmed に留める。",
+            "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
+            "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+            "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
+          }
         },
         {
           "route": "courier_brokerage",
@@ -831,7 +847,15 @@
             "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
-          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
+          "variant_applicability": {
+            "answer": "non_account_holder",
+            "confidence": "reasoned_judgement_unconfirmed",
+            "basis": "このサイトが想定する利用者は、日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人であり、DHLの法人（ブローカレッジ）口座を持たない。CA一次資料の定義文が『account holder＝Importers with a DHL Brokerage account on file』『non-account holder＝customers who do not hold a DHL account number』と、口座の有無をshipperではなくimporter（宛先で課金される側＝受取人）に紐づけて定義している。DTX（Duty Tax Processing）自体が『受取人が請求される』方の費目（dtp_for_contrastが明記する『shipper/third partyが請求されるDTP』との対比）であることと合わせると、このサイトの利用者には non_account_holder 側のrate/min が適用される、と読める。ただしDHLの一次資料自体が『個人輸入の受取人にどちらが適用されるか』を名指しで書いているわけではなく、定義文からの読み込みであるため reasoned_judgement_unconfirmed に留める。",
+            "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
+            "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+            "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
+          }
         },
         {
           "route": "fedex",
@@ -1187,7 +1211,15 @@
             "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
-          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
+          "variant_applicability": {
+            "answer": "non_account_holder",
+            "confidence": "reasoned_judgement_unconfirmed",
+            "basis": "このサイトが想定する利用者は、日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人であり、DHLの法人（ブローカレッジ）口座を持たない。CA一次資料の定義文が『account holder＝Importers with a DHL Brokerage account on file』『non-account holder＝customers who do not hold a DHL account number』と、口座の有無をshipperではなくimporter（宛先で課金される側＝受取人）に紐づけて定義している。DTX（Duty Tax Processing）自体が『受取人が請求される』方の費目（dtp_for_contrastが明記する『shipper/third partyが請求されるDTP』との対比）であることと合わせると、このサイトの利用者には non_account_holder 側のrate/min が適用される、と読める。ただしDHLの一次資料自体が『個人輸入の受取人にどちらが適用されるか』を名指しで書いているわけではなく、定義文からの読み込みであるため reasoned_judgement_unconfirmed に留める。",
+            "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
+            "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+            "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
+          }
         },
         {
           "route": "fedex",
@@ -1394,7 +1426,15 @@
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
           "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
-          "service_label_note": "カナダは他っ6か国と違い、『Duty Tax Processing』ではなく『Customs Clearance』という名称だが、定義文（アカウント有無で分岐、宛先で受取人請求）はDTX相当と一致する。"
+          "service_label_note": "カナダは他っ6か国と違い、『Duty Tax Processing』ではなく『Customs Clearance』という名称だが、定義文（アカウント有無で分岐、宛先で受取人請求）はDTX相当と一致する。",
+          "variant_applicability": {
+            "answer": "non_account_holder",
+            "confidence": "reasoned_judgement_unconfirmed",
+            "basis": "このサイトが想定する利用者は、日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人であり、DHLの法人（ブローカレッジ）口座を持たない。CA一次資料の定義文が『account holder＝Importers with a DHL Brokerage account on file』『non-account holder＝customers who do not hold a DHL account number』と、口座の有無をshipperではなくimporter（宛先で課金される側＝受取人）に紐づけて定義している。DTX（Duty Tax Processing）自体が『受取人が請求される』方の費目（dtp_for_contrastが明記する『shipper/third partyが請求されるDTP』との対比）であることと合わせると、このサイトの利用者には non_account_holder 側のrate/min が適用される、と読める。ただしDHLの一次資料自体が『個人輸入の受取人にどちらが適用されるか』を名指しで書いているわけではなく、定義文からの読み込みであるため reasoned_judgement_unconfirmed に留める。",
+            "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
+            "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+            "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
+          }
         },
         {
           "route": "fedex",
@@ -1661,7 +1701,15 @@
             "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
-          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
+          "variant_applicability": {
+            "answer": "non_account_holder",
+            "confidence": "reasoned_judgement_unconfirmed",
+            "basis": "このサイトが想定する利用者は、日本の代行業者からDHL Expressで荷物を受け取る宛先国の個人であり、DHLの法人（ブローカレッジ）口座を持たない。CA一次資料の定義文が『account holder＝Importers with a DHL Brokerage account on file』『non-account holder＝customers who do not hold a DHL account number』と、口座の有無をshipperではなくimporter（宛先で課金される側＝受取人）に紐づけて定義している。DTX（Duty Tax Processing）自体が『受取人が請求される』方の費目（dtp_for_contrastが明記する『shipper/third partyが請求されるDTP』との対比）であることと合わせると、このサイトの利用者には non_account_holder 側のrate/min が適用される、と読める。ただしDHLの一次資料自体が『個人輸入の受取人にどちらが適用されるか』を名指しで書いているわけではなく、定義文からの読み込みであるため reasoned_judgement_unconfirmed に留める。",
+            "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
+            "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+            "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
+          }
         },
         {
           "route": "fedex",
