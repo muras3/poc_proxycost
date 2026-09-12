@@ -281,7 +281,7 @@ const PLUSH = 'plush toy, no weight data';
 
 test('5. an item with no weight data gets an assumed weight, says so, and is corrected in place', async ({ page }) => {
   await gotoCompare(page);
-  // **宛先はオーストラリア。カートは1点だけにする。**
+  // **宛先はカナダ。カートは1点だけにする。**
   // **2026-09-12、courier-ui で差し替えた。**この PR で Buyee に実測宅配便運賃を
   // 配線した結果（P2「wire measured courier rates into the comparison engine」）、
   // おすすめ枠が事実上どこの宛先でも「ZenMarket・FROM JAPAN の2社で固定」に
@@ -290,12 +290,14 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   // **枠の顔ぶれ（recommended の集合）自体は動かない**ため、`decisive`
   // （枠の集合が変わったか）は常に false のままになり、この警告が実演できない
   // （`src/lib/pricing` で実測）。総額を小さく保つ——**カートをこの1点だけに
-  // する**——と、枠の顔ぶれごと入れ替わる帯が残っている。豪（AU）で
-  // 500 g は FROM JAPAN・10 kg は ZenMarket と割れる（実測）。
-
-  // 'plush toy' はどのラインにも当たらない。以前は重量 null で「段ごとの総額」に落ちていた。
-  // いまは仮置きの 1,000 g が入り、**仮置きだと名乗り**、その場で直せる。
-  await page.getByLabel('Ship to').selectOption('AU');
+  // する**——と、枠の顔ぶれごと入れ替わる帯が残っている。
+  //
+  // **2026-09-12、六か国拡張で宛先を豪（AU）からカナダ（CA）に差し替えた。**
+  // AU は今回の拡張で FROM JAPAN が全重量帯で1位を独占するようになり
+  // （`compare()` で直接確認）、500 g/10 kg の割れ目が消えた。CA では
+  // 500 g は FROM JAPAN・10 kg は Buyee と割れる（実測、`compare()` の
+  // `weightSensitivity` で直接確認）。
+  await page.getByLabel('Ship to').selectOption('CA');
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
   const c = await openCart(page);
@@ -311,8 +313,8 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   expect(assumed.length).toBeGreaterThanOrEqual(5);
   for (const r of assumed) expect(r.total).toBeGreaterThan(0);
 
-  // **この品の重量が1位を決める**（カート1点、豪。2026-09-12 実測:
-  // 500 g で FROM JAPAN、10 kg で ZenMarket）。仮置きの数字を信じるなと、その場で言う。
+  // **この品の重量が1位を決める**（カート1点、カナダ。2026-09-12 六か国拡張後の実測:
+  // 500 g で FROM JAPAN、10 kg で Buyee）。仮置きの数字を信じるなと、その場で言う。
   await expect(li.getByText(DECIDES)).toBeVisible();
   const flag = (await li.getByText(DECIDES).innerText()).replace(/\s+/g, ' ');
   expect(flag).toMatch(/at 500 g/);
@@ -323,7 +325,7 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   expect(named![1]).not.toBe(named![2]);
 
   // 軽くすれば総額は下がり、重くすれば上がる。1位も 200 g（FROM JAPAN）から
-  // 8,000 g（ZenMarket）で入れ替わる（実測、同上）。
+  // 8,000 g（Buyee）で入れ替わる（実測、同上）。
   await weightBox(page, PLUSH).fill('200');
   await expect.poll(async () => first(await readRanking(page)).total)
     .toBeLessThan(assumed[0]!.total);
@@ -408,11 +410,18 @@ test('22. two rows with the same total share the rank, and both are CHEAPEST', a
 });
 
 test('23. a tie below the top shares its rank too, and does not move the winner', async ({ page }) => {
-  // 1点 ¥12,800・1,450 g・ヤフオク・**ドイツ**で Buyee と Neokyo が ¥28,417 の3位タイ。
+  // 1点 ¥500・1,850 g・ヤフオク・**ドイツ**で Buyee と Neokyo が ¥14,635 の3位タイ。
   // **旧実装はここで社名の辞書順に割っていて、報酬を払う Buyee が、報酬ゼロの Neokyo を
   // 常に上に置いていた**（同額 3,938 組のうち 3,716 組が同じ向き）。
   // **宛先が米国からドイツに変わった。**同額になる2社の片方（Neokyo）は米国宛に
   // 日本郵便を売っていないので、米国ではこの同額そのものが起きない。
+  //
+  // **2026-09-12、courier-ui の六か国拡張で組み合わせを差し替えた。**旧の
+  // ¥12,800・1,450g の入力は、DE に Buyee/Neokyo/ZenMarket/FROM JAPAN の実測宅配便
+  // 運賃を配線した結果、Buyee と Neokyo のどちらか（あるいは両方）が日本郵便から
+  // 宅配便に乗り換えて同額が崩れた（`compare()` で直接確認）。新しい入力（¥500・
+  // 1,850g）は同じ性質（3位タイ・1位は不動・タイの次は5位に飛ぶ）を再現する組み合わせ
+  // として走査で見つけ直した。
   await gotoCompare(page);
   await page.getByLabel('Ship to').selectOption('DE');
   // 0d: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が乗る。
@@ -420,9 +429,9 @@ test('23. a tie below the top shares its rank too, and does not move the winner'
   // 両社とも無料期間の内側になる30日に固定する（Buyee ¥0・Neokyo ¥0）。
   await page.getByLabel('Days kept in the warehouse before shipping').fill('30');
   await emptyCart(page);
-  await addByHand(page, TIE, 12800);
+  await addByHand(page, TIE, 500);
   await openCart(page);
-  await weightBox(page, TIE).fill('1450');
+  await weightBox(page, TIE).fill('1850');
 
   await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
   const rows = await readRanking(page);
@@ -700,13 +709,15 @@ test('16. a weight from our table is shown with its source and spread, can be ov
 
 test('17. when the weight decides the winner, the note says so and takes you to the box that matters', async ({ page }) => {
   await gotoCompare(page);
-  // **宛先はオーストラリア。カートは1点だけにする**（テスト5と同じ理由——
+  // **宛先はカナダ。カートは1点だけにする**（テスト5と同じ理由——
   // 2026-09-12、courier-ui で Buyee に実測宅配便運賃を配線した結果、おすすめ枠が
   // 既定の2点＋追加1点だと顔ぶれごと動かなくなり、`decisive` を実演できる
   // 組み合わせが見つからなくなった。以前はドイツで既定2点のうち Nendoroid も
   // 道連れで決定打になっていたが、いまその反転先が無い。カートをこの1点だけに
-  // 絞ると、枠の顔ぶれごと入れ替わる帯がまだ残っている——詳細はテスト5のコメント）。
-  await page.getByLabel('Ship to').selectOption('AU');
+  // 絞ると、枠の顔ぶれごと入れ替わる帯がまだ残っている——詳細はテスト5のコメント。
+  // **2026-09-12、六か国拡張でさらに豪（AU）からカナダ（CA）に差し替えた**——
+  // AU は FROM JAPAN が全重量帯で1位を独占するようになり割れ目が消えたため）。
+  await page.getByLabel('Ship to').selectOption('CA');
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
   const note = page.getByText(/The recommended range changes with the weight/);
@@ -716,7 +727,7 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   await expect(note).toContainText('our weight estimate');
   await expect(note).not.toContainText('you gave us');
 
-  // **この仮置きの1点が1位を決める**（500 g で FROM JAPAN、10 kg で ZenMarket。実測、
+  // **この仮置きの1点が1位を決める**（500 g で FROM JAPAN、10 kg で Buyee。実測、
   // テスト5と同じ）。
   await openCart(page);
   await expect(cartItem(page, PLUSH).getByText(DECIDES)).toBeVisible();
@@ -925,8 +936,11 @@ test('19. the ranking says which methods are priced, US couriers included, other
   expect(text).toMatch(/Japan Post methods/);
   expect(text).toMatch(/cheapest that fits/i);
   // (2) 米国宛は宅配便も価格化してあり、それを名指しすること（Jauce は対象外だと言う）。
+  // **2026-09-12、六か国拡張で「US only」の決め打ちを外した**（`EmsOnlyNote.tsx` の
+  // `courierScopeText` 参照。国名は `COUNTRIES[country].name` から取り、文全体が
+  // `coverage` だけから組み立つ）ので、ここも文字列 "US only" ではなく実際の国名を見る。
   expect(text).toMatch(/Courier rates are also priced/);
-  expect(text).toMatch(/US only/);
+  expect(text).toMatch(/for United States/);
   expect(text).toMatch(/Jauce has no courier rate grid/);
   expect(text).toMatch(/FedEx/);
   expect(text).toMatch(/DHL/);
@@ -936,12 +950,23 @@ test('19. the ranking says which methods are priced, US couriers included, other
   //     「総額は高く出ている」と書けば、片側だけの誤差だと誤解させる。
   expect(text).toMatch(/either direction/);
 
-  // 行き先を未測定国に変えれば「価格化していない」側の文言に切り替わる。
-  await page.getByLabel('Ship to').selectOption('GB');
-  const gbText = (await note.innerText()).replace(/\s+/g, ' ');
-  expect(gbText).toMatch(/Courier rates are not priced for this destination/);
-  expect(gbText).toMatch(/Neokyo|ZenMarket|FROM JAPAN|Buyee/);
-  expect(gbText).toMatch(/we have not priced them for this destination/);
+  // **2026-09-12、六か国拡張で GB を「全社未測定」の例には使えなくなった。**
+  // このPR（#87）が GB/DE/FR/AU/CA/SG に実測宅配便運賃を配線した結果、GB は
+  // FROM JAPAN・Neokyo・ZenMarket・Buyee の4社とも価格化済みになった
+  // （`courierCoverageFor('GB')` で直接確認）——「全社まだ調べていない」の分岐
+  // (`pricedServiceNames.length === 0`) は2026-09-12時点でどの対応国からも
+  // 到達できない（`EmsOnlyNote.test.ts` がその分岐をセレクタ経由ではなく直接
+  // 検査している）。旧アサーションが間違っていたのではなく、データが増えて
+  // GB がその例で無くなっただけ。代わりに DE を使う——DE は Buyee だけ
+  // 未測定で、他3社は価格化済みという「一部だけ」の形を今も実演できる。
+  await page.getByLabel('Ship to').selectOption('DE');
+  const deText = (await note.innerText()).replace(/\s+/g, ' ');
+  expect(deText).toMatch(/Courier rates are also priced/);
+  expect(deText).toMatch(/for Germany/);
+  expect(deText).toMatch(/FROM JAPAN|Neokyo|ZenMarket/);
+  expect(deText).toMatch(/Buyee also offer couriers here/);
+  expect(deText).toMatch(/we have not priced them for Germany/);
+  expect(deText).toMatch(/Jauce has no courier rate grid/);
   await page.getByLabel('Ship to').selectOption('US');
 
   // 5社とも名指しする。1社でも落ちれば「その社は EMS しか無い」と読めてしまう。

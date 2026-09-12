@@ -22,14 +22,18 @@ const byId = (rows: ReturnType<typeof compare>['rows'], id: string) => {
 
 describe('unmeasured country stays unmeasured (P2 2)', () => {
   test('a courier price never appears for a country we have not measured — the method is absent with a reason, not ¥0', () => {
-    // FROM JAPAN の宅配便は US しか測っていない。DE を明示的に選ぶと値段は付かない。
-    const rows = compare({ items: items(1, 600), country: 'DE', method: 'courier-fedex-economy' }).rows;
+    // 2026-09-12 拡張で FROM JAPAN の UPS/DHL/FedEx-Economy/FedEx-Priority は
+    // GB/FR/AU/CA/SG/DE まで測ったが、**ECMS は US/AU/SG しか画面に出ず GB は今も
+    // 未測定のまま**（`services.ts` の courier-ecms のコメント参照）——このテストは
+    // その本物の空白（正しく DE のままだと GB に変わっただけの数字合わせではない）
+    // で固定し直す。
+    const rows = compare({ items: items(1, 600), country: 'GB', method: 'courier-ecms' }).rows;
     const fj = byId(rows, 'fromjapan');
     const shipLine = fj.lines.find((l) => l.key === 'intl-shipping')!;
     expect(shipLine.amount).toBeNull();
     expect(fj.comparable).toBe(false);
     expect(fj.notComparableReason).toContain('has not priced this courier');
-    expect(fj.notComparableReason).toContain('Germany');
+    expect(fj.notComparableReason).toContain('United Kingdom');
   });
 
   test('Jauce has no courier grid at all — a courier method is simply not offered', () => {
