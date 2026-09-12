@@ -112,6 +112,46 @@
             "note": "**この2%/15USDは2026-07-20のFedEx改定前の旧料率と一致する（新料率は2.5%/17.50USD）。**Neokyoページの取得日が明記されておらず、改定前の値が転記時点でそのまま古くなっている可能性と、Neokyoが単に自社ページを更新していない可能性の両方があり得る。いずれにせよ Neokyo の記述はFedExの一次資料そのものではなく、代行会社による二次的な言い換えなので、これを『FedExの一次情報を取得済み』の根拠にはできない。"
           },
           "note": "**`docs/ROADMAP.md` の『US FedEx DDP の課税式は一次情報を取得済み』は、このマスタが直前まで保持していた `courier_brokerage: {rule: unknown, tier: C_unknown, source: \"—\"}` という記録と矛盾する ── マスタ側には一次情報を取得した形跡が無かった。今回 `whichever is higher` を明記する『greater of』構造の式自体は複数の独立した二次情報源（ShipScience 等）で一致しており reasoned_judgement を超える確度はあるが、FedEx自身のページ本文はこの環境のWAFに阻まれ逐語引用できていないため、`tier` は A_confirmed ではなく B_inferred、`amount_tier` は `search_snippet` に留める。"
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_variants",
+            "variants": {
+              "account_holder": {
+                "name": "Duty Tax Processing: Account Holders",
+                "rate": 0.02,
+                "min": 17.5,
+                "currency": "USD"
+              },
+              "non_account_holder": {
+                "name": "Duty Tax Processing: Non-Account Holder",
+                "rate": 0.02,
+                "min": 17.5,
+                "currency": "USD"
+              }
+            },
+            "basis": "import_charges（duty+tax等、advanced分）"
+          },
+          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
+          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "tier": "A_confirmed",
+          "amount_tier": "direct_fetch",
+          "source": "https://mydhl.express.dhl/content/dam/downloads/us/en/rate-guide/service_and_rate_guide_us_en_2026.pdf.coredownload.pdf",
+          "source_checked_on": "2026-09-12",
+          "verbatim_quote_available": true,
+          "quote": "DHL will accelerate the customs clearance initiating the payment process of duty and tax charges relating to a shipment. The receiver is invoiced for the duty and tax amount, allowing payment to be deferred until a mutually agreed date. / Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2% of fiscal charges with a minimum of $17.00",
+            "quote": "At Customer's request, DHL clears the shipment at destination and arranges for the applicable import duties, taxes and regulatory charges to be invoiced to a specified DHL account at origin or third country, rather than the receiver of the shipment being billed at destination.",
+            "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
         }
       ],
       "carrier_availability": {
@@ -244,6 +284,46 @@
           "tier": "B_inferred",
           "source": "https://www.parcelforce.com/receiving/customs-charge",
           "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_variants",
+            "variants": {
+              "account_holder": {
+                "name": "Duty Tax Processing: Account Customers",
+                "rate": 0.025,
+                "min": 12.0,
+                "currency": "GBP"
+              },
+              "non_account_holder": {
+                "name": "Duty Tax Processing: Non-Account Customers",
+                "rate": 0.025,
+                "min": 11.0,
+                "currency": "GBP"
+              }
+            },
+            "basis": "import_charges（duty+tax等、advanced分）"
+          },
+          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
+          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "tier": "A_confirmed",
+          "amount_tier": "direct_fetch",
+          "source": "https://mydhl.express.dhl/content/dam/downloads/gb/en/rate-guide/service_and_rate_guide_gb_en.pdf.coredownload.pdf",
+          "source_checked_on": "2026-09-12",
+          "verbatim_quote_available": true,
+          "quote": "DHL will accelerate the customs clearance initiating the payment process of duty and tax charges relating to a shipment. The receiver is invoiced for the duty and tax amount, allowing payment to be deferred until a mutually agreed date. / Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2% of fiscal charges with minimum of £16.00",
+            "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
+            "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
         }
       ],
       "conditional": {
@@ -356,13 +436,33 @@
           "rule": {
             "type": "rate_of_import_charges_with_min",
             "rate": 0.02,
-            "min": 14.88,
+            "min": 15.0,
             "currency": "EUR",
-            "min_note": "€12.50 ＋ 19% USt"
+            "min_plus_vat": true,
+            "min_note": "€15.00 zzgl. MwSt.（19%込みで約€17.85）。旧記録の€12.50+19%USt(=14.88)は一次資料と不一致（下記 corrected_from）。"
           },
           "tier": "A_confirmed",
-          "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
-          "quote": "Kapitalbereitstellungsprovision … 2% der Einfuhrabgaben, mindestens aber 14,88 Euro"
+          "source": "https://www.dhl.de/dam/jcr:3c343ee4-e952-4310-aa15-dfd1c99aa7e9/dhl-express-auftragsbedingungen-gebuehren-zollabfertigung-de-012025.pdf",
+          "quote": "Bei Überweisung wird das zuzügliche Entgelt für die Nutzung des DHL eigenen Aufschubkontos standardmäßig in Höhe von 2 % der verauslagten Einfuhrabgaben, mind. jedoch 15,00 EUR, zzgl. MwSt. pro abgefertigter Sendung berechnet (Service: Duty Tax Processing).",
+          "corrected_from": {
+            "amount": "2% mindestens €14.88 (=€12.50+19% USt)",
+            "why": "paketda.de（業界紙、一次情報ではない）由来の数字。DHL自身の一次資料（DE Service & Rate Guide 2026 および 『Auftragsbedingungen und Gebühren für die Zollabfertigung』 PDF、いずれも2026-09-12に直接フェッチ・逐語確認）は 2% mindestens €15,00 zzgl. MwSt.（19%込みで€17.85相当）としており、金額が食い違う。名称・仲組み（率２％・宛先国で受取人請求）自体はA_confirmedのまま正しかった（「Kapitalbereitstellungsprovision」は正式サービス名「Duty Tax Processing」のドイツ語通称で、DTPではなくDTX相当だったことをこのタスクで再確認できた）が、最低額は本タスクで一次資料により€15.00+MwStへ更新する。"
+          },
+          "amount_tier": "direct_fetch",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）。ドイツ語通称は「Kapitalbereitstellungsprovision」",
+          "source2": "https://www.dhl.de/dam/jcr:66008de1-5933-4497-a194-ab7f4626d671/dhl-express-produkte-services-und-preise-en.pdf (DHL Express Service & Rate Guide 2026: Germany)",
+          "source_checked_on": "2026-09-12",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "上記quoteが「pro abgefertigter Sendung」(per cleared shipment)と明記。７か国中DEのみ、この軸がA_confirmed。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2% of fiscal charges with minimum of €17.00",
+            "source": "DHL Express Service & Rate Guide 2026: Germany（同じ一次資料内、上記source2）",
+            "note": "出発国/第三国のDHLアカウントに請求される費目。宛先国clearanceには該当しないため本行のruleには含めない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026 / Auftragsbedingungen（発効日の明記なし）"
         }
       ],
       "clearance_fee_vat": {
@@ -478,6 +578,46 @@
           "tier": "B_inferred",
           "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
           "inference_basis": "二次情報。公式で裏づけていない"
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_variants",
+            "variants": {
+              "account_holder": {
+                "name": "Duty Tax Processing: Account Customers",
+                "rate": 0.02,
+                "min": 15.3,
+                "currency": "EUR"
+              },
+              "non_account_holder": {
+                "name": "Duty Tax Processing: Non-Account Customers",
+                "rate": 0.018,
+                "min": 16.67,
+                "currency": "EUR"
+              }
+            },
+            "basis": "import_charges（duty+tax等、advanced分）"
+          },
+          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
+          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "tier": "A_confirmed",
+          "amount_tier": "direct_fetch",
+          "source": "https://mydhl.express.dhl/content/dam/downloads/fr/en/rate-guide/service_and_rate_guide_fr_en_2026.pdf.coredownload.pdf",
+          "source_checked_on": "2026-09-12",
+          "verbatim_quote_available": true,
+          "quote": "DHL will accelerate the customs clearance initiating the payment process of duty and tax charges relating to a shipment. The receiver is invoiced for the duty and tax amount, allowing payment to be deferred until a mutually agreed date. / Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2% of fiscal charges with minimum of €17",
+            "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
+            "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
         }
       ],
       "user_action": {
@@ -722,6 +862,46 @@
           "source": "https://www.abf.gov.au/",
           "inference_basis": "実装（src/lib/pricing/countries.ts）が T24 で原文を取り、A$1,000 以下は A$0、以降 A$50 / A$152 の帯を持っている。マスタ側はその転記なので B",
           "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）"
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_variants",
+            "variants": {
+              "account_holder": {
+                "name": "Duty Tax Processing: Account Customers",
+                "rate": 0.03,
+                "min": 23.0,
+                "currency": "AUD"
+              },
+              "non_account_holder": {
+                "name": "Duty Tax Processing: Non-Account Customers",
+                "rate": 0.03,
+                "min": 23.0,
+                "currency": "AUD"
+              }
+            },
+            "basis": "import_charges（duty+tax等、advanced分）"
+          },
+          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
+          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "tier": "A_confirmed",
+          "amount_tier": "direct_fetch",
+          "source": "https://mydhl.express.dhl/content/dam/downloads/au/en/rate-guide/service_and_rate_guide_au_en_2026.pdf.coredownload.pdf",
+          "source_checked_on": "2026-09-12",
+          "verbatim_quote_available": true,
+          "quote": "DHL will accelerate the customs clearance initiating the payment process of duty and tax charges relating to a shipment. The receiver is invoiced for the duty and tax amount, allowing payment to be deferred until a mutually agreed date. / Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2% of fiscal charges with minimum of 30 AUD",
+            "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
+            "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
         }
       ],
       "clearance_fee_vat": {
@@ -825,6 +1005,47 @@
           "tier": "B_inferred",
           "source": "複数の業界情報源",
           "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得"
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_variants",
+            "variants": {
+              "account_holder": {
+                "name": "Customs Clearance: Customers with DHL Brokerage Account",
+                "rate": 0.0275,
+                "min": 12.0,
+                "currency": "CAD"
+              },
+              "non_account_holder": {
+                "name": "Customs Clearance: Customers without DHL Brokerage Account",
+                "rate": 0.0275,
+                "min": 18.0,
+                "currency": "CAD"
+              }
+            },
+            "basis": "import_charges（duty+tax等、advanced分）"
+          },
+          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
+          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "tier": "A_confirmed",
+          "amount_tier": "direct_fetch",
+          "source": "https://mydhl.express.dhl/content/dam/downloads/ca/en/rate-guide/service_and_rate_guide_ca_en_2026.pdf.coredownload.pdf",
+          "source_checked_on": "2026-09-12",
+          "verbatim_quote_available": true,
+          "quote": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file. / Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2.5% of fiscal charges with minimum of 16.00 CAD",
+            "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
+            "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
+          "service_label_note": "カナダは他っ6か国と違い、『Duty Tax Processing』ではなく『Customs Clearance』という名称だが、定義文（アカウント有無で分岐、宛先で受取人請求）はDTX相当と一致する。"
         }
       ],
       "real_invoice": {
@@ -983,6 +1204,46 @@
           "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
           "inference_basis": "公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画のみ。**S$400 の閾値は公式本文で取れている**が、S$10.90 という額の文そのものは取れていない",
           "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料"
+        },
+        {
+          "route": "dhl_express",
+          "carrier": "DHL Express",
+          "service_family": "Duty Tax Processing（DTX相当、宛先国＝受取人請求）",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_variants",
+            "variants": {
+              "account_holder": {
+                "name": "Duty Tax Processing: Account Customers",
+                "rate": 0.05,
+                "min": 20.0,
+                "currency": "SGD"
+              },
+              "non_account_holder": {
+                "name": "Duty Tax Processing: Non-Account Customers",
+                "rate": 0.05,
+                "min": 20.0,
+                "currency": "SGD"
+              }
+            },
+            "basis": "import_charges（duty+tax等、advanced分）"
+          },
+          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
+          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "zero_duty_charged": "C_unknown",
+          "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
+          "tier": "A_confirmed",
+          "amount_tier": "direct_fetch",
+          "source": "https://mydhl.express.dhl/content/dam/downloads/sg/en/rate-guide/service_and_rate_guide_sg_en_2026.pdf.coredownload.pdf",
+          "source_checked_on": "2026-09-12",
+          "verbatim_quote_available": true,
+          "quote": "DHL will accelerate the customs clearance initiating the payment process of duty and tax charges relating to a shipment. The receiver is invoiced for the duty and tax amount, allowing payment to be deferred until a mutually agreed date. / Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
+          "dtp_for_contrast": {
+            "name": "Duty Tax Paid",
+            "amount": "2% of fiscal charges with minimum of SGD 34",
+            "quote": "DHL can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur, and shipper has requested that those are to be billed outside of the destination country.",
+            "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
+          },
+          "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
         }
       ],
       "clearance_fee_vat": {

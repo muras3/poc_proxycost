@@ -33,7 +33,7 @@
 | `rule.type` の語彙 | 33 種 |
 | `catalog`（F01〜、欠番なし） | 41 |
 | `customs.json` の国 | 9 |
-| └ 通関経路 | 22 |
+| └ 通関経路 | 28 |
 
 会社ごとの行数：zenmarket 20 / fromjapan 19 / jauce 16 / buyee 15 / neokyo 10
 <!-- generated:END counts -->
@@ -114,14 +114,14 @@
 <!-- generated:BEGIN countries -->
 | 国 | 関税 | VAT/GST | 通関手数料（経路ごと） |
 |---|---|---|---|
-| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 ／ FedEx 2.5% |
-| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 |
-| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 14.88 |
-| **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 |
+| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 ／ FedEx 2.5% ／ DHL Express None |
+| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 ／ DHL Express None |
+| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 15.0 |
+| **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 ／ DHL Express None |
 | **ES** | EUR 3† | 21% | Correos（事前に自分で払う） EUR 1.29 ／ Correos（配達時・現金） EUR 6 ／ FedEx 3% / EUR 15 ／ DHL EUR 21 ／ UPS 28.3% ／ FedEx 30% |
-| **AU** | 1000 以下は免税‡ | 10% | ABF（Import Processing Charge） AUD 〜1000:0・〜10000:50・上限なし:152 |
-| **CA** | 20 以下は免税‡ | 5% | Canada Post CAD 9.95 ／ UPS / FedEx / DHL CAD 10〜50 |
-| **SG** | 0% | 9% | SingPost SGD 0 ／ SingPost SGD 10.9 |
+| **AU** | 1000 以下は免税‡ | 10% | ABF（Import Processing Charge） AUD 〜1000:0・〜10000:50・上限なし:152 ／ DHL Express None |
+| **CA** | 20 以下は免税‡ | 5% | Canada Post CAD 9.95 ／ UPS / FedEx / DHL CAD 10〜50 ／ DHL Express None |
+| **SG** | 0% | 9% | SingPost SGD 0 ／ SingPost SGD 10.9 ／ DHL Express None |
 | **TW** | 2000 以下は免税† | 5%† | 快遞（代引き） TWD 30 |
 
 † 推論（`inference_basis` あり）　‡ 未取得
@@ -255,7 +255,7 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
 <!-- generated:BEGIN validator -->
 ```
 == 1. スキーマ ==
-  費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 22
+  費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 28
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
 == 2. 実請求の再現（customs.json の rule を評価する） ==
