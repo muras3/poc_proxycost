@@ -1872,16 +1872,16 @@
       "name": "会社の申告額ポリシー（CN22/インボイスに何を書くか）",
       "in_fees_master": false,
       "kind": "company_attribute",
-      "excluded_reason": "**訂正（2026-09-12、`docs/audit/declared-value-2026-09-12.md`）: ここに従来書かれていた『5社とも公表していない』は、source/quote/checked_on の裏付けを欠いたまま置かれた誤りだった。**原因は3つの別の問いを1行に畳んでいたこと。分解すると②は5社とも公表している。①②③に分解して下記 `questions` に記録する。①（商品代のみか手数料込みか）は Neokyo のみ取得済み・他4社は未取得。②（過少申告・ギフト扱いの可否）は5社とも取得済み。③（複数個口の按分）は5社とも未取得（『公開ページを探したが見当たらなかった』であり『存在しない』とは断定していない）。輸入側の計算（F31・F32・F34・F36）の入力になる点自体は変わらない",
+      "excluded_reason": "**訂正（2026-09-12、`docs/audit/declared-value-2026-09-12.md`）: ここに従来書かれていた『5社とも公表していない』は、source/quote/checked_on の裏付けを欠いたまま置かれた誤りだった。**原因は3つの別の問いを1行に畳んでいたこと。分解すると②は5社とも公表している。①②③に分解して下記 `questions` に記録する。①（商品代のみか手数料込みか）は 2026-09-12 の追加調査で Neokyo に加えて Buyee / FROM JAPAN / ZenMarket も判明、残るは Jauce のみ。②（過少申告・ギフト扱いの可否）は5社とも取得済み。③（複数個口の按分）は5社とも未取得（『公開ページを探したが見当たらなかった』であり『存在しない』とは断定していない）。輸入側の計算（F31・F32・F34・F36）の入力になる点自体は変わらない。**2026-09-12 の追加調査は、この会話の外のブラウザを使える環境から行われ、我々自身の環境からは到達できなかった `faq.buyee.jp` と `zenmarket.jp` のヘルプページに到達できた。**次に調べる人はこの経路の違いを踏まえること（我々の環境で到達できないページでも、ブラウザ経由なら取得できる場合がある）",
       "occurrence": "C_conditional_no_input",
       "display": "engine_only",
-      "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。①③は未取得だが②は5社とも取得済み（2026-09-12 訂正、下記 `questions` 参照）。",
+      "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。①③は未取得だが②は5社とも取得済み（2026-09-12 訂正、下記 `questions` 参照）。①は2026-09-12の追加調査でJauce以外の4社が判明。",
       "questions": {
         "$comment": "F39 は1つの tier で表せない。3つの問い（F39a/b/c）に分解し、問いごとに tier と根拠を持つ。tier 語彙は docs/MASTER.md と共通（A_confirmed / B_inferred / C_unknown / D_unpredictable）。confidence は取得経路（direct_fetch / search_snippet / search_snippet_no_verbatim_quote）を区別する追加軸で、同じ tier でも確度の差を残すために使う",
         "F39a": {
           "question": "①商品代のみを申告するか、代行の手数料を含めて申告するか（課税ベースそのもの）",
-          "tier": "C_unknown",
-          "note": "Neokyo のみ取得済み。残り4社（Buyee / ZenMarket / Jauce / FROM JAPAN）は未取得——『非公表』と断定はしていない。①が未確定な限り F31・F32・F34・F36 は開始できない。ドイツの既定カートで VAT が数千円ずれる規模。今日『根拠が無いので触らない』と判断した ZenMarket の EU 矛盾（€3定額関税と通関手数料、最大¥1,453）と SG の CIF 閾値判定の2件も①に依存している",
+          "tier": "B_inferred",
+          "note": "2026-09-12、この会話の外のブラウザ環境（我々の環境からは到達できない faq.buyee.jp / zenmarket.jp のヘルプに到達できた）による追加調査で、Neokyo に加えて Buyee / FROM JAPAN / ZenMarket の3社が判明。残るは Jauce のみ。Buyee・FROM JAPAN・Neokyo は商品代のみ。**ZenMarket は商品代＋国際送料を請求書に記載する**（他社と異なる）。ただし ZenMarket の請求書は Item Information（商品ごとの単価・小計）と Freight（送料）を別項目として列挙しており、単一の合算額として書いているわけではない——`master/customs.json` の各国 `base`/`threshold_base` の判定（B の判断、下記コード側の note 参照）と矛盾しない。確度は社ごとに異なる（下記 confirmed 参照）ため、全体の tier は最も弱い ZenMarket/FROM JAPAN の間接的根拠に合わせて B_inferred とする",
           "confirmed": [
             {
               "company": "neokyo",
@@ -1891,13 +1891,37 @@
               "quote": "Neokyo always encloses a \"Pro Forma Invoice\" with your parcel...as well as their value. The Pro Forma Invoice does not include the Neokyo service fee.",
               "checked_on": "2026-09-12",
               "note": "直接 fetch は 403。検索エンジンのスニペット経由での確認"
+            },
+            {
+              "company": "buyee",
+              "tier": "A_confirmed",
+              "confidence": "direct_fetch",
+              "source": "https://faq.buyee.jp/article/281?lang=en",
+              "quote": "The displayed amount is the total for item prices only and does not include fees.",
+              "checked_on": "2026-09-12",
+              "note": "原文を直接取得（我々の環境からは到達できなかった faq.buyee.jp に、この調査を行った外部のブラウザ環境は到達できた）。日本語版 https://faq.buyee.jp/article/281?lang=ja も同旨（『※表示金額は商品代金のみの合計で、手数料等は含まれていません。』）。関連して https://faq.buyee.jp/article/131?lang=en に『Buyee writes invoices based on the information published on the original product page』『the item price on the invoice cannot be edited』とあり、商品代金＝商品ページの価格であることも確認できる"
+            },
+            {
+              "company": "fromjapan",
+              "tier": "B_inferred",
+              "confidence": "direct_fetch",
+              "source": "https://support.fromjapan.co.jp/en/support/solutions/articles/154000210433-can-the-invoice-name-hs-code-and-amount-be-changed- / https://support.fromjapan.co.jp/en/support/solutions/articles/154000208206-how-much-does-it-cost-to-purchase-an-item-",
+              "quote": "Invoice Amount ... The value shown will match the charge 1 amount. / Charge 1: Item price - Item price only (Based on the amount shown on the item listing page)",
+              "checked_on": "2026-09-12",
+              "note": "原文は直接取得できているが、『インボイス額＝Charge 1』と『Charge 1＝商品代のみ』という2つの別記事の組合せで読み取っており、『インボイスは商品代のみ』と直接述べた一文ではない。そのため tier を B_inferred に落とす"
+            },
+            {
+              "company": "zenmarket",
+              "tier": "A_confirmed",
+              "confidence": "direct_fetch",
+              "source": "https://zenmarket.jp/en/blog/post/14047/zenmarket-invoice",
+              "quote": "Here is all the information that is included in the invoice. ... Item Information (Description, Tariff Code, Origin, Quantity, Unit Price in JPY, Total Amount in JPY) / Freight (Shipping Costs in JPY) / Total Commercial Value (Parcel Total Value and Shipping Fees in JPY)",
+              "checked_on": "2026-09-12",
+              "note": "**他社と違い、商品代に加えて国際送料（Freight）もインボイスの構成要素として明記されている。**原文は直接取得できているが、これは『含む』を直接述べた一文ではなく、インボイスの構成要素の列挙から読み取った間接的な根拠（列挙に代行手数料は無い）。代行手数料が『含まれない』ことも同じ列挙からの間接的な根拠に過ぎない。https://zenmarket.jp/en/shipping.aspx の EU VAT 節『Both the cost of the goods and the international shipping fees are subject to tax.』も商品代＋送料が課税対象であることを裏付ける（ただしこれは EU 側の課税ベースの説明であり ZenMarket 自身のインボイス記載方針の一次情報ではない）"
             }
           ],
           "unresolved": [
-            { "company": "buyee", "status": "not_found_on_public_pages_searched", "note": "FAQ 記事1本のみ確認。網羅的には探していない" },
-            { "company": "zenmarket", "status": "not_found_on_public_pages_searched", "note": "FAQ一覧ページ1本のみ確認" },
-            { "company": "jauce", "status": "not_found_on_public_pages_searched", "note": "利用規約1本のみ確認" },
-            { "company": "fromjapan", "status": "not_found_on_public_pages_searched", "note": "ヘルプページ2本・ブログ記事1本のみ確認" }
+            { "company": "jauce", "status": "not_found_on_public_pages_searched", "note": "2026-09-12 追加調査でも不明のまま。https://www.jauce.com/help/knowledgebase.php?article=36 に『we will record the actual values of your items on invoices and describe them accurately』とあるのみで、手数料・送料を含むかどうかへの言及が無い。加えてこの1件は WebFetch（要約経由）でのみ取得できており、他社（direct_fetch）より逐語性の保証が低い" }
           ]
         },
         "F39b": {
@@ -1953,11 +1977,15 @@
         "F39c": {
           "question": "③複数個口（Buyee の注文別送など）でパーセルごとにいくら申告するか（按分）",
           "tier": "C_unknown",
-          "note": "5社とも未取得。『公開ページを探したが見当たらなかった』であり『存在しない』と断定していない——各社1〜3ページしか見ていない（Buyee: FAQ記事1本／Neokyo: FAQ記事2本／ZenMarket: FAQ一覧1本／Jauce: 利用規約1本／FROM JAPAN: ヘルプ2本+ブログ1本）。`docs/O3-PLAN.md`（アカウント作成〜明細画面）に委ねる現状の位置づけは維持する",
+          "note": "2026-09-12 の追加調査（faq.buyee.jp / zenmarket.jp に到達できた外部のブラウザ環境による）でも5社とも未取得のまま。『公開ページを探したが見当たらなかった』であり『存在しない』と断定していない。ZenMarket に近接する記述が1件見つかったが、按分方法そのものの明言ではない（下記 note 参照）。各社1〜3ページしか見ていない（Buyee: FAQ記事1本／Neokyo: FAQ記事2本／ZenMarket: FAQ一覧1本＋blog1本＋shipping.aspx／Jauce: 利用規約1本＋knowledgebase1本／FROM JAPAN: ヘルプ3本）。`docs/O3-PLAN.md`（アカウント作成〜明細画面）に委ねる現状の位置づけは維持する",
           "unresolved": [
             { "company": "buyee", "status": "not_found_on_public_pages_searched" },
             { "company": "neokyo", "status": "not_found_on_public_pages_searched" },
-            { "company": "zenmarket", "status": "not_found_on_public_pages_searched" },
+            {
+              "company": "zenmarket",
+              "status": "not_found_on_public_pages_searched",
+              "note": "按分方法の明言は無いが、近接する記述が1件ある。https://zenmarket.jp/en/shipping.aspx『Split items in two or more parcels ... Each parcel will be treated as a separate one ... Example ... A and C are placed into parcel #1 and B into parcel #2.』は、複数個口になった場合に商品を物理的に振り分ける例を示しており、全額を各荷物に重複記載するのではないことを示唆する。ただし各個口にいくらと申告するか（按分の計算式）そのものは述べていないため、C_unknown のまま据え置く。同ページには豪州向けの注記もある: 『If multiple parcels addressed to the same recipient arrive in Australia on the same plane, and their total price exceeds 1,000 AUD, they may be treated as a single parcel.』（F39c そのものの答えではないが関連情報として残す）"
+            },
             { "company": "jauce", "status": "not_found_on_public_pages_searched" },
             { "company": "fromjapan", "status": "not_found_on_public_pages_searched" }
           ]
