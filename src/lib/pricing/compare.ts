@@ -15,6 +15,7 @@ import {
   EXPORT_DECLARATION_FEE_YEN, SERVICES, type Service,
 } from './services';
 import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
+import { splitByWeightLimit, type PackableItem, type ParcelPack } from './parcels';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import { alcoholItems } from './restricted-goods';
 import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
@@ -907,26 +908,34 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const domFreeShippingRisk = dom.some((d) => d.freeShippingRisk);
 
   const split = variant === 'default' && svc.parcelDefault === 'per-order';
-  const parcels = split ? orders : 1;
-  // **個口ごとに実際に入っている商品の添字。**注文ごとの分割は店舗単位で決まっており
+  // **下地（個口の第1段階）: 店舗単位の分割。**注文ごとの分割は店舗単位で決まっており
   // （`grouping.groups`）、1個口に何が入るかは既に分かっている——均等割りにする理由が無い
   // （docs/DESIGN-BOX-SIZE.md §2⑤）。個口を分けない社は全点が1個口に入る。
-  const parcelItemIndices: number[][] = split
+  //
+  // **docs/DESIGN-BOX-SIZE.md §2④（184〜190行、オーナー確定 2026-09-12）を
+  // ここから実装する。**「配送方式の上限（重量: 小形包装物2kg / EMS・国際小包30kg。
+  // 寸法: 最大長・長さ+胴回り・3辺の和）を超えたら箱を増やす」——この下地1つが
+  // すでに方式の上限を超えているとき、`boxesForPostal` がこの下地の**内側**でさらに
+  // 箱を増やす（`splitByWeightLimit`、`./parcels.ts`）。店舗の分割と方式上限の分割は
+  // 「先に店舗、その中でさらに上限」の順に**合成する**——店舗をまたいで詰め直すことは
+  // しない（別の店舗の商品を同じ箱に混ぜる根拠が無い。店舗ごとに別便で届くという
+  // Buyee 原文の前提を壊さないため）。
+  const baseGroups: number[][] = split
     ? grouping.groups
     : [items.map((_, idx) => idx)];
-  // 個口も注文の単位で割る。同一店舗の2点が1注文なら、届くのも1個口
-  // （Buyee 原文「we process each order respectively … separate domestic shipment fees
-  //  for each order」＝**注文ごと**であって点ごとではない）。
-  const parcelGross = split
-    ? grouping.groups.map((g) => grossG(g.reduce((a, idx) => a + netPerItem[idx]!, 0)))
-    : [grossG(netPerItem.reduce((a, g) => a + g, 0))];
+  const packOfGroup = (g: number[]): ParcelPack => ({
+    indices: g,
+    totalWeightG: g.reduce((a, idx) => a + netPerItem[idx]!, 0),
+    declaredYen: g.reduce((a, idx) => a + items[idx]!.priceYen * items[idx]!.qty, 0),
+  });
+  const baseBoxes: ParcelPack[] = baseGroups.map(packOfGroup);
   // 保管（F21）だけは常に**注文単位**の個口重量で計算する。まとめ発送
   // （consolidated）は発送時にまとめるだけで、保管中（無料期間〜まとめ発送まで）は
   // 注文ごとに別々の個口として倉庫にある（Buyee 原文「we process each order
   // respectively … separate domestic shipment fees for each order」と同じ理由）。
-  // `parcelGross` は発送方式の選択・送料計算のための「発送時の個口」で、
-  // consolidated 変種では `parcels=1` に潰れてしまうため、保管の計算にはそのまま
-  // 使えない（外部レビュー2回目 A-2）。
+  // **方式の上限による分割（§2④）は発送時の箱の話であって、保管中の置き場の数とは
+  // 無関係**——保管は常に注文単位のまま、下の `orderGross` を使う（`baseBoxes` や
+  // 方式ごとの分割結果を混ぜない）。
   const orderGross = grouping.groups.map((g) => grossG(g.reduce((a, idx) => a + netPerItem[idx]!, 0)));
 
   // **国際配送の方式を決める。**利用者が指定していなければ、この行の荷物を
@@ -940,7 +949,41 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **箱は仮定する**（P2 2a）。日本郵便4方式は寸法に一切依存しないと実測済み
   // （`docs/audit/o2-courier-2026-09-08.md` §2）なので額の計算には使わない。
   // 使うのは (a) 寸法での「送れない」判定と (b) 宅配便の容積重量の2箇所だけ。
+  //
+  // **箱を増やしても、増やした箱1つ1つの寸法は依然この既定値のまま。**
+  // `DEFAULT_PARCEL_DIMENSIONS_CM`（20×15×10cm）はどの社・方式の寸法上限も
+  // 下回るので（`dimensionsExceedLimit` のコメント）、箱数を増やす分割理由は
+  // 実質つねに「重量」側になる——寸法側の分割は、この既定箱を使っている限り
+  // 発火しない（`dimensionsExceedLimit` は各方式ごとに1回判定するだけで、
+  // 箱ごとに変わる値ではないので分割の対象にしていない）。
   const parcelDims = DEFAULT_PARCEL_DIMENSIONS_CM;
+  // **方式ごとの重量上限で、店舗の下地（`baseGroups`）をさらに箱に分ける。**
+  // `maxGramsFor` が持つ表の最大重量（小形包装物2kg・EMS/国際小包30kg 等）を
+  // 超えないよう、超えている下地グループだけを `splitByWeightLimit` で分割する
+  // （収まっている下地グループは1箱のまま——余計に箱を増やさない）。
+  // 1点だけで上限を超える商品があれば `null`（=この方式は使えない。
+  // `splitByWeightLimit` のコメント参照——箱を増やしても解決しない以上、
+  // 「特大口として運べることにする」より「使えない」と読むほうが安全側）。
+  //
+  // **宅配便（`priceCourier`）はここに含めない。**doc §2④が明示するのは日本郵便の
+  // 重量表（`maxGramsFor`）であり、宅配便側の「区間の上限（20kg超は null）」は
+  // 実測データがそこで尽きているという当方の計測範囲の限界であって、社が公表する
+  // 現実の重量上限ではない——未測定を「方式の上限」と混同して箱を増やすと、
+  // 根拠の無い分割をしたことになる。宅配便への接続は別途判断が要る
+  // （PR報告でオープンな問いとして明記する）。
+  const boxesForPostal = (m: PostalMethod): ParcelPack[] | null => {
+    const limit = maxGramsFor(m, ctx.cc);
+    const out: ParcelPack[] = [];
+    for (const g of baseGroups) {
+      const packable: PackableItem[] = g.map((idx) => ({
+        index: idx, weightG: netPerItem[idx]!, priceYen: items[idx]!.priceYen * items[idx]!.qty,
+      }));
+      const boxes = splitByWeightLimit(packable, limit, grossG);
+      if (boxes == null) return null;
+      out.push(...boxes);
+    }
+    return out;
+  };
   // **その社が売っていない方式は値段が付かない。**2026-09-07 の実測で品揃えが社で
   // 大きく違うことが分かった（FROM JAPAN 5方式 / Jauce 2方式、Neokyo は小形包装物なし）。
   // 売っていない方式に公表額を当てると、使えない選択肢を最安に見せることになる。
@@ -954,10 +997,15 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     // （`rate.dimensionLimit`）で判定する。既定の箱はどの制限も下回るので、
     // いまはここで常に false になる（`dimensionsExceedLimit` のコメント）。
     if (dimensionsExceedLimit(parcelDims, rate.dimensionLimit)) return null;
-    const each = parcelGross.map((g) => postageFor(m, ctx.cc, g));
+    // §2④: 重量上限を超えていれば箱を増やす。増やしても収まらなければこの方式は
+    // 使えない（`boxesForPostal` のコメント）。
+    const boxes = boxesForPostal(m);
+    if (boxes == null) return null;
+    const gross = boxes.map((b) => grossG(b.totalWeightG));
+    const each = gross.map((g) => postageFor(m, ctx.cc, g));
     if (each.some((e) => e == null)) return null;  // 1個口でも運べなければ使えない
     // **上乗せは個口ごとに足す。**1kg 段の定額なので、個口を分ければその数だけ乗る。
-    return parcelGross.reduce(
+    return gross.reduce(
       (a, g, i) => a + each[i]!.yen + markupYen(rate, ctx.cc, g), 0);
   };
   // **宅配便（P2 1、2026-09-12 拡張）。**`courierPriceFor` は区間 `{low, high}` を返す
@@ -965,12 +1013,14 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 呼び出し側は `null`（値段が付かない）。個口が複数あるときは低い側・高い側を
   // それぞれ独立に合計する（1個口でも区間が崩れれば全体も崩れる——`high` の
   // どれか1つでも `null` なら合計の `high` も `null`）。
+  // **宅配便は §2④ の方式上限による分割を適用しない**（上の `boxesForPostal` の
+  // コメント参照）——店舗の下地（`baseBoxes`）のまま。
   const priceCourier = (m: CourierMethod): { low: number; high: number | null } | null => {
     const rate = svc.courier?.[m];
     if (!rate) return null;
     if (rate.unavailableIn?.includes(ctx.cc)) return null;
     if (rate.priceCapJpy != null && itemsYen > rate.priceCapJpy) return null;
-    const each = parcelGross.map((g) => courierPriceFor(rate, ctx.cc, g, parcelDims));
+    const each = baseBoxes.map((b) => courierPriceFor(rate, ctx.cc, grossG(b.totalWeightG), parcelDims));
     if (each.some((e) => e == null)) return null;
     const sure = each as { low: number; high: number | null }[];
     return {
@@ -1011,6 +1061,24 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // （宅配便IDを日本郵便の方式表に引いてしまうため）。
   const isCourier = COURIER_METHOD_IDS.includes(method as CourierMethod) || method === 'courier-surface';
   const courierRate = isCourier ? svc.courier?.[method as CourierMethod] : undefined;
+  // **この行が実際に使う個口。**宅配便は §2④ の分割を適用しないので `baseBoxes`
+  // （店舗の下地のまま）。郵便は選ばれた方式の重量上限で `baseGroups` をさらに
+  // 分割した結果——`boxesForPostal` が `null`（1点だけで上限を超え、箱を
+  // 増やしても解決しない）を返すことがあるのは `wanted` が明示的にその方式を
+  // 指定した場合だけ（`'cheapest'` で選ばれる方式は `priceAll` の時点で
+  // `boxesForPostal` が非 `null` だったものに限られる）。そのときは `baseBoxes`
+  // （店舗の下地のまま、未分割）にフォールバックする——`overMax` 判定
+  // （下の `each`）は、フォールバックした未分割の重量でもどのみち上限を超えて
+  // `null` になるので、「送れない」という結論自体は変わらない。
+  const methodBoxes: ParcelPack[] | null = isCourier ? baseBoxes : boxesForPostal(method as PostalMethod);
+  const finalBoxes: ParcelPack[] = methodBoxes ?? baseBoxes;
+  const parcels = finalBoxes.length;
+  const parcelItemIndices: number[][] = finalBoxes.map((b) => b.indices);
+  const parcelGross: number[] = finalBoxes.map((b) => grossG(b.totalWeightG));
+  // **`parcels > 1` の理由は2つある**（両方が同時に効くこともある）:
+  // 店舗ごとの別送（`split`）と、選ばれた方式の重量上限による分割（§2④）。
+  // 表示は理由を問わず「個口が複数ある」ことだけを言う。
+  const multiParcel = parcels > 1;
   const spec = isCourier
     // 宅配便は `PostalMethodSpec` の表に無い。ラベルは料金データ自身の `labelRaw`
     // から作る——各社が法人契約している宅配ブランド名は社ごとに違うので、
@@ -1054,7 +1122,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : shipYen == null
         // **未価格。0円にしない。**「大きすぎる／重すぎる」ではなく「まだ調べていない」。
         ? `${svc.name} has not priced this courier for ${COUNTRIES[ctx.cc].name} yet`
-        : split ? `${plural(parcels, 'parcel')}` : '1 parcel')
+        : multiParcel ? `${plural(parcels, 'parcel')}` : '1 parcel')
     : (!rate
       ? `${svc.name} does not offer this method`
       : rate.unavailableIn?.includes(ctx.cc)
@@ -1067,7 +1135,9 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
           + (rate.dimensionLimit!.tier === 'estimate' ? ' (estimate)' : '')
       : overMax
         ? `over ${formatStep(maxGramsFor(method as PostalMethod, ctx.cc))} — outside this method's table`
-        : split
+          + (methodBoxes == null && parcels > 1
+            ? ` even split across ${plural(parcels, 'parcel')}` : '')
+        : multiParcel
           ? `${plural(parcels, 'parcel')}`
           : `1 parcel, ${formatStep(each[0]!.stepGrams)} step`);
 
@@ -1324,9 +1394,14 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     : svc.name;
   const tag = split
     ? `${plural(orders, 'order')} · ${plural(parcels, 'parcel')}`
-    : `${plural(units, 'item')} · 1 parcel`
-      + (svc.parcelVerified ? '' : ' assumed')
-      + (variant === 'consolidated' ? ' · you must request this' : '');
+    // **`split` が false でも `parcels` は1個口とは限らない**——docs/DESIGN-BOX-SIZE.md
+    // §2④（方式の重量上限）がここで箱を増やすことがある。店舗の分割が無いだけで、
+    // 箱は複数になりうるので、「1 parcel」と言い切らない。
+    : multiParcel
+      ? `${plural(units, 'item')} · ${plural(parcels, 'parcel')}`
+      : `${plural(units, 'item')} · 1 parcel`
+        + (svc.parcelVerified ? '' : ' assumed')
+        + (variant === 'consolidated' ? ' · you must request this' : '');
 
   return {
     id: svc.id + (variant ? `:${variant}` : ''),
