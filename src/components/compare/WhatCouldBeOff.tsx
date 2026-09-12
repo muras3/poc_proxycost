@@ -61,8 +61,16 @@ export function WhatCouldBeOff({ result }: { result: CompareResult }) {
           </li>
         )}
         <li>
-          The order below is what we stand behind. The EMS rate is the published one, but the
-          weight that picks it is ours — and shipping is most of a total.
+          {/* **F5**: 以前は「勝つのは常に EMS」という前提でこの1文を書いていたが、
+              宅配便が7カ国すべてに配線され、既定カートは常に宅配便が勝つように
+              なった今、EMS を名指しするのは事実に反する（コーディネーター指摘
+              2026-09-12）。方式に関係なく言える主張——公表された料率表を使って
+              いる、こちらが仮定しているのは重量（宅配便なら箱の大きさも）——
+              だけを残す。どの方式が実際に勝ったかはこの一覧では特定の1行に
+              絞らない（複数行を比較しているため）ので、方式名は挙げない。 */}
+          The order below is what we stand behind. Whichever method wins is priced from that
+          method&apos;s published rate table, but the weight — and, for a courier, the box
+          size — that decides it is ours. Shipping is most of a total.
         </li>
       </ul>
     </section>
