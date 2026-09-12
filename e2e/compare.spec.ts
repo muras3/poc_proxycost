@@ -936,8 +936,11 @@ test('19. the ranking says which methods are priced, US couriers included, other
   expect(text).toMatch(/Japan Post methods/);
   expect(text).toMatch(/cheapest that fits/i);
   // (2) 米国宛は宅配便も価格化してあり、それを名指しすること（Jauce は対象外だと言う）。
+  // **2026-09-12、六か国拡張で「US only」の決め打ちを外した**（`EmsOnlyNote.tsx` の
+  // `courierScopeText` 参照。国名は `COUNTRIES[country].name` から取り、文全体が
+  // `coverage` だけから組み立つ）ので、ここも文字列 "US only" ではなく実際の国名を見る。
   expect(text).toMatch(/Courier rates are also priced/);
-  expect(text).toMatch(/US only/);
+  expect(text).toMatch(/for United States/);
   expect(text).toMatch(/Jauce has no courier rate grid/);
   expect(text).toMatch(/FedEx/);
   expect(text).toMatch(/DHL/);
@@ -947,12 +950,23 @@ test('19. the ranking says which methods are priced, US couriers included, other
   //     「総額は高く出ている」と書けば、片側だけの誤差だと誤解させる。
   expect(text).toMatch(/either direction/);
 
-  // 行き先を未測定国に変えれば「価格化していない」側の文言に切り替わる。
-  await page.getByLabel('Ship to').selectOption('GB');
-  const gbText = (await note.innerText()).replace(/\s+/g, ' ');
-  expect(gbText).toMatch(/Courier rates are not priced for this destination/);
-  expect(gbText).toMatch(/Neokyo|ZenMarket|FROM JAPAN|Buyee/);
-  expect(gbText).toMatch(/we have not priced them for this destination/);
+  // **2026-09-12、六か国拡張で GB を「全社未測定」の例には使えなくなった。**
+  // このPR（#87）が GB/DE/FR/AU/CA/SG に実測宅配便運賃を配線した結果、GB は
+  // FROM JAPAN・Neokyo・ZenMarket・Buyee の4社とも価格化済みになった
+  // （`courierCoverageFor('GB')` で直接確認）——「全社まだ調べていない」の分岐
+  // (`pricedServiceNames.length === 0`) は2026-09-12時点でどの対応国からも
+  // 到達できない（`EmsOnlyNote.test.ts` がその分岐をセレクタ経由ではなく直接
+  // 検査している）。旧アサーションが間違っていたのではなく、データが増えて
+  // GB がその例で無くなっただけ。代わりに DE を使う——DE は Buyee だけ
+  // 未測定で、他3社は価格化済みという「一部だけ」の形を今も実演できる。
+  await page.getByLabel('Ship to').selectOption('DE');
+  const deText = (await note.innerText()).replace(/\s+/g, ' ');
+  expect(deText).toMatch(/Courier rates are also priced/);
+  expect(deText).toMatch(/for Germany/);
+  expect(deText).toMatch(/FROM JAPAN|Neokyo|ZenMarket/);
+  expect(deText).toMatch(/Buyee also offer couriers here/);
+  expect(deText).toMatch(/we have not priced them for Germany/);
+  expect(deText).toMatch(/Jauce has no courier rate grid/);
   await page.getByLabel('Ship to').selectOption('US');
 
   // 5社とも名指しする。1社でも落ちれば「その社は EMS しか無い」と読めてしまう。
