@@ -37,7 +37,7 @@ describe('the breakdown explains the total', () => {
     for (const cc of COUNTRIES_ALL) {
       for (const n of [1, 3, 5]) {
         for (const w of [200, 600, 3000]) {
-          for (const row of compare({ items: items(n, w), country: cc }).rows) {
+          for (const row of compare({ method: 'ems', items: items(n, w), country: cc }).rows) {
             expect(row.total.low, `${cc} n=${n} w=${w} ${row.id}`).toBe(sumLines(row));
           }
         }
@@ -47,7 +47,7 @@ describe('the breakdown explains the total', () => {
 
   test('an unfetched line is null — never 0 — and never enters the total', () => {
     // US には連邦の売上税が無い。0 と書けば「税は0円」という嘘になる。
-    const row = compare({ items: items(1, 600), country: 'US' }).rows[0]!;
+    const row = compare({ method: 'ems', items: items(1, 600), country: 'US' }).rows[0]!;
     const vat = line(row, 'vat');
     expect(vat.amount).toBeNull();
     expect(vat.tier).toBe('none');
@@ -57,7 +57,7 @@ describe('the breakdown explains the total', () => {
 
   test('excluded names exactly the null lines, so the shortfall is visible', () => {
     for (const cc of COUNTRIES_ALL) {
-      for (const row of compare({ items: items(3, 600), country: cc }).rows) {
+      for (const row of compare({ method: 'ems', items: items(3, 600), country: cc }).rows) {
         expect(row.excluded, `${cc} ${row.id}`)
           .toEqual(row.lines.filter((l) => l.amount == null).map((l) => l.label));
       }
@@ -71,7 +71,7 @@ describe('the breakdown explains the total', () => {
     // プロファイルの非農産品 MFN 単純平均 2.0% を推定として出す。
     // **反証**: 同プロファイルでカナダは非農産品の税表の行の 79.2% が無税。
     // 最頻値は 0% で、2.0% は分布の平均でしかない。だから tier は estimate。
-    const row = compare({ items: items(1, 600), country: 'CA' }).rows[0]!;
+    const row = compare({ method: 'ems', items: items(1, 600), country: 'CA' }).rows[0]!;
     const duty = line(row, 'duty');
     expect(duty.amount).toBeGreaterThan(0);
     expect(duty.tier).toBe('estimate');
@@ -86,7 +86,7 @@ describe('the breakdown explains the total', () => {
   });
 
   test('a fetched zero stays a zero: under-threshold duty is 0 with its reason', () => {
-    const duty = line(compare({ items: items(1, 600), country: 'GB' }).rows[0]!, 'duty');
+    const duty = line(compare({ method: 'ems', items: items(1, 600), country: 'GB' }).rows[0]!, 'duty');
     expect(duty.amount).toBe(0);
     expect(duty.tier).toBe('fixed');
     expect(duty.note).toContain('threshold');
@@ -105,7 +105,7 @@ describe('the breakdown explains the total', () => {
     // 調べていない国だけが安く見えるという嘘になっていた。
     // **この test は、その嘘に戻らないための歯止め。**
     for (const cc of COUNTRIES_ALL) {
-      const clearance = line(compare({ items: items(1, 600), country: cc }).rows[0]!, 'clearance');
+      const clearance = line(compare({ method: 'ems', items: items(1, 600), country: cc }).rows[0]!, 'clearance');
       expect(clearance.amount, cc).not.toBeNull();
       expect(clearance.tier, cc).not.toBe('none');
       // 額が在るなら出典と確認日も在る。無ければ「いつの値か」を言えない。
@@ -117,11 +117,11 @@ describe('the breakdown explains the total', () => {
     // 税関自身は通関手数料を取らない。取るのは SingPost で、名目は「税関に代わって
     // GST を徴収する手数料」。**S$400 以下は OVR で決済時に GST が済んでいるので
     // 徴収するものが無く、手数料も発生しない。**この 0 は取得できた 0。
-    const low = line(compare({ items: items(1, 600), country: 'SG' }).rows[0]!, 'clearance');
+    const low = line(compare({ method: 'ems', items: items(1, 600), country: 'SG' }).rows[0]!, 'clearance');
     expect(low.amount).toBe(0);
     expect(low.note).toContain('OVR');
     // 閾値を越えれば S$10.90 が乗る（¥400,000 の1点なら CIF は S$400 を確実に超える）。
-    const high = compare({
+    const high = compare({ method: 'ems',
       items: [{ ...items(1, 600)[0]!, priceYen: 400_000 }], country: 'SG',
     }).rows[0]!;
     const fee = line(high, 'clearance');
@@ -134,7 +134,7 @@ describe('the breakdown explains the total', () => {
     // 「一次情報だから正しい」ではなく「いつの一次情報か」を見ないと、7年前の値を今日の値として出す。
     // **手数料が立つ行を選ぶ。**ZenMarket は IOSS で決済時に VAT を払うので国境で
     // 徴収するものが無く、この社だけ 0 になる（別テストで見ている）。
-    const rows = compare({ items: items(1, 600), country: 'DE' }).rows;
+    const rows = compare({ method: 'ems', items: items(1, 600), country: 'DE' }).rows;
     const fee = line(byId(rows, 'neokyo'), 'clearance');
     expect(fee.amount).not.toBeNull();
     expect(fee.note).toContain('EUR 7.5 × 1 parcel');
@@ -143,20 +143,20 @@ describe('the breakdown explains the total', () => {
   });
 
   test('the Canada Post handling fee is a published number, per parcel, and zero below CAD 20', () => {
-    const row = compare({ items: items(1, 600), country: 'CA' }).rows[0]!;
+    const row = compare({ method: 'ems', items: items(1, 600), country: 'CA' }).rows[0]!;
     const fee = line(row, 'clearance');
     expect(fee.tier).toBe('fixed');
     expect(fee.note).toContain('CAD 9.95 × 1 parcel');
     expect(fee.sourceUrl).toContain('canadapost-postescanada.ca');
     // 個口が割れる行では個口ぶん。原文が「per dutiable or taxable mail item」。
-    const split = byId(compare({ items: items(3, 600), country: 'CA' }).rows, 'buyee:default');
+    const split = byId(compare({ method: 'ems', items: items(3, 600), country: 'CA' }).rows, 'buyee:default');
     expect(split.parcels).toBe(3);
     expect(line(split, 'clearance').note).toContain('CAD 9.95 × 3 parcels');
     // 丸めは合計に1回だけ掛ける（個口ごとに丸めて足すと ¥1 ずれる）。
     expect(line(split, 'clearance').amount).toBe(Math.round(9.95 * rateFor('CAD') * 3));
     expect(fee.amount).toBe(Math.round(9.95 * rateFor('CAD')));
     // C$20 以下は課税自体が無いので手数料も 0。**未取得の 0 ではないので tier は fixed。**
-    const tiny = line(compare({ items: items(1, 200, 1500), country: 'CA' }).rows[0]!, 'clearance');
+    const tiny = line(compare({ method: 'ems', items: items(1, 200, 1500), country: 'CA' }).rows[0]!, 'clearance');
     expect(tiny.amount).toBe(0);
     expect(tiny.tier).toBe('fixed');
     expect(tiny.note).toContain('nothing is charged for collecting it');
@@ -167,7 +167,7 @@ describe('the breakdown explains the total', () => {
     // 費目（FROM JAPAN の外注梱包・Jauce の Premium insurance）も総額の行として現れ、
     // amount: null（画面「—」）で excluded に名前が載る。行ごと消えたら「そんな費目は
     // 無い」という嘘になる。
-    const fj = byId(compare({ items: items(1, 600), country: 'US' }).rows, 'fromjapan');
+    const fj = byId(compare({ method: 'ems', items: items(1, 600), country: 'US' }).rows, 'fromjapan');
     const outsourced = fj.lines.find((l) => l.key === 'outsourced-packing');
     expect(outsourced).toBeDefined();
     expect(outsourced!.amount).toBeNull();
@@ -186,7 +186,7 @@ describe('ranking uses the total and nothing else', () => {
         // **比較不能な行は順位の対象外**なので、順位の不変条件もその外で確かめる。
         // 米国では Neokyo が日本郵便を売っていない（自社の計算機が
         // "Not available or suspended in your country."）ので1行落ちる。
-        const all = compare({ items: items(n, 600), country: cc }).rows;
+        const all = compare({ method: 'ems', items: items(n, 600), country: cc }).rows;
         const rows = all.filter((r) => r.comparable);
         // **落ちる行は米国の Neokyo だけ**で、他は6カ国とも全行が比較可能。
         // （n=1 では Buyee の同梱行が既定行と同じ姿になるので行数自体が1つ少ない。）
@@ -209,7 +209,7 @@ describe('ranking uses the total and nothing else', () => {
     for (const cc of COUNTRIES_ALL) {
       for (const w of [450, 1425, 1450, 1900]) {
         for (const site of ['yahoo-auctions', 'rakuten'] as const) {
-          const rows = compare({ items: items(1, w, 4200, { site }), country: cc }).rows
+          const rows = compare({ method: 'ems', items: items(1, w, 4200, { site }), country: cc }).rows
             .filter((r) => r.comparable);
           for (const a of rows) {
             for (const b of rows) {
@@ -232,7 +232,7 @@ describe('ranking uses the total and nothing else', () => {
     // **国が米国からドイツに変わったのは、この不変条件が米国で実証できなくなったから。**
     // Neokyo は米国宛に日本郵便を売っていないので米国の盤面から落ち、残る報酬ゼロの社
     // （Jauce）はそこで最安にならない。ドイツは 6 社そろう帯。
-    const rows = compare({ items: items(5, 200), country: 'DE' }).rows;
+    const rows = compare({ method: 'ems', items: items(5, 200), country: 'DE' }).rows;
     expect(rows[0]!.serviceId).toBe('neokyo');
     expect(rows[0]!.paysUs).toBe(false);
     expect(rows[0]!.cheapest).toBe(true);
@@ -243,7 +243,7 @@ describe('ranking uses the total and nothing else', () => {
     for (const w of [200, 600, 1500, 3000]) {
       // 比較不能な行（米国の Neokyo）は総額が最大の費目を欠いているので、昇順の
       // 検査に混ぜられない。順位が付いている行だけが並びの対象。
-      const rows = compare({ items: items(5, w), country: 'US' }).rows
+      const rows = compare({ method: 'ems', items: items(5, w), country: 'US' }).rows
         .filter((r) => r.comparable);
       const paying = rows.filter((r) => r.paysUs).map((r) => r.total.low);
       const free = rows.filter((r) => !r.paysUs).map((r) => r.total.low);
@@ -256,7 +256,7 @@ describe('ranking uses the total and nothing else', () => {
 
   test('diff is the gap to the cheapest, and exactly one row is cheapest', () => {
     // diff は比較可能な行にしか無い（比較不能な行は diff=0・cheapest=false 固定）。
-    const rows = compare({ items: items(5, 600), country: 'US' }).rows
+    const rows = compare({ method: 'ems', items: items(5, 600), country: 'US' }).rows
       .filter((r) => r.comparable);
     const low = rows[0]!.total.low;
     for (const row of rows) expect(row.diff).toBe(row.total.low - low);
@@ -265,9 +265,9 @@ describe('ranking uses the total and nothing else', () => {
   });
 
   test('each country reports its own currency at the fixed rate', () => {
-    const seen = COUNTRIES_ALL.map((cc) => compare({ items: items(1, 600), country: cc }).currency.code);
+    const seen = COUNTRIES_ALL.map((cc) => compare({ method: 'ems', items: items(1, 600), country: cc }).currency.code);
     expect(seen).toEqual(['USD', 'GBP', 'EUR', 'EUR', 'AUD', 'CAD', 'SGD']);
-    expect(compare({ items: items(1, 600), country: 'US' }).currency.rate).toBe(156.25);
+    expect(compare({ method: 'ems', items: items(1, 600), country: 'US' }).currency.rate).toBe(156.25);
   });
 });
 
@@ -280,7 +280,7 @@ describe('Australia: the import processing charge, including the band where it i
     // ABF の表は「Electronic / ≤$1,000 / Sea·Air·Post / $0.00」という行を持っている。
     // **原文が 0 と書いている 0** なので `—` にしない。この帯はちょうど代行が
     // 販売時点で GST を取る帯でもあり、この計算機が扱う買い物のほとんどがここに入る。
-    const fee = line(compare({ items: items(1, 600), country: 'AU' }).rows[0]!, 'clearance');
+    const fee = line(compare({ method: 'ems', items: items(1, 600), country: 'AU' }).rows[0]!, 'clearance');
     expect(fee.amount).toBe(0);
     expect(fee.tier).toBe('fixed');
     expect(fee.note).toContain('no import declaration is required');
@@ -289,8 +289,8 @@ describe('Australia: the import processing charge, including the band where it i
 
   test('above AUD 1,000 it is a number, and it steps again above AUD 10,000', () => {
     // ¥150,000 ≒ A$1,515、¥1,500,000 ≒ A$15,151（rates.ts の転記値）。
-    const mid = line(compare({ items: items(1, 600, 150000), country: 'AU' }).rows[0]!, 'clearance');
-    const high = line(compare({ items: items(1, 600, 1500000), country: 'AU' }).rows[0]!, 'clearance');
+    const mid = line(compare({ method: 'ems', items: items(1, 600, 150000), country: 'AU' }).rows[0]!, 'clearance');
+    const high = line(compare({ method: 'ems', items: items(1, 600, 1500000), country: 'AU' }).rows[0]!, 'clearance');
     expect(mid.amount).toBeGreaterThan(0);
     expect(mid.note).toContain('AUD 98');
     expect(mid.note).toContain('biosecurity');
@@ -301,7 +301,7 @@ describe('Australia: the import processing charge, including the band where it i
   test('the band is chosen per parcel, because the charge is per declaration', () => {
     // 3点を3個口に割る Buyee default では、1個口あたりの価格で帯が決まる。
     // 籠の合計で決めると、安い小包にまで A$98 を積むことになる。
-    const rows = compare({ items: items(3, 600, 150000), country: 'AU' }).rows;
+    const rows = compare({ method: 'ems', items: items(3, 600, 150000), country: 'AU' }).rows;
     const split = byId(rows, 'buyee:default');
     const together = byId(rows, 'buyee:consolidated');
     expect(split.parcels).toBe(3);
@@ -321,7 +321,7 @@ describe('the UK excise duty on alcohol is named even though we cannot price it'
   test('a bottle in the basket adds a null line, so the shortfall is on the screen', () => {
     // gov.uk 原文「you'll be charged Excise Duty at current rates」——金額にかかわらず
     // 課され、£135 も £39 も効かない。**発生は確実。額だけが分からない。**
-    const row = compare({ items: [sake()], country: 'GB' }).rows[0]!;
+    const row = compare({ method: 'ems', items: [sake()], country: 'GB' }).rows[0]!;
     const excise = line(row, 'excise');
     expect(excise.amount).toBeNull();
     expect(excise.tier).toBe('none');
@@ -332,10 +332,10 @@ describe('the UK excise duty on alcohol is named even though we cannot price it'
   });
 
   test('no bottle, no line — and no other destination gets one', () => {
-    expect(compare({ items: items(1, 600), country: 'GB' }).rows[0]!.lines
+    expect(compare({ method: 'ems', items: items(1, 600), country: 'GB' }).rows[0]!.lines
       .some((l) => l.key === 'excise')).toBe(false);
     for (const cc of COUNTRIES_ALL.filter((c) => c !== 'GB')) {
-      expect(compare({ items: [sake()], country: cc }).rows[0]!.lines
+      expect(compare({ method: 'ems', items: [sake()], country: cc }).rows[0]!.lines
         .some((l) => l.key === 'excise'), cc).toBe(false);
     }
   });
@@ -348,7 +348,7 @@ describe('the UK excise duty on alcohol is named even though we cannot price it'
 // ─────────────────────────────────────────────────────────────────────────────
 describe('Canada: the province decides the bill, and not choosing one is not an excuse', () => {
   const ca = (province: ProvinceCode | null, n = 1) =>
-    compare({ items: items(n, 600), country: 'CA', province }).rows[0]!;
+    compare({ method: 'ems', items: items(n, 600), country: 'CA', province }).rows[0]!;
 
   test('the provincial rates add up to the totals the CBSA publishes', () => {
     // ここが崩れたら、州の取り分と合計のどちらかを書き写し間違えている。
@@ -422,7 +422,7 @@ describe('Canada: the province decides the bill, and not choosing one is not an 
   });
 
   test('below CAD 20 nothing is charged — and that zero keeps its reason', () => {
-    const row = compare({ items: items(1, 200, 1500), country: 'CA', province: 'QC' }).rows[0]!;
+    const row = compare({ method: 'ems', items: items(1, 200, 1500), country: 'CA', province: 'QC' }).rows[0]!;
     for (const key of ['duty', 'vat', 'province-tax', 'clearance']) {
       const l = line(row, key);
       expect(l.amount, key).toBe(0);
@@ -437,15 +437,15 @@ describe('Canada: the province decides the bill, and not choosing one is not an 
 
   test('the province is ignored outside Canada, and an unknown one is rejected', () => {
     for (const cc of ['US', 'GB', 'DE', 'FR', 'AU', 'SG'] as const) {
-      const withProvince = compare({ items: items(1, 600), country: cc, province: 'ON' }).rows;
-      const without = compare({ items: items(1, 600), country: cc }).rows;
+      const withProvince = compare({ method: 'ems', items: items(1, 600), country: cc, province: 'ON' }).rows;
+      const without = compare({ method: 'ems', items: items(1, 600), country: cc }).rows;
       expect(withProvince.map((r) => r.total.low), cc).toEqual(without.map((r) => r.total.low));
       // 州税の行はカナダにしか出ない。
       expect(without[0]!.lines.some((l) => l.key === 'province-tax'), cc).toBe(false);
     }
     // 知らないコードを黙って「未選択」に落とすと、代表値を「あなたの州の率」として
     // 出すことになる。呼び出し側の不具合なので投げる。
-    expect(() => compare({
+    expect(() => compare({ method: 'ems',
       items: items(1, 600), country: 'CA', province: 'XX' as ProvinceCode,
     })).toThrow(RangeError);
   });
@@ -473,14 +473,14 @@ describe('equal totals get equal rank', () => {
    * ここで検査しているのは同額・同順位の仕組みであって保管日数の効きではないので、
    * 両社とも無料期間の内側（Buyee ¥0・Neokyo ¥0）になる日数に固定する。
    */
-  const midTie = () => compare({ items: items(1, 1450), country: 'DE', storageDays: 30 }).rows;
+  const midTie = () => compare({ method: 'ems', items: items(1, 1450), country: 'DE', storageDays: 30 }).rows;
   /**
    * 1点 200 g・¥4,500・楽天・AU。Neokyo と ZenMarket が**1位で**同額になる入力。
    *
    * **外部レビュー⑤-a（入金手数料の課税ベース修正）で数値が動き、以前の
    * 組み合わせ（450g・¥4,200）の同額が崩れたので、修正後の値で探し直した。**
    */
-  const topTie = () => compare({
+  const topTie = () => compare({ method: 'ems',
     items: items(1, 200, 4500, { site: 'rakuten' }), country: 'AU',
   }).rows;
 
@@ -538,7 +538,7 @@ describe('equal totals get equal rank', () => {
     // 1位が {Neokyo, ZenMarket} で、おすすめ枠もその2社。片端では枠が
     // {ZenMarket, Neokyo（overlapping 3社目に別が入りうる）}、他端で入れ替わる
     // ——枠の**集合**が変わるので不安定（P1-2、判断2: 枠の集合の完全一致で判定する）。
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: items(1, 200, 4500, { site: 'rakuten', weightOrigin: 'user' }), country: 'AU',
     });
     expect(r.rows.filter((x) => x.cheapest).map((x) => x.serviceId).sort())
@@ -554,7 +554,7 @@ describe('equal totals get equal rank', () => {
     // 旧実装は `rows[0]` を比べていたので、同額の中で先頭が入れ替わっただけでも
     // 「1位が替わった」と読む余地があった。集合で見ることでそれを塞ぐ。
     // storageDays: 30 の理由は midTie() のコメントと同じ。
-    const r = compare({ items: items(1, 1450), country: 'DE', storageDays: 30 });
+    const r = compare({ method: 'ems', items: items(1, 1450), country: 'DE', storageDays: 30 });
     expect(r.rows.filter((x) => x.tied).length).toBe(2);
     expect(r.rankStable).toBe(true);
     expect(r.rankStabilityNote)
@@ -565,7 +565,7 @@ describe('equal totals get equal rank', () => {
     for (const cc of COUNTRIES_ALL) {
       for (const n of [1, 2, 3, 5]) {
         for (const w of [200, 450, 600, 1450, 1900, 3000]) {
-          const rows = compare({ items: items(n, w), country: cc }).rows
+          const rows = compare({ method: 'ems', items: items(n, w), country: cc }).rows
             .filter((r) => r.comparable);
           const ranks = rows.map((r) => r.rank);
           // 先頭は必ず 1。ある順位 k が使われた回数だけ、その後の順位が飛ぶ。
@@ -589,10 +589,10 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     // **社が Neokyo から ZenMarket に変わった。額は1円も変わっていない。**
     // Neokyo は米国宛に日本郵便を売っていないので、米国の 30kg 段を Neokyo で
     // 測ると「重すぎる」ではなく「売っていない」を測ることになる。
-    const inside = byId(compare({ items: items(1, 24750), country: 'US' }).rows, 'zenmarket');
+    const inside = byId(compare({ method: 'ems', items: items(1, 24750), country: 'US' }).rows, 'zenmarket');
     expect(inside.comparable).toBe(true);
     expect(line(inside, 'intl-shipping').amount).toBe(75100);
-    const outside = byId(compare({ items: items(1, 24751), country: 'US' }).rows, 'zenmarket');
+    const outside = byId(compare({ method: 'ems', items: items(1, 24751), country: 'US' }).rows, 'zenmarket');
     expect(outside.comparable).toBe(false);
     expect(line(outside, 'intl-shipping').amount).toBeNull();
     expect(line(outside, 'intl-shipping').note).toContain(`over ${EMS_MAX_GRAMS / 1000} kg`);
@@ -604,7 +604,7 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     // 見ていた。米国の EMS 30kg は第4地帯の ¥75,100（第3地帯なら ¥65,500）なのに
     // 「zone 3」と書いていて、**額と根拠が食い違っていた。**
     const emsNote = (cc: CountryCode) =>
-      line(byId(compare({ items: items(1, 24750), country: cc }).rows, 'zenmarket'),
+      line(byId(compare({ method: 'ems', items: items(1, 24750), country: cc }).rows, 'zenmarket'),
         'intl-shipping').note!;
     expect(emsNote('US')).toContain('zone 4');
     for (const cc of COUNTRIES_ALL.filter((c) => c !== 'US' && c !== 'SG')) {
@@ -621,7 +621,7 @@ describe('a parcel above the published EMS table drops out of the comparison', (
   test('**a row missing its EMS line has a lower total and must still rank last**', () => {
     // 5点 × 5,000g。同梱する社は梱包後 30.3kg で公表料金が無い。
     // 注文ごとに分ける Buyee default だけが表の中に残る。
-    const rows = compare({ items: items(5, 5000), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(5, 5000), country: 'US' }).rows;
     const top = rows[0]!;
     expect(top.id).toBe('buyee:default');
     expect(top.comparable).toBe(true);
@@ -642,7 +642,7 @@ describe('a parcel above the published EMS table drops out of the comparison', (
   });
 
   test('when nothing is comparable we say so instead of ranking the leftovers', () => {
-    const r = compare({ items: items(5, 25000), country: 'US' });
+    const r = compare({ method: 'ems', items: items(5, 25000), country: 'US' });
     expect(r.rows.every((row) => !row.comparable)).toBe(true);
     expect(r.rows.every((row) => !row.cheapest)).toBe(true);
     expect(r.rankStabilityNote).toBe(
@@ -663,7 +663,7 @@ describe('a parcel above the published EMS table drops out of the comparison', (
 
   test('every country stops at the same table edge', () => {
     for (const cc of COUNTRIES_ALL) {
-      const rows = compare({ items: items(5, 5000), country: cc }).rows;
+      const rows = compare({ method: 'ems', items: items(5, 5000), country: cc }).rows;
       expect(winnerOf(rows)!.id, cc).toBe('buyee:default');
       expect(rows.filter((r) => !r.comparable).length, cc).toBe(5);
     }
@@ -695,7 +695,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // Buyee consolidated・Jauce・Buyee default とは確定した差がある。
     const stable: CountryCode[] = ['AU', 'SG'];
     for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c) && c !== 'US')) {
-      const r = compare({ items: items(5, 600), country: cc });
+      const r = compare({ method: 'ems', items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(false);
       expect(r.rankIndeterminate, cc).toBe(false);
       // **不安定だと言うだけでは足りない。誰に替わるかを名指しすること。**
@@ -709,13 +709,13 @@ describe('rank stability is measured, not assumed — and it is often false', ()
       expect(named, `${cc}: note names no company — ${note}`).toBe(true);
     }
     for (const cc of stable) {
-      const r = compare({ items: items(5, 600), country: cc });
+      const r = compare({ method: 'ems', items: items(5, 600), country: cc });
       expect(r.rankStable, cc).toBe(true);
       expect(r.rankIndeterminate, cc).toBe(false);
       expect(r.rankStabilityNote, cc).toBe(
         'Neokyo stays in the recommended range even if we are off by 3x on weight.');
     }
-    const us = compare({ items: items(5, 600), country: 'US' });
+    const us = compare({ method: 'ems', items: items(5, 600), country: 'US' });
     expect(us.rankStable).toBe(true);
     expect(us.rankIndeterminate).toBe(false);
     expect(us.rankStabilityNote).toBe(
@@ -732,7 +732,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // ではあるが、判定不能ではない。「唯一値段が付く社≠最安」という主張そのものは
     // per-item の `weightSensitivity`（`onlyPricedAtLow`/`onlyPricedAtHigh`）で
     // 別に縛っている（`when the heavy end leaves the EMS table, ...` テスト）。
-    const r = compare({ items: items(5, 3000), country: 'US' });
+    const r = compare({ method: 'ems', items: items(5, 3000), country: 'US' });
     expect(r.rankStable).toBe(false);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).not.toContain('Buyee, default is cheapest');
@@ -744,7 +744,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // （外注梱包。FJ 固有の未知）だが、ZenMarket（`rankHigh` は閉じている）が
     // 明確な2位で枠に残り、他社とは確定した差がある。
     for (const cc of COUNTRIES_ALL) {
-      const r = compare({ items: items(5, 200), country: cc });
+      const r = compare({ method: 'ems', items: items(5, 200), country: cc });
       expect(r.rankStable, cc).toBe(true);
       expect(r.rankIndeterminate, cc).toBe(false);
       expect(r.rankStabilityNote, cc).toBe(
@@ -758,7 +758,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // 1位（FROM JAPAN）自身は上限不明（外注梱包。FJ 固有）のままだが、
     // ZenMarket（`rankHigh` は閉じている）は明確な2位で枠に残り、
     // Buyee・Jauce とは確定した差がある——P1-4 により「判定不能」ではない。
-    const r = compare({ items: items(1, 9000), country: 'US' });
+    const r = compare({ method: 'ems', items: items(1, 9000), country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).toBe(
@@ -776,7 +776,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // 交差の片側が盤面に存在しない。同じ3点はカナダでそのまま成り立ち、
     // 3点・5点は独・英・仏でも同じ重量で起きる（`docs/audit/` の走査）。
     const winnerAt = (n: number, weightG: number) =>
-      winnerOf(compare({ items: items(n, weightG), country: 'CA' }).rows)!.id;
+      winnerOf(compare({ method: 'ems', items: items(n, weightG), country: 'CA' }).rows)!.id;
     const CROSSINGS: [number, number][] = [[2, 1150], [3, 1325], [5, 1625]];
     for (const [n, at] of CROSSINGS) {
       expect(winnerAt(n, at - 25), `n=${n} just below ${at}g`).toBe('neokyo');
@@ -792,7 +792,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     for (const n of [1, 2, 3, 5]) {
       const winners = new Set<string>();
       for (let g = 100; g <= 4000; g += 100) {
-        const rows = compare({ items: items(n, g), country: 'US' }).rows;
+        const rows = compare({ method: 'ems', items: items(n, g), country: 'US' }).rows;
         // 同梱組が公表表を出た帯は「順位が動いた」ではないので数えない。
         if (!rows.every((r) => r.comparable || r.id === 'neokyo')) continue;
         winners.add(winnerOf(rows)!.id);
@@ -804,16 +804,16 @@ describe('rank stability is measured, not assumed — and it is often false', ()
 
   test('a single item never crosses: FROM JAPAN wins at every weight the table covers', () => {
     for (const w of [100, 500, 1000, 1625, 3000, 8000, 24750]) {
-      expect(winnerOf(compare({ items: items(1, w), country: 'US' }).rows)!.id, `${w}g`)
+      expect(winnerOf(compare({ method: 'ems', items: items(1, w), country: 'US' }).rows)!.id, `${w}g`)
         .toBe('fromjapan');
     }
   });
 
   test('at 4,975 g per item the winner changes because everyone else leaves the table', () => {
     // 価格の逆転ではない。同梱行が 30kg を越え、比較可能な行が Buyee default だけになる。
-    const below = compare({ items: items(5, 4950), country: 'US' }).rows;
+    const below = compare({ method: 'ems', items: items(5, 4950), country: 'US' }).rows;
     expect(winnerOf(below)!.id).toBe('fromjapan');
-    const above = compare({ items: items(5, 4975), country: 'US' }).rows;
+    const above = compare({ method: 'ems', items: items(5, 4975), country: 'US' }).rows;
     expect(winnerOf(above)!.id).toBe('buyee:default');
     expect(above.filter((r) => r.comparable)).toHaveLength(1);
   });
@@ -825,7 +825,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
 describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
   test('GBP 135 is measured on the item price alone — GBP 211.40/¥ → ¥28,539', () => {
     const dutyAt = (priceYen: number) =>
-      compare({ items: items(1, 500, priceYen), country: 'GB' }).rows
+      compare({ method: 'ems', items: items(1, 500, priceYen), country: 'GB' }).rows
         .map((r) => line(r, 'duty').amount);
     // 商品代 ¥28,539 = £135.0。送料込みなら £150 相当だが、判定には混ぜない。
     // **境界は為替そのもの。**転記前の ¥190/£ では ¥25,650 に置かれていた（約 ¥2,900 手前）。
@@ -847,7 +847,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
     // **以前はカート全額で判定していた。**Buyee の既定は注文ごとに別送するので、
     // 3点 × ¥20,000 が 1個口 €110 ずつ（€150 以下）なのに「€330 超」と判定され、
     // 4.1% を掛けていた。**個口を分けたほうが税は安いのに、逆に高く出していた。**
-    const de = compare({ items: items(3, 600, 20_000), country: 'DE' }).rows;
+    const de = compare({ method: 'ems', items: items(3, 600, 20_000), country: 'DE' }).rows;
     const one = byId(de, 'buyee:consolidated');   // 1個口 = €330
     const three = byId(de, 'buyee:default');      // 3個口 = 1個口あたり €110
     expect(one.parcels).toBe(1);
@@ -858,7 +858,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
     expect(line(one, 'duty').amount!).toBeGreaterThan(line(three, 'duty').amount!);
 
     // 英国も同じ。1個口 £330 は限度超、3個口なら1個口 £110 で限度以下＝取得できた 0。
-    const gb = compare({ items: items(3, 600, 20_000), country: 'GB' }).rows;
+    const gb = compare({ method: 'ems', items: items(3, 600, 20_000), country: 'GB' }).rows;
     expect(line(byId(gb, 'buyee:consolidated'), 'duty').amount!).toBeGreaterThan(0);
     expect(line(byId(gb, 'buyee:default'), 'duty').amount).toBe(0);
   });
@@ -866,7 +866,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
   test('splitting is not automatically cheaper — the postage eats the tax saving', () => {
     // **「個口を分ければ安い」と断言してはいけない。**分けると EMS が個口ごとに乗る。
     // 上のテストで税は下がるが、総額は上がる。両方を計算しないと助言にならない。
-    const de = compare({ items: items(3, 600, 20_000), country: 'DE' }).rows;
+    const de = compare({ method: 'ems', items: items(3, 600, 20_000), country: 'DE' }).rows;
     const one = byId(de, 'buyee:consolidated');
     const three = byId(de, 'buyee:default');
     expect(line(three, 'intl-shipping').amount!).toBeGreaterThan(line(one, 'intl-shipping').amount!);
@@ -874,11 +874,11 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
   });
 
   test('SGD 400 likewise: GST stays 0 while CIF is over but the goods are not', () => {
-    const rows = compare({ items: items(1, 600, 46000), country: 'SG' }).rows;
+    const rows = compare({ method: 'ems', items: items(1, 600, 46000), country: 'SG' }).rows;
     // 商品代 SGD 373.0 < 400。CIF は社により 413〜466 で超えているが、限度は商品代で測る。
     for (const r of rows) expect(line(r, 'vat').amount, r.id).toBe(0);
     // 商品代自体が超えれば課税され、そのときの課税ベースは CIF。
-    const over = compare({ items: items(1, 600, 50000), country: 'SG' }).rows;
+    const over = compare({ method: 'ems', items: items(1, 600, 50000), country: 'SG' }).rows;
     for (const r of over) expect(line(r, 'vat').amount, r.id).toBeGreaterThan(0);
   });
 
@@ -886,22 +886,22 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
     // 社ごとに送料も手数料も違う。CIF で判定していたら、同じ商品なのに
     // 社によって課税されたりされなかったりして、順位が税の誤判定で歪む。
     for (const priceYen of [25000, 25650, 25700, 30000]) {
-      const notes = compare({ items: items(1, 500, priceYen), country: 'GB' }).rows
+      const notes = compare({ method: 'ems', items: items(1, 500, priceYen), country: 'GB' }).rows
         .map((r) => line(r, 'duty').note);
       expect(new Set(notes).size, `¥${priceYen}`).toBe(1);
     }
   });
 
   test('Germany charges its flat duty per item, counted from the item count', () => {
-    const row = compare({ items: items(2, 600), country: 'DE' }).rows[0]!;
+    const row = compare({ method: 'ems', items: items(2, 600), country: 'DE' }).rows[0]!;
     const duty = line(row, 'duty');
     expect(duty.note).toBe('EUR 3 flat × 2 items');
     expect(duty.amount).toBe(Math.round(3 * 2 * 181.59));
   });
 
   test('a FOB country taxes the goods only: domestic shipping never enters US duty', () => {
-    const paid = compare({ items: items(2, 600), country: 'US' }).rows[0]!;
-    const free = compare({ items: items(2, 600, 3000, { freeShipping: true }), country: 'US' }).rows[0]!;
+    const paid = compare({ method: 'ems', items: items(2, 600), country: 'US' }).rows[0]!;
+    const free = compare({ method: 'ems', items: items(2, 600, 3000, { freeShipping: true }), country: 'US' }).rows[0]!;
     expect(line(paid, 'duty').amount).toBe(750); // 12.5% × ¥6,000
     expect(line(free, 'duty').amount).toBe(750);
   });
@@ -912,7 +912,7 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('domestic shipping is charged by every service, and taxed where the base is CIF', () => {
   test('no service folds domestic shipping into its fee — every row shows the line', () => {
-    for (const row of compare({ items: items(2, 600), country: 'US' }).rows) {
+    for (const row of compare({ method: 'ems', items: items(2, 600), country: 'US' }).rows) {
       expect(line(row, 'domestic-shipping').amount, row.id).toBe(1600);
       expect(line(row, 'domestic-shipping').tier, row.id).toBe('estimate');
     }
@@ -920,8 +920,8 @@ describe('domestic shipping is charged by every service, and taxed where the bas
 
   test('**the domestic shipping a row actually pays raises its VAT** (GB, 20%)', () => {
     for (const n of [1, 2, 3]) {
-      const paid = compare({ items: items(n, 600), country: 'GB' }).rows;
-      const free = compare({ items: items(n, 600, 3000, { freeShipping: true }), country: 'GB' }).rows;
+      const paid = compare({ method: 'ems', items: items(n, 600), country: 'GB' }).rows;
+      const free = compare({ method: 'ems', items: items(n, 600, 3000, { freeShipping: true }), country: 'GB' }).rows;
       // **税を運んでいる行で測る。**ZenMarket は閾値の中では決済時に払う（IOSS）ので
       // 国境 VAT が 0 になり、代わりに prepaid-import-tax が同じ課税ベースを持つ。
       // どちらの経路でも「実際に払う国内送料が課税ベースに入る」ことは変わらない。
@@ -942,7 +942,7 @@ describe('domestic shipping is charged by every service, and taxed where the bas
   });
 
   test('free shipping zeroes the line without touching the service fee', () => {
-    const rows = compare({ items: items(2, 600, 3000, { freeShipping: true }), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(2, 600, 3000, { freeShipping: true }), country: 'US' }).rows;
     const fj = byId(rows, 'fromjapan');
     expect(line(fj, 'domestic-shipping').amount).toBe(0);
     expect(line(fj, 'domestic-shipping').tier).toBe('fixed');
@@ -954,8 +954,8 @@ describe('domestic shipping is charged by every service, and taxed where the bas
     // （ZenMarket の 3.5%）だけで、そこは順位が入れ替わりうる。
     // storageDays: 30 で保管を無料期間の内側に固定する（0d、全社¥0）——
     // ここで検査しているのは送料無料の効きであって保管日数の効きではない。
-    const paid = compare({ items: items(5, 200), country: 'US', storageDays: 30 }).rows;
-    const free = compare({
+    const paid = compare({ method: 'ems', items: items(5, 200), country: 'US', storageDays: 30 }).rows;
+    const free = compare({ method: 'ems',
       items: items(5, 200, 3000, { freeShipping: true }), country: 'US', storageDays: 30,
     }).rows;
     expect(free[0]!.id).toBe(paid[0]!.id);
@@ -966,11 +966,11 @@ describe('domestic shipping is charged by every service, and taxed where the bas
   });
 
   test('a given domestic shipping cost is fixed, an assumed one is an estimate', () => {
-    const assumed = byId(compare({ items: [item({ id: 'a' })], country: 'US' }).rows, 'zenmarket');
+    const assumed = byId(compare({ method: 'ems', items: [item({ id: 'a' })], country: 'US' }).rows, 'zenmarket');
     expect(line(assumed, 'domestic-shipping').amount).toBe(800);
     expect(line(assumed, 'domestic-shipping').tier).toBe('estimate');
     const known = byId(
-      compare({ items: [item({ id: 'a', domesticShippingYen: 250 })], country: 'US' }).rows, 'zenmarket');
+      compare({ method: 'ems', items: [item({ id: 'a', domesticShippingYen: 250 })], country: 'US' }).rows, 'zenmarket');
     expect(line(known, 'domestic-shipping').amount).toBe(250);
     expect(line(known, 'domestic-shipping').tier).toBe('fixed');
   });
@@ -982,7 +982,7 @@ describe('domestic shipping is charged by every service, and taxed where the bas
 // ───────────────────────────────────────────────────────────────────────────────────
 describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at zero (T-F10)', () => {
   test('Buyee\'s domestic-shipping line stays at \u00a50 but is no longer `fixed`', () => {
-    const withFree = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const withFree = compare({ method: 'ems', items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
     const buyee = byId(withFree, 'buyee');
     expect(line(buyee, 'domestic-shipping').amount).toBe(0);
     expect(line(buyee, 'domestic-shipping').tier).not.toBe('fixed');
@@ -990,7 +990,7 @@ describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at 
   });
 
   test('other services keep the confirmed \u00a50 for the same free-shipping item', () => {
-    const withFree = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const withFree = compare({ method: 'ems', items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
     for (const id of ['zenmarket', 'neokyo', 'fromjapan', 'jauce']) {
       const row = byId(withFree, id);
       expect(line(row, 'domestic-shipping').amount, id).toBe(0);
@@ -1002,9 +1002,9 @@ describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at 
     // freeShipping: true と domesticShippingYen: 0 は、domestic-shipping の金額として
     // どちらも 0。T-F10 が変えたのは確度（tier）と note だけなので、totalは全行一致するはず
     // ——一致しなければ金額が動いたということ。
-    const free = compare({ items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
+    const free = compare({ method: 'ems', items: [item({ id: 'a', freeShipping: true })], country: 'US' }).rows;
     const confirmedZero = compare(
-      { items: [item({ id: 'a', domesticShippingYen: 0 })], country: 'US' }).rows;
+      { method: 'ems', items: [item({ id: 'a', domesticShippingYen: 0 })], country: 'US' }).rows;
     expect(free.length).toBeGreaterThan(0);
     for (const row of free) {
       expect(row.total.low, row.id).toBe(byId(confirmedZero, row.id).total.low);
@@ -1015,16 +1015,17 @@ describe('Buyee: "free shipping" does not mean the domestic leg is confirmed at 
 // ─────────────────────────────────────────────────────────────────────────────
 // Buyee だけが既定で注文ごとに別送する。同梱は申請しないと得られない。
 // ─────────────────────────────────────────────────────────────────────────────
-describe('the international method is an input, and the default is still EMS', () => {
+describe('the international method is an input, and the default is now cheapest-excluding-surface', () => {
   const shipOf = (r: Row) => line(r, 'intl-shipping');
 
-  test('with nothing chosen every row goes by EMS — the default did not silently move', () => {
-    // **既定を「運べる中で最安」にしなかった。**最安はたいてい船便で 1〜3 か月かかる
-    // （Buyee 原文）。それを既定にすると**ほぼ誰も払わない額**を総額として出すことになる。
-    // 各社の画面が既定で何を選んでいるかは未取得（`docs/O2-CALCULATOR-RUN.md` フェーズ1）。
+  // **2026-09-12、オーナー確定（P2 4）で既定が変わった。**以前は実請求の利用実績
+  // （EMS 11 / FedEx 12 / UPS 7 / DHL 7 / 船便 3 / Airmail 1）を根拠に EMS 固定
+  // だったが、その議論は `DEFAULT_METHOD` のコメントに残したまま、オーナーが
+  // 「条件ごとに再計算する最安（Surface は除く）」に置き換えた。
+  test('with nothing chosen every row goes by the cheapest non-surface method for that condition', () => {
     for (const row of compare({ items: items(5, 600), country: 'DE' }).rows) {
-      expect(row.method, row.id).toBe('ems');
-      expect(shipOf(row).label, row.id).toContain('EMS');
+      expect(row.method, row.id).not.toBe('small-packet-surface');
+      expect(row.method, row.id).not.toBe('parcel-surface');
     }
   });
 
@@ -1080,10 +1081,11 @@ describe('the international method is an input, and the default is still EMS', (
     expect(split.parcels).toBe(3);
     expect(together.parcels).toBe(1);
     // Buyee は**船便の小形包装物を売っていない**ので、分割側は航空の小形包装物になる。
-    // 同梱側は1個口 3kg で小形包装物の上限を超えるため国際小包(船便)。
+    // 同梱側は1個口 3kg で小形包装物の上限を超えるため国際小包(船便)が最安だが、
+    // **Surface は既定候補から外れる**（P2 4、2026-09-12）ので EMS になる。
     // **同じ社の同じカートで方式が分かれる**——個口の数が方式の可否を決めている。
     expect(split.method).toBe('small-packet-air');
-    expect(together.method).toBe('parcel-surface');
+    expect(together.method).toBe('ems');
   });
 
   test('a service that does not ship Japan Post to a country is not priced there as if it did', () => {
@@ -1095,7 +1097,7 @@ describe('the international method is an input, and the default is still EMS', (
     //
     // 背景: 日本郵便は 2025-08 に米国宛を停止し、2026-04 に「差出人が Zonos で関税を
     // 事前納付すること」を条件に再開した。**その条件を飲まなかった社がある。**
-    const us = compare({ items: items(5, 600), country: 'US' }).rows;
+    const us = compare({ method: 'ems', items: items(5, 600), country: 'US' }).rows;
     const neokyo = byId(us, 'neokyo');
     expect(line(neokyo, 'intl-shipping').amount).toBeNull();
     expect(neokyo.comparable).toBe(false);
@@ -1106,7 +1108,7 @@ describe('the international method is an input, and the default is still EMS', (
 
     // 他の国では普通に出る。**国を消したのではなく、その国のその方式が無い。**
     for (const cc of ['GB', 'DE', 'FR', 'AU', 'CA', 'SG'] as CountryCode[]) {
-      const row = byId(compare({ items: items(5, 600), country: cc }).rows, 'neokyo');
+      const row = byId(compare({ method: 'ems', items: items(5, 600), country: cc }).rows, 'neokyo');
       expect(line(row, 'intl-shipping').amount, cc).toBeGreaterThan(0);
       expect(row.comparable, cc).toBe(true);
     }
@@ -1119,19 +1121,26 @@ describe('the international method is an input, and the default is still EMS', (
   });
 
   test("'cheapest' skips a method the service does not ship there, rather than falling back to it", () => {
-    // 米国では Neokyo に選べる日本郵便が1つも無いので、`cheapest` でも行が立たない。
+    // 米国では Neokyo に選べる日本郵便が1つも無い。**だがP2 1で宅配便を繋いだので、
+    // Neokyo は米国では日本郵便の代わりに宅配便で比較可能になる**——「日本郵便が
+    // 無い＝比較不能」ではなく「その社がその国で売っている経路（宅配便）で見る」。
     const row = byId(compare({ items: items(5, 600), country: 'US', method: 'cheapest' }).rows, 'neokyo');
-    expect(row.comparable).toBe(false);
+    expect(row.comparable).toBe(true);
+    expect(row.method).toMatch(/^courier-/);
+    // だが宅配便の目的地側手数料は未公表なので、上限は必ず開いたまま（P2 3）。
+    expect(row.total.high).toBeNull();
   });
 
-  test("'cheapest' never picks a method that costs more than another eligible one", () => {
+  test("'cheapest' never picks a method that costs more than another eligible non-surface one", () => {
+    // **Surface はこの比較から外す**（P2 4）——最安の定義そのものが Surface を
+    // 除外しているので、Surface と比べて負けることは意図した挙動（ZenMarket→US
+    // 600g で EMS ¥7,900 が Surface ¥3,300 より高いまま選ばれるのがまさにこの例）。
     for (const cc of COUNTRIES_ALL) {
       for (const n of [1, 3, 5]) {
         for (const row of compare({ items: items(n, 600), country: cc, method: 'cheapest' }).rows) {
           const chosen = shipOf(row).amount;
           if (chosen == null) continue;
-          for (const m of ['ems', 'small-packet-air', 'small-packet-surface',
-            'parcel-air', 'parcel-surface'] as const) {
+          for (const m of ['ems', 'small-packet-air', 'parcel-air'] as const) {
             const alt = line(byId(compare({ items: items(n, 600), country: cc, method: m }).rows,
               row.id), 'intl-shipping').amount;
             if (alt != null) expect(chosen, `${cc} ${n}点 ${row.id} vs ${m}`).toBeLessThanOrEqual(alt);
@@ -1144,7 +1153,7 @@ describe('the international method is an input, and the default is still EMS', (
 
 describe('Buyee splits parcels by order', () => {
   test('two rows once there is more than one order', () => {
-    const rows = compare({ items: items(3, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(3, 600), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
     expect(consolidated.variant).toBe('consolidated');
@@ -1156,7 +1165,7 @@ describe('Buyee splits parcels by order', () => {
   });
 
   test('splitting costs more on EMS — but not on the US clearance fee, which is zero here', () => {
-    const rows = compare({ items: items(3, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(3, 600), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
     expect(line(consolidated, 'intl-shipping').amount).toBe(9100);
@@ -1171,7 +1180,7 @@ describe('Buyee splits parcels by order', () => {
 
   test('above the $2,500 prepayment band the clearance fee is per parcel, so splitting triples it', () => {
     // 1点 ¥500,000 × 3点。個口あたりの申告額が $2,500 を超えるので $9.35 が立つ。
-    const rows = compare({ items: items(3, 600, 500_000), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(3, 600, 500_000), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
     // USD 9.35 × ¥156.25 × 3個口を最後に一度だけ丸める（¥1,461 の3倍ではない）。
@@ -1181,13 +1190,13 @@ describe('Buyee splits parcels by order', () => {
   });
 
   test('the purchase fee is per order, so splitting does not change it', () => {
-    const rows = compare({ items: items(3, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(3, 600), country: 'US' }).rows;
     expect(line(byId(rows, 'buyee:consolidated'), 'purchase-fee').amount).toBe(1500);
     expect(line(byId(rows, 'buyee:default'), 'purchase-fee').amount).toBe(1500);
   });
 
   test('a single order gives one Buyee row and no variant', () => {
-    const rows = compare({ items: items(1, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(1, 600), country: 'US' }).rows;
     expect(rows.filter((r) => r.serviceId === 'buyee')).toHaveLength(1);
     const only = byId(rows, 'buyee');
     expect(only.variant).toBeNull();
@@ -1196,7 +1205,7 @@ describe('Buyee splits parcels by order', () => {
   });
 
   test('the other four services stay at one parcel', () => {
-    const rows = compare({ items: items(4, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(4, 600), country: 'US' }).rows;
     for (const id of ['neokyo', 'zenmarket', 'fromjapan', 'jauce']) {
       expect(byId(rows, id).parcels, id).toBe(1);
     }
@@ -1235,7 +1244,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     // 共通の未知」は `rankHigh`（順位判定専用の内部値）から無視されるので
     // （P1-4、外部レビュー、オーナー確定 2026-09-11）、ZenMarket が明確な2位で
     // 枠に残り、判定不能ではない。1位そのものは動かない。
-    const r = compare({ items: EXAMPLE, country: 'US' });
+    const r = compare({ method: 'ems', items: EXAMPLE, country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rows[0]!.id).toBe('fromjapan');
@@ -1253,7 +1262,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     // **国が米国からドイツに変わった。境界（380–600 g / 500 g–10 kg）も勝者も同じ。**
     // この反転は軽い側が Neokyo で、Neokyo は米国宛に日本郵便を売っていないため
     // 米国では片側が存在しない。ドイツでは同じ荷物が同じ形で反転する。
-    const r = compare({ items: [...EXAMPLE, assumed('i2')], country: 'DE' });
+    const r = compare({ method: 'ems', items: [...EXAMPLE, assumed('i2')], country: 'DE' });
     expect(r.rows[0]!.id).toBe('neokyo');
     expect(r.rankStable).toBe(false);
     // 仮置きは 500 g〜10 kg で見る。軽ければ Neokyo、重ければ FROM JAPAN。
@@ -1276,7 +1285,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     // 未知——Zonos・連邦売上税のような共通の未知とは違い、`rankHigh` はそれを
     // 引き続き `null` にする一方、ZenMarket の `rankHigh` は閉じているので
     // 判定不能にはならない（P1-4）。
-    const r = compare({ items: [assumed('i2')], country: 'US' });
+    const r = compare({ method: 'ems', items: [assumed('i2')], country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.weightSensitivity['i2']).toMatchObject({
@@ -1288,7 +1297,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     // **国が米国からカナダに変わった。**反転の軽い側は Neokyo で、Neokyo は米国宛に
     // 日本郵便を売っていない。独・英・仏ではこの荷物の1位が両端とも ZenMarket に
     // なって反転しないので、**同じ形が残るのはカナダ**（実測で7カ国を走査）。
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: [table('a', 1000, [800, 1600]), table('b', 1000, [800, 1600])], country: 'CA',
     });
     for (const id of ['a', 'b']) {
@@ -1299,7 +1308,7 @@ describe('one item at a time: whose weight decides the winner', () => {
   });
 
   test('kendo armour: the胴 alone reshuffles the (now 2-company) bracket; the cart as a whole is not indeterminate', () => {
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2500]), table('tare', 1500, [1500, 1500])],
       // **国が米国からドイツに変わった。**×1/3 側の勝者が Neokyo で、Neokyo は
       // 米国宛に日本郵便を売っていない。1位も四分位の判定も同じ。
@@ -1324,14 +1333,14 @@ describe('one item at a time: whose weight decides the winner', () => {
   });
 
   test('a weight the user typed is theirs: we do not second-guess it', () => {
-    const r = compare({ items: [user('a', 200), user('b', 200)], country: 'US' });
+    const r = compare({ method: 'ems', items: [user('a', 200), user('b', 200)], country: 'US' });
     expect(r.weightSensitivity).toEqual({});
   });
 
   test('when the heavy end leaves the EMS table, the survivor is named as the only one priced, not as cheapest', () => {
     // 和弓 7 kg × 3 + 仮置き1点。仮置きを 10 kg にすると同梱行が 30 kg を超え、
     // 注文ごとに分ける Buyee default だけが値段を持つ。
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: [
         table('y0', 7000, [7000, 7000], { priceYen: 30000 }),
         table('y1', 7000, [7000, 7000], { priceYen: 30000 }),
@@ -1349,7 +1358,7 @@ describe('one item at a time: whose weight decides the winner', () => {
   });
 
   test('with an unknown weight in the cart there is no base weight to move, so the map is empty', () => {
-    const r = compare({ items: [item({ id: 'a', weightG: null, weightTier: 'none' })], country: 'US' });
+    const r = compare({ method: 'ems', items: [item({ id: 'a', weightG: null, weightTier: 'none' })], country: 'US' });
     expect(r.bands).not.toBeNull();
     expect(r.weightSensitivity).toEqual({});
   });
@@ -1357,11 +1366,11 @@ describe('one item at a time: whose weight decides the winner', () => {
   test('the sensitivity map never contradicts a direct run at that weight', () => {
     for (const cc of COUNTRIES_ALL) {
       const items = [...EXAMPLE, assumed('i2')];
-      const r = compare({ items, country: cc });
+      const r = compare({ method: 'ems', items, country: cc });
       for (const [id, s] of Object.entries(r.weightSensitivity)) {
         for (const [g, expected] of [[s.lowG, s.winnerAtLow], [s.highG, s.winnerAtHigh]] as const) {
           const moved = items.map((i) => (i.id === id ? { ...i, weightG: g } : i));
-          const direct = winnerOf(compare({ items: moved, country: cc }).rows);
+          const direct = winnerOf(compare({ method: 'ems', items: moved, country: cc }).rows);
           expect(direct?.label ?? null, `${cc} ${id} at ${g} g`).toBe(expected);
         }
       }
@@ -1378,7 +1387,7 @@ describe('unknown weight falls back to EMS steps', () => {
    * FROM JAPAN のまま＝「重量が分からないと1位が決まらない」という現象自体が
    * 米国では観測できないので、観測できる国で縛る。
    */
-  const unknown = (n: number) => compare({
+  const unknown = (n: number) => compare({ method: 'ems',
     items: Array.from({ length: n }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
     country: 'CA',
   });
@@ -1413,7 +1422,7 @@ describe('unknown weight falls back to EMS steps', () => {
     // レビュー、オーナー確定 2026-09-11）ので、ZenMarket が明確な2位として枠に
     // 残り続け、判定不能にはならない——「1位が変わらない」＝安定という主張が
     // そのまま成り立つ。
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: Array.from({ length: 2 }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
       country: 'US',
     });
@@ -1491,7 +1500,7 @@ describe('unknown weight falls back to EMS steps', () => {
   });
 
   test('one unknown item among known ones still drops the whole board to bands', () => {
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: [item({ id: 'a', weightG: 600 }), item({ id: 'b', weightG: null, weightTier: 'none' })],
       country: 'US',
     });
@@ -1519,10 +1528,10 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
    * 落ちた行は行数と理由のほうで縛る（下の `dropped`）。
    */
   const board = (cc: CountryCode, n: number, w: number, over: Partial<Item> = {}, priceYen = 3000) =>
-    compare({ items: items(n, w, priceYen, over), country: cc }).rows.filter((r) => r.comparable);
+    compare({ method: 'ems', items: items(n, w, priceYen, over), country: cc }).rows.filter((r) => r.comparable);
   /** その国で日本郵便を売っていない社の行。米国は Neokyo の1行だけ。 */
   const dropped = (cc: CountryCode, n: number, w: number) =>
-    compare({ items: items(n, w), country: cc }).rows.filter((r) => !r.comparable);
+    compare({ method: 'ems', items: items(n, w), country: cc }).rows.filter((r) => !r.comparable);
 
   test('5 items x ¥3,000, 200 g each, to the US', () => {
     // **Neokyo が消えたのは値段が高いからではなく、米国宛に日本郵便を売っていないから。**
@@ -1649,7 +1658,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
 
 describe('edges', () => {
   test('no items → an empty board, not a crash', () => {
-    const r = compare({ items: [], country: 'US' });
+    const r = compare({ method: 'ems', items: [], country: 'US' });
     expect(r.rows).toEqual([]);
     expect(r.bands).toBeNull();
     expect(r.totalRangeYen).toBeNull();
@@ -1658,7 +1667,7 @@ describe('edges', () => {
   });
 
   test('quantity multiplies price and weight, but a repeat buy is still one order', () => {
-    const rows = compare({ items: [item({ id: 'a', weightG: 200, qty: 3 })], country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: [item({ id: 'a', weightG: 200, qty: 3 })], country: 'US' }).rows;
     expect(line(byId(rows, 'neokyo'), 'items').amount).toBe(9000);
     expect(byId(rows, 'neokyo').tag).toBe('3 items · 1 parcel');
     // 同一商品を3個でも手数料は1回だと明記している社。
@@ -1686,7 +1695,7 @@ describe('edges', () => {
     test('a total built only from published numbers is not approximate', () => {
       // Neokyo は自社ページで「国際送料に上乗せしない」と書いている唯一の社なので、
       // EMS 行が公表料金として立つ。
-      const row = byId(compare({ items: [certain()], country: 'GB' }).rows, 'neokyo');
+      const row = byId(compare({ method: 'ems', items: [certain()], country: 'GB' }).rows, 'neokyo');
       expect(row.lines.filter((l) => l.tier === 'estimate')).toEqual([]);
       expect(line(row, 'intl-shipping').tier).toBe('fixed');
       expect(line(row, 'intl-shipping').note).toContain('published rate');
@@ -1696,7 +1705,7 @@ describe('edges', () => {
     test('an estimated weight brings the ~ back, even though the EMS rate stays published', () => {
       // 重量は費目ではないので行の tier には出ない。ここを数えていないと、推定の重量で
       // 引いた総額が確定値の顔をする。
-      const row = byId(compare({
+      const row = byId(compare({ method: 'ems',
         items: [certain({ weightTier: 'estimate' })], country: 'GB',
       }).rows, 'neokyo');
       expect(line(row, 'intl-shipping').tier).toBe('fixed');
@@ -1704,7 +1713,7 @@ describe('edges', () => {
     });
 
     test('an assumed domestic postage brings it back too', () => {
-      const row = byId(compare({
+      const row = byId(compare({ method: 'ems',
         items: [certain({ domesticShippingYen: null })], country: 'GB',
       }).rows, 'neokyo');
       expect(line(row, 'domestic-shipping').tier).toBe('estimate');
@@ -1718,13 +1727,13 @@ describe('edges', () => {
       //
       // **国際送料の行は5社とも `fixed`。**
       for (const s of SERVICES) {
-        const row = byId(compare({ items: [certain()], country: 'GB' }).rows, s.id);
+        const row = byId(compare({ method: 'ems', items: [certain()], country: 'GB' }).rows, s.id);
         expect(line(row, 'intl-shipping').tier, s.id).toBe('fixed');
       }
       // **`~` が残る社は、国際送料以外に推定を持っている社だけ。**
       // ZenMarket の入金手数料 3.5% は実請求からの逆算（`services.ts`）で、これは推定のまま。
       // 「国際送料が確定した」を「行全体が確定した」と読み替えないこと。
-      const rows = compare({ items: [certain()], country: 'GB' }).rows;
+      const rows = compare({ method: 'ems', items: [certain()], country: 'GB' }).rows;
       for (const s of SERVICES) {
         const row = byId(rows, s.id);
         const otherEstimates = row.lines
@@ -1751,7 +1760,7 @@ describe('edges', () => {
       // 「注記が消えた」のと「その方式を売っていない」の区別が付かなくなるので両方縛る。
       let priced = 0;
       let dropped = 0;
-      for (const row of compare({ items: [certain()], country: 'US' }).rows) {
+      for (const row of compare({ method: 'ems', items: [certain()], country: 'US' }).rows) {
         const l = line(row, 'intl-shipping');
         if (l.amount == null) {
           // 額の無い行は 0 と書かず、代わりに**なぜ無いのか**を必ず言う。
@@ -1769,7 +1778,7 @@ describe('edges', () => {
     });
 
     test('over the top EMS step there is no rate at all, so the line is neither published nor an estimate', () => {
-      const row = byId(compare({ items: [certain({ weightG: 30000 })], country: 'US' }).rows, 'neokyo');
+      const row = byId(compare({ method: 'ems', items: [certain({ weightG: 30000 })], country: 'US' }).rows, 'neokyo');
       expect(line(row, 'intl-shipping').amount).toBeNull();
       expect(line(row, 'intl-shipping').tier).toBe('none');
       expect(row.comparable).toBe(false);
@@ -1777,15 +1786,15 @@ describe('edges', () => {
   });
 
   test('an estimated price marks the row approximate', () => {
-    const exact = compare({ items: [item({ id: 'a', priceTier: 'fixed', freeShipping: true })], country: 'SG' }).rows;
-    const guess = compare({ items: [item({ id: 'a', priceTier: 'estimate', freeShipping: true })], country: 'SG' }).rows;
+    const exact = compare({ method: 'ems', items: [item({ id: 'a', priceTier: 'fixed', freeShipping: true })], country: 'SG' }).rows;
+    const guess = compare({ method: 'ems', items: [item({ id: 'a', priceTier: 'estimate', freeShipping: true })], country: 'SG' }).rows;
     expect(line(byId(exact, 'neokyo'), 'items').tier).toBe('fixed');
     expect(line(byId(guess, 'neokyo'), 'items').tier).toBe('estimate');
     expect(byId(guess, 'neokyo').approximate).toBe(true);
   });
 
   test('every row carries an outbound url and a stable id', () => {
-    const rows = compare({ items: items(2, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(2, 600), country: 'US' }).rows;
     expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
     for (const r of rows) expect(r.outboundUrl).toMatch(/^https:\/\//);
   });
@@ -1796,18 +1805,18 @@ describe('edges', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('F26 export clearance fee is a total line with a per-row threshold', () => {
   test('¥200,000 exactly is under the threshold: ¥0', () => {
-    const rows = compare({ items: [item({ id: 'a', priceYen: 200000 })], country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: [item({ id: 'a', priceYen: 200000 })], country: 'US' }).rows;
     for (const r of rows) expect(line(r, 'export-clearance').amount, r.serviceId).toBe(0);
   });
 
   test('¥200,001 is over the threshold: ¥2,800', () => {
-    const rows = compare({ items: [item({ id: 'a', priceYen: 200001 })], country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: [item({ id: 'a', priceYen: 200001 })], country: 'US' }).rows;
     for (const r of rows) expect(line(r, 'export-clearance').amount, r.serviceId).toBe(2800);
   });
 
   test('multiple parcels still charge the fee once per row, not once per parcel', () => {
     // Buyee は既定で注文ごとに別送する（複数個口）。それでも輸出通関は行につき1回。
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [
         item({ id: 'a', priceYen: 200001 }),
         item({ id: 'b', priceYen: 1 }),
@@ -1867,7 +1876,7 @@ describe('the total is an interval, not a point (P1)', () => {
     // 持つので、行全体の total.high はこのケースでも null のまま**——それは正しい
     // (premium insurance の上端は本当に置けない)。ここでは保管の行そのものが
     // 個別に上端を持てていることを確かめる。
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [item({ id: 'a', weightG: 600 })],
       country: 'DE',
       storageDays: 70,
@@ -1882,7 +1891,7 @@ describe('the total is an interval, not a point (P1)', () => {
   });
 
   test('the Jauce storage cap is "up to 2 months × the guitar reference", not the reference itself', () => {
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [item({ id: 'a', weightG: 600 })],
       country: 'DE',
       storageDays: 70,
@@ -1897,7 +1906,7 @@ describe('the total is an interval, not a point (P1)', () => {
 
   test('a row with no unknown line keeps a closed interval (low === high, not null)', () => {
     // 保管が無料期間の内側（既定45日）なら、この籠に未取得の費目は無い —— 区間は閉じたまま。
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [item({ id: 'a', weightG: 600 })],
       country: 'DE',
     }).rows;
@@ -1912,7 +1921,7 @@ describe('the total is an interval, not a point (P1)', () => {
     // Zonos の利用料は額もキャップも無い（一次情報3ページで確認済み）ので unknownCapYen が無い。
     // その行を持つ社は total.high が **null**（上限不明）になる。
     // **`{ high: 数値, highUnbounded: true }` のような矛盾した状態を作れないことがここの主張。**
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [item({ id: 'a', weightG: 600 })],
       country: 'US',
     }).rows;
@@ -1930,7 +1939,7 @@ describe('the total is an interval, not a point (P1)', () => {
     // 寸法が入力に無いので amount は小型段の点推定。上端は最大段(¥1,400/order)——
     // これは「額×期間」ではなく「額×寸法の幅」だが、期間(6週上限)は閉じているので
     // 同じ理屈で上端が出せる。
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [item({ id: 'a', weightG: 600 })],
       country: 'DE',
       storageDays: 60, // Neokyo 無料45日を15日超過 → 3週ぶん課金
@@ -1943,7 +1952,7 @@ describe('the total is an interval, not a point (P1)', () => {
   });
 
   test('ranking, cheapest, tied and diff are computed from total.low only (behaviour unchanged)', () => {
-    const rows = compare({ items: items(3, 600), country: 'DE' }).rows;
+    const rows = compare({ method: 'ems', items: items(3, 600), country: 'DE' }).rows;
     const comparable = rows.filter((r) => r.comparable);
     for (const row of comparable) {
       const cheaperCount = comparable.filter((o) => o.total.low < row.total.low).length;
@@ -1959,7 +1968,7 @@ describe('the total is an interval, not a point (P1)', () => {
   describe('the default real cart actually shows a live interval, in every country', () => {
     const COUNTRIES_HERE: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
     const defaultRows = (cc: CountryCode) =>
-      compare({ items: items(5, 600), country: cc }).rows.filter((r) => r.comparable);
+      compare({ method: 'ems', items: items(5, 600), country: cc }).rows.filter((r) => r.comparable);
 
     test('not every row is a trivially closed interval — some are open, some are unbounded', () => {
       // docs/ROADMAP.md P1 確定仕様どおりの表現: 総額は「¥X 以上」(high===null) か、
@@ -1980,7 +1989,7 @@ describe('the total is an interval, not a point (P1)', () => {
       // だが「額×期間／額×寸法」の上端は公表されたルールの範囲内で実際に開く
       // ——これが「増やした上端」が意味を持つことの確認(60日/70日で実演)。
       const neokyo = byId(
-        compare({ items: items(5, 600), country: 'DE', storageDays: 60 }).rows, 'neokyo',
+        compare({ method: 'ems', items: items(5, 600), country: 'DE', storageDays: 60 }).rows, 'neokyo',
       );
       expect(neokyo.total.high).not.toBeNull();
       expect(neokyo.total.high!).toBeGreaterThan(neokyo.total.low);
@@ -2026,7 +2035,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
   test('no overlap: the leader stands alone (recommended solo, nobody else marked)', () => {
     // ドイツ・英・仏・豪・加・星は5点600gの既定でNeokyoが単独で閉じた区間の1位を取り、
     // 他社はどれも重ならない（実測、docs/ROADMAP.md P1 の全社重なりの反例でもある）。
-    const rows = compare({ items: items(5, 600), country: 'DE' }).rows.filter((r) => r.comparable);
+    const rows = compare({ method: 'ems', items: items(5, 600), country: 'DE' }).rows.filter((r) => r.comparable);
     const neokyo = byId(rows, 'neokyo');
     expect(neokyo.recommended).toBe(true);
     expect(neokyo.equivalent).toBe(false);
@@ -2050,7 +2059,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // （`computeBracket` は境界を「既知の上限を持つ行」からのみ伸ばす）。
     // 結果、ZenMarket が明確な2位として枠に残り、Buyee consolidated・Jauce・
     // Buyee default とは確定した差がついて、誰も「同等」に落ちない。
-    const rows = compare({ items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
+    const rows = compare({ method: 'ems', items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
     const recommended = rows.filter((r) => r.recommended);
     const equivalent = rows.filter((r) => r.equivalent);
     expect(recommended.map((r) => r.id).sort()).toEqual(['fromjapan', 'zenmarket']);
@@ -2065,7 +2074,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // 下端が1位の上端以下なら重なる——上限不明であることが枠入りを妨げも
     // 助けもしない。US の ZenMarket (total.high===null、枠の2社目) が枠に入って
     // いることが、候補側の high を見ていないことの直接の証拠。
-    const rows = compare({ items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
+    const rows = compare({ method: 'ems', items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
     const zenmarket = byId(rows, 'zenmarket');
     expect(zenmarket.total.high).toBeNull();
     expect(zenmarket.recommended).toBe(true);
@@ -2076,7 +2085,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // なったからといって、`equivalent` の仕組みそのものが働かなくなったわけではない。**
     // 1点・150 g・¥500・保管90日（米国）は Jauce の保管超過（額に幅がある）が
     // ZenMarket の総額と実際に重なる、閉区間同士の正真正銘の重なり。
-    const rows = compare({ items: items(1, 150, 500), country: 'US', storageDays: 90 })
+    const rows = compare({ method: 'ems', items: items(1, 150, 500), country: 'US', storageDays: 90 })
       .rows.filter((r) => r.comparable);
     const zenmarket = byId(rows, 'zenmarket');
     const buyee = byId(rows, 'buyee');
@@ -2090,7 +2099,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
   test('an unbounded leader (leader.total.high === null) does not swallow everyone — the 2-company cap still holds', () => {
     // 1点9,000g・米国: FROM JAPAN が1位で上限不明。全社が「重なりうる」状態でも、
     // 枠は依然として最大2社（1位を含む）に収まる。
-    const rows = compare({ items: items(1, 9000), country: 'US' }).rows.filter((r) => r.comparable);
+    const rows = compare({ method: 'ems', items: items(1, 9000), country: 'US' }).rows.filter((r) => r.comparable);
     expect(byId(rows, 'fromjapan').total.high).toBeNull();
     const recommended = rows.filter((r) => r.recommended);
     expect(recommended.length).toBeLessThanOrEqual(2);
@@ -2106,7 +2115,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // 同じコードパスを通るので、ここでの検証は目的に対して十分な代理になる。
     // ⑤-a の修正で数値が動き、以前の組み合わせ（450g・¥4,200）の同額が崩れたので
     // 修正後の値で探し直した（`topTie` と同じ入力、`equal totals get equal rank`）。
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: [item({ id: 'a', priceYen: 4500, weightG: 200, site: 'rakuten' })], country: 'AU',
     }).rows.filter((r) => r.comparable);
     const tiedLow = Math.min(...rows.map((r) => r.total.low));
@@ -2119,7 +2128,7 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
   test('comparable: false rows are never recommended or equivalent', () => {
     // 米国では Neokyo が comparable: false（日本郵便を売っていない）。
     // おすすめ枠の判定は比較可能な行だけを対象にする。
-    const rows = compare({ items: items(5, 600), country: 'US' }).rows;
+    const rows = compare({ method: 'ems', items: items(5, 600), country: 'US' }).rows;
     const neokyo = byId(rows, 'neokyo');
     expect(neokyo.comparable).toBe(false);
     expect(neokyo.recommended).toBe(false);
@@ -2143,7 +2152,7 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
     // （米国の例を避けたのは、米国は FROM JAPAN の上限不明のせいでほぼ常に
     // `rankIndeterminate` になり、この describe の主張——安定 vs 「枠の顔ぶれが
     // 変わる」不安定——を混ぜてしまうため。）
-    const r = compare({ items: items(5, 600), country: 'DE' });
+    const r = compare({ method: 'ems', items: items(5, 600), country: 'DE' });
     const base = r.rows.filter((row) => row.recommended).map((row) => row.id);
     expect(base).toEqual(['neokyo']);
     expect(r.rankStable).toBe(false);
@@ -2164,7 +2173,7 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
 
   test('a lone-leader bracket (no overlap) is the simplest stable case', () => {
     // AU: Neokyo が単独1位（重なる社なし）で、×1/3・×3 でも同じ単独枠が保たれる。
-    const r = compare({ items: items(5, 600), country: 'AU' });
+    const r = compare({ method: 'ems', items: items(5, 600), country: 'AU' });
     expect(r.rows.filter((row) => row.recommended).map((row) => row.id)).toEqual(['neokyo']);
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
@@ -2179,7 +2188,7 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
     // そのものに焦点を当てる）。
     const table = (id: string, weightG: number, range: [number, number]) =>
       item({ id, weightG, weightOrigin: 'table', weightRangeG: range });
-    const r = compare({
+    const r = compare({ method: 'ems',
       items: [
         table('do', 2000, [1500, 7500]),
         table('hakama', 1500, [1500, 2500]),

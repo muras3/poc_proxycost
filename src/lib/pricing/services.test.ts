@@ -19,7 +19,7 @@ function item(over: Partial<Item> & { id: string }): Item {
     weightG: 600, weightTier: 'estimate', qty: 1, ...over,
   };
 }
-const rowsFor = (items: Item[]) => compare({ items, country: 'US' }).rows;
+const rowsFor = (items: Item[]) => compare({ method: 'ems', items, country: 'US' }).rows;
 const byService = (rows: Row[], serviceId: string): Row =>
   rows.find((r) => r.serviceId === serviceId) ?? (() => { throw new Error(`no row ${serviceId}`); })();
 const line = (row: Row, key: string): Line =>
@@ -176,7 +176,7 @@ describe('the service table itself', () => {
     // **宛先が米国からドイツに変わった。**Neokyo は米国宛に日本郵便を売っていないので
     // 米国の盤面に居らず、残る報酬ゼロの社（Jauce）はそこで最安にならない。
     // つまり「報酬ゼロの社が1位に立てる」は米国では実演できない。
-    const rows = compare({
+    const rows = compare({ method: 'ems',
       items: Array.from({ length: 5 }, (_, i) => item({ id: `i${i}`, priceYen: 3000, weightG: 200 })),
       country: 'DE',
     }).rows;
@@ -207,7 +207,7 @@ describe('the service table itself', () => {
     // 付いていると「取れているのに 0」と読めてしまう。両方向を塞ぐ。
     for (const country of ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'] as const) {
       for (const weightG of [200, 3000, 30000]) {
-        const rows = compare({
+        const rows = compare({ method: 'ems',
           items: [item({ id: 'a', weightG, priceYen: 200000 }), item({ id: 'b', weightG, site: 'rakuten' })],
           country,
         }).rows;
@@ -341,7 +341,7 @@ describe('the ¥200,000 export clearance fee matches company pages', () => {
 describe('storage is a total line for every service (0d)', () => {
   const storageOf = (serviceId: string, storageDays?: number, over: Partial<Item> = {}): Line => {
     const row = byService(
-      compare({ items: [item({ id: 'a', ...over })], country: 'US', storageDays }).rows,
+      compare({ method: 'ems', items: [item({ id: 'a', ...over })], country: 'US', storageDays }).rows,
       serviceId,
     );
     return row.lines.find((l) => l.key === 'storage')
@@ -423,7 +423,7 @@ describe('storage is a total line for every service (0d)', () => {
   });
 
   test('Buyee counts every parcel: two orders in the split row are two daily fees', () => {
-    const split = compare({
+    const split = compare({ method: 'ems',
       items: [item({ id: 'a' }), item({ id: 'b' })], country: 'US', storageDays: 31,
     }).rows.find((r) => r.id === 'buyee:default')!;
     expect(split.parcels).toBe(2);
@@ -483,7 +483,7 @@ describe('storage is a total line for every service (0d)', () => {
 
   test('excluded lists the storage label when Jauce cannot price it', () => {
     const row = byService(
-      compare({ items: [item({ id: 'a' })], country: 'US', storageDays: 61 }).rows, 'jauce',
+      compare({ method: 'ems', items: [item({ id: 'a' })], country: 'US', storageDays: 61 }).rows, 'jauce',
     );
     expect(row.excluded).toContain('Storage after 60 free days');
   });
@@ -622,7 +622,7 @@ describe('ZenMarket — ¥500 per item, ¥800 only where the company says ¥800'
     // ZenMarket DE ¥12,800（外部レビューの実例）: 修正前は入金手数料が
     // 決済時に徴収する IOSS VAT に掛からず、約 ¥136 過少だった。
     const row = byService(
-      compare({ items: [item({ id: 'a', priceYen: 12800, weightG: 600 })], country: 'DE' }).rows,
+      compare({ method: 'ems', items: [item({ id: 'a', priceYen: 12800, weightG: 600 })], country: 'DE' }).rows,
       'zenmarket',
     );
     const prepaid = row.lines.find((l) => l.key === 'prepaid-import-tax')!;
