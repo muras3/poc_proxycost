@@ -16,12 +16,17 @@ describe('courierCoverageFor (EmsOnlyNote の国別開示)', () => {
     expect(c.noCourierServiceNames).toEqual(['Jauce']);
   });
 
-  test('未測定の国（GB）: 4社とも「調べていない」側に落ち、価格化済みは0社', () => {
-    const c = courierCoverageFor('GB');
-    expect(c.pricedServiceNames).toEqual([]);
-    expect(c.unpricedServiceNames.sort()).toEqual(
-      ['Buyee', 'FROM JAPAN', 'Neokyo', 'ZenMarket'].sort(),
+  test('DE: Buyee だけ「調べていない」側に落ち、他3社は価格化済み（2026-09-12 六か国拡張後）', () => {
+    // 拡張前は GB がこの役（4社全員未測定）を担っていたが、六か国調査の取り込みで
+    // GB は4社とも価格化された。**Buyee の DE だけ本物の空白が残る**——DE では
+    // Buyee の画面自体が「Buyee Air Delivery」「ECMS」という表記を一度も出さず
+    // （`services.ts` の courier-buyee-air コメント参照）、この2便は他国の同名の
+    // ラベルと同一便かどうか一次情報から決められないので取り込んでいない。
+    const c = courierCoverageFor('DE');
+    expect(c.pricedServiceNames.sort()).toEqual(
+      ['FROM JAPAN', 'Neokyo', 'ZenMarket'].sort(),
     );
+    expect(c.unpricedServiceNames).toEqual(['Buyee']);
     expect(c.noCourierServiceNames).toEqual(['Jauce']);
   });
 
@@ -46,8 +51,14 @@ describe('courierMethodAvailable / COURIER_METHODS (MethodPicker の選択肢)',
   });
 
   test('未測定の国では同じ便 id が available:false になる（¥0 に見せない）', () => {
-    expect(courierMethodAvailable('courier-fedex', 'GB')).toBe(false);
-    expect(courierMethodAvailable('courier-dhl-express-1200', 'DE')).toBe(false);
+    // 2026-09-12 六か国拡張で `courier-fedex`（ZenMarket FEDEX）は GB まで測り、
+    // `courier-dhl-express-1200`（Neokyo）も DE まで測った——どちらも今は
+    // available:true になった。今も本物の空白が残る組で固定し直す:
+    // FROM JAPAN の ECMS は US/AU/SG しか画面に出ず GB は今も未測定、
+    // Neokyo の FedEx Connect Plus は DE で画面に明示的に「Not available」と出る
+    // （`unavailableIn: ['DE']`、`services.ts` 参照）。
+    expect(courierMethodAvailable('courier-ecms', 'GB')).toBe(false);
+    expect(courierMethodAvailable('courier-fedex-connect-plus', 'DE')).toBe(false);
   });
 
   test('COURIER_METHODS は全便に非空の label と days を持つ', () => {

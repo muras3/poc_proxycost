@@ -6,6 +6,7 @@ import {
 } from '@/lib/pricing/shipping-methods';
 import { POSTAL_METHODS } from '@/lib/pricing/postage';
 import { courierCoverageFor } from '@/lib/pricing/services';
+import { COUNTRIES } from '@/lib/pricing/countries';
 import { tierClass, tierTitle } from '@/lib/ui/tiers';
 import type { CompareResult, CountryCode } from '@/lib/pricing/types';
 
@@ -14,6 +15,49 @@ function joinNames(names: string[]): string {
   if (names.length === 0) return '';
   if (names.length === 1) return names[0]!;
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+/** `courierCoverageFor` の返り値の形。描画側からはこれだけに依存する。 */
+export interface CourierCoverage {
+  pricedServiceNames: string[];
+  unpricedServiceNames: string[];
+  noCourierServiceNames: string[];
+}
+
+/**
+ * 開示の本文。**描画から切り離す**（vitest は node 環境なので、文はここで検査する
+ * ——`AssumedWeightsNote.tsx` の `assumedWeightsText` と同じ形）。
+ *
+ * **2026-09-12、六か国拡張で見つかった欠陥の再発防止。**以前はここが
+ * `` `Courier rates are also priced for ${...}, US only` `` と、国名の片方だけ
+ * `coverage`（データ由来）、もう片方 `US` が文字列決め打ちという非対称だった——
+ * データを7か国ぶん配線しても、決め打ちの半分は動かず「米国限定」と嘘をつき続けた
+ * （PR #87 で発覚）。**文全体を `coverage` と `countryName` から組み立てる**ことで、
+ * 次に国やデータが増減しても、この関数を直さない限り文が古びない形にする。
+ *
+ * `pricedServiceNames.length === 0`（＝この国はどの社の宅配便も価格化されていない）
+ * の分岐は、**2026-09-12時点でどの対応国からも到達できない**（全7か国が最低1社は
+ * 価格化済み）。それでも消さない——次に国が増える／ある社のデータが取り下げられる
+ * と、また現実の状態になる。だから分岐は残し、`EmsOnlyNote.test.ts` が
+ * `courierScopeText` を直接呼んで（セレクタ経由ではなく）検査する。
+ */
+export function courierScopeText(coverage: CourierCoverage, countryName: string): {
+  scope: string;
+  unpriced: string | null;
+  noGrid: string | null;
+} {
+  const scope = coverage.pricedServiceNames.length > 0
+    ? `Courier rates are also priced for ${joinNames(coverage.pricedServiceNames)} for `
+      + `${countryName} — ranked alongside the postal methods above.`
+    : `Courier rates are not priced for ${countryName}.`;
+  const unpriced = coverage.unpricedServiceNames.length > 0
+    ? `${joinNames(coverage.unpricedServiceNames)} also offer couriers here, but we have`
+      + ` not priced them for ${countryName}.`
+    : null;
+  const noGrid = coverage.noCourierServiceNames.length > 0
+    ? `${joinNames(coverage.noCourierServiceNames)} has no courier rate grid at all.`
+    : null;
+  return { scope, unpriced, noGrid };
 }
 
 /**
@@ -41,7 +85,7 @@ export function EmsOnlyNote({ result, country }: { result: CompareResult; countr
   const secondHand = nameList(ALTERNATIVE_SHIPPING_SECOND_HAND);
   const priced = POSTAL_METHODS.length;
   const coverage = courierCoverageFor(country);
-  const anyCourierPriced = coverage.pricedServiceNames.length > 0;
+  const text = courierScopeText(coverage, COUNTRIES[country].name);
 
   return (
     <p data-testid="scope-disclosure" className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -49,23 +93,9 @@ export function EmsOnlyNote({ result, country }: { result: CompareResult; countr
       the cheapest that fits{' '}
       <span className="font-medium">by weight; a parcel&rsquo;s size is never checked</span>,
       and an oversize one is refused however light.{' '}
-      {anyCourierPriced ? (
-        <span className="font-medium">
-          Courier rates are also priced for {joinNames(coverage.pricedServiceNames)}, US
-          only — ranked alongside the postal methods above.
-        </span>
-      ) : (
-        <span className="font-medium">Courier rates are not priced for this destination.</span>
-      )}{' '}
-      {coverage.unpricedServiceNames.length > 0 && (
-        <>
-          {joinNames(coverage.unpricedServiceNames)} also offer couriers here, but we have
-          not priced them for this destination.{' '}
-        </>
-      )}
-      {coverage.noCourierServiceNames.length > 0 && (
-        <>{joinNames(coverage.noCourierServiceNames)} has no courier rate grid at all.{' '}</>
-      )}
+      <span className="font-medium">{text.scope}</span>{' '}
+      {text.unpriced && <>{text.unpriced}{' '}</>}
+      {text.noGrid && <>{text.noGrid}{' '}</>}
       {verified}
       {secondHand && (
         <>
