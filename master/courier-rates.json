@@ -10348,6 +10348,834 @@
           "zenmarket_fee_jpy": 500,
           "delivery_estimate": "2〜6日",
           "extra_fees": []
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 2302,
+          "total_jpy": 12802,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2〜3週間",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 3230,
+          "total_jpy": 13730,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "1週間以内",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 5229,
+          "total_jpy": 15729,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 5586,
+          "total_jpy": 16086,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 5622,
+          "total_jpy": 16122,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 6062,
+          "total_jpy": 16562,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "price_jpy": 2302,
+          "total_jpy": 22802,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2〜3週間",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "price_jpy": 3230,
+          "total_jpy": 23730,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "1週間以内",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "price_jpy": 5229,
+          "total_jpy": 25729,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "price_jpy": 5586,
+          "total_jpy": 26086,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "price_jpy": 5622,
+          "total_jpy": 26122,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "price_jpy": 6062,
+          "total_jpy": 26562,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "price_jpy": 2302,
+          "total_jpy": 27802,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2〜3週間",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "price_jpy": 3230,
+          "total_jpy": 28730,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "1週間以内",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "price_jpy": 5229,
+          "total_jpy": 30729,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "price_jpy": 5586,
+          "total_jpy": 31086,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "price_jpy": 5622,
+          "total_jpy": 31122,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "price_jpy": 6062,
+          "total_jpy": 31562,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "price_jpy": 5229,
+          "total_jpy": 31729,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "price_jpy": 5586,
+          "total_jpy": 32086,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "price_jpy": 5622,
+          "total_jpy": 32122,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "price_jpy": 6062,
+          "total_jpy": 32562,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "price_jpy": 5229,
+          "total_jpy": 32229,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "price_jpy": 5586,
+          "total_jpy": 32586,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "price_jpy": 5622,
+          "total_jpy": 32622,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "price_jpy": 6062,
+          "total_jpy": 33062,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "price_jpy": 5229,
+          "total_jpy": 32354,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "price_jpy": 5586,
+          "total_jpy": 32711,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "price_jpy": 5622,
+          "total_jpy": 32747,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "price_jpy": 6062,
+          "total_jpy": 33187,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 5229,
+          "total_jpy": 32479,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 5586,
+          "total_jpy": 32836,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 5622,
+          "total_jpy": 32872,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 6062,
+          "total_jpy": 33312,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 2047,
+          "total_jpy": 29297,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2週間",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 2500,
+          "total_jpy": 29750,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2~3カ月",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 3400,
+          "total_jpy": 30650,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約1週間",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "price_jpy": 3850,
+          "total_jpy": 31100,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2週間",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX LOWCOST",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 5229,
+          "total_jpy": 32729,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "3〜7日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "DHL (GREEN+)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 5586,
+          "total_jpy": 33086,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "FEDEX",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 5622,
+          "total_jpy": 33122,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "UPS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 6062,
+          "total_jpy": 33562,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "2〜6日",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 2047,
+          "total_jpy": 29547,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2週間",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 2500,
+          "total_jpy": 30000,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2~3カ月",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 3400,
+          "total_jpy": 30900,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約1週間",
+          "extra_fees": [],
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "price_jpy": 3850,
+          "total_jpy": 31350,
+          "zenmarket_fee_jpy": 500,
+          "delivery_estimate": "約2週間",
+          "extra_fees": [],
+          "methods_shown_total": 8
         }
       ],
       "not_available": [
@@ -10510,10 +11338,851 @@
           ],
           "item_price_jpy": 500000,
           "reason": "内容品の上限価格¥200,000 JPYを超過したため選択肢から消えた"
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 20000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 25000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=6）",
+          "methods_shown_total": 6
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26000,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26500,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）小形航空便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "船便",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "EMS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "航空便（AVIA）国際小包",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26625,
+          "reason": "画面の選択肢自体に表示されなかった（商品価格の閾値スキャンの一環。methods_shown_total=4）",
+          "methods_shown_total": 4
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=8）",
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 26750,
+          "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=8）",
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=8）",
+          "methods_shown_total": 8
+        },
+        {
+          "proxy": "zenmarket",
+          "method_name": "ECMS EXPRESS",
+          "country": "DE",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 27000,
+          "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた（価格閾値スキャンの一環、methods_shown_total=8）",
+          "methods_shown_total": 8
         }
       ],
       "coverage": "ZenMarketの当初計画を全条件完了。(1)7カ国×600g、20x15x10cm、¥10,000（US/DE/GB/FR/AU/CA/SG）。(2)ドイツ・20x15x10cm・¥10,000の重量カーブ：500/600/700/1000/1500/2000/2500/3000/5000/10000/20000g（全11点）。(3)ドイツ・600g・¥10,000の寸法走査：10x10x10/20x15x10(再利用)/20x20x20/30x20x10/40x30x20/60x40x30/25³/30³/35³/40³/45³/50³cm（12条件）+ 寸法未入力の単独条件1件。(4)ドイツ・600g・20x15x10cmの商品価格走査：¥10,000(600g基準を再利用)/¥50,000/¥100,000/¥200,000/¥200,001/¥500,000（6条件）。observations合計230件、not_available（利用不可）13件（Neokyoのrobots.txt該当1件含む）。",
-      "notes": "測定は全てユーザーのローカルChromeをClaude in Chromeで人間同様のUI操作により実施。HTTPクライアント・クラウドブラウザは不使用。CAPTCHA・Cloudflare認証は一度も表示されず。アカウント作成・ログイン・購入は一切行っていない。画面表示の円価格をそのまま記録し、通貨換算・推定・丸め・運送会社定価からの逆算は行っていない。robots.txtのCrawl-delay:5に準拠し、各条件間で最低5秒以上の間隔を空けた（複数フィールドを変更した条件では追加の待機時間を挟んだ）。ZenMarketの計算機はAJAXベースで、フィールド変更後にTabで確定させても再計算が正しく発火しない場合があることを測定中に発見した。特に(a)複数フィールドを一括変更した直後、(b)商品価格フィールドの変更が最後の操作だった場合、に古い（stale）運賃が表示され続けるケースがあったため、疑わしい結果は寸法欄を一時的に別の値に変更してから元に戻す「ゆさぶり」操作を行って再計算を強制し、結果を重量カーブとの体積重量クロスチェックで検証した上で確定させた。商品価格は運賃自体（画面表示の各方式の金額）には影響せず、内容品上限価格を超えた方式が選択肢から消えるという形でのみ結果に影響することを確認済み（cross_check参照）。"
+      "notes": "測定は全てユーザーのローカルChromeをClaude in Chromeで人間同様のUI操作により実施。HTTPクライアント・クラウドブラウザは不使用。CAPTCHA・Cloudflare認証は一度も表示されず。アカウント作成・ログイン・購入は一切行っていない。画面表示の円価格をそのまま記録し、通貨換算・推定・丸め・運送会社定価からの逆算は行っていない。robots.txtのCrawl-delay:5に準拠し、各条件間で最低5秒以上の間隔を空けた（複数フィールドを変更した条件では追加の待機時間を挟んだ）。ZenMarketの計算機はAJAXベースで、フィールド変更後にTabで確定させても再計算が正しく発火しない場合があることを測定中に発見した。特に(a)複数フィールドを一括変更した直後、(b)商品価格フィールドの変更が最後の操作だった場合、に古い（stale）運賃が表示され続けるケースがあったため、疑わしい結果は寸法欄を一時的に別の値に変更してから元に戻す「ゆさぶり」操作を行って再計算を強制し、結果を重量カーブとの体積重量クロスチェックで検証した上で確定させた。商品価格は運賃自体（画面表示の各方式の金額）には影響せず、内容品上限価格を超えた方式が選択肢から消えるという形でのみ結果に影響することを確認済み（cross_check参照）。 【追記・訂正】ドイツ・600g・20×15×10cmで商品価格を¥10,000〜¥27,000の範囲で走査し、日本郵便4方式（EMS・航空便(AVIA)国際小包・航空便(AVIA)小形航空便・船便）の出現有無を確認した。結果：¥10,000/¥20,000/¥25,000/¥26,000/¥26,500/¥26,625では日本郵便4方式は選択肢に一切表示されず（NOVA GLOBAL・ECMS EXPRESSは各自の内容品上限価格¥25,392／¥25,223を超えた時点(¥26,000以降)で別途消える）、¥26,750/¥27,000では日本郵便4方式がすべて表示された。したがって出現の境目は¥26,625（不在）と¥26,750（出現）の間、幅¥125の範囲まで絞り込めた。この境目はIOSSの少額輸入特例の閾値である€150に近い水準であり（当時のレート換算で€150が概ねこの価格帯に相当する）、税関上のIOSS適用可否がJapan Post表示の有無に連動している可能性を示唆する。ただし正確な換算式やIOSSとの直接の因果関係は画面上から確認できないため、自己推定・逆算はしていない（観測された価格帯の相関のみを記録）。なお、この発見の過程で本セッション内において一時的な誤りがあった：Claude in ChromeのUI操作で商品価格欄をform_input（プログラム的な値設定）で変更した場合、ZenMarketのAJAX再計算が発火せず、直前の空欄計算結果がそのまま画面に残る（stale表示）バグを発見した。このstale表示を見て「¥10,000でも日本郵便は出る＝当初の23条件データが誤りだった」と一時的に誤った結論を出したが、実際のキーボード入力（クリック→全選択→削除→タイプ入力）で再検証した結果、¥10,000では日本郵便は出現せず、当初の23条件データ（item_price_jpy=10000で日本郵便4方式が0件）は正しかったことを確認した。取りこぼしではなく、実際の閾値による正当な結果である。"
+    },
+    "fromjapan_us_japanpost_confirmation_2026_09_12": {
+      "source_meta": {
+        "proxy": "fromjapan",
+        "url": "https://www.fromjapan.co.jp/en/estimate/",
+        "robots_txt_checked": "https://www.fromjapan.co.jp/robots.txt",
+        "robots_txt_result": "Disallow対象: /japan/tools/, /japan/s/, /japan/urlOrder/, 各種/api/yahoo_recommend*, /usa/配下のebay検索・入力系パス。計算機の実URL(/en/estimate/, /en/estimate/calc)はいずれのDisallowにも該当しない。Crawl-delay: 30が指定されており、本測定でも30秒以上の間隔を空けた。",
+        "terms_checked": "https://www.fromjapan.co.jp/en/title/serviceRule/ (Terms of Service, Last updated April 30, 2026)",
+        "terms_result": "全文をキーワード検索(scrap/automat/bot/crawl/script/robot)した結果、自動操作・スクレイピング・計算機アクセスを明示的に禁止する条項は確認されなかった。",
+        "captcha_or_cloudflare_encountered": false,
+        "account_created_or_login_used": false,
+        "purchase_made": false,
+        "access_method": "Claude in Chrome（ユーザーのローカルChromeを人間同様のUI操作で使用。HTTPクライアント・クラウドブラウザは不使用）",
+        "checked_at": "2026-09-12"
+      },
+      "default_box_cm": [
+        20,
+        15,
+        10
+      ],
+      "observations": [
+        {
+          "proxy": "fromjapan",
+          "method_name": "ECMS",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 3506,
+          "total_jpy": 14706,
+          "handling_fee_jpy": 500,
+          "domestic_delivery_fee_jpy": 700,
+          "export_clearance_fee_jpy": 0,
+          "methods_shown_total": 5,
+          "screen_note": "画面注記:\"Only available shipping methods are displayed.\" — 利用不可の方式はメッセージ付きで表示されず、選択肢自体に出現しない。"
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "UPS",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 3539,
+          "total_jpy": 14739,
+          "handling_fee_jpy": 500,
+          "domestic_delivery_fee_jpy": 700,
+          "export_clearance_fee_jpy": 0,
+          "methods_shown_total": 5,
+          "screen_note": ""
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "DHL",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 4771,
+          "total_jpy": 15971,
+          "handling_fee_jpy": 500,
+          "domestic_delivery_fee_jpy": 700,
+          "export_clearance_fee_jpy": 0,
+          "methods_shown_total": 5,
+          "screen_note": ""
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "FedEx - Economy",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 5109,
+          "total_jpy": 16309,
+          "handling_fee_jpy": 500,
+          "domestic_delivery_fee_jpy": 700,
+          "export_clearance_fee_jpy": 0,
+          "methods_shown_total": 5,
+          "screen_note": ""
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "FedEx - Priority",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "price_jpy": 5437,
+          "total_jpy": 16637,
+          "handling_fee_jpy": 500,
+          "domestic_delivery_fee_jpy": 700,
+          "export_clearance_fee_jpy": 0,
+          "methods_shown_total": 5,
+          "screen_note": ""
+        }
+      ],
+      "not_available": [
+        {
+          "proxy": "fromjapan",
+          "method_name": "Japan Post EMS",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない。ページ注記:\"Only available shipping methods are displayed.\"）。methods_shown_total=5（ECMS/UPS/DHL/FedEx-Economy/FedEx-Priorityのみ）"
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "Japan Post International Parcel (Airmail/Surface)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "Japan Post Small Packet (Airmail/Surface)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "Japan Post International ePacket Light",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "SF Express Economy Express",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"
+        },
+        {
+          "proxy": "fromjapan",
+          "method_name": "ECMS Standard Express",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": 10000,
+          "reason": "画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない。ECMS(Economy Expressと思われる)のみ表示され、Standard Expressは表示されず）。methods_shown_total=5"
+        }
+      ],
+      "coverage": "US・600g・20×15×10cm・商品価格¥10,000の1条件のみ実測。利用者の依頼により「Terms of Serviceで定義された全配送方法のうちUS宛てで実際に画面表示される方式を全て数える」ことを目的とした確認測定。",
+      "notes": "Terms of Service Article 9に記載の全配送方法リスト: [Japan発] FedEx(Priority/Economy), DHL(Express), UPS(Worldwide Express Saver), Japan Post(EMS/International Parcel[Airmail,Surface]/Small Packet[Airmail,Surface]/International ePacket Light), SF Express(Economy Express), ECMS(Standard Express) — 合計9種類（EMS単体を1種、International Parcelを1種などとして数える場合の目安）。US宛て600g・20×15×10cm・¥10,000の条件で実際に画面表示されたのは5方式のみ（ECMS, UPS, DHL, FedEx-Economy, FedEx-Priority）。日本郵便系（EMS/International Parcel/Small Packet/ePacket Light）はいずれも一切表示されず、画面に\"Not available\"等の明示メッセージも一切出なかった——選択肢のリストからJapan Post関連が完全に消える形。SF Express Economy ExpressおよびECMS Standard Express（ECMSという名前だけ見ると一致するがStandardの方は非表示）も表示されなかった。ページ自体に\"*Only available shipping methods are displayed.\"という注記があり、これはNeokyoで観測した「メッセージなしで一覧から消える」パターンと同じ挙動。取りこぼしを避けるため、結果セクション全体をスクロールしてフッターに到達するまで確認し、表示された行が5行で全てであることを確認済み（methods_shown_total=5として記録）。"
+    },
+    "buyee_us_japanpost_confirmation_2026_09_12": {
+      "source_meta": {
+        "proxy": "buyee",
+        "url": "https://buyee.jp/helpcenter/guide/shipping-fees",
+        "robots_txt_checked": "https://buyee.jp/robots.txt",
+        "robots_txt_result": "User-agent:*でDisallow対象: /errors/, /internalapi/, /api/v1/, /mycoupon/, /myorders/, /myshopping/, /mypage/, /mybaggages/, /mydelivery/, /myurlpurchase/, /ya/, /btob/, /payments/, /signup/regist/address/, /signup/regist/paymentmethod/, /signup/creditcard/, /refunds/, /mercari/item/description/。計算機の実URL(/helpcenter/guide/shipping-fees)はいずれのDisallowにも該当しない。Crawl-delay指定なし(User-agent:*向け)のため、他社での運用実績に準じ10秒以上の間隔を空けて操作した。",
+        "terms_checked": "https://buyee.jp/help/common/terms (Terms of Service)",
+        "terms_result": "全文をキーワード検索(scrap/automat/bot/crawl/script tool/robot)した結果、自動操作・スクレイピング・計算機アクセスを明示的に禁止する条項は確認されなかった。",
+        "captcha_or_cloudflare_encountered": false,
+        "account_created_or_login_used": false,
+        "purchase_made": false,
+        "access_method": "Claude in Chrome（ユーザーのローカルChromeを人間同様のUI操作で使用。HTTPクライアント・クラウドブラウザは不使用）",
+        "checked_at": "2026-09-12",
+        "item_price_field_present": false,
+        "item_price_field_note": "計算機フォームに商品価格の入力欄は存在しない。したがって商品価格による影響は測定不能。"
+      },
+      "default_box_cm": [
+        20,
+        15,
+        10
+      ],
+      "observations": [
+        {
+          "proxy": "buyee",
+          "method_name": "ECMS",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "price_jpy": 2288,
+          "customs_clearance_fee_jpy": 800,
+          "delivery_estimate": "7-14 days",
+          "methods_shown_total": 10,
+          "screen_note": "Customs Clearance Feeが別途800円発生する旨の注記あり"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "Buyee Air Delivery",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "price_jpy": 4526,
+          "customs_clearance_fee_jpy": 1200,
+          "delivery_estimate": "2-7 days",
+          "methods_shown_total": 10,
+          "screen_note": "Customs Clearance Feeが別途1200円発生する旨の注記あり"
+        }
+      ],
+      "not_available": [
+        {
+          "proxy": "buyee",
+          "method_name": "EMS (Express Mail Service)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。\"Recommended\"バッジが付いたまま利用不可表示になっている点に留意。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "FedEx Economy",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "International Parcel Post (AIR) / Airmail",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "International Parcel Post (SAL) / Economy Airmail",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "International Parcel Post (Surface Mail)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "AIR Packet (Airmail, Shipping Preparation Fee included)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "Small Packet (AIR) / Airmail (without tracking)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        },
+        {
+          "proxy": "buyee",
+          "method_name": "Small Packet (SAL) / Economy Airmail (without tracking)",
+          "country": "US",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "item_price_jpy": null,
+          "reason": "画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"
+        }
+      ],
+      "coverage": "US・600g・20×15×10cmの1条件のみ実測。商品価格の入力欄がフォームに存在しないため、その観点は測定不能（sources[0].item_price_field_present=false）。",
+      "notes": "画面全体をフッターまでスクロールし、表示された行が10行（価格表示2件＋Shipping not available表示8件）で全てであることを確認済み（methods_shown_total=10として記録）。FROM JAPANが日本郵便系を選択肢から完全に消す(メッセージなし)のに対し、Buyeeは日本郵便系（EMS/International Parcel Post 3種/AIR Packet/Small Packet 2種）とFedEx Economyの計7方式を『方式名は表示するが\"Shipping not available\"と明示して不可にする』という異なる提示方法を採る。EMSには\"Recommended\"バッジが付与されたままだが実際には利用不可であり、UI上の矛盾（推奨表示と利用不可表示の併存）が見られた。価格が表示され実際に利用可能なのはECMS(2,288円、customs clearance fee別途800円)とBuyee Air Delivery(4,526円、customs clearance fee別途1200円)の2方式のみ。"
     }
   },
   "separately_displayed_fees": {
@@ -11877,24 +13546,32 @@
         "neokyo": "robots.txtにより自動測定せず。顔ぶれ未確認。外部作業者が手動ブラウザで測定中。"
       },
       "us_japan_post_unavailable_tally": {
-        "status": "US で日本郵便を出していないことが確認された社が3つ目になった（FROM JAPAN・Jauce・Buyee）。5社中3社。残る2社（ZenMarket・Neokyo）は外部作業者が手動測定中。",
+        "status": "2026-09-12（本追記）: FROM JAPAN・Buyeeの追加実測（methods_shown_totalによる網羅性の裏付け付き）とNeokyoの既存実測（画面の明示メッセージ）により、『USに日本郵便を出していない』ことが確認された社は3社で確定：FROM JAPAN・Buyee・Neokyo（5社中3社）。以前ここにJauceを含めていたのは誤りだった——Jauceは小形包装物とUS向けSurfaceを欠くだけで、US向けEMS（日本郵便の一方式）は現に提供している（observations.jauce_country_600g_20x15x10のUS行: EMS=4180, Surface=null）。ZenMarketも同様にUS向け日本郵便4方式（船便・航空便(AVIA)小形航空便・EMS・航空便(AVIA)国際小包）を提供している（observations.zenmarket_2026_09_12のUS行）。したがって『日本郵便をUSに出すかどうか』はキャリア一律の制約ではなく、代行会社ごとに異なる。証拠の強さは社によって異なるクラスに分かれる（下記各社basis参照）：Buyeeは画面上の明示的な不可宣言（オンスクリーン宣言）、FROM JAPANはmethods_shown_totalによる網羅カウント（宣言メッセージなしで消える）、Neokyoは画面の明示メッセージ。3社とも「たまたま記録されていないだけ」という取りこぼしの可能性を排除できる根拠を持つ。",
         "companies": [
           {
             "proxy": "fromjapan",
-            "basis": "2026-09-12実測 ＋ 2026-09-07の別実測（外部文書）。USは宅配便（DHL/FedEx等）のみ"
-          },
-          {
-            "proxy": "jauce",
-            "basis": "2026-09-12実測でUS向けSurfaceがnull"
+            "evidence_class": "counted_absence_with_page_disclaimer（宣言なしで選択肢から消えるが、ページ自体に『表示されるのは利用可能な方式のみ』という注記があり、フッターまでスクロールして表示行数を数えて確認済み）",
+            "basis": "observations.fromjapan_us_japanpost_confirmation_2026_09_12（2026-09-12実測）。US・600g・20x15x10cm・¥10,000でmethods_shown_total=5（ECMS/UPS/DHL/FedEx-Economy/FedEx-Priorityのみ）。Terms of Service Article 9記載の9方式中、日本郵便系4方式（EMS/International Parcel/Small Packet/ePacket Light）はいずれも選択肢に一切現れない。2026-09-07の別実測（外部文書）でもUSは宅配便のみと記録されており一致。"
           },
           {
             "proxy": "buyee",
-            "basis": "2026-09-12実測（今回）。US向け日本郵便が選択肢から全滅"
+            "evidence_class": "declared_unavailable（最も強い証拠。方式名が画面上にグレーアウトで表示された上で\"Shipping not available\"という明示メッセージが付く。不在ではなく肯定的な不可表示）",
+            "basis": "observations.buyee_us_japanpost_confirmation_2026_09_12（2026-09-12実測）。US・600g・20x15x10cmでmethods_shown_total=10（価格表示2件＋Shipping not available表示8件）。日本郵便系（EMS・International Parcel Post AIR/SAL/Surface・AIR Packet・Small Packet AIR/SAL）とFedEx Economyの計7方式が\"Shipping not available\"と明示された。EMSには\"Recommended\"バッジが付いたままだったが、それでも利用不可——バッジは可用性を意味しないことを示す観測。"
+          },
+          {
+            "proxy": "neokyo",
+            "evidence_class": "declared_unavailable（画面の明示メッセージ。既存データで確認済みだったが、他2社が methods_shown 相当の裏付けを得たことで、この節の条件『methods_shown的カウンタで裏づけること』が3社そろって満たされた）",
+            "basis": "observations.neokyo_2026_09_12のUS行（postcode 10001, 600g, 20x15x10cm）で、Japan Post EMS/Airmail/Surfaceを含む6方式全てに画面上\"Not available or suspended in your country.\"の明示メッセージが表示された。"
           }
         ],
+        "jauce_and_zenmarket_offer_japan_post_to_us": {
+          "statement": "JauceとZenMarketはUSに日本郵便を提供している。これはキャリアレベルの一律制約ではなく、代行会社ごとの方針差であることの直接証拠。",
+          "jauce": "observations.jauce_country_600g_20x15x10のUS行: EMS=¥4,180（提供）, Surface=null（この方式のみ不可）。",
+          "zenmarket": "observations.zenmarket_2026_09_12のUS行（600g・20x15x10cm・¥10,000）: 船便 ¥2,600 / 航空便（AVIA）小形航空便 ¥2,691 / EMS ¥4,180 / 航空便（AVIA）国際小包 ¥4,200 — 日本郵便4方式すべて提供。"
+        },
         "current_code_behavior": "src/lib/pricing/services.ts の buyee エントリでは、'ems' の postage に unavailableIn: ['US'] が設定されておらず、US 向けにも EMS が markup 方式で価格化・順位表示されている。つまり現在のコードは、Buyee が実際には提供していない『US向けEMS』という方式を価格化して比較・順位付けに使っている。FROM JAPANで先に見つかったのと同じ型の欠陥。",
-        "expected_impact_if_fixed": "US では Buyee の実在する方式が ECMS と FedEx（宅配便、まだ価格化していない）だけになるため、Buyee は US 向け郵便での比較から実質的に外れる（宅配便が価格化されるまでは『価格が付かない』側になる）。現状 Buyee が US で日本郵便（EMS）の額で他社と比較・順位付けされている行はすべて誤りで、修正後は他の日本郵便系の社との直接比較から外れ、順位が変わりうる。ただし ZenMarket・Neokyo の可否がまだ揃っていないため、具体的な順位の変化は5社そろってからでないと言えない。",
-        "code_not_touched": "本コミットでは services.ts を変更していない（オーナー方針: 5社そろってから一括修正）。"
+        "expected_impact_if_fixed": "US では Buyee の実在する方式が ECMS と Buyee Air Delivery（および将来価格化されるFedEx Economy）だけになるため、Buyee は US 向け日本郵便での比較から実質的に外れる。現状 Buyee が US で日本郵便（EMS）の額で他社と比較・順位付けされている行はすべて誤りで、修正後は他の日本郵便系の社（Jauce・ZenMarket）との直接比較から外れ、順位が変わりうる。同様にFROM JAPANとNeokyoのUS向け日本郵便もservices.tsで除外する必要がある。3社（FROM JAPAN・Buyee・Neokyo）分の証拠が出揃ったため、次はこの節をもとにservices.tsを修正する段階に進める——ただしこのPRでは変更しない（オーナーが別途タイミングを指示）。",
+        "code_not_touched": "本コミットでは services.ts を変更していない（オーナー方針: このデータ取り込みとは別工程で反映する）。データ上はこの修正が支持されることをPR本文に明記する。"
       }
     },
     "ups_lower_bound_flag": {
@@ -12014,10 +13691,23 @@
       "action": "以前の23条件DE走査データから『DE向けに日本郵便が存在しない』という可用性の結論を導き出さないこと。今回の新データ（observations.zenmarket_2026_09_12）のDE行を可用性の根拠とする。古い23条件データセット自体は書き換えない（当時の記録として残す）が、そこから可用性を再導出することを禁止する。"
     },
     "neokyo_us_no_japan_post_observation_flag": {
-      "status": "observation_only_not_a_conclusion",
-      "statement": "新しいNeokyoデータでは、US(600g/20x15x10cm)で表示された方式はFedEx International Connect Plus / DHL Express Worldwide / DHL EXPRESS 12:00 の3つのみで、日本郵便(Japan Post)系の行が無い。一方DE/GB/FR/AU/CA/SGでは日本郵便EMS/Airmail/Surfaceが表示されている。",
+      "status": "confirmed_2026_09_12（この節が要求していたmethods_shown相当の裏付け条件は満たされた）",
+      "statement": "新しいNeokyoデータでは、US(600g/20x15x10cm)で表示された方式はFedEx International Connect Plus / DHL Express Worldwide / DHL EXPRESS 12:00 の3つのみで、日本郵便(Japan Post)系の行が無い。一方DE/GB/FR/AU/CA/SGでは日本郵便EMS/Airmail/Surfaceが表示されている。Neokyo自身、US向けの不可方式（Japan Post EMS/Airmail/Surface含む計6方式）に画面上で\"Not available or suspended in your country.\"という明示メッセージを出しており、これは不在ではなく肯定的な不可表示である。",
       "basis": "observations.neokyo_2026_09_12.observations（country=USの行）および同 not_available（country=USの行）。",
-      "caveat": "これを『USに日本郵便が存在しない』という可用性の結論として確定させてはならない。国ごとに提供される方式の総数（methods_shown）を記録するカウンタが無いため、『表示されなかった』のか『そもそもそのAPIレスポンス上限に切れた』のか等を区別できない。今後の再測定では国ごとに methods_shown: N のようなカウンタを記録し、可用性の欠如として扱えるかどうかをそこで確認すること。"
+      "resolution": "本節が要求していた『取りこぼしではないことを示すmethods_shownスタイルのカウンタ、または同等の裏付け』は2026-09-12の追加実測で満たされた: FROM JAPAN（observations.fromjapan_us_japanpost_confirmation_2026_09_12、methods_shown_total=5でページ自体が『表示されるのは利用可能な方式のみ』と宣言）とBuyee（observations.buyee_us_japanpost_confirmation_2026_09_12、methods_shown_total=10で日本郵便系を含む8方式に\"Shipping not available\"の明示メッセージ）が、Neokyoの画面メッセージと同じ結論（US向け日本郵便の不提供）を独立に指し示した。証拠クラスの強さは社ごとに異なる（Buyee=画面上の明示的不可宣言、Neokyo=画面上の明示メッセージ、FROM JAPAN=宣言なしで消えるがページの『利用可能な方式のみ表示』注記とmethods_shown_totalによる網羅カウントで裏付け）——これらを同一の主張に平板化してはならない。詳細は conclusions.courier_lineup_diffs.us_japan_post_unavailable_tally を参照。結論として『USに日本郵便を提供しない代行会社』はFROM JAPAN・Buyee・Neokyoの3社で確定し、Jauce・ZenMarketはUSに日本郵便を提供している（同tally参照）——キャリア一律の制約ではなく代行会社ごとの方針差である。",
+      "caveat": "この結論はUS・600g・20x15x10cm・（測定可能な社では）¥10,000という条件でのものであり、他の重量・寸法・商品価格帯や他国への一般化はしていない。"
+    },
+    "methods_shown_total_field_convention": {
+      "status": "2026-09-12新設。今後の全実測キャプチャで必須フィールドとする。",
+      "definition": "ある1条件（社×国×重量×寸法×商品価格の組み合わせ）で、画面に表示された配送方式の総数（価格が付いた方式＋明示的に利用不可と表示された方式の合計。選択肢に一切現れない方式は含まない）。フッターまでスクロールしてこれが全件であることを確認した上で記録する。",
+      "purpose": "『ある方式が表示されなかった』という観測が、実際の提供状況を反映しているのか、単なる取りこぼし（キャプチャミス）なのかを区別するため。2026-09-11のZenMarket DE走査での取りこぼし（conclusions.zenmarket_de_japan_post_capture_miss_correction参照）と、本日German dataset（別件）で起きた同型の失敗を受けて導入した。",
+      "adopted_in": [
+        "observations.fromjapan_us_japanpost_confirmation_2026_09_12（各行に methods_shown_total を記録）",
+        "observations.buyee_us_japanpost_confirmation_2026_09_12（各行に methods_shown_total を記録）",
+        "observations.zenmarket_2026_09_12（NOVA GLOBAL価格上限の絞り込み走査46行に methods_shown_total を記録。他の行は本フィールド新設以前の実測のため未記録のまま残す——書き換えない）"
+      ],
+      "not_backfilled": "本フィールド新設以前に取り込んだ行（neokyo_2026_09_12・zenmarket_2026_09_12の旧230行・jauce系・single_points等）には methods_shown_total が無い。実測時に数えていない数値を後から推測で埋めることはしない。今後の再測定・追加測定で埋まる。",
+      "naming_note": "フィールド名は必ず methods_shown_total に統一する（methods_shown・shown_total等の表記ゆれを禁止）。今回取り込んだ3ファイルはいずれもこの名前で提供されており、そのまま採用した。"
     }
   }
 }
