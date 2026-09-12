@@ -35,7 +35,7 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
           // 「なぜ上限が不明か」に辿り着けない状態を作らない。
           const isUncapped = l.amount == null && l.unknownCapYen == null;
           return (
-            <tr key={l.key}>
+            <tr key={l.key} data-cost-key={l.key}>
               <td className="py-1 pr-2 align-top">
                 <span className="block">{l.label}</span>
                 <span className="block text-[11px] text-neutral-500">

@@ -174,6 +174,17 @@ export function costRow(li: Locator, label: string | RegExp): Locator {
   return li.getByRole('row').filter({ has: li.page().getByRole('cell', { name: label }) });
 }
 
+/**
+ * 開いた行の2列比較から、費目の内部キー（`Line.key`、`RowBreakdown.tsx` の
+ * `data-cost-key`）で1行を引く。**同じ label 文字列を持つ行が2本以上ありうる
+ * 費目（例: 国境側の `vat` 行と、社側の前払いをまとめる `prepaid-import-tax` 行は
+ * どちらもラベルが "VAT"／"VAT collected at checkout" で始まる）は、
+ * 文言ではなくこちらで引く。**
+ */
+export function costRowByKey(li: Locator, key: string): Locator {
+  return li.locator(`tr[data-cost-key="${key}"]`);
+}
+
 /** 表の1行を、セルの文字列の配列にする。 */
 export async function rowCells(row: Locator): Promise<string[]> {
   const cells = row.getByRole('cell');
