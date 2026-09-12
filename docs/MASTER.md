@@ -258,34 +258,54 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
   費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 48
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
-  rule.type 評価カバレッジ: 通関経路 48 件中 22 件が eval_clearance() で評価可能、**26 件は宣言のみで未評価**
+  rule.type 評価カバレッジ: 通関経路 48 件中 41 件が eval_clearance() で評価可能、**7 件は宣言のみで未評価**
   未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:
-    - US/FedEx(courier_brokerage): rule.type='greater_of' ── eval_clearance() 未対応
-    - US/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
-    - US/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
-    - GB/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
     - GB/FedEx(courier_brokerage): rule.type='unknown' ── eval_clearance() 未対応
     - GB/UPS(ups_disbursement): rule.type='unknown' ── eval_clearance() 未対応
-    - DE/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min' ── eval_clearance() 未対応
     - DE/FedEx（Aufwendungspauschale/Disbursement Fee）(fedex): rule.type='unknown' ── eval_clearance() 未対応
-    - DE/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
     - DE/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
-    - FR/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
-    - FR/FedEx（frais d'avance / avance de douane）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
-    - FR/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── eval_clearance() 未対応
     - FR/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
-    - AU/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
-    - AU/FedEx（Disbursement Fee/Advancement Fee）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
-    - AU/UPS(ups_disbursement): rule.type='greater_of' ── eval_clearance() 未対応
     - AU/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
-    - CA/UPS / FedEx / DHL(courier): rule.type='range' ── eval_clearance() 未対応
-    - CA/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
-    - CA/FedEx（Disbursement Fee）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
-    - CA/UPS(ups_disbursement): rule.type='greater_of_by_service' ── eval_clearance() 未対応
     - CA/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
-    - SG/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── eval_clearance() 未対応
-    - SG/FedEx（Disbursement Fee/Advancement Fee）(fedex): rule.type='greater_of' ── eval_clearance() 未対応
-    - SG/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min_and_max' ── eval_clearance() 未対応
+
+  fixture カバレッジ: 評価可能な 41 件中 4 件は実請求 fixture でクロスチェック済み、**36 件は評価可能だが突き合わせる fixture が無い**
+  評価可能・未fixtureの内訳（計算はできるが、一度も実請求と突き合わせていない行）:
+    - US/USPS(usps): rule.type='banded_by_value' ── 評価器はあるが fixture 無し
+    - US/FedEx(courier_brokerage): rule.type='greater_of' ── 評価器はあるが fixture 無し
+    - US/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - US/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min' ── 評価器はあるが fixture 無し
+    - US/ECMS(ecms_duty_advance): rule.type='rate_of_import_charges' ── 評価器はあるが fixture 無し
+    - GB/Royal Mail(royal_mail): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - GB/Parcelforce(parcelforce): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - GB/Royal Mail / Parcelforce(high_value): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - GB/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - GB/ECMS(ecms_duty_advance): rule.type='rate_of_import_charges' ── 評価器はあるが fixture 無し
+    - DE/Deutsche Post / DHL 標準 / EMS(deutsche_post): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - DE/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min' ── 評価器はあるが fixture 無し
+    - DE/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── 評価器はあるが fixture 無し
+    - FR/La Poste(la_poste_default): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - FR/La Poste(la_poste_online): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - FR/Chronopost(chronopost): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - FR/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - FR/FedEx（frais d'avance / avance de douane）(fedex): rule.type='greater_of' ── 評価器はあるが fixture 無し
+    - FR/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── 評価器はあるが fixture 無し
+    - ES/Correos（配達時・現金）(correos_at_delivery): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - ES/DHL(dhl): rule.type='fixed_min' ── 評価器はあるが fixture 無し
+    - AU/ABF（Import Processing Charge）(abf_import_processing): rule.type='banded_by_value' ── 評価器はあるが fixture 無し
+    - AU/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - AU/FedEx（Disbursement Fee/Advancement Fee）(fedex): rule.type='greater_of' ── 評価器はあるが fixture 無し
+    - AU/UPS(ups_disbursement): rule.type='greater_of' ── 評価器はあるが fixture 無し
+    - CA/UPS / FedEx / DHL(courier): rule.type='range' ── 評価器はあるが fixture 無し
+    - CA/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - CA/FedEx（Disbursement Fee）(fedex): rule.type='greater_of' ── 評価器はあるが fixture 無し
+    - CA/UPS(ups_disbursement): rule.type='greater_of_by_service' ── 評価器はあるが fixture 無し
+    - SG/SingPost(singpost_low_value): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - SG/SingPost(singpost): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
+    - SG/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - SG/FedEx（Disbursement Fee/Advancement Fee）(fedex): rule.type='greater_of' ── 評価器はあるが fixture 無し
+    - SG/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min_and_max' ── 評価器はあるが fixture 無し
+    - SG/ECMS(ecms_duty_advance): rule.type='rate_of_import_charges' ── 評価器はあるが fixture 無し
+    - TW/快遞（代引き）(courier_cod): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
 
 == 2. 実請求の再現（customs.json の rule を評価する） ==
   [PASS    ] es-zenmarket-ups-2023-07-26  (循環（率をこの請求書から導いている）)

@@ -117,20 +117,78 @@ EVAL_HANDLED_TYPES = {
     "fixed_per_parcel", "fixed_plus_vat", "rate_of_import_charges",
     "rate_of_value_with_min", "fixed_min", "fixed_per_parcel_plus_gst",
     "banded_by_value",
+    # 2026-09-12 追加分（PR: eval-clearance-coverage）── 下の eval_clearance() の
+    # 対応する if 分岐と手で同期させること。
+    "greater_of", "rate_of_import_charges_with_min",
+    "rate_of_import_charges_with_min_variants", "banded_by_value_mixed",
+    "greater_of_by_service", "rate_of_import_charges_with_min_and_max",
+    # "range" は他と契約が違う: eval_clearance() は単一の金額ではなく (min, max) を返す。
+    # これは「算出できる一点の値」ではなく「幅の表明」を評価する型で、実請求額がこの
+    # 幅に収まるか（包含）を eval_clearance_range_contains() でチェックする。等号での
+    # 再現検証はできないし、してはならない（中央値や端点を使って数字を捏造しない）。
+    "range",
 }
+
+# fixture が無いために「評価可能だが一度もクロスチェックされていない」行を、
+# 「型自体が未対応の行」と区別して数える。両方とも `master/fixtures.json` に
+# このrouteを再現する fixture が無ければ生まれるが、原因が違う:
+#   - 未対応（below）: eval_clearance() がそもそも計算できない
+#   - 評価可能・未fixture: eval_clearance() は計算できるが、突き合わせる実請求が無い
+FIXTURE_ROUTES = set()  # (country, carrier, route) を fixtures 側の再現ロジックから集める
+# fixtures.json 側の再現ロジック（下の find_route 呼び出し）と手で同期させる。
+# 現状クロスチェックされているのは ES/UPS, CA/Canada Post, ES/Correos（事前）, ES/FedEx(conflicting_report) のみ。
+FIXTURE_ROUTES.update({
+    ("ES", "UPS", "ups"),
+    ("CA", "Canada Post", "canada_post"),
+    ("ES", "Correos（事前に自分で払う）", "correos_self_clear"),
+    ("ES", "FedEx", "fedex"),
+})
+
+# 「今後 eval_clearance() が対応しない型の行を新規に増やさない」ためのラチェット。
+# ここに列挙した (country, carrier, route) の組だけが「型未対応のまま」を許される
+# 既存行（このPR以前から main にあった行）。新しく customs.json に追加される
+# clearance 行の rule.type が EVAL_HANDLED_TYPES に無く、かつこの組に無い場合は
+# fail 扱いにする（= 検証がビルドを落とす）。キーは (country, carrier, route) の3つ組。
+GRANDFATHERED_UNEVALUATED = {
+    ("GB", "FedEx", "courier_brokerage"),
+    ("GB", "UPS", "ups_disbursement"),
+    ("DE", "FedEx（Aufwendungspauschale/Disbursement Fee）", "fedex"),
+    ("DE", "ECMS", "ecms_duty_advance"),
+    ("FR", "ECMS", "ecms_duty_advance"),
+    ("AU", "ECMS", "ecms_duty_advance"),
+    ("CA", "ECMS", "ecms_duty_advance"),
+}
+
 unevaluated = []
+unfixtured = []
 for cc, c in CO.items():
     for r in c["clearance"]:
         t = r["rule"]["type"]
+        carrier, route = r.get("carrier"), r.get("route")
         if t not in EVAL_HANDLED_TYPES:
-            unevaluated.append((cc, r.get("carrier"), r.get("route"), t))
-print(f"\n  rule.type 評価カバレッジ: 通関経路 {sum(len(c['clearance']) for c in CO.values())} 件中"
-      f" {sum(len(c['clearance']) for c in CO.values()) - len(unevaluated)} 件が eval_clearance() で評価可能、"
+            unevaluated.append((cc, carrier, route, t))
+            if (cc, carrier, route) not in GRANDFATHERED_UNEVALUATED:
+                fail.append(f"{cc}/{carrier}({route}): rule.type='{t}' は eval_clearance() 未対応の"
+                            f"新規行（ラチェット対象外）── GRANDFATHERED_UNEVALUATED に無い組み合わせ")
+        elif (cc, carrier, route) not in FIXTURE_ROUTES:
+            unfixtured.append((cc, carrier, route, t))
+
+total_routes = sum(len(c["clearance"]) for c in CO.values())
+print(f"\n  rule.type 評価カバレッジ: 通関経路 {total_routes} 件中"
+      f" {total_routes - len(unevaluated)} 件が eval_clearance() で評価可能、"
       f"**{len(unevaluated)} 件は宣言のみで未評価**")
 if unevaluated:
     print("  未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:")
     for cc, carrier, route, t in unevaluated:
-        print(f"    - {cc}/{carrier}({route}): rule.type='{t}' ── eval_clearance() 未対応")
+        flag = "" if (cc, carrier, route) in GRANDFATHERED_UNEVALUATED else "  ← ラチェット対象外（新規行なら fail）"
+        print(f"    - {cc}/{carrier}({route}): rule.type='{t}' ── eval_clearance() 未対応{flag}")
+print(f"\n  fixture カバレッジ: 評価可能な {total_routes - len(unevaluated)} 件中"
+      f" {len(FIXTURE_ROUTES)} 件は実請求 fixture でクロスチェック済み、"
+      f"**{len(unfixtured)} 件は評価可能だが突き合わせる fixture が無い**")
+if unfixtured:
+    print("  評価可能・未fixtureの内訳（計算はできるが、一度も実請求と突き合わせていない行）:")
+    for cc, carrier, route, t in unfixtured:
+        print(f"    - {cc}/{carrier}({route}): rule.type='{t}' ── 評価器はあるが fixture 無し")
 
 # =============================================================== 2. 再現検証
 print("\n== 2. 実請求の再現（customs.json の rule を評価する） ==")
@@ -157,7 +215,60 @@ def eval_clearance(rule, ctx):
         for up, amt in rule["bands"]:
             if up is None or v <= up: return amt
         raise ValueError(f"banded_by_value: 値 {v} を含む帯が無い")
+    if t == "greater_of":
+        # flat と rate×import_tax のいずれか大きい方（UPS/FedEx の Disbursement Fee系）。
+        return max(rule["flat"], rule["rate"] * ctx["import_tax"])
+    if t == "rate_of_import_charges_with_min":
+        # rate_of_value_with_min と同じ「率 or 最低額の大きい方」構造だが、
+        # 掛ける対象が goods_value ではなく import_tax（advanced された関税等）である点が違う。
+        return max(rule["rate"] * ctx["import_tax"], rule["min"])
+    if t == "rate_of_import_charges_with_min_and_max":
+        # 上と同じだが上限も明記されている（SG UPS）。上限で頭打ちにする。
+        return min(max(rule["rate"] * ctx["import_tax"], rule["min"]), rule["max"])
+    if t == "rate_of_import_charges_with_min_variants":
+        # DHL の Duty Tax Processing。account_holder / non_account_holder 等、
+        # 利用者の契約形態でどの variant を使うかが変わるため、ctx["variant"] が必須。
+        # 未指定のまま評価しようとするのは「代行の内部運用を勝手に決め打ちする」ことに
+        # なるため、原則1に反する ── 呼び出し側に variant の指定を要求してエラーにする。
+        variant = ctx.get("variant")
+        if variant is None or variant not in rule["variants"]:
+            raise KeyError(
+                f"rate_of_import_charges_with_min_variants: ctx['variant'] が"
+                f"{sorted(rule['variants'])}のいずれかとして必要")
+        v = rule["variants"][variant]
+        return max(v["rate"] * ctx["import_tax"], v["min"])
+    if t == "banded_by_value_mixed":
+        # UPS DE/FR。帯によって式の「構造」自体（flat か rate_with_min か）が変わる。
+        # 帯選びは intrinsic value（申告価格）で行い、選んだ帯の rule を再帰的に評価する。
+        v = ctx["goods_value_per_parcel"]
+        for band in rule["bands"]:
+            lte = band.get("value_lte")
+            gt = band.get("value_gt")
+            if lte is not None and v <= lte:
+                return eval_clearance(band["rule"], ctx)
+            if gt is not None and v > gt:
+                return eval_clearance(band["rule"], ctx)
+        raise ValueError(f"banded_by_value_mixed: 値 {v} を含む帯が無い")
+    if t == "greater_of_by_service":
+        # CA UPS。flat側の最低額がサービス種別で変わる greater_of。
+        service = ctx.get("service")
+        if service is None or service not in rule["min_by_service"]:
+            raise KeyError(
+                f"greater_of_by_service: ctx['service'] が"
+                f"{sorted(rule['min_by_service'])}のいずれかとして必要")
+        return max(rule["rate"] * ctx["import_tax"], rule["min_by_service"][service])
+    if t == "range":
+        # range は「算出できる一点の金額」ではなく「幅の表明」。中央値や端点を使って
+        # 数字を捏造しない（タスクの指示通り）。ここでは (min, max) をそのまま返し、
+        # 呼び出し側は eval_clearance_range_contains() で実請求額の包含判定を行う。
+        return (rule["min"], rule["max"])
     raise KeyError(f"未対応の clearance rule.type: {t}")
+
+def eval_clearance_range_contains(range_result, amount):
+    """eval_clearance() が range 型に対して返す (min, max) に amount が収まるかを判定する。
+    等号での再現検証はできない（そもそも一点の値が原文に無い）ため、真偽値のみを返す。"""
+    lo, hi = range_result
+    return lo <= amount <= hi
 
 def eval_fee_vat(country, fee):
     r = CO[country]["clearance_fee_vat"]["rule"]
