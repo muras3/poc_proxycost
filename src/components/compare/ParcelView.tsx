@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { singleParcelGrossG } from '@/lib/pricing/compare';
-import { COUNTRIES } from '@/lib/pricing/countries';
 import { EMS_SOURCE_URL, EMS_ZONE, emsFor } from '@/lib/pricing/ems';
-import { rateFor } from '@/lib/pricing/rates';
 import { grams as gramsText, yen } from '@/lib/ui/format';
 import { Glyph } from '@/lib/ui/glyphs';
-import type { CountryCode, Item, ParcelBox, ParcelSplitReason, Row } from '@/lib/pricing/types';
+import type {
+  CountryCode, Item, ParcelBox, ParcelDutyKind, ParcelSplitReason, ParcelVatKind, Row,
+} from '@/lib/pricing/types';
 import { PackingBox, type PackedItem } from './PackingBox';
 import { WeightLadder } from './WeightLadder';
 
@@ -23,7 +23,7 @@ import { WeightLadder } from './WeightLadder';
  *   3. **直前の操作で送料が動いたか。動かなかったなら「+¥0」と書いて静止する**
  *
  * 複数箱に分かれるときは、箱ごとに言う: なぜ分かれたか・詰めた順（重い順）・
- * その箱の申告額・その箱の免税しきい値。**箱の内訳（`row.boxes`）は一切ここで
+ * その箱の申告額・その箱の関税/VAT・GST の判定。**箱の内訳（`row.boxes`）は一切ここで
  * 再計算しない。**`compare()`/`buildRow`（`src/lib/pricing/compare.ts`）が
  * その行に実際に選んだ方式・グルーピングで計算した `Row.boxes` を、そのまま
  * 描くだけ（2026-09-12、オーナー確定）。
@@ -255,7 +255,7 @@ export function ParcelView({
     >
       <ParcelHeading />
 
-      {multiBox && <MultiBoxView boxes={multiBox} items={items} country={country} />}
+      {multiBox && <MultiBoxView boxes={multiBox} items={items} />}
 
       {/* **単箱のときだけマウントする。**以前は `hidden` クラスで隠すだけだったため、
           分割時にこの単箱と `MultiBoxView` の箱が両方 DOM に残り、
@@ -414,20 +414,45 @@ const REASON_TEXT: Record<ParcelSplitReason, string> = {
   'weight-limit': "over this shipping method's weight limit",
 };
 
-/** 免税しきい値の判定。**円換算と比較だけ**——箱の中身・分割の理由には触れない、
- *  国のマスタデータ（`COUNTRIES`）を declaredYen に当てはめるだけの表示用計算。 */
-function dutyFreeCheck(country: CountryCode, declaredYen: number): { thresholdYen: number | null; over: boolean } {
-  const c = COUNTRIES[country];
-  if (!Number.isFinite(c.dutyFreeLimit)) return { thresholdYen: null, over: false };
-  const thresholdYen = Math.round(c.dutyFreeLimit * rateFor(c.ccy));
-  return { thresholdYen, over: declaredYen > thresholdYen };
+/**
+ * `box.tax` の文言。**しきい値と申告額を比べ直さない**——`taxLines()`
+ * （`src/lib/pricing/compare.ts`）が個口ごとに出した `kind` をそのまま文にするだけ。
+ *
+ * **なぜ「免税しきい値の下＝無税」で描かないか（コーディネーター指摘 2026-09-12）**:
+ * 7か国中5か国でその読みが崩れる——GB/DE/FR/AU は VAT/GST の免税限度が実質0
+ * （`vatFreeLimit: 0`、金額が1円でもあれば課税）、DE/FR は関税の免税限度以下でも
+ * 1点あたり定額課税（`flatDutyPerItem`）、SG は関税の免税限度が無限大（`no-duty`
+ * ——限度という概念自体が無く、線を引く意味がない）。だから「しきい値の絵」では
+ * なく「`taxLines` が実際に出した結論」を見せる。
+ */
+const DUTY_TEXT: Record<ParcelDutyKind, (amountYen: number | null) => string> = {
+  flat: (y) => `${yen(y ?? 0)} flat per-item duty — still charged under the duty-free line`,
+  free: () => 'none — under the duty-free line',
+  'no-duty': () => 'no duty on this category (no duty-free line applies)',
+  rate: (y) => `${yen(y ?? 0)}`,
+  unknown: () => 'rate not published',
+};
+const VAT_TEXT: Record<ParcelVatKind, (amountYen: number | null) => string> = {
+  'no-rate': () => 'none at federal level',
+  'seller-collects': () => 'collected at checkout, not at the border',
+  free: () => 'none — under the threshold',
+  rate: (y) => `${yen(y ?? 0)}`,
+};
+/** 「何かかかっている」か。色分けの根拠は `kind` そのもの——金額の大小ではない。 */
+function dutyIsCharged(kind: ParcelBox['tax']['duty']['kind']): boolean {
+  return kind === 'flat' || kind === 'rate';
+}
+function vatIsCharged(kind: ParcelBox['tax']['vat']['kind']): boolean {
+  return kind === 'rate';
 }
 
 /**
  * **箱の分かれ方そのものを見せる区画。**
  * 前提（`docs/DESIGN-BOX-SIZE.md` §5、オーナー確定 #76）を先に言い、箱ごとに
  * 4つの事実を出す: 分かれた理由・詰めた順（重い順）・その箱の申告額・その箱の
- * 免税しきい値。すべて文字と数字で言うので `prefers-reduced-motion` でも全部
+ * 関税/VAT・GST の判定（**しきい値との比較は component 側でやり直さない**——
+ * `taxLines()` が個口ごとに出した結論をそのまま渡す。理由は下の `DUTY_TEXT`/
+ * `VAT_TEXT` の doc comment）。すべて文字と数字で言うので `prefers-reduced-motion` でも全部
  * 読める（この区画自体はアニメーションを使っていない）。
  * **`boxes` はそのまま `row.boxes`（`compare()` の出力）を描くだけ。** 分割・
  * グルーピングの計算はここには一切無い。
@@ -435,11 +460,9 @@ function dutyFreeCheck(country: CountryCode, declaredYen: number): { thresholdYe
 function MultiBoxView({
   boxes,
   items,
-  country,
 }: {
   boxes: readonly ParcelBox[];
   items: readonly Item[];
-  country: CountryCode;
 }) {
   return (
     <div data-testid="parcel-split" className="mt-3 min-w-0">
@@ -447,13 +470,13 @@ function MultiBoxView({
       <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
         {boxes.map((box, boxIndex) => {
           const boxItems = packedItemsForBox(items, box);
-          const { thresholdYen, over } = dutyFreeCheck(country, box.declaredYen);
           return (
             <div
               key={boxIndex}
               data-testid="split-box"
               data-reason={box.reason}
-              data-over-threshold={over ? 'true' : 'false'}
+              data-duty-kind={box.tax.duty.kind}
+              data-vat-kind={box.tax.vat.kind}
               className={[
                 'min-w-0 rounded border p-2',
                 box.reason === 'weight-limit'
@@ -498,25 +521,29 @@ function MultiBoxView({
                   {yen(box.declaredYen)}{' '}
                   <span className="text-neutral-500">sum of what is actually in this box</span>
                 </dd>
-                <dt className="text-neutral-600 dark:text-neutral-400">Duty-free threshold</dt>
-                <dd data-testid="split-box-threshold" className="num">
-                  {thresholdYen == null ? (
-                    'no threshold for this destination'
-                  ) : (
-                    <>
-                      ~{yen(thresholdYen)}{' '}
-                      <span
-                        data-testid="split-box-threshold-state"
-                        className={
-                          over
-                            ? 'font-semibold text-amber-700 dark:text-amber-400'
-                            : 'font-semibold text-emerald-700 dark:text-emerald-400'
-                        }
-                      >
-                        {over ? 'OVER' : 'under'}
-                      </span>
-                    </>
-                  )}
+                <dt className="text-neutral-600 dark:text-neutral-400">Duty</dt>
+                <dd data-testid="split-box-duty" className="num">
+                  <span
+                    className={
+                      dutyIsCharged(box.tax.duty.kind)
+                        ? 'font-semibold text-amber-700 dark:text-amber-400'
+                        : 'font-semibold text-emerald-700 dark:text-emerald-400'
+                    }
+                  >
+                    {DUTY_TEXT[box.tax.duty.kind](box.tax.duty.yen)}
+                  </span>
+                </dd>
+                <dt className="text-neutral-600 dark:text-neutral-400">VAT / GST</dt>
+                <dd data-testid="split-box-vat" className="num">
+                  <span
+                    className={
+                      vatIsCharged(box.tax.vat.kind)
+                        ? 'font-semibold text-amber-700 dark:text-amber-400'
+                        : 'font-semibold text-emerald-700 dark:text-emerald-400'
+                    }
+                  >
+                    {VAT_TEXT[box.tax.vat.kind](box.tax.vat.yen)}
+                  </span>
                 </dd>
               </dl>
             </div>

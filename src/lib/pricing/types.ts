@@ -353,6 +353,52 @@ export interface Row {
  */
 export type ParcelSplitReason = 'identified-shop' | 'per-listing' | 'unresolved-shop' | 'weight-limit';
 
+/**
+ * この箱の関税の判定（`compare.ts` の `taxLines` が個口ごとに出す判定、そのまま）。
+ * **4種は対称ではない**（コーディネーター指摘 2026-09-12、`docs/DESIGN-BOX-SIZE.md` 参照）:
+ *   - `'flat'`    … 免税限度以下でも1点あたり定額の関税がかかる（DE/FR の `flatDutyPerItem`）。
+ *                   **免税線の下にあっても無税ではない**——画面はこれを「免税」と混同してはいけない。
+ *   - `'free'`    … 免税限度（有限）以下で、関税ゼロ。**限度線を引いてよいのはこのときだけ。**
+ *   - `'no-duty'` … この品目にはそもそも関税という費目が無い国（例: シンガポール、
+ *                   `dutyFreeLimit: Infinity`）。**「限度以下だから免税」ではなく
+ *                   「限度という概念自体が無い」**——画面はここで免税線を描いてはいけない
+ *                   （無限の限度は線ではない）。
+ *   - `'rate'`    … 免税限度を超え、税率で関税がかかる。
+ *   - `'unknown'` … 税率が未公表（`yen` は `null`）。
+ */
+export type ParcelDutyKind = 'flat' | 'free' | 'no-duty' | 'rate' | 'unknown';
+
+export interface ParcelDutyVerdict {
+  kind: ParcelDutyKind;
+  /** 円。`kind === 'unknown'` のときだけ `null`（未取得。0 とは書かない）。 */
+  yen: number | null;
+}
+
+/**
+ * この箱の VAT/GST の判定。**4種は対称ではない:**
+ *   - `'no-rate'`         … 連邦レベルの VAT/GST が無い制度（米国）。
+ *   - `'seller-collects'` … 代行が決済時に徴収する（国境では別途課さない）。`yen` は常に0
+ *                           （社が別途、決済手数料の行で取る額を持つ）。
+ *   - `'free'`            … VAT/GST の免税限度以下で、ゼロ。**免税限度が実質0の国
+ *                           （GB/DE/FR/AU の `vatFreeLimit: 0`）ではこの kind は出ない**
+ *                           ——0円以下の商品は存在しないので、必ず `'rate'` になる。
+ *                           **免税線の下＝無税、という読みが崩れる国がある理由はここ。**
+ *   - `'rate'`            … 税率で VAT/GST がかかる。
+ */
+export type ParcelVatKind = 'no-rate' | 'seller-collects' | 'free' | 'rate';
+
+export interface ParcelVatVerdict {
+  kind: ParcelVatKind;
+  /** 円。`kind === 'no-rate'` のときだけ `null`。 */
+  yen: number | null;
+}
+
+/** この箱の関税・VAT/GST の判定を1組にまとめたもの。`taxLines()` の個口ごとの判定そのもの。 */
+export interface ParcelTaxVerdict {
+  duty: ParcelDutyVerdict;
+  vat: ParcelVatVerdict;
+}
+
 export interface ParcelBox {
   /** この箱に入っている商品の元の `items` 配列における添字。**重い順**
    *  （`packHeaviestFirst` の詰め順、docs/DESIGN-BOX-SIZE.md §2⑤）。 */
@@ -363,6 +409,15 @@ export interface ParcelBox {
   weightG: number;
   /** この箱がなぜ他の箱と別なのか。上の `ParcelSplitReason` 参照。 */
   reason: ParcelSplitReason;
+  /**
+   * この箱の関税・VAT/GST の判定（コーディネーター指摘 2026-09-12）。
+   * **画面はここから「免税かどうか」を読み取るだけで、しきい値と申告額を
+   * 自分で比べてはいけない。**国によって免税限度が指すものが違いすぎる
+   * （GB/DE/FR/AU は VAT 免税限度が実質0、DE/FR は免税限度以下でも定額関税、
+   * SG は関税の限度が無限大）ため、「限度未満＝無税」という単純な比較は
+   * 5カ国中5カ国で誤る。`taxLines()` が個口ごとに出した判定をそのまま渡す。
+   */
+  tax: ParcelTaxVerdict;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */

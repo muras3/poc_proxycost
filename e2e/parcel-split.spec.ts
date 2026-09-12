@@ -25,9 +25,21 @@ import { addByHand, emptyCart, gotoCompare, openCart, weightBox } from './helper
  *   1. なぜ分かれたか（per-listing / weight-limit ——実際の理由をそのまま）
  *   2. 重い順に詰めた順序
  *   3. 箱ごとの申告額（その箱の中身の合計）
- *   4. 箱ごとの免税しきい値
+ *   4. 箱ごとの関税・VAT/GST の判定
  * すべて `prefers-reduced-motion` でも読める（この区画はテキストのみ・
  * アニメーションを使っていない）。
+ *
+ * **fact 4 は「免税しきい値」ではなく「関税・VAT/GST の判定」**
+ * （2026-09-12、コーディネーター指摘で撤回・修正）。「しきい値の下＝無税」は
+ * 7か国中5か国で誤る——ここで使う2つのフィクスチャがそれぞれ実例を持つ:
+ *   - US（per-listing フィクスチャ）: 関税の免税限度が0なので、**免税線に意味が
+ *     無く、必ず課税**（`duty.kind` は 'rate'、'free' にはならない）。
+ *   - DE（weight-limit フィクスチャ）: 商品代が安く関税の免税限度（€150）以下
+ *     だが、**免税限度以下でも1点あたり定額の関税がかかる**（`duty.kind` は
+ *     'flat'、'free' ではない）。VAT は ZenMarket が IOSS で決済時に代理徴収する
+ *     ため `vat.kind` は 'seller-collects'（無税ではない——国境で取らないだけ）。
+ *     どちらの費目も 'free' にはならない——「免税限度の下にいる箱」が実際には
+ *     二重に課税されている、というまさに5カ国で崩れる読みの実例。
  */
 
 function parcel(page: Page) {
@@ -65,7 +77,7 @@ async function weightLimitCart(page: Page): Promise<void> {
 }
 
 test('per-listing split shows why it split, the pack order, each box\'s declared value,'
-  + ' and its duty-free threshold', async ({ page }) => {
+  + ' and each box\'s actual duty/VAT verdict', async ({ page }) => {
   await perListingCart(page);
 
   const split = page.getByTestId('parcel-split');
@@ -97,9 +109,12 @@ test('per-listing split shows why it split, the pack order, each box\'s declared
   // 保全: 5箱の申告額の合計はカート全体の代金と一致する。
   expect(declaredTexts.map(toYen).reduce((a, b) => a + b, 0)).toBe(1000 + 2000 + 3000 + 4000 + 5000);
 
-  // fact 4: 箱ごとの免税しきい値と、そのしきい値に対する判定。
-  await expect(boxes.first().getByTestId('split-box-threshold')).toBeVisible();
-  await expect(boxes.first().getByTestId('split-box-threshold-state')).toBeVisible();
+  // fact 4: 箱ごとの関税・VAT の判定。**US は関税の免税限度が0**なので、
+  // どの箱も 'free'（免税）にはなり得ず、必ず課税される——免税線を引く意味が無い
+  // 国の実例。
+  await expect(boxes.first().getByTestId('split-box-duty')).toBeVisible();
+  await expect(boxes.first()).not.toHaveAttribute('data-duty-kind', 'free');
+  await expect(boxes.first().getByTestId('split-box-vat')).toBeVisible();
 });
 
 test('weight-limit split is told apart from per-listing — different reason, different wording', async ({ page }) => {
@@ -119,6 +134,18 @@ test('weight-limit split is told apart from per-listing — different reason, di
   );
   const toYen = (s: string) => Number(s.match(/[\d,]+/)?.[0]?.replace(/,/g, '') ?? NaN);
   expect(declaredTexts.map(toYen).reduce((a, b) => a + b, 0)).toBe(1000 + 2000);
+
+  // **fact 4、DE の実例。**商品代は関税の免税限度（€150）を大きく下回るが、
+  // ドイツは免税限度以下でも1点あたり定額の関税がかかる（`flatDutyPerItem`）
+  // ——「免税限度の下＝無税」ではないことを、この画面自身が言えているかを見る。
+  await expect(boxes.first()).toHaveAttribute('data-duty-kind', 'flat');
+  await expect(boxes.first().getByTestId('split-box-duty')).not.toContainText(/^none/);
+  await expect(boxes.first().getByTestId('split-box-duty')).toContainText('still charged under the duty-free line');
+  // VAT はゼロにはならない——ZenMarket が IOSS で決済時に代理徴収するので
+  // 'seller-collects'（国境では取らないが、無税ではない）。**'free' ではない**
+  // ことがここでの主張——`vatFreeLimit: 0` の国で VAT が消える箱は無い。
+  await expect(boxes.first()).not.toHaveAttribute('data-vat-kind', 'free');
+  await expect(boxes.first().getByTestId('split-box-vat')).not.toContainText(/^none — under/);
 });
 
 test('prefers-reduced-motion: all four facts are still readable with motion off', async ({ page }) => {
@@ -130,7 +157,8 @@ test('prefers-reduced-motion: all four facts are still readable with motion off'
   await expect(boxes.first().getByTestId('split-box-reason')).toBeVisible();
   await expect(boxes.first().getByTestId('pack-order').first()).toBeVisible();
   await expect(boxes.first().getByTestId('split-box-declared')).toBeVisible();
-  await expect(boxes.first().getByTestId('split-box-threshold')).toBeVisible();
+  await expect(boxes.first().getByTestId('split-box-duty')).toBeVisible();
+  await expect(boxes.first().getByTestId('split-box-vat')).toBeVisible();
 });
 
 test('no horizontal overflow at 412px wide with a split cart', async ({ page }) => {

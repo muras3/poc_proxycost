@@ -1501,6 +1501,87 @@ describe('Row.boxes: the per-parcel breakdown this row actually used', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// **`ParcelBox.tax`（コーディネーター指摘 2026-09-12）**: 「免税限度未満＝無税」は
+// 5カ国中5カ国で誤る（GB/DE/FR/AU は VAT 免税限度が実質0、DE/FR は免税限度以下でも
+// 定額関税、SG は関税の限度が無限大）。画面がしきい値と申告額を自分で比べるのではなく、
+// `taxLines()` が個口ごとに出した判定（`kind`+`yen`）をそのまま渡せていることを固定する。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ParcelBox.tax: the box-level duty/VAT verdict, not a threshold the UI re-derives', () => {
+  test('GB: a box under the £135 duty line is duty-free, but VAT still applies from'
+    + ' the first pound (vatFreeLimit: 0) — under the duty line does not mean untaxed', () => {
+    const row = byId(compare({ items: items(1, 300, 3000), country: 'GB', method: 'small-packet-air' }).rows, 'buyee');
+    expect(row.boxes).toHaveLength(1);
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).toBe('free');
+    expect(box.tax.duty.yen).toBe(0);
+    expect(box.tax.vat.kind).toBe('rate');
+    expect(box.tax.vat.yen).toBeGreaterThan(0);
+  });
+
+  test('DE/FR: a box under the €150 duty line still owes a flat €3/item duty —'
+    + ' \'flat\' is not \'free\', and must not render as duty-free', () => {
+    for (const cc of ['DE', 'FR'] as const) {
+      const row = byId(compare({ items: items(1, 300, 3000), country: cc, method: 'small-packet-air' }).rows, 'buyee');
+      const box = row.boxes[0]!;
+      expect(box.tax.duty.kind, cc).toBe('flat');
+      expect(box.tax.duty.yen, cc).toBeGreaterThan(0);
+      expect(box.tax.duty.kind, cc).not.toBe('free');
+      expect(box.tax.vat.kind, cc).toBe('rate'); // vatFreeLimit: 0 — always taxed
+    }
+  });
+
+  test("SG: duty is 'no-duty' (the limit is infinite — there is no duty line to draw),"
+    + ' distinct from being merely under a real threshold', () => {
+    const row = byId(compare({ items: items(1, 300, 3000), country: 'SG', method: 'small-packet-air' }).rows, 'buyee');
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).toBe('no-duty');
+    expect(box.tax.duty.kind).not.toBe('free'); // 'free' would wrongly imply a threshold line exists
+    expect(box.tax.duty.yen).toBe(0);
+    // 400 SGD 未満は代行が決済時に GST を徴収する（seller-collects）。
+    expect(box.tax.vat.kind).toBe('seller-collects');
+  });
+
+  test('US: the duty-free limit is 0, so nothing can ever be classified \'free\' —'
+    + " every box is 'rate' (or 'unknown'), which itself says the box is taxed", () => {
+    const row = byId(compare({ items: items(1, 300, 100), country: 'US', method: 'small-packet-air' }).rows, 'buyee');
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).not.toBe('free');
+    expect(['rate', 'unknown']).toContain(box.tax.duty.kind);
+  });
+
+  test('CA: the naive mental model (duty and VAT thresholds equal, at 20) actually holds'
+    + ' — both free under CAD 20', () => {
+    const row = byId(compare({ items: items(1, 300, 500), country: 'CA', method: 'small-packet-air' }).rows, 'buyee');
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).toBe('free');
+    expect(box.tax.vat.kind).toBe('free');
+  });
+
+  test('a cart split into boxes on either side of a duty threshold shows each box\'s'
+    + ' own verdict, not one verdict for the whole shipment', () => {
+    // DE の下限 €150 をまたぐよう、安い個口と高い個口を店舗違いで分ける
+    // （Buyee default は店舗ごとに別送——`groupByShop`）。
+    const cheap = item({
+      id: 'cheap', priceYen: 3000, weightG: 300,
+      site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/cheap/',
+    });
+    const pricey = item({
+      id: 'pricey', priceYen: 40_000, weightG: 300,
+      site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-b/pricey/',
+    });
+    const row = byId(
+      compare({ items: [cheap, pricey], country: 'DE', method: 'small-packet-air' }).rows,
+      'buyee:default',
+    );
+    expect(row.boxes).toHaveLength(2);
+    const cheapBox = row.boxes.find((b) => b.declaredYen === 3000)!;
+    const priceyBox = row.boxes.find((b) => b.declaredYen === 40_000)!;
+    expect(cheapBox.tax.duty.kind).toBe('flat'); // 免税限度以下でも定額関税
+    expect(priceyBox.tax.duty.kind).toBe('rate'); // 限度超なので税率課税
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 重量不明。1つの数字を押し付けず、EMS の段ごとに出す。
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
