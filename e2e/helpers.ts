@@ -9,8 +9,60 @@ import { expect, type Locator, type Page } from '@playwright/test';
 /** ConsentBanner が localStorage に置く鍵。 */
 export const CONSENT_KEY = 'proxycost.consent.v1';
 
-/** 順位に出る会社名。行の見出しからどの社かを引くのに使う。 */
-const SERVICE_NAMES = ['FROM JAPAN', 'ZenMarket', 'Neokyo', 'Buyee', 'Jauce'] as const;
+/**
+ * `Row.id`（`src/lib/pricing/compare.ts` の `buildRow`/`rowsFor` が
+ * `svc.id + (variant ? ':' + variant : '')` で組み立てる）の社ID部分から
+ * 表示名への対応。`RankBoard.tsx` はこの `id` をそのまま `<li data-row-id>`
+ * に落としているので、**行の変種はここから構造的に読む**——行の地の文
+ * （'not used as the default because it takes 1-3 months' のような Surface
+ * 便の注記など、変種と無関係な文言）を部分一致で探さない。
+ *
+ * 例: 'zenmarket' → variant なし（null）。'buyee:consolidated' →
+ * name='Buyee', variant='consolidated'。
+ */
+const SERVICE_ID_TO_NAME: Record<string, string> = {
+  fromjapan: 'FROM JAPAN',
+  zenmarket: 'ZenMarket',
+  neokyo: 'Neokyo',
+  buyee: 'Buyee',
+  jauce: 'Jauce',
+};
+
+/**
+ * variant を持ちうる社の名前の集合。**`compare.ts` の `rowsFor` を見ると、
+ * `svc.parcelDefault === 'per-order'` の社だけが（カートに複数点あるとき）
+ * default/consolidated の2行に分かれる。今それに該当するのは Buyee だけ**
+ * （`services.ts` の `parcelDefault` フィールド：FROM JAPAN・ZenMarket・Neokyo・
+ * Jauce はいずれも `'one'`）。他の4社の行は常に variant: null の単一行。
+ *
+ * この外の名前に non-null の variant を渡すのは、その場で落とすべき書き間違い
+ * ——`findRow`／`rankOf`／`dropOf` に許してしまうと、「見つからない」
+ * (`undefined`) が返るだけになり、"disappeared from the ranking" のような
+ * ミスリーディングな失敗として1テストずつ後から発覚する
+ * （実例: 2026-09-12、`dropOf('FROM JAPAN', 'default')` — FROM JAPAN の
+ * `data-row-id` は常に `'fromjapan'` で variant を持たないのに、
+ * 旧・部分一致検出の名残りで 'default' を渡していた）。
+ */
+export const VARIANT_CAPABLE_SERVICES: ReadonlySet<string> = new Set(['Buyee']);
+
+/**
+ * 社名（と variant）で1行を引く。**存在しない組み合わせと、そもそもあり得ない
+ * 組み合わせを区別する**——後者（`VARIANT_CAPABLE_SERVICES` に無い社に
+ * non-null の variant を渡す）はその場で例外にする。前者は `undefined` を返す
+ * ので、呼び出し側が「見つからない」ことをどう扱うか決められる。
+ */
+export function findRow<T extends RankRow>(rows: T[], name: string, variant: string | null = null): T | undefined {
+  if (variant !== null && !VARIANT_CAPABLE_SERVICES.has(name)) {
+    const capable = [...VARIANT_CAPABLE_SERVICES].join(', ') || '(none)';
+    throw new Error(
+      `findRow: ${JSON.stringify(name)} has no variants — only ${capable} do — so `
+      + `variant must be null, not ${JSON.stringify(variant)}. This is a call-site bug, `
+      + `not a missing row. Rows present: `
+      + `${rows.map((r) => `${r.name}${r.variant ? `/${r.variant}` : ''}`).join(', ') || '(no rows)'}`,
+    );
+  }
+  return rows.find((r) => r.name === name && r.variant === variant);
+}
 
 export interface RankRow {
   /** 1 始まり。画面上の**並び順**。順位そのものではない（同額は同順位になる）。 */
@@ -193,6 +245,19 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
   const buttons = rankButtons(page);
   await expect(buttons.first()).toBeVisible();
   const n = await buttons.count();
+  // **社名と変種は行の地の文からではなく、`<li data-row-id>` から構造的に読む。**
+  // `data-row-id` は各行に1個ずつ、ボタンと同じ並び順で乗っている
+  // （`RankBoard.tsx` の `<li data-row-id={row.id}><button>…`）。
+  const rowIds = await ranking(page).locator('li[data-row-id]').evaluateAll(
+    (els) => els.map((el) => el.getAttribute('data-row-id')),
+  );
+  if (rowIds.length !== n) {
+    throw new Error(
+      `readRanking: found ${n} rank button(s) but ${rowIds.length} li[data-row-id] element(s) `
+      + `— they should be 1:1 (one <li data-row-id> wrapping one row button each). `
+      + `row ids seen: ${JSON.stringify(rowIds)}`,
+    );
+  }
   const out: RankRow[] = [];
   for (let i = 0; i < n; i++) {
     const text = (await buttons.nth(i).innerText()).replace(/\s+/g, ' ').trim();
@@ -212,13 +277,24 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
     const shown = text.match(/^(\d+)\s/);
     if (!shown) throw new Error(`row ${i} shows no rank number: ${text}`);
-    // **社名は行頭からだけ読む。** 行の中には他社の名前も出る（同額の「tied with ZenMarket」）
-    // ので、行全体を includes で探すと隣の社の名前を自分の名前として拾う。
-    const head = text.replace(/^\d+\s+/, '');
-    const name = SERVICE_NAMES.find((s) => head.startsWith(s));
-    if (!name) throw new Error(`row ${i} has no known service name: ${text}`);
-    const variant = text.includes('consolidated') ? 'consolidated'
-      : text.includes('default') ? 'default' : null;
+    // **社名と変種は `data-row-id`（例: 'buyee:consolidated'）から読む。**
+    // 以前はここを行の地の文の部分一致（`text.includes('consolidated' | 'default')`）
+    // で読んでいたため、ZenMarket の Surface 便注記 "not used as the **default**
+    // because it takes 1-3 months" のような、変種と無関係な地の文が
+    // `variant: 'default'` として誤検出されていた（ZenMarket は default/consolidated
+    // の変種を持たない社で、常に variant は null のはずだった）。地の文はこれからも
+    // 変わり続けるので、部分一致は「今日たまたま引っかからない」だけで直っていない。
+    const rowId = rowIds[i]!;
+    const [svcId, variantPart] = rowId ? rowId.split(':') : [undefined, undefined];
+    const name = svcId ? SERVICE_ID_TO_NAME[svcId] : undefined;
+    if (!name) {
+      const known = Object.keys(SERVICE_ID_TO_NAME).join(', ');
+      throw new Error(
+        `readRanking: row ${i} has data-row-id=${JSON.stringify(rowId)}, whose service id `
+        + `${JSON.stringify(svcId)} is not one of the known ids (${known}). Row text: ${text}`,
+      );
+    }
+    const variant = variantPart ?? null;
     out.push({
       rank: i + 1,
       shownRank: Number(shown[1]),

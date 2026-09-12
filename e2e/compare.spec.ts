@@ -10,6 +10,7 @@ import {
   DECIDES,
   emptyCart,
   emsOnlyNote,
+  findRow,
   freeShippingDomesticNote,
   gotoCompare,
   headerCells,
@@ -80,10 +81,16 @@ const first = (rows: RankRow[]) => priced(rows)[0]!;
 /** 行の開示文から報酬の有無を読む。'pays us nothing' 以外は我々に報酬を払う社。 */
 const paysUs = (r: RankRow) => !/pays us nothing/.test(r.text);
 
-/** 社名（と variant）で順位を引く。居なければその場で落とす。 */
+/**
+ * 社名（と variant）で順位を引く。`findRow`（helpers.ts）が、そもそも variant を
+ * 持たない社に variant を渡す**書き間違い**をその場で例外にする。見つからない
+ * だけなら、探した対象と実際にあった行を並べて落とす。
+ */
 function rankOf(rows: RankRow[], name: string, variant: string | null = null): number {
-  const row = rows.find((r) => r.name === name && r.variant === variant);
-  expect(row, `${name}${variant ? `, ${variant}` : ''} is not in the ranking`).toBeTruthy();
+  const row = findRow(rows, name, variant);
+  const wanted = `${name}${variant ? `/${variant}` : ''}`;
+  const present = rows.map((r) => `${r.name}${r.variant ? `/${r.variant}` : ''}`).join(', ') || '(no rows)';
+  expect(row, `rankOf: looked for ${wanted} but the ranking has: ${present}`).toBeTruthy();
   return row!.rank;
 }
 
@@ -119,6 +126,28 @@ test('1. the ranking is sorted by total, ascending, and so are the gaps', async 
     expect(r.diff).toBeGreaterThan(0);
     expect(Math.abs(r.total! - rows[0]!.total! - r.diff)).toBeLessThanOrEqual(100);
   }
+});
+
+test('1b. ZenMarket is never misdetected as variant "default" by its own Surface-shipping prose', async ({ page }) => {
+  // **ZenMarket は default／consolidated の変種を持たない社**（`parcelDefault`
+  // が per-order でないので `rowsFor` は常に `buildRow(svc, null, ctx)` を呼ぶ
+  // ——`src/lib/pricing/compare.ts`）。したがって ZenMarket の行は常に
+  // `variant: null` のはず。
+  //
+  // それにもかかわらず、既定のカート（米国宛）で ZenMarket の行は必ずこの一文を
+  // 含む——Surface 便（1〜3ヶ月）を既定にしない理由の注記:
+  //   "not used as the **default** because it takes 1-3 months"
+  // `readRanking` がかつて `text.includes('default')` で変種を判定していたころ、
+  // この地の文だけでこの行が `variant: 'default'` と**誤検出**されていた
+  // （実際にはこの社に default 変種はそもそも存在しない）。
+  await gotoCompare(page);
+  const rows = await readRanking(page);
+  const zen = rows.find((r) => r.name === 'ZenMarket');
+  expect(zen, 'ZenMarket row not found in the default ranking').toBeTruthy();
+  // 誤検出の引き金がまだそこにあることを確かめる——このプローブ自体が
+  // 消えていたら、このテストは何も検査していないことになる。
+  expect(zen!.text).toMatch(/not used as the default/);
+  expect(zen!.variant).toBeNull();
 });
 
 test('2. rank is decided by the total alone — paying us buys neither the top spot nor safety from the bottom', async ({ page }) => {
@@ -237,9 +266,14 @@ test('3b. two figures we did not read from the source are drawn as such (T17)', 
   await expect(dutyAmount).toBeVisible();
   expect((await dutyAmount.innerText()).trim()).toMatch(/^~¥/);
 
-  const buyee = rows.findIndex((r) => r.name === 'Buyee');
-  expect(buyee, 'Buyee が順位に居ない').toBeGreaterThanOrEqual(0);
-  const buyeeLi = await openRankRow(page, buyee);
+  // **既定のカートは2点なので、Buyee は default／consolidated の2行に分かれる。**
+  // variant を指定せず `name === 'Buyee'` だけで引くと、そのときの並び順（総額の
+  // 安い方）でどちらを掴むかが決まってしまう——`svc.deposit` のパーセンテージは
+  // 変種で変わらないので今日はどちらでも通るが、それは「たまたま」であって
+  // 「そう検査している」ことにはならない。consolidated 行だと決め打って引く。
+  const buyee = findRow(rows, 'Buyee', 'consolidated');
+  expect(buyee, 'Buyee/consolidated が順位に居ない').toBeTruthy();
+  const buyeeLi = await openRankRow(page, buyee!.rank - 1);
 
   const depositRow = costRow(buyeeLi, /^Deposit fee/);
   await expect(depositRow).toHaveCount(1);
@@ -526,12 +560,13 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   expect(priced(before)).toHaveLength(6);
   expect(first(before).name).toBe('Buyee');
   expect(rankOf(before, 'Buyee', 'consolidated')).toBe(1);
-  // **ZenMarket は 'default' を渡す必要がある。**readRanking は variant を部分一致で
-  // 拾うため、ZenMarket の行にある Surface 案内文「not used as the default because
-  // it takes 1-3 months」の "default" に引きずられて variant: 'default' と読まれる
-  // （helpers.ts の既知の制約、行末のコメント参照）。variant: null で探すと見つからず
-  // 「ZenMarket is not in the ranking」で落ちる——実際に real Chromium で確認済み。
-  expect(rankOf(before, 'ZenMarket', 'default')).toBe(2);
+  // **ここに以前あった `rankOf(before, 'ZenMarket', 'default')` は、readRanking の
+  // 部分一致バグ（ZenMarket の Surface 案内文「not used as the default …」に
+  // 引きずられて variant: 'default' と誤読される）を避けるための workaround
+  // だった。**readRanking が `data-row-id` から構造的に variant を読むようになった
+  // いま、ZenMarket は他社と同じく default/consolidated の変種を持たない
+  // （`variant: null`）ので、素直に名前だけで引ける。
+  expect(rankOf(before, 'ZenMarket')).toBe(2);
   expect(rankOf(before, 'Neokyo')).toBe(3);
   expect(rankOf(before, 'FROM JAPAN')).toBe(4);
   expect(rankOf(before, 'Jauce')).toBe(5);
@@ -576,18 +611,17 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
     .toEqual(priced(before).map((r) => `${r.name}/${r.variant}`));
   expect(isNonDecreasing(after.map((r) => r.total))).toBe(true);
 
-  // 全社が同じ国内送料（~¥800 × 5点）のぶん下がる。総額は ¥100 丸めなので誤差を許す。
-  // **variant は行のテキストの部分一致（helpers.ts の readRanking）で拾っているため
-  // 「not used as the default because it takes 1-3 months」のような別の文言に
-  // 引きずられて before/after で違う値になりうる。**Buyee は同じ画面に2行
-  // （default／consolidated）出るので名前だけでは引けないが、他社は1行しか無いので
-  // 並び順（rank）で対応付ける——名前が同じで variant が食い違っても同一の行だと分かる。
+  // 全社が同じ国内送料（~¥800 × 5点）のぶん下がる。variant は `data-row-id` から
+  // 構造的に読んでいる（helpers.ts の readRanking）ので、名前＋variant でそのまま
+  // 引ける——`findRow` が、variant を持たない社に variant を渡す書き間違いを
+  // その場で例外にする（実例: 以前ここで `dropOf('FROM JAPAN', 'default')` と
+  // 書いていた。FROM JAPAN の `data-row-id` は常に `'fromjapan'` で variant を
+  // 持たないのに、旧・部分一致検出の名残りで 'default' を渡していた——CI が
+  // "FROM JAPAN/default disappeared from the ranking" で発見）。
   const DOMESTIC = 4000;
   const dropOf = (name: string, variant: string | null) => {
-    const bs = priced(before).filter((r) => r.name === name);
-    const as = after.filter((r) => r.name === name);
-    const b = bs.length > 1 ? bs.find((r) => r.variant === variant) : bs[0];
-    const a = as.length > 1 ? as.find((r) => r.variant === variant) : as[0];
+    const b = findRow(priced(before), name, variant);
+    const a = findRow(after, name, variant);
     expect(b && a, `${name}${variant ? `/${variant}` : ''} disappeared from the ranking`).toBeTruthy();
     return b!.total - a!.total;
   };
@@ -603,7 +637,7 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // **2026-09-12、FROM JAPAN が米国宛にEMSを売っていないため courier
   // （ECMS）で比較されるようになり、総額が上がったぶん自身の推定 deposit
   // （3.5%グロスアップ）の絶対額も少し増え、しきい値を ¥100 だけ超えた。**
-  expect(dropOf('FROM JAPAN', 'default')).toBeLessThanOrEqual(DOMESTIC + 200);
+  expect(dropOf('FROM JAPAN', null)).toBeLessThanOrEqual(DOMESTIC + 200);
 });
 
 test('8. editing a price marks that number as ours, not theirs', async ({ page }) => {
