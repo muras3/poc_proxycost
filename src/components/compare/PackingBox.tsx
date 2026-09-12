@@ -1,13 +1,18 @@
 'use client';
 
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { EMS_TABLE } from '@/lib/pricing/ems';
 
 /**
  * 段ボール箱。**中身を「詰める」絵ではない。**
- * EMS は重量だけで料金が決まり体積は一切効かないので、満杯に見える箱は
- * 存在しない費用モデルを教えることになる。ここで箱がやることは2つだけ:
- *   1. いま立っている EMS の段を、大きさで（離散的に）示す
+ * この箱の見た目（`stepIndex`＝段）は EMS 固有の概念ではない——呼び出し側が
+ * 「この箱がどれだけ大きく見えるべきか」を渡す添字で、EMS の行を使うときは
+ * `emsFor()` の段をそのまま渡すが、宅配便のように段表そのものが無い方式では
+ * 呼び出し側が固定の添字（0）を渡す（`ParcelView.tsx` の `MultiBoxView`／
+ * `CourierSingleBoxView` 参照）。**このファイル自身は EMS の表を持たない**
+ * ——以前は `EMS_TABLE.length` を大きさの上限に借りていたが、見た目の段数と
+ * EMS 表の段数を混ぜる理由が無い（2026-09-12、`ParcelView` の EMS 依存を
+ * 外す作業で分離）。ここでやることは2つだけ:
+ *   1. 呼び出し側が渡した段を、大きさで（離散的に）示す
  *   2. どの品が推定重量なのかを、半透明で示す
  * 中身の並べ方は「床に一列に置く」だけで、隙間を埋めにいかない。
  */
@@ -36,14 +41,21 @@ const SIN_Y = Math.abs(Math.sin(CAMERA_Y_DEG * RAD));
 const COS_X = Math.cos(CAMERA_X_DEG * RAD);
 const SIN_X = Math.abs(Math.sin(CAMERA_X_DEG * RAD));
 
-/** 表の外（30kg 超）は表の段ではないので、最上段の1つ先の「余白の段」として扱う。
+/**
+ * 見た目の段の総数。**EMS 表の段数（42）をそのまま流用しているだけ**——箱の
+ * 大きさの見た目のレンジを決める定数であって、EMS の料金表を参照しているわけ
+ * ではない（このファイルは EMS を import しない）。
+ */
+const VISUAL_NOTCH_COUNT = 42;
+
+/** 表の外（EMS なら 30kg 超）は最上段の1つ先の「余白の段」として扱う。
  *  **最上段に丸めない。** */
-export const OVER_MAX_NOTCH = EMS_TABLE.length;
+export const OVER_MAX_NOTCH = VISUAL_NOTCH_COUNT;
 
 /** 段の添字 → 箱の段（notch）。重量からは計算しない。 */
 export function boxNotch(stepIndex: number, overMax: boolean): number {
   if (overMax) return OVER_MAX_NOTCH;
-  return Math.min(EMS_TABLE.length - 1, Math.max(0, stepIndex));
+  return Math.min(VISUAL_NOTCH_COUNT - 1, Math.max(0, stepIndex));
 }
 
 /** **箱の大きさは段の添字からだけ決まる。**重量から連続的に膨らませない。

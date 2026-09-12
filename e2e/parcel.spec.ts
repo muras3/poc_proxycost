@@ -419,6 +419,55 @@ test('an empty cart still shows the box, and the empty box claims no numbers', a
   expect(await step(page)).not.toBe('empty');
 });
 
+test.describe('method sensitivity — courier vs postal (#88 follow-up)', () => {
+  // フィクスチャは compare() を実際に走らせて確かめたもの（この docstring より
+  // 上の推測ではない）——US 宛・1点・単価3000円・重量200gなら FROM JAPAN の
+  // small-packet-air（郵便）が最安、同じ条件で重量1500gなら ZenMarket の
+  // courier-ecms-express（宅配便）が最安になる。国・点数・重量を変えると
+  // 勝つ方式は入れ替わるので、この2点だけを固定値として当てにする。
+  test('postal-winning row: weight-only prose, EMS ladder, no courier section', async ({ page }) => {
+    await gotoCompare(page);
+    const w = await soloCart(page);
+    await w.fill('200');
+    await expect(parcel(page)).toBeVisible();
+
+    await expect(page.getByTestId('weight-ladder')).toHaveCount(1);
+    await expect(page.getByTestId('parcel-postage')).toHaveCount(1);
+    await expect(page.getByTestId('parcel-courier')).toHaveCount(0);
+    await expect(page.getByTestId('parcel-courier-explainer')).toHaveCount(0);
+
+    const text = await parcel(page).innerText();
+    expect(text).toMatch(/EMS is priced by weight alone/);
+    expect(text).not.toMatch(/chargeable weight/);
+    expect(text).not.toMatch(/volumetric/);
+  });
+
+  test('courier-winning row: volumetric prose, no EMS ladder, no EMS postage figure', async ({ page }) => {
+    await gotoCompare(page);
+    const w = await soloCart(page);
+    await w.fill('1500');
+    await expect(parcel(page)).toBeVisible();
+
+    await expect(page.getByTestId('parcel-courier')).toHaveCount(1);
+    await expect(page.getByTestId('weight-ladder')).toHaveCount(0);
+    await expect(page.getByTestId('parcel-postage')).toHaveCount(0);
+    // 箱の見た目は1つだけ（strict mode violation を今日また作らない）。
+    await expect(page.getByTestId('packing-box-scene')).toHaveCount(1);
+
+    const text = await parcel(page).innerText();
+    expect(text).toMatch(/chargeable weight/);
+    expect(text).toMatch(/volumetric weight/);
+    // 体積が効くという事実だけを言い、EMS 固有の語彙・EMS の料金は出さない。
+    expect(text).not.toMatch(/EMS is priced by weight alone/);
+    expect(text).not.toMatch(/EMS postage/);
+    expect(text).not.toMatch(/EMS steps/);
+    // 除数・端数処理・実際の容積重量の値は会社ごとの一次情報で、エンジンが
+    // まだ出していない——ここで具体的な kg/g の容積重量を言い切らない
+    // （説明文にそれらしき比率・除数の数字を書いていないことの弱いチェック）。
+    expect(text).not.toMatch(/5000|÷\s*5,?000/);
+  });
+});
+
 test.describe('desktop layout', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'lg 以上の2列なので desktop でだけ見る');
