@@ -184,13 +184,16 @@ describe('ranking uses the total and nothing else', () => {
     for (const cc of COUNTRIES_ALL) {
       for (const n of [1, 2, 3, 5]) {
         // **比較不能な行は順位の対象外**なので、順位の不変条件もその外で確かめる。
-        // 米国では Neokyo が日本郵便を売っていない（自社の計算機が
-        // "Not available or suspended in your country."）ので1行落ちる。
+        // 米国では Neokyo・FROM JAPAN・Buyee の3社が日本郵便（EMS含む）を売っていない
+        // （2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+        // を配線。以前は FROM JAPAN・Buyee に `unavailableIn` が無く、実際には
+        // 売っていない米国向けEMSに値段が付いていた）ので3行落ちる。
         const all = compare({ method: 'ems', items: items(n, 600), country: cc }).rows;
         const rows = all.filter((r) => r.comparable);
-        // **落ちる行は米国の Neokyo だけ**で、他は6カ国とも全行が比較可能。
-        // （n=1 では Buyee の同梱行が既定行と同じ姿になるので行数自体が1つ少ない。）
-        expect(all.length - rows.length, `${cc} n=${n}`).toBe(cc === 'US' ? 1 : 0);
+        // **落ちる行は米国の Neokyo・FROM JAPAN・Buyee**で、他は6カ国とも全行が比較可能。
+        // n=1 では Buyee は1行（既定行と同梱行が同じ姿になる）なので3行、
+        // n>1 では Buyee が default/consolidated の2行に分かれるので4行落ちる。
+        expect(all.length - rows.length, `${cc} n=${n}`).toBe(cc !== 'US' ? 0 : n === 1 ? 3 : 4);
         // **総額だけが並べ替えの鍵。** 第2の鍵（社名の辞書順など）は無い。
         const bySort = [...rows].sort((a, b) => a.total.low - b.total.low);
         expect(rows.map((r) => r.id), `${cc} n=${n}`).toEqual(bySort.map((r) => r.id));
@@ -633,26 +636,27 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     // 消え、他の4社も自前で2箱に分けて同じ土俵に乗る。この変化は
     // このPRが正しく動いていることの証拠であって、退行ではない。
     const rows = compare({ method: 'ems', items: items(5, 5000), country: 'US' }).rows;
-    // **Neokyo だけがいまも比較不能。**理由は重量ではなく、Neokyo が米国宛に
-    // 日本郵便を売っていないこと（このPRの変更点とは無関係、既存の事実）。
+    // **Neokyo・FROM JAPAN・Buyee(default/consolidated) が比較不能。**理由は重量では
+    // なく、この3社が米国宛にEMS（日本郵便）を売っていないこと（2026-09-12、
+    // `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線。
+    // 以前は FROM JAPAN・Buyee に `unavailableIn` が無く、実際には売っていない
+    // 米国向けEMSに値段を付けて比較していた欠陥）。
     const blocked = rows.filter((r) => !r.comparable);
-    expect(blocked.map((r) => r.id)).toEqual(['neokyo']);
-    expect(blocked[0]!.notComparableReason).toContain('does not ship EMS to United States');
+    expect(blocked.map((r) => r.id).sort()).toEqual(
+      ['buyee:consolidated', 'buyee:default', 'fromjapan', 'neokyo']);
+    for (const row of blocked) {
+      expect(row.notComparableReason, row.id).toContain('does not ship EMS to United States');
+    }
 
     const comparable = rows.filter((r) => r.comparable);
-    expect(comparable).toHaveLength(5);
-    // **1位は FROM JAPAN。**同梱4社は方式の上限に収めるため2箱に分かれ、
-    // Buyee default は元から5箱（注文ごと）——箱数の理由は違うが、全社が
-    // 同じ額（30kg以下）でEMSを使えている。
+    // 米国宛にEMSを売っているのは ZenMarket と Jauce の2社だけ。
+    expect(comparable).toHaveLength(2);
+    // **1位は ZenMarket。**FROM JAPAN が脱落した今、日本郵便をUS向けに出す
+    // 2社（ZenMarket・Jauce）だけの比較になる。
     const top = comparable.sort((a, b) => a.total.low - b.total.low)[0]!;
-    expect(top.id).toBe('fromjapan');
-    expect(byId(rows, 'fromjapan').parcels).toBe(2);
+    expect(top.id).toBe('zenmarket');
     expect(byId(rows, 'zenmarket').parcels).toBe(2);
     expect(byId(rows, 'jauce').parcels).toBe(2);
-    expect(byId(rows, 'buyee:consolidated').parcels).toBe(2);
-    // Buyee default はもともと注文ごとに5個口——方式の上限による分割は要らない
-    // （下地1個あたり1点・5,000gはどのみち上限の下）。
-    expect(byId(rows, 'buyee:default').parcels).toBe(5);
   });
 
   test('when nothing is comparable we say so instead of ranking the leftovers', () => {
@@ -680,9 +684,10 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     // 5点×5,000gはどの国でも梱包後30.15kgで、以前はEMS表を出て全社が脱落し
     // Buyee default だけが残った——`splitByWeightLimit`（§2④）を実装した今、
     // 上限超の個口は箱を増やして収まるので、もう「表の同じ端で全社が止まる」
-    // ことは無い。米国だけ Neokyo が引き続き比較不能だが、理由は重量ではなく
-    // 「米国宛にEMSを売っていない」という既存の事実（このPRの変更点ではない）。
-    const EXPECT_NOT_COMPARABLE: Partial<Record<CountryCode, number>> = { US: 1 };
+    // ことは無い。米国だけ Neokyo・FROM JAPAN・Buyee(2行) が引き続き比較不能だが、
+    // 理由は重量ではなく「米国宛にEMSを売っていない」という事実（2026-09-12、
+    // `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線）。
+    const EXPECT_NOT_COMPARABLE: Partial<Record<CountryCode, number>> = { US: 4 };
     for (const cc of COUNTRIES_ALL) {
       const rows = compare({ method: 'ems', items: items(5, 5000), country: cc }).rows;
       expect(rows.filter((r) => !r.comparable).length, cc).toBe(EXPECT_NOT_COMPARABLE[cc] ?? 0);
@@ -707,13 +712,12 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // FROM JAPAN だけで、残る3社の行には税が乗っていない（その3社の総額は税のぶん低い）。
     // 確認できる社が増えれば、ここは不安定に転じうる。
     //
-    // **US（下で別に検査する）は P1-4（外部レビュー、オーナー確定 2026-09-11）で
-    // 「安定」に変わった。**1位（FROM JAPAN）の総額はいまも上限不明（外注梱包）
-    // だが、その未取得行は Zonos・連邦売上税と違い FROM JAPAN 固有——`rankHigh`
-    // （順位判定専用の内部値）はそれを引き続き `null` として扱い、Zonos・連邦
-    // 売上税のような「社を問わず同じようにかかる共通の未知」だけを無視する。
-    // 結果、ZenMarket（`rankHigh` は閉じている）が明確な2位として枠に残り、
-    // Buyee consolidated・Jauce・Buyee default とは確定した差がある。
+    // **US（下で別に検査する）は安定。**ただし理由がP1-4当時から変わった:
+    // 2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線した結果、FROM JAPAN・Neokyo・Buyee はいずれも米国宛にEMS（日本郵便）
+    // を売っていないと確認済みで比較不能になり、米国でEMSを比較できるのは
+    // ZenMarket と Jauce の2社だけになった——「1位がFROM JAPAN」という以前の
+    // 前提自体が、実際には売っていない方式に値段を付けていた欠陥の産物だった。
     const stable: CountryCode[] = ['AU', 'SG'];
     for (const cc of COUNTRIES_ALL.filter((c) => !stable.includes(c) && c !== 'US')) {
       const r = compare({ method: 'ems', items: items(5, 600), country: cc });
@@ -740,7 +744,7 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     expect(us.rankStable).toBe(true);
     expect(us.rankIndeterminate).toBe(false);
     expect(us.rankStabilityNote).toBe(
-      'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.');
+      'ZenMarket stays in the recommended range even if we are off by 3x on weight.');
   });
 
   test('**§2④ implemented: 3,000 g/item no longer destabilizes the ranking at 3x weight**', () => {
@@ -760,33 +764,32 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).toBe(
-      'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.');
+      'ZenMarket stays in the recommended range even if we are off by 3x on weight.');
   });
 
   test('200 g per item is stable in all seven countries (P1-4: US too)', () => {
-    // **US も含めて全国が安定側。**FROM JAPAN 自身の総額はいまも上限不明
-    // （外注梱包。FJ 固有の未知）だが、ZenMarket（`rankHigh` は閉じている）が
-    // 明確な2位で枠に残り、他社とは確定した差がある。
+    // **US も含めて全国が安定側。**米国でEMSを比較できるのは ZenMarket と Jauce の
+    // 2社だけ（FROM JAPAN・Neokyo・Buyee は米国宛にEMSを売っていない、
+    // 2026-09-12 配線）——ZenMarket が明確な1位で枠に残る。
     for (const cc of COUNTRIES_ALL) {
       const r = compare({ method: 'ems', items: items(5, 200), country: cc });
       expect(r.rankStable, cc).toBe(true);
       expect(r.rankIndeterminate, cc).toBe(false);
       expect(r.rankStabilityNote, cc).toBe(
         cc === 'US'
-          ? 'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.'
+          ? 'ZenMarket stays in the recommended range even if we are off by 3x on weight.'
           : 'Neokyo stays in the recommended range even if we are off by 3x on weight.');
     }
   });
 
-  test('a 9,000 g single item in the US: FROM JAPAN leads, ZenMarket a clear second (not indeterminate)', () => {
-    // 1位（FROM JAPAN）自身は上限不明（外注梱包。FJ 固有）のままだが、
-    // ZenMarket（`rankHigh` は閉じている）は明確な2位で枠に残り、
-    // Buyee・Jauce とは確定した差がある——P1-4 により「判定不能」ではない。
+  test('a 9,000 g single item in the US: ZenMarket leads, Jauce a clear second (not indeterminate)', () => {
+    // FROM JAPAN・Neokyo・Buyee は米国宛にEMSを売っていない（2026-09-12配線）ので、
+    // 比較に残るのは ZenMarket と Jauce の2社だけ。ZenMarket が明確な1位。
     const r = compare({ method: 'ems', items: items(1, 9000), country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).toBe(
-      'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.'
+      'ZenMarket stays in the recommended range even if we are off by 3x on weight.'
       + ' Beyond that the parcel leaves the published EMS table.');
   });
 
@@ -808,28 +811,31 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     }
   });
 
-  test('in the US the winner never changes with weight — the crossover needs Neokyo', () => {
-    // **米国では1位が重量で動かない。**上の交差はどれも Neokyo が片側で、
-    // その Neokyo が米国では日本郵便を売っていないため。
-    // 「米国は安定」という結論は、我々のモデルが良くなったからではなく
-    // **比べる相手が1社減ったから**であることをここに残す。
+  test('in the US the winner never changes with weight — the crossover needs Neokyo or FROM JAPAN', () => {
+    // **米国では1位が重量で動かない。**上の交差はどれも Neokyo/FROM JAPAN が片側で、
+    // その両社（Buyee も含め3社）が米国では日本郵便（EMS）を売っていないため
+    // （2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線）。「米国は安定」という結論は、我々のモデルが良くなったからではなく
+    // **比べる相手が ZenMarket と Jauce の2社だけに減ったから**であることをここに残す。
     for (const n of [1, 2, 3, 5]) {
       const winners = new Set<string>();
       for (let g = 100; g <= 4000; g += 100) {
         const rows = compare({ method: 'ems', items: items(n, g), country: 'US' }).rows;
+        const comparableIds = rows.filter((r) => r.comparable).map((r) => r.id).sort();
         // 同梱組が公表表を出た帯は「順位が動いた」ではないので数えない。
-        if (!rows.every((r) => r.comparable || r.id === 'neokyo')) continue;
+        if (comparableIds.join(',') !== 'jauce,zenmarket') continue;
         winners.add(winnerOf(rows)!.id);
-        expect(rows.find((r) => r.id === 'neokyo')!.comparable, `n=${n} ${g}g`).toBe(false);
       }
-      expect([...winners], `n=${n}`).toEqual(['fromjapan']);
+      expect([...winners], `n=${n}`).toEqual(['zenmarket']);
     }
   });
 
-  test('a single item never crosses: FROM JAPAN wins at every weight the table covers', () => {
+  test('a single item never crosses: ZenMarket wins at every weight the table covers', () => {
+    // FROM JAPAN・Neokyo・Buyee は米国宛にEMSを売っていない（2026-09-12配線）ので、
+    // 米国でEMSを比較できるのは ZenMarket と Jauce の2社だけ——ZenMarket が常に安い。
     for (const w of [100, 500, 1000, 1625, 3000, 8000, 24750]) {
       expect(winnerOf(compare({ method: 'ems', items: items(1, w), country: 'US' }).rows)!.id, `${w}g`)
-        .toBe('fromjapan');
+        .toBe('zenmarket');
     }
   });
 
@@ -839,12 +845,13 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     // `splitByWeightLimit`（§2④）を実装した今、4,975gは1点あたり十分軽い
     // （梱包後 6.27kg）ので、上限を超えた個口は箱を2つに分ければ収まる——
     // 表の端をまたいでも勝者は変わらない（そもそも誰も脱落しない）。
+    // **米国でEMSを比較できるのは ZenMarket と Jauce の2社だけ**
+    // （FROM JAPAN・Neokyo・Buyee は米国宛にEMSを売っていない、2026-09-12配線）。
     const below = compare({ method: 'ems', items: items(5, 4950), country: 'US' }).rows;
-    expect(winnerOf(below)!.id).toBe('fromjapan');
+    expect(winnerOf(below)!.id).toBe('zenmarket');
     const above = compare({ method: 'ems', items: items(5, 4975), country: 'US' }).rows;
-    expect(winnerOf(above)!.id).toBe('fromjapan');
-    // Neokyo だけが引き続き比較不能（米国宛にEMSを売っていない、既存の事実）。
-    expect(above.filter((r) => r.comparable)).toHaveLength(5);
+    expect(winnerOf(above)!.id).toBe('zenmarket');
+    expect(above.filter((r) => r.comparable)).toHaveLength(2);
   });
 });
 
@@ -1167,10 +1174,17 @@ describe('the international method is an input, and the default is now cheapest-
       expect(row.comparable, cc).toBe(true);
     }
 
-    // **他社の米国は消さない。**確認できたのは Neokyo だけ。
-    // Buyee と FROM JAPAN も止めているという要約はあるが、生データを持っていない。
-    for (const id of ['buyee:consolidated', 'zenmarket', 'fromjapan', 'jauce']) {
+    // **他社の米国は消さない、ただし実際に売っている方式に限る。**
+    // 2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs` を
+    // 配線した結果、FROM JAPAN・Buyee も Neokyo と同じく米国宛にはEMS（日本郵便）を
+    // 売っていないと確認済みなので、この2社もEMSでは比較不能になる——
+    // ZenMarket と Jauce の2社だけが米国向けEMSを持つ。
+    for (const id of ['zenmarket', 'jauce']) {
       expect(byId(us, id).comparable, id).toBe(true);
+    }
+    for (const id of ['buyee:consolidated', 'fromjapan']) {
+      expect(byId(us, id).comparable, id).toBe(false);
+      expect(byId(us, id).notComparableReason, id).toContain('does not ship');
     }
   });
 
@@ -1218,12 +1232,18 @@ describe('Buyee splits parcels by order', () => {
     expect(consolidated.tag).toContain('you must request this');
   });
 
-  test('splitting costs more on EMS — but not on the US clearance fee, which is zero here', () => {
-    const rows = compare({ method: 'ems', items: items(3, 600), country: 'US' }).rows;
+  test('splitting costs more on the courier — but not on the US clearance fee, which is zero here', () => {
+    // **method を EMS からBuyeeの実測宅配便（`courier-buyee-air`）に変更した**
+    // （2026-09-12）。Buyee は米国宛に EMS（日本郵便）を一切出していないと確認済み
+    // （`master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線）ので、
+    // 以前この場所で使っていた `method: 'ems'` は今は US で Buyee を比較不能にする
+    // ——実際に Buyee が米国へ売っている宅配便で同じ「個口を増やすほど高くなる」
+    // 性質を確かめる。
+    const rows = compare({ method: 'courier-buyee-air', items: items(3, 600), country: 'US' }).rows;
     const consolidated = byId(rows, 'buyee:consolidated');
     const dflt = byId(rows, 'buyee:default');
-    expect(line(consolidated, 'intl-shipping').amount).toBe(9100);
-    expect(line(dflt, 'intl-shipping').amount).toBe(17970);
+    expect(line(consolidated, 'intl-shipping').amount).toBe(4607);
+    expect(line(dflt, 'intl-shipping').amount).toBe(13578);
     // **3点×¥3,000 は $2,500 の事前納付帯の中**。Zonos で関税が事前納付されるので
     // 配達時に徴収するものが無く、USPS の手数料も立たない（IMM 712.11）。
     // 個口を増やしても 0 のまま——**個口が効くのは手数料が立つ帯だけ**。
@@ -1604,21 +1624,21 @@ describe('one item at a time: whose weight decides the winner', () => {
     table('i1', 439, [380, 600], { priceYen: 4200, site: 'mercari' }),
   ];
 
-  test('the example cart: FROM JAPAN wins, and the US total is not indeterminate (P1-4)', () => {
-    // **FROM JAPAN の総額は米国では常に上限不明**（外注梱包。FJ 固有の未知）。
-    // だが Zonos 前払い利用料・連邦売上税のような「社を問わず同じようにかかる
-    // 共通の未知」は `rankHigh`（順位判定専用の内部値）から無視されるので
-    // （P1-4、外部レビュー、オーナー確定 2026-09-11）、ZenMarket が明確な2位で
-    // 枠に残り、判定不能ではない。1位そのものは動かない。
+  test('the example cart: ZenMarket wins, and the US total is not indeterminate (P1-4)', () => {
+    // **FROM JAPAN は米国宛にEMS（日本郵便）を売っていない**（2026-09-12、
+    // `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線。
+    // 以前はここに `unavailableIn` が無く、実際には売っていない米国向けEMSで
+    // FROM JAPAN を1位にしていた欠陥）ので、EMSでの米国比較に残るのは
+    // ZenMarket と Jauce の2社だけになり、ZenMarket が1位になる。
     const r = compare({ method: 'ems', items: EXAMPLE, country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
-    expect(r.rows[0]!.id).toBe('fromjapan');
+    expect(r.rows[0]!.id).toBe('zenmarket');
     // 幅の無いライン（P25=P75）は動かしても同じなので、見ない。
     expect(r.weightSensitivity['i0']).toBeUndefined();
     expect(r.weightSensitivity['i1']).toEqual({
       lowG: 380, highG: 600,
-      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN',
+      winnerAtLow: 'ZenMarket', winnerAtHigh: 'ZenMarket',
       onlyPricedAtLow: false, onlyPricedAtHigh: false,
       decisive: false,
     });
@@ -1646,18 +1666,15 @@ describe('one item at a time: whose weight decides the winner', () => {
     });
   });
 
-  test('a single item off the table: FROM JAPAN always wins, and the US total is not indeterminate (P1-4)', () => {
-    // FROM JAPAN は500g〜10kgの全域で1位のまま（winnerAtLow/High とも FROM JAPAN）で、
-    // 枠は{FROM JAPAN, ZenMarket}の2社のまま動かない（`decisive` は false）。
-    // FROM JAPAN 自身の総額は上限不明（外注梱包）のままだが、それは FJ 固有の
-    // 未知——Zonos・連邦売上税のような共通の未知とは違い、`rankHigh` はそれを
-    // 引き続き `null` にする一方、ZenMarket の `rankHigh` は閉じているので
-    // 判定不能にはならない（P1-4）。
+  test('a single item off the table: ZenMarket always wins, and the US total is not indeterminate (P1-4)', () => {
+    // FROM JAPAN は米国宛にEMSを売っていない（2026-09-12配線）ので、EMSでの米国
+    // 比較に残るのは ZenMarket と Jauce の2社だけ。ZenMarket が500g〜10kgの全域で
+    // 1位のまま（winnerAtLow/High とも ZenMarket、`decisive` は false）。
     const r = compare({ method: 'ems', items: [assumed('i2')], country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.weightSensitivity['i2']).toMatchObject({
-      lowG: 500, highG: 10000, winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN', decisive: false,
+      lowG: 500, highG: 10000, winnerAtLow: 'ZenMarket', winnerAtHigh: 'ZenMarket', decisive: false,
     });
   });
 
@@ -1720,7 +1737,8 @@ describe('one item at a time: whose weight decides the winner', () => {
     // `splitByWeightLimit`（§2④）を実装した今、7,000g・10,000gという
     // 個々の商品重量はどちらも単体では十分軽い（梱包後 8.7kg・12.3kg、
     // どちらも30kg以下）ので、4点の同梱グループが上限を超えても箱を2つに
-    // 分ければ収まる——Buyee default の専売は起きず、1位（FROM JAPAN）は
+    // 分ければ収まる——Buyee default の専売は起きず、1位（ZenMarket。FROM JAPAN は
+    // 米国宛にEMSを売っていないため2026-09-12配線後は比較から外れる）は
     // 仮置きの重量が動いても変わらない（`decisive: false`）。
     const r = compare({ method: 'ems',
       items: [
@@ -1733,7 +1751,7 @@ describe('one item at a time: whose weight decides the winner', () => {
     });
     expect(r.weightSensitivity['p']).toEqual({
       lowG: 500, highG: 10000,
-      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN',
+      winnerAtLow: 'ZenMarket', winnerAtHigh: 'ZenMarket',
       onlyPricedAtLow: false, onlyPricedAtHigh: false,
       decisive: false,
     });
@@ -1796,26 +1814,25 @@ describe('unknown weight falls back to EMS steps', () => {
     expect(r.rankStabilityNote).not.toContain('sit within the same uncertainty');
   });
 
-  test('in the US every band keeps the same bracket — FROM JAPAN leads, ZenMarket a clear second', () => {
-    // 米国には Neokyo が居ない（日本郵便を売っていない）ので、どの帯でも1位は
-    // FROM JAPAN のまま。FROM JAPAN 自身の総額は米国では常に上限不明（外注梱包。
-    // FJ 固有の未知）だが、Zonos 前払い利用料・連邦売上税のような「社を問わず
-    // 同じようにかかる共通の未知」は `rankHigh` から無視される（P1-4、外部
-    // レビュー、オーナー確定 2026-09-11）ので、ZenMarket が明確な2位として枠に
-    // 残り続け、判定不能にはならない——「1位が変わらない」＝安定という主張が
-    // そのまま成り立つ。
+  test('in the US every band keeps the same bracket — ZenMarket leads throughout', () => {
+    // 米国には Neokyo・FROM JAPAN・Buyee が居ない（いずれもEMS/日本郵便を売って
+    // いないと2026-09-12確認、`master/courier-rates.json` の
+    // `conclusions.courier_lineup_diffs` を配線）ので、EMSでの米国比較に残るのは
+    // ZenMarket と Jauce の2社だけ——どの帯でも1位は ZenMarket のまま。
     const r = compare({ method: 'ems',
       items: Array.from({ length: 2 }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
       country: 'US',
     });
-    expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'fromjapan')).toBe(true);
+    expect(r.bands!.every((b) => b.cheapestRowIds.join() === 'zenmarket')).toBe(true);
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
     expect(r.rankStabilityNote).toBe(
-      'In the recommended range at every step from 500 g to 10 kg: FROM JAPAN and ZenMarket.');
-    // どの帯でも Neokyo は値段を持たない。
+      'In the recommended range at every step from 500 g to 10 kg: ZenMarket.');
+    // どの帯でも Neokyo・FROM JAPAN・Buyee は値段を持たない。
     for (const band of r.bands!) {
-      expect(band.rows.find((x) => x.id === 'neokyo')!.comparable).toBe(false);
+      for (const id of ['neokyo', 'fromjapan', 'buyee:default', 'buyee:consolidated']) {
+        expect(band.rows.find((x) => x.id === id)?.comparable ?? false, id).toBe(false);
+      }
     }
   });
 
@@ -1920,21 +1937,18 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
   test('5 items x ¥3,000, 200 g each, to the US', () => {
     // **Neokyo が消えたのは値段が高いからではなく、米国宛に日本郵便を売っていないから。**
     // 以前ここは Neokyo を ¥29,725 で1位に置いていた。
-    // 0d（2026-09-11）: 保管が総額に入り、既定45日では無料期間30日の Buyee だけに課金が
-    // 乗る（他4社は無料60日の内側で¥0）。Buyee の2行がその分だけ上がる。
-    // 外部レビュー2回目 A-2（2026-09-11）: 保管は個口（consolidated では1個口）ではなく
-    // **注文単位**（この基準は5点＝5注文）で計算するよう直したので、consolidated の
-    // 保管料も5個口ぶんに上がり（¥1,500→¥7,500）、jauce の後ろに落ちた。
-    // F07（2026-09-12）: FROM JAPAN・Buyee が新たに推定 deposit（3.5%）を負ったぶん
-    // 総額が上がった。ZenMarket・Jauce は既に deposit を持っていたので動いていない。
+    // **2026-09-12、FROM JAPAN・Buyee も同じ理由で消えた。**
+    // `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線した
+    // 結果、FROM JAPAN・Buyee は米国宛にEMS（日本郵便）を一切出していないと
+    // 実測で確認済みだったと分かった——以前はこの `unavailableIn` が無く、
+    // 実際には売っていない米国向けEMSに値段を付けて比較していた欠陥。
+    // 米国でEMSを売っているのは ZenMarket と Jauce の2社だけになった。
     expect(board('US', 5, 200).map((r) => [r.id, r.total.low])).toEqual([
-      ['fromjapan', 32030],
       ['zenmarket', 32549],
       ['jauce', 34008],
-      ['buyee:consolidated', 41357],
-      ['buyee:default', 56176],
     ]);
-    expect(dropped('US', 5, 200).map((r) => r.id)).toEqual(['neokyo']);
+    expect(dropped('US', 5, 200).map((r) => r.id).sort())
+      .toEqual(['buyee:consolidated', 'buyee:default', 'fromjapan', 'neokyo']);
   });
 
   test('the same basket at 600 g, 1,500 g and 3,000 g — the top two swap on the way', () => {
@@ -1959,43 +1973,39 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     expect(top2(3000)).toEqual([['fromjapan', 71144], ['zenmarket', 71662]]);
     // 0d: 既定45日ぶんの保管料（Buyee、無料30日超過15日×5個口）が乗って上がった。
     expect(board('CA', 5, 600)[5]).toMatchObject({ id: 'buyee:default', total: { low: 66945 } });
-    // 米国では上位2社が3つの重量で1度も入れ替わらない。
-    // 0d: 既定45日の保管料で Buyee の consolidated が ZenMarket の後ろに下がった
-    // （無料30日超過15日×1個口はZenMarketの無料60日の内側の¥0より重い）。
+    // **米国では上位2社が ZenMarket・Jauce に変わった。**FROM JAPAN は米国宛に
+    // EMSを売っていないと2026-09-12に確認済み（`master/courier-rates.json` の
+    // `conclusions.courier_lineup_diffs` を配線）——以前ここに残っていた
+    // 「FROM JAPAN → Buyee(同梱)」の並びは、実際には売っていない米国向けEMSに
+    // 値段を付けていた欠陥の産物だった。
     for (const w of [600, 1500, 3000]) {
       expect(board('US', 5, w).slice(0, 2).map((r) => r.id), `${w}g`)
-        .toEqual(['fromjapan', 'zenmarket']);
+        .toEqual(['zenmarket', 'jauce']);
     }
   });
 
   test('one ¥5,000 Yahoo! Auctions item, 500 g, to the US', () => {
-    // 0d: 1点・1個口なので Buyee の保管料は15日ぶん×1個口（¥1,500）だけ乗り、
-    // ZenMarket・Jauce を抜いて最後尾に落ちた（以前は2位）。
-    // F07（2026-09-12）: FROM JAPAN・Buyee が新たに推定 deposit を負ったぶん上がった
-    // （ZenMarket・Jauce は既に deposit を持っていたので動いていない）。
+    // **2026-09-12: FROM JAPAN・Buyee も米国宛にEMSを売っていないと確認済みで
+    // 落ちた**（`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線）。米国でEMSを比較できるのは ZenMarket と Jauce の2社だけ。
     expect(board('US', 1, 500, {}, 5000).map((r) => [r.serviceName, r.total.low])).toEqual([
-      ['FROM JAPAN', 12563],
       ['ZenMarket', 12666],
       ['Jauce', 13507],
-      ['Buyee', 14428],
     ]);
     // 以前ここに ['Neokyo', 12295] が2位で入っていた。
-    expect(dropped('US', 1, 500).map((r) => r.serviceName)).toEqual(['Neokyo']);
+    expect(dropped('US', 1, 500).map((r) => r.serviceName).sort())
+      .toEqual(['Buyee', 'FROM JAPAN', 'Neokyo']);
   });
 
   test('the same item on Rakuten reshuffles the middle — per-site fees are real', () => {
-    // Jauce は楽天のサービス料がベータで無料、ZenMarket は楽天が ¥500（ヤフオクは ¥800）、
-    // FROM JAPAN はヤフオク限定の ¥200 が消える。0d: Buyee の保管料（既定45日、無料30日
-    // 超過15日ぶん）が乗って最後尾になった。
-    // F07（2026-09-12）: FROM JAPAN が新たに推定 deposit を負ったぶん上がり、
-    // ZenMarket（自社公表値の deposit、動いていない）とちょうど同額になった
-    // ——1位が2社の同額タイになった。
+    // Jauce は楽天のサービス料がベータで無料、ZenMarket は楽天が ¥500（ヤフオクは ¥800）。
+    // **2026-09-12: FROM JAPAN・Buyee は米国宛にEMSを売っていないと確認済みで
+    // 落ちた**（`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線）ので、米国でEMSを比較できるのは ZenMarket と Jauce の2社だけ。
     const rows = board('US', 1, 500, { site: 'rakuten' }, 5000);
     expect(rows.map((r) => [r.serviceName, r.total.low])).toEqual([
       ['ZenMarket', 12356],
-      ['FROM JAPAN', 12356],
       ['Jauce', 12675],
-      ['Buyee', 14428],
     ]);
     expect(line(byId(rows, 'jauce'), 'service-fee').amount).toBe(0);
     expect(line(byId(rows, 'jauce'), 'ad-valorem').amount).toBe(0);
@@ -2024,6 +2034,10 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // **SG はこの帯（5点×¥12,800＝CIF が S$400 超）で S$10.90 が乗る。**
     // **US から1行消えた。**Neokyo が米国宛に日本郵便を売っていないと確認できたため
     // （以前ここは Neokyo を ¥36,125 で先頭に置いていた）。
+    // **2026-09-12: US からさらに2行（FROM JAPAN・Buyee）消えた。**
+    // `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線した
+    // 結果、この2社も米国宛にEMSを売っていないと確認済みだったと分かった——
+    // 米国に残るのは ZenMarket と Jauce の2行だけ。
     // **0d（2026-09-11）で7カ国すべてが動いた。**既定45日の保管料が入り、無料期間
     // 30日の Buyee だけに課金が乗る（他4社は無料60日／Neokyo無料45日の内側で¥0）。
     // Buyee は2行（consolidated 1個口 / default 5個口）持つので、個口の数だけ額が違う
@@ -2043,7 +2057,7 @@ describe('measured totals — 2026-09-06 basket, at the ECB rates of 2026-09-04'
     // deposit を持っていたので動いていない）。並びは複数国で動いた——
     // AU/CA/SG は3位以降が Neokyo→Buyee(consolidated) の逆転を含む形で入れ替わった。
     expect(totals).toEqual({
-      US: [38352, 38870, 40605, 47678, 65554],
+      US: [38870, 40605],
       GB: [41298, 42155, 42282, 44528, 51609, 75805],
       DE: [43912, 44528, 44896, 47142, 54223, 76961],
       FR: [44329, 44879, 45313, 47559, 54640, 77882],
@@ -2181,8 +2195,12 @@ describe('edges', () => {
           priced += 1;
         }
       }
-      // 米国では Neokyo の1行だけが落ちる。ここが 0 になったら上の分岐は空回りしている。
-      expect([priced, dropped]).toEqual([4, 1]);
+      // **米国ではEMSが Neokyo・FROM JAPAN・Buyee の3行で落ちる**（2026-09-12、
+      // `master/courier-rates.json` の `conclusions.courier_lineup_diffs` を配線。
+      // 3社とも米国宛にはEMS/日本郵便を一切出していないと確認済み）。
+      // 額が付くのは ZenMarket・Jauce の2行だけ。ここが 0 になったら上の分岐は
+      // 空回りしている。
+      expect([priced, dropped]).toEqual([2, 3]);
     });
 
     test('over the top EMS step there is no rate at all, so the line is neither published nor an estimate', () => {
@@ -2454,23 +2472,16 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
   });
 
   test('an unbounded leader does not swallow the rest into "equivalent" (P1-4)', () => {
-    // **米国・5点600gでは FROM JAPAN が1位で、自身の総額は上限不明のまま**
-    // （外注梱包。FJ 固有の未知）。以前はこれだけで、下端で並ぶ他社が全員
-    // 「重なりうる」ことになり、枠に入りきらない3社（Buyee consolidated・Jauce・
-    // Buyee default）が無条件で「同等」になっていた——枠は最大2社（確定仕様2）
-    // でも `equivalent` には上限が無いので、そこが巻き込みの経路だった。
-    //
-    // **P1-4（外部レビュー、オーナー確定 2026-09-11）で直った。**Zonos 相当の
-    // 「社を問わず同じようにかかる共通の未知」が米国には無く、FROM JAPAN 自身の
-    // 外注梱包という**社固有**の未知だけが残る——`rankHigh` はこれを引き続き
-    // `null` にするが、他社の重なり判定を Infinity に飛ばすことはない
-    // （`computeBracket` は境界を「既知の上限を持つ行」からのみ伸ばす）。
-    // 結果、ZenMarket が明確な2位として枠に残り、Buyee consolidated・Jauce・
-    // Buyee default とは確定した差がついて、誰も「同等」に落ちない。
+    // **米国・5点600gでは FROM JAPAN・Neokyo・Buyee がEMSを売っておらず比較不能**
+    // （2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線）ので、米国でEMSを比較できるのは ZenMarket と Jauce の2社だけになった。
+    // ZenMarket が1位で、自身の総額は上限不明（連邦売上税等、社を問わず同じに
+    // かかる共通の未知は `rankHigh` から無視される、P1-4）——それでも Jauce との
+    // 間には確定した差があるので、Jauce は「同等」にも「枠入り」にもならない。
     const rows = compare({ method: 'ems', items: items(5, 600), country: 'US' }).rows.filter((r) => r.comparable);
     const recommended = rows.filter((r) => r.recommended);
     const equivalent = rows.filter((r) => r.equivalent);
-    expect(recommended.map((r) => r.id).sort()).toEqual(['fromjapan', 'zenmarket']);
+    expect(recommended.map((r) => r.id)).toEqual(['zenmarket']);
     expect(recommended.length).toBeLessThanOrEqual(2); // 1位 + 最大1社 = 2社
     expect(equivalent).toEqual([]);
     // 枠と同等は互いに排他。
@@ -2491,9 +2502,13 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
   test('genuine closed-interval overlap still marks a 3rd company "equivalent" (the mechanism is not dead)', () => {
     // **④（外部レビュー、オーナー確定 2026-09-11）で「共通の未知」を無視するように
     // なったからといって、`equivalent` の仕組みそのものが働かなくなったわけではない。**
-    // 1点・150 g・¥500・保管90日（米国）は Jauce の保管超過（額に幅がある）が
-    // ZenMarket の総額と実際に重なる、閉区間同士の正真正銘の重なり。
-    const rows = compare({ method: 'ems', items: items(1, 150, 500), country: 'US', storageDays: 90 })
+    // **国を米国からドイツに変更した**（2026-09-12）。米国では FROM JAPAN・Buyee が
+    // EMS（日本郵便）を売っていないと確認済みで比較不能になり（`master/courier-rates.json`
+    // の `conclusions.courier_lineup_diffs` を配線）、このテストが検証したい
+    // 「Buyeeは重ならない」という対照そのものが米国では作れなくなった——同じ形は
+    // ドイツで成り立つ。1点・150 g・¥500・保管90日（ドイツ）は Jauce の保管超過
+    // （額に幅がある）が ZenMarket の総額と実際に重なる、閉区間同士の正真正銘の重なり。
+    const rows = compare({ method: 'ems', items: items(1, 150, 500), country: 'DE', storageDays: 90 })
       .rows.filter((r) => r.comparable);
     const zenmarket = byId(rows, 'zenmarket');
     const buyee = byId(rows, 'buyee');
@@ -2505,13 +2520,16 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
   });
 
   test('an unbounded leader (leader.total.high === null) does not swallow everyone — the 2-company cap still holds', () => {
-    // 1点9,000g・米国: FROM JAPAN が1位で上限不明。全社が「重なりうる」状態でも、
-    // 枠は依然として最大2社（1位を含む）に収まる。
+    // 1点9,000g・米国: FROM JAPAN・Neokyo・Buyee はEMSを売っておらず比較不能
+    // （2026-09-12、`master/courier-rates.json` の `conclusions.courier_lineup_diffs`
+    // を配線）ので、比較に残るのは ZenMarket・Jauce の2社。ZenMarket が1位で
+    // 上限不明。全社が「重なりうる」状態でも、枠は依然として最大2社
+    // （1位を含む）に収まる。
     const rows = compare({ method: 'ems', items: items(1, 9000), country: 'US' }).rows.filter((r) => r.comparable);
-    expect(byId(rows, 'fromjapan').total.high).toBeNull();
+    expect(byId(rows, 'zenmarket').total.high).toBeNull();
     const recommended = rows.filter((r) => r.recommended);
     expect(recommended.length).toBeLessThanOrEqual(2);
-    expect(recommended.map((r) => r.id).sort()).toEqual(['fromjapan', 'zenmarket']);
+    expect(recommended.map((r) => r.id)).toEqual(['zenmarket']);
   });
 
   test('a tie for 1st exactly at the 2-company cap: both tied companies go in the bracket', () => {
