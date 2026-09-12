@@ -280,11 +280,19 @@ export function ParcelView({
   if (items.length === 0) return <EmptyParcel className={className} />;
   // **宅配便・単箱は EMS の段判定アニメーションを一切使わない。**`shown`/`target`
   // は EMS 前提の状態機械なので、ここでは見ない——`row.boxes[0]` を直接描く。
+  // ただし「点線の輪郭が何か」「薄い品が何か」は**方式に関係なく我々のデータに
+  // ついての開示**（コーディネーター指摘 2026-09-12）——重量を推測したことは
+  // 郵便でも宅配便でも同じ意味を持つので、ここでも渡す。
   if (singleCourierBox) {
     return (
       <section aria-label="Parcel" data-testid="parcel" data-phase="idle" data-step="courier" className={className}>
         <ParcelHeading />
-        <CourierSingleBoxView box={singleCourierBox} items={items} method={row!.method as CourierMethod} />
+        <CourierSingleBoxView
+          box={singleCourierBox}
+          items={items}
+          method={row!.method as CourierMethod}
+          placeholders={placeholderCount(items)}
+        />
       </section>
     );
   }
@@ -412,15 +420,8 @@ export function ParcelView({
           3行の散文が挟まり、**段が最初の視界から押し出される。** */}
       <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
         EMS is priced by weight alone — volume never enters the price, so this box is not a packing
-        simulation. Faded items are weights we estimated, not measured.{' '}
-        {/* 点線の輪郭（`drawUnknown`）は「重量表に当たらなかった」の形。箱に居るときだけ
-            説明する。居ないときに説明すると、画面に無いものを指すことになる。 */}
-        {placeholders > 0 && (
-          <>
-            A dashed outline means we have no weight for that item at all — it is standing in the
-            box at a placeholder we chose, not at anything we looked up.{' '}
-          </>
-        )}
+        simulation.{' '}
+        <EstimatedDataDisclosure placeholders={placeholders} />
         <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
           Japan Post EMS rates ↗
         </a>
@@ -428,6 +429,33 @@ export function ParcelView({
       </>
       )}
     </section>
+  );
+}
+
+/**
+ * **重量データそのものについての開示。方式に関係なく常に出す。**
+ * 「薄い品は推定重量」「点線は重量表にすら当たらなかった品の仮置き」は、
+ * 我々がその品の重さをどう知ったか（郵便で送るか宅配便で送るかとは無関係）の
+ * 話であって、方式ごとに変えてよい情報ではない（コーディネーター指摘
+ * 2026-09-12——`CourierSingleBoxView` が旧来の説明段落を丸ごと入れ替えたとき、
+ * 方式に依存する部分（EMS は重量だけで決まる・日本郵便の出典）と、我々の
+ * データについての部分（この disclosure）を区別せずに落としてしまい、
+ * 宅配便の行でこの開示が消える回帰を作った——それを二度と作らないため、
+ * 単箱の postal 分岐・courier 分岐の両方から同じこの関数を呼ぶ）。
+ */
+function EstimatedDataDisclosure({ placeholders }: { placeholders: number }) {
+  return (
+    <>
+      Faded items are weights we estimated, not measured.{' '}
+      {/* 点線の輪郭（`drawUnknown`）は「重量表に当たらなかった」の形。箱に居るときだけ
+          説明する。居ないときに説明すると、画面に無いものを指すことになる。 */}
+      {placeholders > 0 && (
+        <>
+          A dashed outline means we have no weight for that item at all — it is standing in the
+          box at a placeholder we chose, not at anything we looked up.{' '}
+        </>
+      )}
+    </>
   );
 }
 
@@ -630,20 +658,30 @@ function CourierSingleBoxView({
   box,
   items,
   method,
+  placeholders,
 }: {
   box: ParcelBox;
   items: readonly Item[];
   method: CourierMethod;
+  /** 重量表に当たらなかった品の数。方式に関係ない開示（`EstimatedDataDisclosure`）に渡す。 */
+  placeholders: number;
 }) {
   const boxItems = packedItemsForBox(items, box);
   const methodLabel = COURIER_METHODS.find((m) => m.id === method)?.label ?? method;
-  // **箱の見た目の大きさは点数だけで決める。**価格には一切関係ない
-  // ——宅配便には EMS の「段」のような価格の刻みが無いので、ここでの大きさは
-  // 「中身が見えるだけの余白」という装飾でしかなく、値段の根拠を主張しない
-  // （プロースも同様に「仮定の大きさ」とだけ言い、価格には結び付けない）。
-  // 固定の notch=0 のままだと、点数が増えるほど中身が縮んで潰れ、
-  // カードボードとのコントラストが読めない値まで落ちる（e2e で実測）。
-  const visualNotch = Math.min(41, Math.max(0, boxItems.length - 1));
+  // **箱の見た目の大きさは `box.weightG`（`compare()` が既に出した梱包後重量、
+  // 再計算ではない）だけで決める、点数ではなく重さで大きさを言う装飾。**
+  // 値段には一切関係ない——宅配便には EMS の「段」のような価格の刻みが無いので、
+  // ここでの大きさは「中身が見えるだけの余白」でしかなく、値段の根拠を主張しない
+  // （プロースも同様に「仮定の大きさ」とだけ言い、価格には結び付けない）。500g
+  // 刻みは EMS の段とは無関係な、この描画だけの目盛り。
+  //
+  // **点数だけで決める版を最初に試したが、実測でコントラストが直らなかった**
+  // （6点・うち5点が推定重量＝半透明のカートで 2.45:1 しか出なかった。半透明の
+  // 品が増えても、箱の床幅が点数ほどには増えず、行の縮尺（`rowScale`）が
+  // 効いて中身の輪郭がにじんだままだった）。重量ベースにして箱そのものを
+  // 十分大きくし、縮尺を 1 に近づける方が効いた（同条件で 3.x:1 まで回復、
+  // 実測値は PR 本文参照）。
+  const visualNotch = Math.min(41, Math.max(0, Math.floor(box.weightG / 200)));
   return (
     <div data-testid="parcel-courier" className="mt-3 min-w-0">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -675,6 +713,10 @@ function CourierSingleBoxView({
           壊したことがある（#77、e2e/parcel.spec.ts の fold テスト）。EMS 側の
           段落（`EMS is priced by weight alone…`）と同程度の長さに抑える。 */}
       <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400" data-testid="parcel-courier-explainer">
+        {/* **方式に関係ない開示を先に言う。**旧来の説明段落を丸ごと入れ替えたときに
+            ここが消える回帰を一度作った——重量の出どころは郵便でも宅配便でも
+            同じ意味を持つデータの話であって、方式ごとの説明ではない。 */}
+        <EstimatedDataDisclosure placeholders={placeholders} />
         Couriers charge by <strong>chargeable weight</strong> — actual weight or{' '}
         <strong>volumetric weight</strong> (size-based), whichever is larger. Unlike EMS,{' '}
         <strong>volume can raise the price</strong>, so a half-empty box can cost more than its contents weigh.
