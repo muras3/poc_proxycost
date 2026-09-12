@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { singleParcelGrossG } from '@/lib/pricing/compare';
 import { EMS_SOURCE_URL, EMS_ZONE, emsFor } from '@/lib/pricing/ems';
 import {
-  COURIER_METHODS, DEFAULT_PARCEL_DIMENSIONS_CM,
+  COURIER_METHODS, DEFAULT_PARCEL_DIMENSIONS_CM, POSTAL_METHODS,
 } from '@/lib/pricing/postage';
 import { grams as gramsText, yen } from '@/lib/ui/format';
 import { Glyph } from '@/lib/ui/glyphs';
@@ -99,6 +99,11 @@ export interface ParcelState {
  */
 function isCourierMethod(method: PostalMethod | CourierMethod): method is CourierMethod {
   return method.startsWith('courier-');
+}
+
+/** `PostalMethod` の表示名。マスタ（`POSTAL_METHODS`）から引く——ここでベタ書きしない。 */
+function postalMethodLabel(method: PostalMethod): string {
+  return POSTAL_METHODS.find((m) => m.id === method)?.label ?? method;
 }
 
 export function parcelStateFor(items: readonly Item[], country: CountryCode): ParcelState | null {
@@ -314,7 +319,7 @@ export function ParcelView({
       data-step={shown.overMax ? 'over' : String(shown.stepIndex)}
       className={className}
     >
-      <ParcelHeading />
+      <ParcelHeading split={!!multiBox} />
 
       {multiBox && <MultiBoxView boxes={multiBox} items={items} />}
 
@@ -354,7 +359,14 @@ export function ParcelView({
               ~{gramsText(shown.grams)}{' '}
               <span className="text-xs text-neutral-500">after our packing allowance</span>
             </dd>
-            <dt className="text-neutral-600 dark:text-neutral-400">EMS postage</dt>
+            {/* **F5**: この行が実際に使った方式が EMS とは限らない
+                （`row.method` が他の3つの `PostalMethod` のこともある）。
+                「EMS postage」は EMS 以外の方式の行にとって偽の名指しなので、
+                `row` が無い（フォールバック既定は EMS）ときだけそう呼び、
+                それ以外は実際の方式名で呼ぶ。 */}
+            <dt className="text-neutral-600 dark:text-neutral-400">
+              {!row || row.method === 'ems' ? 'EMS postage' : `${postalMethodLabel(row.method as PostalMethod)} postage`}
+            </dt>
             <dd data-testid="parcel-postage" className="num">
               {shown.overMax || shown.yen == null ? (
                 <span className="text-neutral-500 dark:text-neutral-400">
@@ -768,11 +780,18 @@ function SplitDisclosure() {
   );
 }
 
-/** 区画の見出し。空でも中身が入っていても同じ場所に同じ文言で立つ。 */
-function ParcelHeading() {
+/**
+ * 区画の見出し。空でも中身が入っていても同じ場所に立つが、**「everything ships
+ * together」は分かれていない箱にしか言えない主張**（F5、コーディネーター指摘
+ * 2026-09-12）。分かれている（`split`）ときにこの文言を出すと、「まとめて送る
+ * 前提の見積もり」という嘘を見出しが言うことになる——分かれる理由（重量上限・
+ * 出品ごとの1注文・店舗不明など）は箱ごとに `REASON_TEXT` が既に言っている
+ * ので、見出し側で新しく理由を作らない。分かれているときは中立な見出しにする。
+ */
+function ParcelHeading({ split = false }: { split?: boolean }) {
   return (
     <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
-      Parcel — if everything ships together
+      {split ? 'Parcel — split into separate boxes' : 'Parcel — if everything ships together'}
     </h2>
   );
 }
