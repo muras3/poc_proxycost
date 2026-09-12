@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addByHand, emptyCart, gotoCompare, openCart, weightBox } from './helpers';
+import { addByHand, emptyCart, gotoCompare, openCart, setMethod, weightBox } from './helpers';
 
 /**
  * 箱の E2E。**実際に足して、消して、重量を打ち込む。**
@@ -43,6 +43,12 @@ async function soloCart(page: Page) {
 
 test('an item you add lands in the box', async ({ page }) => {
   await gotoCompare(page);
+  // **この落下アニメーションは EMS 単箱の実装だけが持つ**（宅配便の単箱ビュー
+  // `CourierSingleBoxView` はアニメーションの状態機械を一切使わない、#88
+  // follow-up）ので、この検査は EMS 側の実装を名指しで固定する。既定の
+  // `cheapest` に任せると、既定カート（例のフィギュア+ねんどろいど）は
+  // 宅配便が最安になり（ZenMarket ECMS Express）、この行自体が実行されない。
+  await setMethod(page, 'ems');
   const before = await page.getByTestId('packed-item').count();
   await addByHand(page, ITEM, 4000);
   await expect(page.getByTestId('packed-item')).toHaveCount(before + 1);
@@ -112,6 +118,12 @@ test('over 30 kg the box says there is no published rate, not ¥0', async ({ pag
 
 test('the box is operable with the keyboard alone', async ({ page }) => {
   await gotoCompare(page);
+  // **この検査は「箱が段を跨いで大きくなる」という EMS 固有の動きを見ている**
+  // （最後の `boxWidth` の比較）。宅配便には段（step）という概念自体が無く、
+  // 単箱ビューの箱は段で大きさを変えない（#88 follow-up）ので、方式を明示的に
+  // EMS へ固定する——`cheapest` のままだと、9000g に打ち込んだ時点で宅配便
+  // （courier-ups）が最安に替わり、`parcel-delta` も箱の成長も無くなる。
+  await setMethod(page, 'ems');
   await soloCart(page);
   const w = weightBox(page, ITEM);
   const id = await w.getAttribute('id');
@@ -294,6 +306,12 @@ test.describe('prefers-reduced-motion', () => {
 
   test('nothing moves — the final state is shown at once', async ({ page }) => {
     await gotoCompare(page);
+    // `parcel-delta`（「+¥0」のチップ）は EMS 単箱ビューだけが持つ——宅配便の
+    // 単箱ビューはこのチップに相当するものをまだ出さない（#88 follow-up、
+    // エンジンが容積重量の実値・勝敗をまだ出していないため。PR 本文の
+    // 「エンジンへの質問」参照）。この検査自体は EMS のアニメーション制御
+    // （reduced-motion で止まるか）を見ているので、方式を明示的に固定する。
+    await setMethod(page, 'ems');
     const before = await page.getByTestId('packed-item').count();
     await addByHand(page, ITEM, 4000);
     await expect(page.getByTestId('packed-item')).toHaveCount(before + 1);
@@ -313,6 +331,13 @@ test.describe('prefers-reduced-motion', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 test('the ladder shows the step the parcel is actually on, not the end of the table', async ({ page }) => {
   await gotoCompare(page);
+  // `weight-ladder` は EMS 専用（宅配便には段表そのものが無い、#88
+  // follow-up）。既定の `cheapest` のままだと既定カート（例のフィギュア +
+  // ねんどろいど）は宅配便（ZenMarket ECMS Express）が最安になり、目盛りが
+  // 描かれず、この検査そのものが成り立たなくなる。この検査の主題は
+  // 「目盛りのスクロール位置」という EMS 実装の中身なので、方式を明示的に
+  // EMS へ固定する。
+  await setMethod(page, 'ems');
   const ladder = page.getByTestId('weight-ladder');
   await expect(ladder).toBeVisible();
 
@@ -465,6 +490,23 @@ test.describe('method sensitivity — courier vs postal (#88 follow-up)', () => 
     // まだ出していない——ここで具体的な kg/g の容積重量を言い切らない
     // （説明文にそれらしき比率・除数の数字を書いていないことの弱いチェック）。
     expect(text).not.toMatch(/5000|÷\s*5,?000/);
+  });
+
+  test('courier single-box view: no horizontal overflow at 412px', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 900 });
+    await gotoCompare(page);
+    const w = await soloCart(page);
+    await w.fill('1500');
+    await expect(page.getByTestId('parcel-courier')).toBeVisible();
+
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(
+      overflow.scrollWidth,
+      `scrollWidth ${overflow.scrollWidth} > clientWidth ${overflow.clientWidth} at 412px`,
+    ).toBeLessThanOrEqual(overflow.clientWidth);
   });
 });
 

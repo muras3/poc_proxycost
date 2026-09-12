@@ -637,12 +637,19 @@ function CourierSingleBoxView({
 }) {
   const boxItems = packedItemsForBox(items, box);
   const methodLabel = COURIER_METHODS.find((m) => m.id === method)?.label ?? method;
+  // **箱の見た目の大きさは点数だけで決める。**価格には一切関係ない
+  // ——宅配便には EMS の「段」のような価格の刻みが無いので、ここでの大きさは
+  // 「中身が見えるだけの余白」という装飾でしかなく、値段の根拠を主張しない
+  // （プロースも同様に「仮定の大きさ」とだけ言い、価格には結び付けない）。
+  // 固定の notch=0 のままだと、点数が増えるほど中身が縮んで潰れ、
+  // カードボードとのコントラストが読めない値まで落ちる（e2e で実測）。
+  const visualNotch = Math.min(41, Math.max(0, boxItems.length - 1));
   return (
     <div data-testid="parcel-courier" className="mt-3 min-w-0">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <PackingBox
-            stepIndex={0}
+            stepIndex={visualNotch}
             items={boxItems}
             label={`Parcel box holding ${boxItems.length} item${boxItems.length === 1 ? '' : 's'}, `
               + 'priced by courier chargeable weight, not by weight alone'}

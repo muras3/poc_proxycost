@@ -319,6 +319,20 @@ export function freeShippingDomesticNote(page: Page): Locator {
  * 手入力で1点足す。**検索も URL 取得も要らない唯一の経路**なので、
  * 入力を組み立てるテストはここを通る。`site` を渡すと出品サイトも選ぶ。
  */
+/**
+ * 配送方式を固定する（`MethodPicker`、`#ship-by-select`）。**既定は `cheapest`**
+ * ——宅配便が7カ国に配線されてから（#87）、既定カートを含め多くの重量で最安が
+ * 宅配便に替わった（`ParcelView` の EMS 専用の絵・アニメーションは方式が
+ * `PostalMethod` の行にしか出ない、#88 follow-up）。**EMS の箱・目盛り・落下
+ * アニメーション自体を検査するテストは、`cheapest` に任せると重量やカートの
+ * 中身次第で宅配便に化ける**——そういうテストは `'ems'` へ明示的に固定して、
+ * 何を検査しているかをテスト自身に語らせる（「たまたま今は EMS が最安」に
+ * 頼らない）。
+ */
+export async function setMethod(page: Page, method: string): Promise<void> {
+  await page.locator('#ship-by-select').selectOption(method);
+}
+
 export async function addByHand(
   page: Page, title: string, priceYen: number, site?: string,
 ): Promise<void> {
