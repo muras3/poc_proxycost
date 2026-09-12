@@ -4,9 +4,9 @@ import {
 } from './countries';
 import { EMS_SOURCE_URL, UNKNOWN_WEIGHT_STEPS_G, formatStep } from './ems';
 import {
-  DEFAULT_PARCEL_DIMENSIONS_CM, DEFAULT_PARCEL_DIMENSIONS_NOTE, DEFAULT_PARCEL_DIMENSIONS_TIER,
-  POSTAGE_SOURCE_URL, POSTAL_METHODS, RANKED_COURIER_METHOD_IDS, courierPriceFor,
-  dimensionsExceedLimit, markupYen, maxGramsFor, postageFor, zoneFor,
+  COURIER_METHODS, DEFAULT_PARCEL_DIMENSIONS_CM, DEFAULT_PARCEL_DIMENSIONS_NOTE,
+  DEFAULT_PARCEL_DIMENSIONS_TIER, POSTAGE_SOURCE_URL, POSTAL_METHODS, RANKED_COURIER_METHOD_IDS,
+  courierPriceFor, dimensionsExceedLimit, markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
@@ -1161,18 +1161,29 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // EMS ¥7,900 より安いのでそれが起きていた）——ここを直すのが今回の変更点。
   const SURFACE_POSTAL_IDS: readonly PostalMethod[] = ['small-packet-surface', 'parcel-surface'];
   const nonSurfacePostalMethods = POSTAL_METHODS.filter((s) => !SURFACE_POSTAL_IDS.includes(s.id));
+  // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
+  // **郵便と宅配便を同じ土俵で比べる**——「宅配便は最終価格を正とする」という
+  // オーナー決定（2026-09-11）により、宅配便も総額としては郵便の各方式と対等。
+  // 比べるのは**下端**（宅配便は目的地側の未知の手数料で上端が開くことがあるが、
+  // それでも下端で比較する——オーナー決定 P2 3「順位は下端で決める」）。
+  const cheapestCandidate = [
+    ...nonSurfacePostalMethods.map((s) => ({ id: s.id as PostalMethod | CourierMethod, yen: priceAll(s.id) })),
+    ...COURIER_METHOD_IDS.map((id) => ({ id: id as PostalMethod | CourierMethod, yen: priceCourier(id)?.low ?? null })),
+  ]
+    .filter((x): x is { id: PostalMethod | CourierMethod; yen: number } => x.yen != null)
+    .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0];
+  // **F2: 「誰も値段が付かなかった」は、方式を選んでいるのではない。**以前は
+  // ここで `?? 'ems'` に潰しており、他のすべての値段が付かなかったときも
+  // 「EMS を選んだ」ことにしていた——下流の `notComparableReason` がそれを
+  // そのまま「EMS を出していない」という、名指しした方式についての嘘の文に
+  // していた（500g未満の米国向けカートで実際に起きた）。この場合
+  // `wanted === 'cheapest'` のときだけ起こるので、`noPricedCandidate` として
+  // 別に持ち、`method` 自体は内部計算（`spec`/`rate` の解決）のために
+  // 何かしらの値が要るので `'ems'` のままにしておくが、**文言側は
+  // `noPricedCandidate` を見て、方式名を名指ししない**。
+  const noPricedCandidate = wanted === 'cheapest' && cheapestCandidate == null;
   const method: PostalMethod | CourierMethod = wanted === 'cheapest'
-    // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
-    // **郵便と宅配便を同じ土俵で比べる**——「宅配便は最終価格を正とする」という
-    // オーナー決定（2026-09-11）により、宅配便も総額としては郵便の各方式と対等。
-    // 比べるのは**下端**（宅配便は目的地側の未知の手数料で上端が開くことがあるが、
-    // それでも下端で比較する——オーナー決定 P2 3「順位は下端で決める」）。
-    ? ([
-        ...nonSurfacePostalMethods.map((s) => ({ id: s.id as PostalMethod | CourierMethod, yen: priceAll(s.id) })),
-        ...COURIER_METHOD_IDS.map((id) => ({ id: id as PostalMethod | CourierMethod, yen: priceCourier(id)?.low ?? null })),
-      ]
-        .filter((x): x is { id: PostalMethod | CourierMethod; yen: number } => x.yen != null)
-        .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0]?.id ?? 'ems')
+    ? (cheapestCandidate?.id ?? 'ems')
     : wanted;
   // **`isCourier` は `COURIER_METHOD_IDS`（ランキング候補）とは別に判定する。**
   // `courier-surface` は候補集合には無いが、`ctx.method` で明示的に選ぶことは
@@ -1230,8 +1241,11 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const boxReasons: ParcelSplitReason[] = finalBoxes.map((b) => {
     const gi = groupOfItemIndex.get(b.indices[0]!)!;
     // その下地から2箱以上できていれば、重量上限で増やした箱（§2④）。
-    // 1箱のままなら、下地そのものの理由（店舗の切れ目、`split` のときだけ意味を持つ）。
-    return (boxCountByGroup.get(gi) ?? 1) > 1 ? 'weight-limit' : split ? groupReason(gi) : 'weight-limit';
+    // 1箱のままで、かつ元々複数の下地があった（`split`）なら、下地そのものの
+    // 理由（店舗の切れ目）。**どちらでもなければ、単に分割されていない**
+    // ——以前はここも `'weight-limit'` を返しており、割れていない箱に
+    // 「重量上限で割った」という起きていない分割を主張していた（F6）。
+    return (boxCountByGroup.get(gi) ?? 1) > 1 ? 'weight-limit' : split ? groupReason(gi) : 'single';
   });
   // **`parcels > 1` の理由は2つある**（両方が同時に効くこともある）:
   // 店舗ごとの別送（`split`）と、選ばれた方式の重量上限による分割（§2④）。
@@ -1262,6 +1276,33 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // F30: 商品価格の上限超は「重すぎる」でも「売っていない」でもなく「選べない」。
   const priceCapExceeded = !!(rate ?? courierRate)?.priceCapJpy
     && itemsYen > (rate ?? courierRate)!.priceCapJpy!;
+  // **F2 用の2つの事実。**`noPricedCandidate`（上）のときだけ `notComparableReason`
+  // で使う——「日本郵便を売っていない」と「宅配便の測定が軽い側で尽きている」は
+  // 別々の理由で、混ぜて「EMSを出していない・宅配便は値付けしていない」と
+  // 語ると両方とも嘘になる（F2）。
+  //
+  // その社が、この国向けに日本郵便の方式を**1つも**売っていない
+  // （非surface方式のどれも `unavailableIn` か、そもそも料金表が無い）。
+  const postalUnavailableForCountry = nonSurfacePostalMethods.every((s) => {
+    const r = svc.postage[s.id];
+    return !r || r.unavailableIn?.includes(ctx.cc);
+  });
+  // その社の宅配便のうち、この国向けに測定済み（`unavailableIn` でなく、価格
+  // 上限も超えていない）ものの、**測定した最も軽い重量点**。1つも無ければ
+  // `null`（宅配便自体を測っていない、または国自体が無い——これは「軽すぎる」
+  // とは別の理由なので、`courierBelowFloor` を false にして下の一般文言に流す）。
+  const courierMeasuredFloorsG = COURIER_METHOD_IDS.map((id) => {
+    const r = svc.courier?.[id];
+    if (!r || r.unavailableIn?.includes(ctx.cc)) return null;
+    if (r.priceCapJpy != null && itemsYen > r.priceCapJpy) return null;
+    const points = r.weightPointsByCountry[ctx.cc];
+    return points && points.length > 0 ? points[0]!.g : null;
+  }).filter((g): g is number => g != null);
+  const minCourierFloorG = courierMeasuredFloorsG.length ? Math.min(...courierMeasuredFloorsG) : null;
+  // このカートの最も軽い個口（既定の下地、店舗分割前）が、その最軽測定点を
+  // 下回っている——だから宅配便のどれも値が付かない。
+  const courierBelowFloor = minCourierFloorG != null
+    && Math.min(...baseBoxes.map((b) => grossG(b.totalWeightG))) < minCourierFloorG;
   // **`shipYen` は常に下端。**`shipHigh` は宅配便のときだけ意味を持つ上端候補——
   // 測定点の間の重量で、単調性が崩れていなければ「直上の測定点の価格」、崩れて
   // いれば `null`（P2 1）。郵便は測定区間という概念が無いので `shipHigh === shipYen`
@@ -1622,6 +1663,27 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     // 国際送料が取れていない行は、取れている行と総額を比べられない。
     comparable: shipYen != null,
     notComparableReason: shipYen != null ? null
+      // **F2: 何も値段が付かなかった場合を、方式を1つ名指しして語らない。**
+      // `?? 'ems'` のフォールバックは方式を「選んだ」わけではなく、下の
+      // `!rate`/`unavailableIn` 分岐に落ちると「EMS を出していない」という、
+      // 選んでいない方式についての嘘を言ってしまう（500g未満の米国向け
+      // カートで実際に起きていた——Buyee/FROM JAPAN/Neokyoは日本郵便を
+      // 米国に出していないが、それは「EMSだけ」の話ではなく全方式の話で、
+      // かつ「宅配便を我々が値付けしていない」という文言は#87以降そもそも
+      // 偽——宅配便の重量表が500gから始まっているだけ、という**当方の
+      // 計測の下限**が本当の理由）。ここは方式を跨いで実際に起きたことを言う。
+      : noPricedCandidate
+        ? (postalUnavailableForCountry && courierBelowFloor
+          ? `${svc.name} does not sell any Japan Post method to ${COUNTRIES[ctx.cc].name}`
+            + ' — confirmed on their own site, not something we are inferring. Its couriers do have'
+            + ` published prices, but only from ${formatStep(minCourierFloorG!)} in what we have`
+            + ' measured, and this parcel is lighter than that — that part is our measurement gap,'
+            + ` not ${svc.name}'s absence.`
+          : postalUnavailableForCountry
+            ? `${svc.name} does not sell any Japan Post method to ${COUNTRIES[ctx.cc].name},`
+              + ' and none of its couriers have a published price for this parcel either'
+            : `${svc.name} has no priced shipping method for this parcel — every method we checked`
+              + ' is either not sold here or has no rate at this weight yet')
       : isCourier
         // **未価格の宅配便は「比較不能」として落とす。0円にも安く見せもしない**
         // （P2 4、これが最重要）。理由は郵便と同じ粒度で書き分ける
@@ -1639,8 +1701,13 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : !rate
         ? `${svc.name} does not sell ${spec.label}, so there is no total to compare`
       : rate.unavailableIn?.includes(ctx.cc)
+        // **F2: 「couriers, which we do not price」を落とした。**#87以降、
+        // 宅配便は7か国すべてで値付けしている——この方式（`spec.label`）が
+        // この国に出ていないことと、宅配便を値付けしているかどうかは無関係な
+        // 別々の事実で、一方の不在からもう一方を語ってはいけない。ここは
+        // `wanted` で名指しに方式を選んでいる場合（`noPricedCandidate` は
+        // `'cheapest'` のときだけ）なので、方式名自体は正しく言える。
         ? `${svc.name} does not ship ${spec.label} to ${COUNTRIES[ctx.cc].name}`
-          + ' — its options there are couriers, which we do not price'
       : priceCapExceeded
         ? `${spec.label} can only be selected under ¥${rate.priceCapJpy!.toLocaleString('en-US')}`
           + ' declared value at this company, and this cart is over that'
@@ -1928,6 +1995,18 @@ function cheapestIds(rows: Row[]): string[] {
   return ok.filter((r) => r.total.low === low).map((r) => r.id);
 }
 
+/**
+ * ある方式IDの画面向けの名前。**マスタ（`POSTAL_METHODS`/`COURIER_METHODS`）から引く
+ * ——ここで「EMS」などとベタ書きしない。**宅配便が既定の勝者になった今、
+ * 郵便固有の名前をハードコードすると、宅配便の行で嘘になる（F5）。
+ * UI側（`ParcelView.tsx` の `postalLabel`/`methodLabel`）と同じ考え方。
+ */
+function methodLabelFor(method: PostalMethod | CourierMethod): string {
+  return POSTAL_METHODS.find((m) => m.id === method)?.label
+    ?? COURIER_METHODS.find((m) => m.id === method)?.label
+    ?? method;
+}
+
 /** 'A' / 'A and B' / 'A, B and C'。英語UIにそのまま出る。 */
 export function andList(names: string[]): string {
   if (names.length <= 1) return names[0] ?? '';
@@ -2170,7 +2249,16 @@ export function compare(
         : stable
           ? `${andList(baseBracket.map(labelOf))} stay${baseBracket.length === 1 ? 's' : ''} in the`
             + ' recommended range even if we are off by 3x on weight.'
-            + (outOfTable ? ' Beyond that the parcel leaves the published EMS table.' : '')
+            // **方式名をベタ書きしない（F5）。**宅配便が既定の勝者になった今、枠に
+            // 残る行は日本郵便とは限らない。枠に実際に残った行が使った方式の名前を
+            // 引いて言う——複数あれば重複を除いて列挙する。
+            + (outOfTable
+              ? ` Beyond that, no priced rate covers the parcel for ${
+                  andList([...new Set(
+                    base.filter((r) => baseBracket.includes(r.id)).map((r) => methodLabelFor(r.method)),
+                  )])
+                }.`
+              : '')
           // **不安定なときに「段の表を見ろ」と言ってはいけない。** 重量が分かって
           // いるときは段の表を出していないので、画面に無いものを指すことになる。
           // どの倍率で誰に替わるかは winners に持っているので、それを名指しする。
@@ -2181,7 +2269,10 @@ export function compare(
                 const names = w.bracket.map((id) => w.rows.find((r) => r.id === id)?.label ?? id);
                 const many = names.length > 1;
                 const label = names.length === 0
-                  ? 'no published EMS rate covers the parcel'
+                  // **どの方式も名指しできない**（誰も値段が付かない）。「EMS」に
+                  // 決め打っていた旧文言は、勝者が郵便以外の方式でも「EMS」と
+                  // 言ってしまう嘘になっていた（F5）。方式を問わない言い方にする。
+                  ? 'no priced method covers the parcel'
                   : w.shrank
                     // 「唯一値段が付く社」を「最安」と書かない。
                     ? `${andList(names)} ${many ? 'are' : 'is'} the only`

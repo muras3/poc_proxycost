@@ -336,22 +336,31 @@ export interface Row {
 }
 
 /**
- * ある個口が他の個口と別である理由。**4つは対称ではない**（`shops.ts` 参照）:
+ * ある個口が他の個口と別である理由。**5つは対称ではない**（`shops.ts` 参照）:
  *   - `'identified-shop'`  … 店舗 ID が判明していて、実際に別の店舗だと分かっている
  *   - `'per-listing'`      … 出品ごとに1注文（オークション/メルカリ/ラクマ。
  *                            `isPerListingSite`）。これは Buyee の公表規約どおりの
  *                            正しい挙動であって、保守的な仮定ではない。
  *   - `'unresolved-shop'`  … 店舗を読み取れなかった（URL から店舗が引けない等）。
  *                            まとめない代わりに、合計額は高めに出る、と
- *                            `compare.ts` 自身が開示している。**4つのうちここだけ
+ *                            `compare.ts` 自身が開示している。**5つのうちここだけ
  *                            が「こちらの数字が高めに外れているかもしれない」と
  *                            知りながら出している値**——最もユーザーに見せる価値がある。
  *   - `'weight-limit'`     … 配送方式の重量上限（`maxGramsFor`）を超えたため増やした箱
- *                            （docs/DESIGN-BOX-SIZE.md §2④）。
+ *                            （docs/DESIGN-BOX-SIZE.md §2④）。**この個口の下地
+ *                            から実際に2箱以上できたときだけ**——起きていない
+ *                            分割をこの値で主張してはいけない（F6）。
+ *   - `'single'`           … そもそも割れていない。1個口のカート、または下地が
+ *                            1つで重量も上限に収まっている場合。「なぜ他と
+ *                            別なのか」という問い自体が成立しない——だから
+ *                            `'weight-limit'` へのフォールバックでごまかさず、
+ *                            この値を正直に返す（F6、旧実装はここも
+ *                            `'weight-limit'` にしていた）。
  * `'unresolved-shop'` を `'identified-shop'`（"a different shop"）のように見せては
  * いけない——知らないことを知っているかのように主張することになる。
  */
-export type ParcelSplitReason = 'identified-shop' | 'per-listing' | 'unresolved-shop' | 'weight-limit';
+export type ParcelSplitReason =
+  | 'identified-shop' | 'per-listing' | 'unresolved-shop' | 'weight-limit' | 'single';
 
 /**
  * この箱の関税の判定（`compare.ts` の `taxLines` が個口ごとに出す判定、そのまま）。

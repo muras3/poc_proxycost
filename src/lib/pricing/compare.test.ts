@@ -791,9 +791,12 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     const r = compare({ method: 'ems', items: items(1, 9000), country: 'US' });
     expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
+    // F5: 以前は方式名を「EMS」に決め打っていた。ここは `method: 'ems'` を明示して
+    // いるので実際にEMSで合っているが、文言はマスタから引いた方式名を言うように
+    // なった（宅配便が枠に残る他のケースでは「EMS」と言うと嘘になるため）。
     expect(r.rankStabilityNote).toBe(
       'ZenMarket stays in the recommended range even if we are off by 3x on weight.'
-      + ' Beyond that the parcel leaves the published EMS table.');
+      + ' Beyond that, no priced rate covers the parcel for EMS.');
   });
 
   test('the cheapest service flips at 1,150 g / 1,325 g / 1,625 g by basket size', () => {
@@ -1259,7 +1262,11 @@ describe('the international method is an input, and the default is now cheapest-
     // **理由が「重すぎる」ではないことを言う。**同じ扱いでも原因が違う。
     expect(neokyo.notComparableReason).toContain('does not ship');
     expect(neokyo.notComparableReason).toContain('United States');
-    expect(neokyo.notComparableReason).toContain('couriers, which we do not price');
+    // F2: 以前はここが「its options there are couriers, which we do not price」と
+    // 続けていたが、#87以降宅配便は7か国すべてで値付けしているので偽。
+    // その社が方式Xを出していないことと、宅配便を我々が値付けしているかは
+    // 無関係な別の事実なので、片方の不在から他方を語らない。
+    expect(neokyo.notComparableReason).not.toContain('we do not price');
 
     // 他の国では普通に出る。**国を消したのではなく、その国のその方式が無い。**
     for (const cc of ['GB', 'DE', 'FR', 'AU', 'CA', 'SG'] as CountryCode[]) {
@@ -1279,6 +1286,48 @@ describe('the international method is an input, and the default is now cheapest-
     for (const id of ['buyee:consolidated', 'fromjapan']) {
       expect(byId(us, id).comparable, id).toBe(false);
       expect(byId(us, id).notComparableReason, id).toContain('does not ship');
+    }
+  });
+
+  test('F2: a light US cart (under the 500g courier floor) does not present a price from a method'
+    + ' the company does not sell, and attributes the absence correctly', () => {
+    // 50gの1点（梱包後 <500g）。Buyee/FROM JAPAN/Neokyoは米国向けに日本郵便を
+    // 一切売っておらず（#92で確認済み）、宅配便の重量表は500gからしか始まらない
+    // （当方の実測の下限）。以前は `cheapest` の解決が候補ゼロを `?? 'ems'` に
+    // 潰し、「EMSを出していない・宅配便は値付けしていない」という、選んで
+    // いない方式についての嘘を言っていた（外部レビュー F2）。
+    const rows = compare({
+      method: 'cheapest', items: items(1, 50), country: 'US',
+    }).rows;
+
+    for (const id of ['buyee', 'fromjapan', 'neokyo']) {
+      const row = byId(rows, id);
+      // **数字を出さない。**方式を持たないEMSの数字をtotal.highの開放や
+      // excluded[]で誤魔化さず、行そのものを比較不能のまま置く——
+      // 原則1の残余リスクの置き場所（`docs/PRINCIPLES.md`）が想定するのは
+      // 「公式ルールはあるが運用が推測」なケースで、これは「そもそも
+      // その方式を売っていない」なので、そもそも数字を出さないのが正しい。
+      expect(row.comparable, id).toBe(false);
+      expect(line(row, 'intl-shipping').amount, id).toBeNull();
+      const reason = row.notComparableReason!;
+      // 会社の不在（日本郵便を売っていない）は会社に帰属させる。
+      expect(reason, id).toContain('does not sell any Japan Post method');
+      // 宅配便の値が付かないのは会社の品揃えの話ではなく、当方の計測の下限
+      // （500g）だと明示する——「couriers, which we do not price」という
+      // 偽の主張を復活させない。
+      expect(reason, id).not.toContain('we do not price');
+      expect(reason, id).toContain('500 g');
+      expect(reason, id).toContain('our measurement gap');
+      // どの方式にも決め打たない——EMSの名を出さない。
+      expect(reason, id).not.toContain('EMS');
+    }
+
+    // 500g以上ならZenMarket/Jauce以外も宅配便で普通に値が付く（対照実験）。
+    const heavier = compare({ method: 'cheapest', items: items(1, 170), country: 'US' }).rows;
+    for (const id of ['buyee', 'fromjapan', 'neokyo']) {
+      const row = byId(heavier, id);
+      expect(row.comparable, id).toBe(true);
+      expect(row.method, id).toMatch(/^courier-/);
     }
   });
 
