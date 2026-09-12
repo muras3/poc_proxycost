@@ -112,6 +112,45 @@
             "note": "**この2%/15USDは2026-07-20のFedEx改定前の旧料率と一致する（新料率は2.5%/17.50USD）。**Neokyoページの取得日が明記されておらず、改定前の値が転記時点でそのまま古くなっている可能性と、Neokyoが単に自社ページを更新していない可能性の両方があり得る。いずれにせよ Neokyo の記述はFedExの一次資料そのものではなく、代行会社による二次的な言い換えなので、これを『FedExの一次情報を取得済み』の根拠にはできない。"
           },
           "note": "**`docs/ROADMAP.md` の『US FedEx DDP の課税式は一次情報を取得済み』は、このマスタが直前まで保持していた `courier_brokerage: {rule: unknown, tier: C_unknown, source: \"—\"}` という記録と矛盾する ── マスタ側には一次情報を取得した形跡が無かった。今回 `whichever is higher` を明記する『greater of』構造の式自体は複数の独立した二次情報源（ShipScience 等）で一致しており reasoned_judgement を超える確度はあるが、FedEx自身のページ本文はこの環境のWAFに阻まれ逐語引用できていないため、`tier` は A_confirmed ではなく B_inferred、`amount_tier` は `search_snippet` に留める。"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "rate_of_import_charges_with_min",
+            "rate": 0.025,
+            "min": 17.5,
+            "currency": "USD",
+            "base": "duty_tax_and_other_government_charges_advanced"
+          },
+          "amount_tier": "search_snippet",
+          "tier": "B_inferred",
+          "source": "https://www.ups.com/us/en/shipping/international-shipping/import-fees",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "終始 HTTP 200/503 が混在し本文取得できず（WebFetch は503、直接curlはHTTP2/1.1いずれもEmpty reply）。同一ドメインの assets.ups.com 上のUS向け料金PDF（imaddl.pdf 等）も同様にEmpty replyで取得不能。",
+          "inference_basis": "独立した複数の二次情報（ShipScience 等の料金改定まとめ）が『2.5% of Duties/Taxes...minimum fee of $17.50、2026-09-07発効』で一致。DE/FR/AU/CA/SGでUPS自身の一次資料から確認できた『Disbursement Fee = rate of advanced amount with minimum, whichever greater』という構造とも整合するため reasoned_judgement より確度は高いが、US自身の一次ページ本文を逐語引用できていないため A_confirmed にはしない。",
+          "verbatim_quote_available": false,
+          "corroborating_search_snippets": [
+            "Effective September 7, 2026, Disbursement Fee will update to 2.5% of Duties/Taxes paid or processed by UPS on behalf of the customer, with a minimum fee of $17.50."
+          ],
+          "per": "per_shipment",
+          "zero_when_no_tax": "unknown",
+          "note": "宛先側（米国）で受取人に課される立替手数料。名称はUPS自身の用語 'Disbursement Fee'。米国は2025-08-29にde minimisが撤廃済みのため、無税で通過する小口自体がほぼ無い状態だが、無税ケースでの課否は未確認。"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "rate_of_import_charges",
+            "rate": 0.03
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ecmsglobal.com/resources/en-us/ECMS%20Express%20US%20Terms%20%20Conditions%20v1.2.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
+          "per": "unknown",
+          "zero_when_no_tax": "does_not_apply_if_no_duty_advanced（無税なら『advance』が発生しないため課さないと読めるが、明示のゼロ税条件文は無い）",
+          "note": "**ECMSは関税を『立て替えない』フォワーダーではなく、実際に立て替えて3%の手数料を課す。**タスクが想定していた『ECMSは通関手数料を課さない可能性』は今回の一次情報では否定される。ECMS US Terms & Conditions v1.2、PDF直接フェッチ（curl経由、pdftotextでテキスト抽出）で本文確認・逐語引用。"
         }
       ],
       "carrier_availability": {
@@ -244,6 +283,46 @@
           "tier": "B_inferred",
           "source": "https://www.parcelforce.com/receiving/customs-charge",
           "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "unknown",
+            "reasoned_range": {
+              "rate": 0.025,
+              "min_gbp": [
+                12,
+                17
+              ]
+            },
+            "currency": "GBP"
+          },
+          "amount_tier": "C_unknown",
+          "tier": "C_unknown",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:c5fb0001-0bc2-4281-8fd0-c4d1c548e30b/original/as/additional-service-charge-si-gb-en.pdf",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "curl --http1.1 で2回試行しいずれも `curl: (52) Empty reply from server`（HTTP 000）。WebFetch は同URLで HTTP 503。同ドメインの en_GB 配下の関連PDF（trade-policy-tariff-changes-en-gb.pdf、HTTP 200・27ページ取得成功）にはDisbursement Feeの数式に言及したQ&Aはあるが具体的な料率・最低額の記載が無い。",
+          "inference_basis": "フォーラム（MoneySavingExpert 等の二次情報）が『2.5%、最低£12〜£17』を伝えているが、いずれもUPS自身の一次資料ではなく、金額の逐語引用も取れていない。#81 が同じくGBのUPS公表値を取得できなかったという記録と整合する。",
+          "verbatim_quote_available": false,
+          "per": "unknown",
+          "zero_when_no_tax": "unknown",
+          "note": "宛先側（英国）で受取人に課される立替手数料と推定されるが、UPS自身の一次資料からは料率・最低額いずれも未確認。#81の既知の壁を再確認した。"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "rate_of_import_charges",
+            "rate": 0.03
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ecmsglobal.com/resources/en-uk/ECMS%20Express%20UK%20Terms%20Conditions%20v1.34.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
+          "per": "unknown",
+          "zero_when_no_tax": "unknown",
+          "note": "ECMS UK T&C v1.34。US版と一言一句同じ条文で3%の duty advance payment fee を規定。"
         }
       ],
       "conditional": {
@@ -363,6 +442,54 @@
           "tier": "A_confirmed",
           "source": "https://www.paketda.de/zoll/kapitalbereitstellungsprovision.html",
           "quote": "Kapitalbereitstellungsprovision … 2% der Einfuhrabgaben, mindestens aber 14,88 Euro"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "banded_by_value_mixed",
+            "value_basis": "intrinsic_value_of_goods_per_shipment",
+            "currency": "EUR",
+            "bands": [
+              {
+                "value_lte": 22,
+                "rule": {
+                  "type": "fixed_per_parcel",
+                  "amount": 7.2
+                }
+              },
+              {
+                "value_gt": 22,
+                "rule": {
+                  "type": "rate_of_import_charges_with_min",
+                  "rate": 0.03,
+                  "min": 14.9
+                }
+              }
+            ]
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ups.com/assets/resources/webcontent/de_DE/additional-service-charge-de.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "Disbursement Fee (fee of % of the advanced amount/minimum, whichever is greater) ... €7,20 per shipment having an intrinsic value lower or equal to €22, €14,90 minimum or 3,00% of the advanced amount when the intrinsic value of the goods exceed €22.",
+          "per": "per_shipment",
+          "zero_when_no_tax": "unknown",
+          "note": "宛先側（ドイツ）で受取人に課される立替手数料（UPS自身の用語 'Disbursement Fee'）。**申告価格帯で構造が変わる**（bandによりflat/rate_with_minが切り替わる）ため、既存の banded_by_value 型では表現できず、新しい rule.type banded_by_value_mixed を導入した。ドキュメント本文に有効日の記載が無く、検索結果のタイトルが『2026 UPS Additional Services and Charges』と付いていることから2026年版と推定。有効日そのものはC_unknown。DE Deutsche Post/EMS/DHL標準の既存行（€7.50固定）や DHL Express 行（2%、最低€14.88）とは別建てで、これらはUPSの費目ではない。",
+          "effective_date": "unknown（文書名から2026年版と推定、本文に記載なし）"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "not_found"
+          },
+          "tier": "C_unknown",
+          "evidence_class": "counted_absence",
+          "source": "https://www.ecmsglobal.com/ 内の国別T&C検索（en-us/en-uk/en-sg/en-nl/en-hkの5法人分は発見できたが対象国分は無し）",
+          "source_checked_on": "2026-09-12",
+          "inference_basis": "ECMS Expressが法人として営業している国のリスト（自社サイト・二次情報）にドイツが含まれない。ドイツ向けT&C文書もサイト内検索で発見できなかった。",
+          "verbatim_quote_available": false,
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
         }
       ],
       "clearance_fee_vat": {
@@ -478,6 +605,54 @@
           "tier": "B_inferred",
           "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
           "inference_basis": "二次情報。公式で裏づけていない"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "banded_by_value_mixed",
+            "value_basis": "intrinsic_value_of_goods_per_shipment",
+            "currency": "EUR",
+            "bands": [
+              {
+                "value_lte": 22,
+                "rule": {
+                  "type": "fixed_per_parcel",
+                  "amount": 8.4
+                }
+              },
+              {
+                "value_gt": 22,
+                "rule": {
+                  "type": "rate_of_import_charges_with_min",
+                  "rate": 0.0305,
+                  "min": 17.5
+                }
+              }
+            ]
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ups.com/assets/resources/webcontent/fr_FR/additional-service-charge-fr.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "Disbursement Fee (fee of % of the advanced amount/minimum, whichever is greater) ... € 8,40 per shipment having an intrinsic value lower or equal to € 22, € 17,50 minimum or 3.05% of the advanced amount when the intrinsic value of the goods exceed € 22.",
+          "per": "per_shipment",
+          "zero_when_no_tax": "unknown",
+          "note": "宛先側（フランス）で受取人に課される立替手数料。DE同様、申告価格帯でflat/rate_with_minが切り替わるため banded_by_value_mixed を使用。有効日はC_unknown（本文に記載なし）。",
+          "effective_date": "unknown（本文に記載なし）"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "not_found"
+          },
+          "tier": "C_unknown",
+          "evidence_class": "counted_absence",
+          "source": "https://www.ecmsglobal.com/ 内の国別T&C検索（en-us/en-uk/en-sg/en-nl/en-hkの5法人分は発見できたが対象国分は無し）",
+          "source_checked_on": "2026-09-12",
+          "inference_basis": "ECMS自身が『フランスなど拡大を検討中』と伝えられる二次情報があり、現時点でフランス向けの法人・T&C文書は存在しないとみられる。",
+          "verbatim_quote_available": false,
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
         }
       ],
       "user_action": {
@@ -722,6 +897,40 @@
           "source": "https://www.abf.gov.au/",
           "inference_basis": "実装（src/lib/pricing/countries.ts）が T24 で原文を取り、A$1,000 以下は A$0、以降 A$50 / A$152 の帯を持っている。マスタ側はその転記なので B",
           "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "greater_of",
+            "rate": 0.036,
+            "base": "import_duty_and_tax",
+            "flat": 23.8,
+            "flat_note": "A$23.80 plus GST",
+            "currency": "AUD"
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ups.com/assets/resources/webcontent/en_GB/service_guide_au.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "Disbursement Fee ... The Disbursement Fee for importation into Australia will be 3.6% of the import duties and taxes, or A$23.80 plus GST per shipment, whichever is greater.",
+          "per": "per_shipment",
+          "zero_when_no_tax": "unknown",
+          "note": "宛先側（豪州）で受取人に課される立替手数料。ABF Import Processing Charge（既存のCO['AU']行、業者共通の税関手数料）とは別建てのUPS独自手数料。2025 UPS Rate and Service Guide Australia（Effective 2024-12-22）より。",
+          "effective_date": "2024-12-22（このガイド自体の発効日。Disbursement Fee率自体の改定日は別途あり得るが未確認）"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "not_found"
+          },
+          "tier": "C_unknown",
+          "evidence_class": "counted_absence",
+          "source": "https://www.ecmsglobal.com/ 内の国別T&C検索（en-us/en-uk/en-sg/en-nl/en-hkの5法人分は発見できたが対象国分は無し）",
+          "source_checked_on": "2026-09-12",
+          "inference_basis": "二次情報ではAU向け配送に言及があるが、AU向けの独立したT&C文書・法人ページをサイト内検索で発見できなかった（US/UK/SG/NL/HK版のみ発見）。",
+          "verbatim_quote_available": false,
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
         }
       ],
       "clearance_fee_vat": {
@@ -825,6 +1034,47 @@
           "tier": "B_inferred",
           "source": "複数の業界情報源",
           "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "greater_of_by_service",
+            "rate": 0.037,
+            "base": "duty_tax_amount",
+            "currency": "CAD",
+            "min_by_service": {
+              "ups_standard": 7.4,
+              "ups_worldwide_express_plus": 11.65,
+              "ups_worldwide_express": 11.65,
+              "ups_worldwide_express_freight": 11.65,
+              "ups_worldwide_express_freight_midday": 11.65,
+              "ups_worldwide_express_saver": 11.65,
+              "ups_worldwide_expedited": 11.65
+            }
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ups.com/assets/resources/webcontent/en_CA/rate_guide_ca.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "When UPS remits payment of duty/tax to the Canada Border Services Agency on behalf of the customer, UPS will invoice the customer for the amount paid and a Disbursement Fee will apply. The applicable Disbursement Fee is the greater of 3.7% of the duty/tax amount or $7.40 on UPS Standard service or $11.65 on UPS Worldwide Express Plus, UPS Worldwide Express, UPS Worldwide Express Freight, Worldwide Express Freight Midday, UPS Worldwide Express Saver and UPS Worldwide Expedited service.",
+          "per": "per_shipment",
+          "zero_when_no_tax": "unknown",
+          "note": "**既存のCA『courier: UPS/FedEx/DHL』範囲行（CAD 10〜50、B_inferred、社別未分解）のうちUPSの取り分を、この一次情報で分解できる。** UPS自身の式（3.7%、最低$7.40〜$11.65）は既存の範囲 CAD10〜50 の下端付近と整合する。2025 UPS Canada Rate & Service Guide（Effective 2024-12-22）より。低価格帯（$40未満）にもEntry Preparation Fee $7.00/entry と共にDisbursement Feeが適用され得ることが同ガイドのFAQ部（trade-policy-tariff-changes PDF）に記載されている。",
+          "effective_date": "2024-12-22（ガイド発効日）"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "not_found"
+          },
+          "tier": "C_unknown",
+          "evidence_class": "counted_absence",
+          "source": "https://www.ecmsglobal.com/ 内の国別T&C検索（en-us/en-uk/en-sg/en-nl/en-hkの5法人分は発見できたが対象国分は無し）",
+          "source_checked_on": "2026-09-12",
+          "inference_basis": "ECMS Expressが法人として営業している国のリスト（自社サイト・二次情報）にカナダが含まれない。カナダ向けT&C文書もサイト内検索で発見できなかった。",
+          "verbatim_quote_available": false,
+          "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。"
         }
       ],
       "real_invoice": {
@@ -983,6 +1233,41 @@
           "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
           "inference_basis": "公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画のみ。**S$400 の閾値は公式本文で取れている**が、S$10.90 という額の文そのものは取れていない",
           "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料"
+        },
+        {
+          "route": "ups_disbursement",
+          "carrier": "UPS",
+          "rule": {
+            "type": "rate_of_import_charges_with_min_and_max",
+            "rate": 0.056,
+            "min": 22.5,
+            "max": 100.0,
+            "currency": "SGD",
+            "base": "import_duty_and_tax"
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ups.com/assets/resources/webcontent/en_GB/service_guide_sg_2024.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "Disbursement Fee ... The Disbursement Fee for importation into Singapore will be 5.6% of the import duties and taxes, subject to a minimum of S$22.50 and maximum of S$100 per shipment.",
+          "per": "per_shipment",
+          "zero_when_no_tax": "unknown",
+          "note": "宛先側（シンガポール）で受取人に課される立替手数料。既存のSingPost行（郵便）とは別建て。2024 UPS Rate and Service Guide Singapore（Effective 2023-12-24）より。上限が明記されている点が他国と異なる（rate_of_import_charges_with_min_and_max という新しいrule.typeを追加）。",
+          "effective_date": "2023-12-24（ガイド発効日）"
+        },
+        {
+          "route": "ecms_duty_advance",
+          "carrier": "ECMS",
+          "rule": {
+            "type": "rate_of_import_charges",
+            "rate": 0.03
+          },
+          "tier": "A_confirmed",
+          "source": "https://www.ecmsglobal.com/resources/en-sg/ECMS%20Express%20Singapore%20Pte%20Ltd_%20Terms%20and%20Conditions_2023.pdf",
+          "source_checked_on": "2026-09-12",
+          "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
+          "per": "unknown",
+          "zero_when_no_tax": "unknown",
+          "note": "ECMS Express (S) Pte Ltd Terms and Conditions 2023。US/UK版と同一条文。"
         }
       ],
       "clearance_fee_vat": {
