@@ -54,3 +54,19 @@ cat <<'EOF'
 Playwright の Chromium は導入済み・PLAYWRIGHT_BROWSERS_PATH も設定済み。
 `playwright install` は実行しないこと。
 EOF
+
+e2e_port="$(cd "$worktree_root" && node -e "
+const { createHash } = require('node:crypto');
+const { existsSync, statSync } = require('node:fs');
+const isLinkedWorktree = existsSync('.git') && statSync('.git').isFile();
+if (!isLinkedWorktree) { console.log(3100); process.exit(0); }
+const hash = createHash('sha256').update(process.cwd()).digest();
+console.log(3100 + (hash.readUInt32BE(0) % 100));
+")"
+
+cat <<EOF
+
+この worktree の e2e ポート(playwright.config.ts の既定値): ${e2e_port}
+(worktree のパスから決定的に導出される。別の worktree と衝突しない。
+ 固定したい場合は PORT か E2E_PORT を指定すること。)
+EOF

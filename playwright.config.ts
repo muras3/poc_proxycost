@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, statSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 // この環境には Chromium が /opt/pw-browsers に焼いてある（revision 1194）。
@@ -8,7 +9,21 @@ import { defineConfig, devices } from '@playwright/test';
 // 実体があるときだけ差し替える。
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const CHROME = existsSync(PINNED) ? PINNED : undefined;
-const PORT = 3100;
+
+// 複数の worktree で並行して e2e を走らせると、ポートが固定だと衝突する
+// (CLAUDE.md の教訓を参照)。PORT / E2E_PORT があればそれを最優先。
+// 無ければ、リンクされた worktree(.git がファイル)のときだけ絶対パスの
+// ハッシュから 3100-3199 の範囲で決定的に導出する。メインチェックアウト
+// (.git がディレクトリ。CI のチェックアウトも同様)では常に 3100 になり、
+// CI の挙動は変えない。
+function defaultPort(): number {
+  const isLinkedWorktree = existsSync('.git') && statSync('.git').isFile();
+  if (!isLinkedWorktree) return 3100;
+  const hash = createHash('sha256').update(process.cwd()).digest();
+  return 3100 + (hash.readUInt32BE(0) % 100);
+}
+
+const PORT = Number(process.env.PORT ?? process.env.E2E_PORT ?? defaultPort());
 // **127.0.0.1 ではなく localhost を使う。** Next 16 は 127.0.0.1 からの dev リソース要求を
 // クロスオリジンとして遮断し、チャンクが 404 になって hydration が完了しない。
 // 実ブラウザで操作すると「クリックしても何も起きない」形で出る。
@@ -35,7 +50,7 @@ export default defineConfig({
   ],
   webServer: {
     // 本番ビルドで回す。dev サーバの遅延で E2E が揺れるのを避ける。
-    command: `npm run build && npx next start -p ${PORT} -H localhost`,
+    command: `node scripts/check-port-free.mjs ${PORT} && npm run build && npx next start -p ${PORT} -H localhost`,
     url: `http://localhost:${PORT}`,
     // 再ビルドで .next が入れ替わると、生き残ったサーバが消えたチャンクを参照して
     // 500 を返し続ける。毎回起こし直す方が確実。
