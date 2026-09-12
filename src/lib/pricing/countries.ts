@@ -28,6 +28,31 @@ export interface Country {
    * 未取得ではない。未取得は `clearanceBands` を置かないことで表す。
    */
   clearanceBands?: { upTo: number; amount: number; note: string }[];
+  /**
+   * F3 の再発防止（`docs/audit/fable-review-2026-09-12.md`、2026-09-12 の是正）。
+   *
+   * `clearanceBands` に載る額は、国によって**性質がまったく違う**——
+   * ひとまとめに「宅配便には立たない」と扱ってはいけない。
+   *
+   * - `'postal-only'`（既定・大半の国）: **宛先の郵便事業者**（Royal Mail / Canada Post /
+   *   SingPost / USPS / Deutsche Post）自身の窓口手数料。郵便物がその事業者に渡って
+   *   初めて発生するので、宅配便（FedEx/UPS/DHL/ECMS）の荷物には構造的に立たない
+   *   ——マスタ（`master/customs.json` の `clearance[].carrier`）がどの国も
+   *   郵便事業者名を carrier に置いている。**DE と CA は特に確認済み**: マスタが
+   *   郵便版（DE `route: "deutsche_post"`）と宅配便版（DE `route: "dhl_express"`、
+   *   DHLの自社建て替え手数料 2%・最低€14.88／CA `route: "courier"`、
+   *   UPS/FedEx/DHL の CA$10〜50+）を**別の row として**持っており、
+   *   このコードが実装しているのは郵便版の額だけ。
+   * - `'any-carrier'`（AU のみ）: **税関（ABF）自身が輸入申告に課す費用**——
+   *   `master/customs.json` AU の `carrier` は "ABF（Import Processing Charge）"で、
+   *   郵便事業者でも宅配便でもない政府機関。申告を誰が運んで来たかによらず、
+   *   申告そのものに課される費用なので宅配便にも立つ。
+   *
+   * 新しい国を足すときは、`master/customs.json` のその国の `clearance[].carrier` を
+   * 読んで、**郵便事業者の名前**が入っていれば `'postal-only'`、
+   * **税関・政府機関**が入っていれば `'any-carrier'` に決める——推測しない。
+   */
+  clearanceCarrierScope: 'postal-only' | 'any-carrier';
   clearanceCcy: string;
   clearanceTier: Tier;
   /** `dutyRate` が `dutyFreeLimit` **超**にだけ効くとき、その税率の出典。
@@ -98,6 +123,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
           + ' $2,500 prepayment band, duty is collected at delivery instead',
       },
     ],
+    clearanceCarrierScope: 'postal-only', // USPS 自身の窓口手数料
     clearanceCcy: 'USD', clearanceTier: 'fixed',
     // 原典 = USPS Notice 123（Price List）。IMM 712 は徴収条件、Notice 123 は額。
     clearanceSourceUrl: 'https://pe.usps.com/text/dmm300/Notice123.htm',
@@ -155,6 +181,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
       upTo: Number.POSITIVE_INFINITY, amount: 8,
       note: 'Royal Mail handling fee — we have not read the original',
     }],
+    clearanceCarrierScope: 'postal-only', // Royal Mail 自身の窓口手数料
     clearanceCcy: 'GBP', clearanceTier: 'unverified',
     // **原典に当たれていない。**note にもそう書いてある。二次情報として出す。
     clearanceSourceUrl: 'https://personal.help.royalmail.com/app/answers/detail/a_id/106',
@@ -201,6 +228,10 @@ export const COUNTRIES: Record<CountryCode, Country> = {
       upTo: Number.POSITIVE_INFINITY, amount: 7.5,
       note: 'Deutsche Post / DHL Auslagepauschale, per consignment, incl. VAT',
     }],
+    // Deutsche Post/DHL「標準」（郵便チャネル）の Auslagepauschale。マスタは
+    // これとは別に DHL Express 自身の建て替え手数料（2%・最低€14.88）を
+    // `route: "dhl_express"` として持っており、この €7.5 とは別物——未実装のまま。
+    clearanceCarrierScope: 'postal-only',
     clearanceCcy: 'EUR', clearanceTier: 'unverified',
     // **原典（Deutsche Post「Leistungen und Preise」）に当たれていない。**
     // 額と改定日は業界紙と paketda.de（複数が €7.50 で一致）から。tier はそのため unverified。
@@ -246,6 +277,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
       upTo: Number.POSITIVE_INFINITY, amount: 8,
       note: 'La Poste frais de gestion, full rate at delivery — 2–5 EUR if paid online in advance',
     }],
+    clearanceCarrierScope: 'postal-only', // La Poste 自身の窓口手数料
     clearanceCcy: 'EUR', clearanceTier: 'fixed',
     clearanceSourceUrl: 'https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international',
     clearanceCheckedOn: '2026-09-07',
@@ -298,6 +330,12 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         note: 'AUD 152 import processing charge (electronic) + AUD 48 biosecurity charge (air)',
       },
     ],
+    // **郵便事業者の窓口手数料ではない。**マスタ（`master/customs.json` AU
+    // `clearance[].carrier`）はここを "ABF（Import Processing Charge）" ——
+    // 豪州の税関（Australian Border Force）自身と記録している。輸入申告そのものに
+    // 課される費用で、誰がその荷物を運んで来たか（郵便か宅配便か）によらない。
+    // だから宅配便の行でも立てる（`clearanceCarrierScope: 'any-carrier'`）。
+    clearanceCarrierScope: 'any-carrier',
     clearanceCcy: 'AUD', clearanceTier: 'fixed',
     clearanceSourceUrl:
       'https://www.abf.gov.au/importing-exporting-and-manufacturing/importing/'
@@ -348,6 +386,10 @@ export const COUNTRIES: Record<CountryCode, Country> = {
         note: 'Canada Post handling fee, charged on each dutiable or taxable item',
       },
     ],
+    // Canada Post 自身の窓口手数料。マスタは別途 `route: "courier"` で
+    // UPS/FedEx/DHL 自身の建て替え手数料（CA$10〜50+、B_inferred、未実装）を
+    // 独立した row として持っており、これとは別物。
+    clearanceCarrierScope: 'postal-only',
     clearanceCcy: 'CAD', clearanceTier: 'fixed',
     clearanceSourceUrl:
       'https://www.canadapost-postescanada.ca/cpc/en/support/articles/customs-requirements/'
@@ -379,6 +421,7 @@ export const COUNTRIES: Record<CountryCode, Country> = {
       { upTo: 400, amount: 0, note: 'GST already collected at checkout under OVR — nothing for SingPost to collect' },
       { upTo: Number.POSITIVE_INFINITY, amount: 10.9, note: 'SingPost handling fee, per consignment' },
     ],
+    clearanceCarrierScope: 'postal-only', // SingPost 自身の窓口手数料
     clearanceCcy: 'SGD', clearanceTier: 'unverified',
     // **S$400 の閾値は公式本文で取れた**（「the postal parcel contains goods of a
     // total CIF value exceeding S$400」）。**額 S$10.90 は取れていない**——
