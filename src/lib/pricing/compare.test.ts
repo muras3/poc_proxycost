@@ -620,27 +620,39 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     expect(parcel.note).toContain('zone 3');
   });
 
-  test('**a row missing its EMS line has a lower total and must still rank last**', () => {
-    // 5点 × 5,000g。同梱する社は梱包後 30.3kg で公表料金が無い。
-    // 注文ごとに分ける Buyee default だけが表の中に残る。
+  test('**docs/DESIGN-BOX-SIZE.md §2④ implemented: a group over the EMS table now splits'
+    + ' into more boxes instead of dropping out**', () => {
+    // 5点 × 5,000g = 梱包後 30.15kg。**このPR以前**は同梱する社（1個口のまま）が
+    // 公表表（30kg）を出て脱落し、注文ごとに分ける Buyee default だけが表に残った
+    // ——このテストはかつてそれを固定していた。
+    //
+    // **§2④（`docs/DESIGN-BOX-SIZE.md` 184〜190行、`splitByWeightLimit`）を
+    // 実装した結果、この固定は成立しなくなった。**5,000g の商品は1点だけなら
+    // 梱包後6.3kgでEMSに十分収まるので、上限を超えた個口は「箱を増やせば収まる」
+    // ケースになる——Buyee default の「注文ごとに元から分かれている」利点が
+    // 消え、他の4社も自前で2箱に分けて同じ土俵に乗る。この変化は
+    // このPRが正しく動いていることの証拠であって、退行ではない。
     const rows = compare({ method: 'ems', items: items(5, 5000), country: 'US' }).rows;
-    const top = rows[0]!;
-    expect(top.id).toBe('buyee:default');
-    expect(top.comparable).toBe(true);
-    expect(top.cheapest).toBe(true);
-
+    // **Neokyo だけがいまも比較不能。**理由は重量ではなく、Neokyo が米国宛に
+    // 日本郵便を売っていないこと（このPRの変更点とは無関係、既存の事実）。
     const blocked = rows.filter((r) => !r.comparable);
-    expect(blocked).toHaveLength(5);
-    for (const row of blocked) {
-      // 国際送料を欠いた総額は 1位の 1/4 以下。安く見えるが順位には出さない。
-      expect(row.total.low, row.id).toBeLessThan(top.total.low);
-      expect(row.rank, row.id).toBeGreaterThan(top.rank);
-      expect(row.cheapest, row.id).toBe(false);
-      expect(row.diff, row.id).toBe(0);
-      expect(line(row, 'intl-shipping').amount, row.id).toBeNull();
-      expect(row.notComparableReason, row.id).toContain('EMS');
-      expect(row.excluded, row.id).toContain('EMS to United States');
-    }
+    expect(blocked.map((r) => r.id)).toEqual(['neokyo']);
+    expect(blocked[0]!.notComparableReason).toContain('does not ship EMS to United States');
+
+    const comparable = rows.filter((r) => r.comparable);
+    expect(comparable).toHaveLength(5);
+    // **1位は FROM JAPAN。**同梱4社は方式の上限に収めるため2箱に分かれ、
+    // Buyee default は元から5箱（注文ごと）——箱数の理由は違うが、全社が
+    // 同じ額（30kg以下）でEMSを使えている。
+    const top = comparable.sort((a, b) => a.total.low - b.total.low)[0]!;
+    expect(top.id).toBe('fromjapan');
+    expect(byId(rows, 'fromjapan').parcels).toBe(2);
+    expect(byId(rows, 'zenmarket').parcels).toBe(2);
+    expect(byId(rows, 'jauce').parcels).toBe(2);
+    expect(byId(rows, 'buyee:consolidated').parcels).toBe(2);
+    // Buyee default はもともと注文ごとに5個口——方式の上限による分割は要らない
+    // （下地1個あたり1点・5,000gはどのみち上限の下）。
+    expect(byId(rows, 'buyee:default').parcels).toBe(5);
   });
 
   test('when nothing is comparable we say so instead of ranking the leftovers', () => {
@@ -663,11 +675,18 @@ describe('a parcel above the published EMS table drops out of the comparison', (
     expect(r.rankStabilityNote).not.toContain('EMS');
   });
 
-  test('every country stops at the same table edge', () => {
+  test('with §2④ implemented, no country drops every non-Buyee row at this weight any more', () => {
+    // **このテストの旧タイトルは「every country stops at the same table edge」だった。**
+    // 5点×5,000gはどの国でも梱包後30.15kgで、以前はEMS表を出て全社が脱落し
+    // Buyee default だけが残った——`splitByWeightLimit`（§2④）を実装した今、
+    // 上限超の個口は箱を増やして収まるので、もう「表の同じ端で全社が止まる」
+    // ことは無い。米国だけ Neokyo が引き続き比較不能だが、理由は重量ではなく
+    // 「米国宛にEMSを売っていない」という既存の事実（このPRの変更点ではない）。
+    const EXPECT_NOT_COMPARABLE: Partial<Record<CountryCode, number>> = { US: 1 };
     for (const cc of COUNTRIES_ALL) {
       const rows = compare({ method: 'ems', items: items(5, 5000), country: cc }).rows;
-      expect(winnerOf(rows)!.id, cc).toBe('buyee:default');
-      expect(rows.filter((r) => !r.comparable).length, cc).toBe(5);
+      expect(rows.filter((r) => !r.comparable).length, cc).toBe(EXPECT_NOT_COMPARABLE[cc] ?? 0);
+      expect(winnerOf(rows)!.id, cc).not.toBe('buyee:default');
     }
   });
 });
@@ -724,21 +743,24 @@ describe('rank stability is measured, not assumed — and it is often false', ()
       'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.');
   });
 
-  test('**「唯一値段が付く社」を「最安」と書かない**', () => {
-    // 3,000 g/点。×3 すると同梱する社が EMS 公表表（30kg）を出て脱落し、
-    // 注文ごとに分ける Buyee default だけが残る。安いのではなく、値段が付く
-    // 唯一の社というだけ——ここを取り違えると、費目が欠けた行を薦めることになる。
-    // **この基準重量（3,000 g）は P1-4 で米国でも「判定不能」ではなくなった。**
-    // FROM JAPAN が1位（総額は外注梱包で上限不明のまま）で、ZenMarket が明確な
-    // 2位——枠が ×3 で「Buyee, default だけが値段を持つ」帯に変わるので不安定
-    // ではあるが、判定不能ではない。「唯一値段が付く社≠最安」という主張そのものは
-    // per-item の `weightSensitivity`（`onlyPricedAtLow`/`onlyPricedAtHigh`）で
-    // 別に縛っている（`when the heavy end leaves the EMS table, ...` テスト）。
+  test('**§2④ implemented: 3,000 g/item no longer destabilizes the ranking at 3x weight**', () => {
+    // **このテストは以前、3,000 g/点を3倍（9,000 g/点）にすると同梱する社が
+    // EMS 公表表（30kg）を出て脱落し、注文ごとに分ける Buyee default だけが
+    // 残る——という不安定さを固定していた。**
+    //
+    // `splitByWeightLimit`（§2④、`docs/DESIGN-BOX-SIZE.md` 184〜190行）を
+    // 実装した今、9,000 g/点は1点あたりでは十分軽い（梱包後 11.1kg）ので、
+    // 上限を超えた5点の個口は箱を2つに分ければ収まる——3倍にしても Buyee
+    // default の専売にならない。この安定化はこのPRの意図した効果である
+    // （「唯一値段が付く社≠最安」という主張そのものは、なお個別に
+    // `weightSensitivity` の `onlyPricedAtLow`/`onlyPricedAtHigh` で縛って
+    // いる——本当に1点だけで方式の上限を超える商品があれば、いまも同じ
+    // 注記が出る）。
     const r = compare({ method: 'ems', items: items(5, 3000), country: 'US' });
-    expect(r.rankStable).toBe(false);
+    expect(r.rankStable).toBe(true);
     expect(r.rankIndeterminate).toBe(false);
-    expect(r.rankStabilityNote).not.toContain('Buyee, default is cheapest');
-    expect(r.rankStabilityNote).toContain('the only one we can still price');
+    expect(r.rankStabilityNote).toBe(
+      'FROM JAPAN and ZenMarket stay in the recommended range even if we are off by 3x on weight.');
   });
 
   test('200 g per item is stable in all seven countries (P1-4: US too)', () => {
@@ -811,13 +833,18 @@ describe('rank stability is measured, not assumed — and it is often false', ()
     }
   });
 
-  test('at 4,975 g per item the winner changes because everyone else leaves the table', () => {
-    // 価格の逆転ではない。同梱行が 30kg を越え、比較可能な行が Buyee default だけになる。
+  test('§2④ implemented: crossing 30kg at 4,975 g/item no longer knocks everyone else out', () => {
+    // **このテストは以前、5点×4,975g（梱包後30.15kg）でEMS表を出た同梱行が
+    // 全社脱落し、Buyee default だけが値段を持つことを固定していた。**
+    // `splitByWeightLimit`（§2④）を実装した今、4,975gは1点あたり十分軽い
+    // （梱包後 6.27kg）ので、上限を超えた個口は箱を2つに分ければ収まる——
+    // 表の端をまたいでも勝者は変わらない（そもそも誰も脱落しない）。
     const below = compare({ method: 'ems', items: items(5, 4950), country: 'US' }).rows;
     expect(winnerOf(below)!.id).toBe('fromjapan');
     const above = compare({ method: 'ems', items: items(5, 4975), country: 'US' }).rows;
-    expect(winnerOf(above)!.id).toBe('buyee:default');
-    expect(above.filter((r) => r.comparable)).toHaveLength(1);
+    expect(winnerOf(above)!.id).toBe('fromjapan');
+    // Neokyo だけが引き続き比較不能（米国宛にEMSを売っていない、既存の事実）。
+    expect(above.filter((r) => r.comparable)).toHaveLength(5);
   });
 });
 
@@ -1061,38 +1088,58 @@ describe('the international method is an input, and the default is now cheapest-
     expect(shipOf(air).note).toContain('no tracking');
   });
 
-  test('a method that cannot carry the parcel makes the row non-comparable, not cheap', () => {
-    // 小形包装物は 2kg まで。5点×600g は同梱すると梱包後 3.9kg で入らない。
-    // **上限超を最上段の額で通すと、送れないものを最安に見せる。**
+  test('a method whose limit the group exceeds now splits into more boxes instead of dropping'
+    + ' out — docs/DESIGN-BOX-SIZE.md §2④', () => {
+    // 小形包装物は 2kg まで。5点×600g は同梱すると梱包後 3.9kg で1個口には入らない。
+    //
+    // **このテストは以前、上限超は「送れない」で終わる（Buyee default だけが
+    // 生き残る）ことを固定していた。**`splitByWeightLimit`（§2④）を実装した今、
+    // 600gの商品は1点あたり十分軽いので、上限超のグループは箱を3つに分ければ
+    // 収まる——FROM JAPAN・ZenMarket・Buyee consolidated も同じ方式を選べる
+    // ようになった。
     const rows = compare({ items: items(5, 600), country: 'DE', method: 'small-packet-air' }).rows;
-    for (const row of rows.filter((r) => r.parcels === 1)) {
-      expect(shipOf(row).amount, row.id).toBeNull();
-      expect(row.comparable, row.id).toBe(false);
-      expect(row.notComparableReason, row.id).toContain('Small packet');
+    const comparable = rows.filter((r) => r.comparable);
+    // **Neokyo と Jauce は引き続き比較不能。**理由は重量ではなく、
+    // Neokyo は小形包装物そのものを売っておらず（2026-09-07実測）、Jauce も
+    // この方式をこの国へ出していない——このPRの変更点とは無関係の既存事実。
+    expect(comparable.map((r) => r.id).sort()).toEqual(
+      ['buyee:consolidated', 'buyee:default', 'fromjapan', 'zenmarket'].sort());
+    for (const row of comparable) {
+      expect(shipOf(row).amount, row.id).not.toBeNull();
+      expect(row.parcels, row.id).toBeGreaterThan(1);
     }
-    // **Buyee の既定だけが残る。**注文ごとに別送するので1個口が梱包後 1.02kg で入る。
-    // つまりこの方式を選ぶと、表に比較可能な行が1つしか残らない
-    // ——「Buyee が安い」ではなく「他社はこの方式で送れない」。
-    const usable = rows.filter((r) => r.comparable);
-    expect(usable.map((r) => r.id)).toEqual(['buyee:default']);
-    expect(shipOf(usable[0]!).amount).toBe(11550);
+    // **箱を分けても店舗の下地は保たれる。**Buyee default は注文ごとに
+    // 元から5個口（1点=1注文、方式の上限より軽いので追加分割は無い）、
+    // 他の3社は同梱1グループを3箱に分ける（下の「conservation」テストで
+    // 中身の保全を別に確認する）。
+    expect(byId(rows, 'buyee:default').parcels).toBe(5);
+    expect(byId(rows, 'fromjapan').parcels).toBe(3);
+    expect(byId(rows, 'zenmarket').parcels).toBe(3);
+    expect(byId(rows, 'buyee:consolidated').parcels).toBe(3);
+    for (const id of ['neokyo', 'jauce']) {
+      expect(byId(rows, id).comparable, id).toBe(false);
+    }
   });
 
-  test("'cheapest' picks per row, so a service that splits parcels can use a method the others cannot", () => {
-    // Buyee の既定は注文ごとに別送するので**1個口が軽い**。3点なら1個口 1.3kg で
-    // 小形包装物（2kg 上限）に入るが、同梱する社は 1個口 3.0kg で入らない。
-    // **これは実在する差**で、モデルから落とすと Buyee の既定が不当に高く出る。
+  test("'cheapest' picks per row — and docs/DESIGN-BOX-SIZE.md §2④ now lets a"
+    + ' consolidated row split its own way into the same method too', () => {
+    // Buyee の既定は注文ごとに別送するので**1個口が軽い**——3点なら1個口 0.6kg
+    // ×3個口で、もとから小形包装物（2kg 上限）に入る。
+    //
+    // **このテストは以前、同梱する社（1個口3.0kgのまま）は小形包装物に入らず、
+    // EMSに回ることを固定していた。**`splitByWeightLimit`（§2④）を実装した今、
+    // 600gの商品は1点あたり十分軽いので、同梱する社も自分で2箱に分けて
+    // 小形包装物に収まる——**これがこのPRで見つかった具体的な方式の入れ替わり
+    // （ranking flip の一種、同じ社の同じカートで最安の方式そのものが変わる）**:
+    // Buyee consolidated は以前 EMS だったが、いまは small-packet-air が最安。
     const rows = compare({ items: items(3, 600), country: 'DE', method: 'cheapest' }).rows;
     const split = byId(rows, 'buyee:default');
     const together = byId(rows, 'buyee:consolidated');
     expect(split.parcels).toBe(3);
-    expect(together.parcels).toBe(1);
-    // Buyee は**船便の小形包装物を売っていない**ので、分割側は航空の小形包装物になる。
-    // 同梱側は1個口 3kg で小形包装物の上限を超えるため国際小包(船便)が最安だが、
-    // **Surface は既定候補から外れる**（P2 4、2026-09-12）ので EMS になる。
-    // **同じ社の同じカートで方式が分かれる**——個口の数が方式の可否を決めている。
+    // **箱数は違う（下地が違う）が、選ぶ方式は同じになった。**
+    expect(together.parcels).toBe(2);
     expect(split.method).toBe('small-packet-air');
-    expect(together.method).toBe('ems');
+    expect(together.method).toBe('small-packet-air');
   });
 
   test('a service that does not ship Japan Post to a country is not priced there as if it did', () => {
@@ -1282,6 +1329,91 @@ describe('Buyee splits parcels by order', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// **docs/DESIGN-BOX-SIZE.md §2④（184〜190行、オーナー確定 2026-09-12）ここから実装。**
+// 「配送方式の上限（重量: 小形包装物2kg / EMS・国際小包30kg。寸法: 別途）を超えたら
+// 箱を増やす」。`splitByWeightLimit`（`./parcels.ts`）が実際の分割を行う——
+// このブロックは conservation・決定性・タイブレーク・Buyee の店舗分割との合成を固定する。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('§2④: adding a box when a method\'s own limit is exceeded', () => {
+  const shopItem = (id: string, shop: string, weightG: number, priceYen: number): Item => item({
+    id, priceYen, weightG, site: 'rakuten', url: `https://item.rakuten.co.jp/${shop}/${id}/`,
+  });
+
+  test('composes with the per-shop split: a shop group that itself exceeds the limit'
+    + ' splits further, but never merges with another shop\'s items', () => {
+    // 店A: 4点×600g（同梱すると梱包後3.18kgで小形包装物2kg超）。店B: 1点×600g（単独で収まる）。
+    // Buyee default は店ごとに個口を分ける（§2⑤の下地）。店Aの個口は、その下地の
+    // **内側**でさらに方式の上限により分割される（§2④）——店Bの商品と混ざらない。
+    const cart = [
+      shopItem('a1', 'shop-a', 600, 1000), shopItem('a2', 'shop-a', 600, 1000),
+      shopItem('a3', 'shop-a', 600, 1000), shopItem('a4', 'shop-a', 600, 1000),
+      shopItem('b1', 'shop-b', 600, 1000),
+    ];
+    const rows = compare({ items: cart, country: 'DE', method: 'small-packet-air' }).rows;
+    const dflt = byId(rows, 'buyee:default');
+    // 店Aの下地（4点2.4kg）が2箱に分かれ、店Bの下地（1点0.6kg）はそのまま1箱——
+    // 合計3個口。「箱を増やす」がゼロか全部かではなく、超えた下地だけに効くことを示す。
+    expect(dflt.parcels).toBe(3);
+    // consolidated 変種（店の下地が無く、全5点が最初から1グループ）も、
+    // 同じ方式の上限で分割される——店の区別が無いので、5点が方式の上限だけで分かれる。
+    const together = byId(rows, 'buyee:consolidated');
+    expect(together.parcels).toBeGreaterThan(1);
+    // 保全: 申告額（Items行）は分割の有無によらずカート全額のまま。
+    expect(line(dflt, 'items').amount).toBe(5000);
+    expect(line(together, 'items').amount).toBe(5000);
+  });
+
+  test('conservation: splitting a single-parcel service\'s group changes which parcel'
+    + ' each item\'s declared value lands in, but the cart-wide duty base is exact', () => {
+    // ZenMarket（店の下地を持たない=1グループ）: 重い安物×2 + 軽い高額品×1。
+    // 3点合計の梱包後重量が EMS の 30kg を超えるので2箱に分かれる
+    // （`splitByWeightLimit` のタイブレーク: 重量降順・同点は入力順）。
+    // **重い順に詰めるので、最初の箱に高額の軽い商品が相乗りし、もう一方の箱は
+    // 安い重量物だけになる**——均等割りなら両方の個口がEUの€150免税限度を
+    // 下回っていたはずが、実際の内訳では片方だけが限度を超える。
+    const cart = [
+      item({ id: 'heavy1', priceYen: 1000, weightG: 15_000, site: 'zenmarket' as never }),
+      item({ id: 'heavy2', priceYen: 1000, weightG: 15_000, site: 'zenmarket' as never }),
+      item({ id: 'light-expensive', priceYen: 40_000, weightG: 100, site: 'zenmarket' as never }),
+    ];
+    const rows = compare({ method: 'ems', items: cart, country: 'DE' }).rows;
+    const row = byId(rows, 'zenmarket');
+    expect(row.parcels).toBe(2);
+    expect(line(row, 'items').amount).toBe(42_000); // 保全: 商品代の合計は動かない
+    // 均等割り（¥14,000/個口 ≈ €77、どちらも限度以下）なら定額分だけで済んだはずの
+    // 関税が、実際の内訳（片方の個口が限度超）では定額のみより高くなる。
+    const eurYen = rateFor('EUR');
+    const flatOnlyYen = Math.round(3 * 3 * eurYen); // 3点すべてが€3定額だった場合
+    expect(line(row, 'duty').amount).toBeGreaterThan(flatOnlyYen);
+  });
+
+  test('determinism: the same cart always produces the same split, including weight ties', () => {
+    const cart = items(6, 3000, 2000);
+    const run = () => compare({ method: 'ems', items: cart, country: 'US' });
+    const a = run();
+    const b = run();
+    expect(JSON.stringify(a.rows)).toBe(JSON.stringify(b.rows));
+    for (const id of ['fromjapan', 'zenmarket', 'jauce']) {
+      expect(byId(a.rows, id).parcels, id).toBe(byId(b.rows, id).parcels);
+    }
+  });
+
+  test('a single item heavier than the method\'s own limit makes that method unusable, even'
+    + ' after splitting — not an oversized parcel we still price', () => {
+    // docs/DESIGN-BOX-SIZE.md §2④ 自体は、1点だけで方式の上限を超える場合の扱いを
+    // 明記していなかった（PR依頼文が挙げる未解決点の一つ）。「箱を増やしても
+    // 解決しない以上、その方式は使えない」という読み方を採用し、ここで固定する
+    // （`splitByWeightLimit` のコメント参照）。
+    const rows = compare({ method: 'ems', items: items(1, 30_500), country: 'US' }).rows;
+    for (const id of ['fromjapan', 'zenmarket', 'jauce']) {
+      const row = byId(rows, id);
+      expect(row.comparable, id).toBe(false);
+      expect(line(row, 'intl-shipping').amount, id).toBeNull();
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 重量不明。1つの数字を押し付けず、EMS の段ごとに出す。
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1410,9 +1542,18 @@ describe('one item at a time: whose weight decides the winner', () => {
     expect(r.weightSensitivity).toEqual({});
   });
 
-  test('when the heavy end leaves the EMS table, the survivor is named as the only one priced, not as cheapest', () => {
-    // 和弓 7 kg × 3 + 仮置き1点。仮置きを 10 kg にすると同梱行が 30 kg を超え、
-    // 注文ごとに分ける Buyee default だけが値段を持つ。
+  test('§2④ implemented: the heavy end no longer leaves the EMS table for this cart', () => {
+    // 和弓 7 kg × 3 + 仮置き1点（500〜10,000gの間で動く）。
+    //
+    // **このテストは以前、仮置きを10 kgにすると同梱行の梱包後重量が30 kgを
+    // 超えてEMS公表表を出て脱落し、注文ごとに分けるBuyee defaultだけが
+    // 値段を持つ——という「唯一値段が付く社」の勝ち方を固定していた。**
+    //
+    // `splitByWeightLimit`（§2④）を実装した今、7,000g・10,000gという
+    // 個々の商品重量はどちらも単体では十分軽い（梱包後 8.7kg・12.3kg、
+    // どちらも30kg以下）ので、4点の同梱グループが上限を超えても箱を2つに
+    // 分ければ収まる——Buyee default の専売は起きず、1位（FROM JAPAN）は
+    // 仮置きの重量が動いても変わらない（`decisive: false`）。
     const r = compare({ method: 'ems',
       items: [
         table('y0', 7000, [7000, 7000], { priceYen: 30000 }),
@@ -1424,9 +1565,9 @@ describe('one item at a time: whose weight decides the winner', () => {
     });
     expect(r.weightSensitivity['p']).toEqual({
       lowG: 500, highG: 10000,
-      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'Buyee, default',
-      onlyPricedAtLow: false, onlyPricedAtHigh: true,
-      decisive: true,
+      winnerAtLow: 'FROM JAPAN', winnerAtHigh: 'FROM JAPAN',
+      onlyPricedAtLow: false, onlyPricedAtHigh: false,
+      decisive: false,
     });
   });
 

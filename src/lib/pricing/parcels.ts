@@ -8,16 +8,15 @@
  * 梱包作業に近い直感で、ビンパッキングの初等的なヒューリスティック——First Fit
  * Decreasing / LPT——とも一致する）。
  *
- * **このモジュールが呼ばれる場面（現状）**: 現時点のコードベースには、配送方式の
- * 重量・寸法上限を超えて箱を増やす仕組み自体がまだ無い（`postage.ts`/`services.ts`
- * 側の配線は別PRで進行中、docs/DESIGN-BOX-SIZE.md §2④）。したがって
- * `compare.ts` の唯一の複数個口経路（Buyee の注文ごと別送）は、店舗という
- * **既に分かっている**分割基準を使っており、ここの重量ベースの割り振りを必要としない
- * ——店舗で個口が決まっている以上、重い順に詰め直す理由が無い。
+ * **このモジュールが呼ばれる場面**: `compare.ts` は、まず店舗という**既に分かっている**
+ * 分割基準（Buyee の注文ごと別送）で個口の下地を作り、そのうえで `splitByWeightLimit`
+ * （下）を使って、**選ばれた配送方式（郵便）自身の重量上限**（`postage.ts` の
+ * `maxGramsFor` ── 小形包装物2kg・EMS/国際小包30kg 等）を超える個口をさらに箱に分ける
+ * （docs/DESIGN-BOX-SIZE.md §2④）。店舗の下地1つがそのまま上限に収まるときは
+ * 箱は増えない——重い順に詰め直す理由が無いのはその場合だけ。
  *
- * このユーティリティは、その将来の配線（上限超過による箱の追加）が入ったときに
- * そのまま使える形で先に用意しておくもの。conservation（合計が保存される）と
- * タイブレークの決定性はここで担保し、テストで固定する。
+ * conservation（合計が保存される）とタイブレークの決定性はここで担保し、
+ * テストで固定する。
  */
 
 export interface PackableItem {
@@ -80,4 +79,47 @@ export function packHeaviestFirst(
     box.declaredYen += item.priceYen;
   }
   return boxes;
+}
+
+/**
+ * **docs/DESIGN-BOX-SIZE.md §2④（オーナー確定 2026-09-12）── 「方式の上限を超えたら
+ * 箱を増やす」の実装。** `packHeaviestFirst` はどの重量上限に対しても中立な
+ * 汎用ユーティリティだが、この関数は特定の配送方式の重量上限を実際に適用し、
+ * 「何個の箱に分ければ収まるか」まで決める。
+ *
+ * **アルゴリズム（決定的）**: 箱数 `n` を1から増やしながら `packHeaviestFirst(items, n)`
+ * を試し、**すべての箱の梱包後重量（`packedWeightOf` で個口の実重量から算出）が
+ * 上限以下になった最小の `n`** を採用する。`packHeaviestFirst` 自体のタイブレーク
+ * （重量降順・同点は入力順／箱は同点なら番号が小さいほう）がそのまま効くので、
+ * 同じ商品構成は常に同じ箱数・同じ詰め方になる。
+ *
+ * **箱数は最小化する。**「とりあえず1箱ずつ詰めて溢れたら次の箱」という順次埋め方
+ * ではなく、収まる最小の箱数を総当たりで探す——LPTは箱数が増えるほど個々の箱の
+ * 負荷を均等に近づけるので、無駄に箱を増やさない。
+ *
+ * **1点だけで上限を超える商品がある場合**: `items.length` 個の箱まで試しても
+ * （＝1商品1箱まで分けても）なお超える箱が残るなら、`null` を返す——**この方式は
+ * 使えない**という意味（呼び出し側は他の方式と同じ「額が付かない」扱いにする）。
+ * 「箱をさらに増やしても解決しない以上、その商品を運べる方式ではない」という
+ * 読み方を採用した（他の読み方——「入りきらない特大口として運べることにする」——も
+ * ありうるが、上限を無視した箱を運べることにするのは架空の免除になるため採らない）。
+ *
+ * **conservation**: 返る `ParcelPack[]` の `declaredYen` の合計は、常に入力の
+ * `priceYen` の合計と一致する（`packHeaviestFirst` がその保証を持つ）。
+ *
+ * 空配列は「箱0個」（空配列）を返す——上限判定の対象がそもそも無い。
+ */
+export function splitByWeightLimit(
+  items: readonly PackableItem[],
+  maxPackedWeightG: number,
+  packedWeightOf: (netWeightSumG: number) => number,
+): ParcelPack[] | null {
+  if (items.length === 0) return [];
+  for (let n = 1; n <= items.length; n += 1) {
+    const boxes = packHeaviestFirst(items, n).filter((b) => b.indices.length > 0);
+    if (boxes.every((b) => packedWeightOf(b.totalWeightG) <= maxPackedWeightG)) {
+      return boxes;
+    }
+  }
+  return null;
 }
