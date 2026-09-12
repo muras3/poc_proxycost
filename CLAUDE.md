@@ -73,6 +73,7 @@ Fable の使いどころ（`docs/FIT-GAP.md` の T-F0 の経緯として残っ�
 - 新しい worktree の `node_modules` は空。メインチェックアウトのものをシンボリックリンクする: `ln -s /home/user/poc_proxycost/node_modules <worktree>/node_modules`
 - **すると Turbopack がビルドを拒否する**。「シンボリックリンクがファイルシステムのルートの外を指している」というエラーになる。ローカルでは `next build --webpack` でビルドすること。これは**ローカル限定の回避策**であり、デフォルトのビルド設定を変更してはいけない。
 - Chromium は導入済みで `PLAYWRIGHT_BROWSERS_PATH` も設定済み。**`playwright install` を実行しない**こと ── 不要な上にブロックされる。
+- `playwright.config.ts` は以前 e2e のポートを `3100` に固定していた。並行して動く複数の worktree がこれに衝突する ── **2026-09-12、PR #85 の e2e がこれで一切動かず**、ポートを別の worktree に握られたままだったため、2つのシナリオを実行検証ではなくコード読解だけで済ませて出す羽目になった。今は `PORT` / `E2E_PORT` があればそれを使い、無ければ worktree の絶対パスから決定的にポートを導出する(メインチェックアウトと CI は常に `3100` のまま)。衝突時は「どのポートが」「別の worktree に握られている可能性が高い」と明示して落ちる。
 
 上記を毎回書き起こさずに済むよう `scripts/worktree-setup.sh` を用意した。シンボリックリンクを冪等に張り、`--webpack` の注意を表示する。次に入るエージェントはこれを1回叩けばよい。
 
