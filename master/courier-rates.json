@@ -1926,7 +1926,373 @@
       }
     },
     "buyee_discarded_batch": "Discarded in full because output included implausible values and unit/state contamination; not used as evidence.",
-    "note": "単点（single_points, country_weight_points）と走査（dimension_scan, price_scan）は混ぜていない。"
+    "note": "単点（single_points, country_weight_points）と走査（dimension_scan, price_scan）は混ぜていない。",
+    "buyee_verified_2026_09_12": {
+      "source": "https://buyee.jp/helpcenter/guide/shipping-fees?lang=en",
+      "fetched_at": "2026-09-12",
+      "measurement_note": "入力ごとに Tab でフォーカスを移して確認し、表示されている結果カードだけを記録した（前回の buyee_discarded_batch とは取得方法が異なる）。",
+      "item_price_supported": false,
+      "country_600g_20x15x10": [
+        {
+          "country": "US",
+          "prices": {
+            "ECMS": 2288,
+            "FedEx": 4526
+          },
+          "extra_fees": {
+            "ECMS_customs_clearance_jpy": 800,
+            "FedEx_customs_clearance_jpy": 1200
+          }
+        },
+        {
+          "country": "DE",
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "country": "GB",
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "country": "FR",
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "country": "AU",
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "ECMS": 2544,
+            "EMS": 3400,
+            "FedEx": 3824,
+            "Air Parcel": 3850,
+            "DHL": 3869
+          }
+        },
+        {
+          "country": "CA",
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4526
+          }
+        },
+        {
+          "country": "SG",
+          "prices": {
+            "Small Packet (AIR)": 980,
+            "ECMS": 1778,
+            "AIR Packet": 1800,
+            "Surface": 2100,
+            "EMS": 2150,
+            "Air Parcel": 2500,
+            "FedEx": 3443,
+            "DHL": 3660
+          }
+        }
+      ],
+      "germany_weight_curve_20x15x10": [
+        {
+          "weight_g": 500,
+          "prices": {
+            "Small Packet (AIR)": 1230,
+            "AIR Packet": 2133,
+            "Surface": 2500,
+            "EMS": 3150,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "weight_g": 600,
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "weight_g": 700,
+          "prices": {
+            "Small Packet (AIR)": 1590,
+            "Surface": 2500,
+            "AIR Packet": 2613,
+            "EMS": 3650,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "weight_g": 1000,
+          "prices": {
+            "Small Packet (AIR)": 2130,
+            "Surface": 2500,
+            "AIR Packet": 3333,
+            "Air Parcel": 3850,
+            "EMS": 4400,
+            "FedEx": 4612
+          }
+        },
+        {
+          "weight_g": 1500,
+          "prices": {
+            "Small Packet (AIR)": 3030,
+            "Surface": 3100,
+            "AIR Packet": 4533,
+            "FedEx": 5068,
+            "EMS": 5550,
+            "Air Parcel": 6000
+          }
+        },
+        {
+          "weight_g": 2000,
+          "prices": {
+            "Surface": 3100,
+            "Small Packet (AIR)": 3930,
+            "FedEx": 5436,
+            "AIR Packet": 5733,
+            "Air Parcel": 6000,
+            "EMS": 6700
+          }
+        },
+        {
+          "weight_g": 2500,
+          "prices": {
+            "Surface": 3700,
+            "FedEx": 6194,
+            "EMS": 7750,
+            "Air Parcel": 8150
+          }
+        },
+        {
+          "weight_g": 3000,
+          "prices": {
+            "Surface": 3700,
+            "FedEx": 6970,
+            "Air Parcel": 8150,
+            "EMS": 8800
+          }
+        },
+        {
+          "weight_g": 5000,
+          "prices": {
+            "Surface": 4900,
+            "FedEx": 9074,
+            "Air Parcel": 12450,
+            "EMS": 13000
+          }
+        },
+        {
+          "weight_g": 10000,
+          "prices": {
+            "Surface": 7900,
+            "FedEx": 15082,
+            "Air Parcel": 23200,
+            "EMS": 23500
+          }
+        },
+        {
+          "weight_g": 20000,
+          "prices": {
+            "Surface": 11900,
+            "FedEx": 24847,
+            "Air Parcel": 39200,
+            "EMS": 44500
+          }
+        }
+      ],
+      "germany_dimension_scan_600g": [
+        {
+          "dims_cm": [
+            10,
+            10,
+            10
+          ],
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "dims_cm": [
+            20,
+            20,
+            20
+          ],
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 4612
+          }
+        },
+        {
+          "dims_cm": [
+            30,
+            20,
+            10
+          ],
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 6194
+          }
+        },
+        {
+          "dims_cm": [
+            40,
+            30,
+            20
+          ],
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 6194
+          }
+        },
+        {
+          "dims_cm": [
+            60,
+            40,
+            30
+          ],
+          "prices": {
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 15082
+          }
+        },
+        {
+          "dims_cm": [
+            25,
+            25,
+            25
+          ],
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 7678
+          }
+        },
+        {
+          "dims_cm": [
+            30,
+            30,
+            30
+          ],
+          "prices": {
+            "Small Packet (AIR)": 1410,
+            "AIR Packet": 2373,
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 8375
+          }
+        },
+        {
+          "dims_cm": [
+            35,
+            35,
+            35
+          ],
+          "prices": {
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 11884
+          }
+        },
+        {
+          "dims_cm": [
+            40,
+            40,
+            40
+          ],
+          "prices": {
+            "Surface": 2500,
+            "EMS": 3400,
+            "Air Parcel": 3850,
+            "FedEx": 16148
+          }
+        },
+        {
+          "dims_cm": [
+            45,
+            45,
+            45
+          ],
+          "prices": {
+            "FedEx": 23653
+          }
+        },
+        {
+          "dims_cm": [
+            50,
+            50,
+            50
+          ],
+          "prices": {
+            "FedEx": 28614
+          }
+        }
+      ],
+      "not_available_summary": [
+        "US: all Japan Post methods were unavailable at 600g/20x15x10cm",
+        "DE: Small Packet and AIR Packet disappeared above 2kg",
+        "DE: at 45cm and 50cm cubes only FedEx remained"
+      ],
+      "default_dimensions": {
+        "status": "not_determined",
+        "reason": "寸法欄をクリアすると直前の結果カードが残ったままになったため、既定の寸法を測れなかった。作業者自身が「フレッシュなページからの再測定が必要」と明記している。DEFAULT_PARCEL_DIMENSIONS_CM の裏付けにはまだ使えない。"
+      },
+      "cross_check_with_buyee_verified_single_observation": {
+        "compared_point": "DE / 600g / 20x15x10cm",
+        "result": "一致。Small Packet(AIR) 1,410 / AIR Packet 2,373 / Surface 2,500 / EMS 3,400 / Air Parcel(国際小包AIR) 3,850 / FedEx 4,612 が前回の buyee_verified_single_observation と1円まで一致した（前回は DHL 5,021 も記録していたが今回の一覧には出ていない＝比較対象外）。取得方法が違う2回（前回は単発測定、今回は Tab フォーカス移動での確認）が一致したことは、この取り方の信頼性を裏づける。"
+      }
+    }
   },
   "separately_displayed_fees": {
     "fromjapan": [
@@ -2111,13 +2477,26 @@
         "reason": "2026-09-12実測で null（US向けSurfaceは提供なし）"
       }
     ],
-    "note": "選択肢から消えたケースを全部記録。可否ロジック（unavailableIn 等）は変更していない。"
+    "note": "選択肢から消えたケースを全部記録。可否ロジック（unavailableIn 等）は変更していない。",
+    "buyee": [
+      {
+        "proxy": "buyee",
+        "country": "US",
+        "weight_g": 600,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "reason": "2026-09-12実測: US では日本郵便の方式が計算機に一つも出ず、ECMS と FedEx のみ表示された（not_available_summary: 'US: all Japan Post methods were unavailable at 600g/20x15x10cm'）。"
+      }
+    ]
   },
   "conclusions": {
     "volumetric_divisor": {
       "value": 5000,
       "unit": "cm3_per_kg",
-      "confidence": "high_for_fromjapan_courier_methods_ge_1kg",
+      "confidence": "high_for_fromjapan_courier_methods_ge_1kg_only",
       "rounding_rule": "縦×横×高さ[cm3] ÷ 5000 を kg 化し、0.5kg単位で切り上げ",
       "basis": [
         "FROM JAPAN / DE / UPS・DHL・FedEx Economy・FedEx Priority の4方式すべてで、10×10×10cm(0.5kg換算)・20×20×20cm(2.0kg換算)・30×20×10cm(1.5kg換算)・40×30×20cm(5.0kg換算) の計算結果が、同じ社のDE重量カーブの対応する重量における実測額と1円まで一致した（16点中16点）。",
@@ -2129,7 +2508,79 @@
       "carriers_or_services_where_divisor_could_not_be_checked": [
         "FROM JAPAN の International ePacket Light / ECMS / SF Express は寸法走査で額が動かず、重量カーブでのみ変化する。容積重量の対象かどうか、今回のデータからは判定できない。"
       ],
-      "supersedes": "2026-09-08 監査（docs/audit/o2-courier-2026-09-08.md §5）が出した実効除数 9.5 / 11.9 は、その監査自身が自己申告した通り、寸法を `blank` にして実重量カーブを取得したため、全点がその社の既定の箱ぶん高く出ていたことが原因。今回の実測（実際の寸法を入力したdimension_scanと、DEの重量カーブの突き合わせ）でこの診断が正しかったことが裏づけられた。docs/audit/o2-courier-2026-09-08.md 自体は当時の記録として書き換えない。docs/ROADMAP.md P2側に「後の実測で解決した」旨を記載する。"
+      "supersedes": "2026-09-08 監査（docs/audit/o2-courier-2026-09-08.md §5）が出した実効除数 9.5 / 11.9 は、その監査自身が自己申告した通り、寸法を `blank` にして実重量カーブを取得したため、全点がその社の既定の箱ぶん高く出ていたことが原因。今回の実測（実際の寸法を入力したdimension_scanと、DEの重量カーブの突き合わせ）でこの診断が正しかったことが裏づけられた。docs/audit/o2-courier-2026-09-08.md 自体は当時の記録として書き換えない。docs/ROADMAP.md P2側に「後の実測で解決した」旨を記載する。 ただし、この『除数5000』が裏づけられたのは FROM JAPAN のみである。他社（Buyeeを含む）に一般化してはならない（scope_warning 参照）。",
+      "scope_warning": "この除数5000・0.5kg切り上げのルールは FROM JAPAN のデータだけから確定した。全社共通の結論として扱ってはならない（2026-09-11のPR #50はこの限定を明記せずに『実測で確定』と書いてしまった。コーディネーターの誤り）。Buyee のデータ（下記 contradicting_evidence_buyee）はこの規則を満たさない。社ごとに確かめるまで、他社に流用しない。",
+      "contradicting_evidence_buyee": {
+        "basis": "observations.buyee_verified_2026_09_12.germany_dimension_scan_600g（DE / 600g / FedEx）。除数5000なら体積の単調増加に対応して価格が単調に上がるはずだが、そうなっていない。",
+        "table": [
+          {
+            "dims_cm": [
+              10,
+              10,
+              10
+            ],
+            "volume_cm3": 1000,
+            "fedex_price_jpy": 4612,
+            "note": "基準"
+          },
+          {
+            "dims_cm": [
+              20,
+              20,
+              20
+            ],
+            "volume_cm3": 8000,
+            "fedex_price_jpy": 4612,
+            "note": "除数5000なら2.0kg相当（5,436円）に上がるはずだが、10x10x10と同額のまま動いていない"
+          },
+          {
+            "dims_cm": [
+              30,
+              20,
+              10
+            ],
+            "volume_cm3": 6000,
+            "fedex_price_jpy": 6194,
+            "note": "除数5000なら1.5kg相当（5,068円）のはずだが、実測は2.5kg相当の額。しかも20x20x20（体積8,000、より大きい）より高い"
+          },
+          {
+            "dims_cm": [
+              40,
+              30,
+              20
+            ],
+            "volume_cm3": 24000,
+            "fedex_price_jpy": 6194,
+            "note": "30x20x10と同額。除数5000なら5.0kg相当のはず"
+          },
+          {
+            "dims_cm": [
+              25,
+              25,
+              25
+            ],
+            "volume_cm3": 15625,
+            "fedex_price_jpy": 7678
+          },
+          {
+            "dims_cm": [
+              30,
+              30,
+              30
+            ],
+            "volume_cm3": 27000,
+            "fedex_price_jpy": 8375
+          }
+        ],
+        "finding": "体積が小さい30x20x10cm（6,000cm3・¥6,194）のほうが、体積が大きい20x20x20cm（8,000cm3・¥4,612）より高い。価格は体積の単調増加ですらない。除数5000（または他のどんな単一の体積÷定数のルール）では説明できない。",
+        "hypothesis_not_confirmed": "最長辺（このケースでは30cm）が効いている可能性がある。ただしこのデータだけでは確定できない。推測でルールを断定しない——Buyee の容積重量の規則は現時点で『不明』のままとする。",
+        "next_measurements_needed": [
+          "最長辺だけを変える走査（他の2辺は固定、例: 10x10x10 → 15x10x10 → 20x10x10 → 25x10x10 → 30x10x10 → 35x10x10 …）で、価格が最長辺のどの値で変わるかを特定する",
+          "縦＋（横+高さ）×2（＝胴回り、girth）を一定にしたまま形状だけ変える走査（運送会社がよく使う『長さ＋胴回り』課金の可能性を切り分ける）",
+          "同じ寸法セットをDE以外の国（US・GBなど）でも走査し、規則が国に依存しないか確認する",
+          "FedEx以外の方式（EMS・Air Parcel等の日本郵便系）でも同じ寸法セットを走査し、Buyeeの日本郵便方式が本当に寸法非依存かを再確認する（今回のデータでは日本郵便系は10x10x10〜40x40x40まで不変だった）"
+        ]
+      }
     },
     "postal_methods_flat_across_dimensions": {
       "confirmed": true,
@@ -2183,6 +2634,11 @@
           "proxy": "jauce",
           "method": "US向けSurface",
           "basis": "2026-09-12実測でnull"
+        },
+        {
+          "proxy": "buyee",
+          "method": "US向けの日本郵便すべて",
+          "basis": "2026-09-12実測でUS向けに日本郵便方式が選択肢に一つも出ない（ECMSとFedExのみ）。not_available_summary: 'US: all Japan Post methods were unavailable at 600g/20x15x10cm'。"
         }
       ],
       "they_offer_but_we_dont_have": [
@@ -2224,6 +2680,26 @@
       "unconfirmed_proxies": {
         "zenmarket": "Cloudflareチャレンジで自動測定できず。顔ぶれ未確認。外部作業者が手動ブラウザで測定中。",
         "neokyo": "robots.txtにより自動測定せず。顔ぶれ未確認。外部作業者が手動ブラウザで測定中。"
+      },
+      "us_japan_post_unavailable_tally": {
+        "status": "US で日本郵便を出していないことが確認された社が3つ目になった（FROM JAPAN・Jauce・Buyee）。5社中3社。残る2社（ZenMarket・Neokyo）は外部作業者が手動測定中。",
+        "companies": [
+          {
+            "proxy": "fromjapan",
+            "basis": "2026-09-12実測 ＋ 2026-09-07の別実測（外部文書）。USは宅配便（DHL/FedEx等）のみ"
+          },
+          {
+            "proxy": "jauce",
+            "basis": "2026-09-12実測でUS向けSurfaceがnull"
+          },
+          {
+            "proxy": "buyee",
+            "basis": "2026-09-12実測（今回）。US向け日本郵便が選択肢から全滅"
+          }
+        ],
+        "current_code_behavior": "src/lib/pricing/services.ts の buyee エントリでは、'ems' の postage に unavailableIn: ['US'] が設定されておらず、US 向けにも EMS が markup 方式で価格化・順位表示されている。つまり現在のコードは、Buyee が実際には提供していない『US向けEMS』という方式を価格化して比較・順位付けに使っている。FROM JAPANで先に見つかったのと同じ型の欠陥。",
+        "expected_impact_if_fixed": "US では Buyee の実在する方式が ECMS と FedEx（宅配便、まだ価格化していない）だけになるため、Buyee は US 向け郵便での比較から実質的に外れる（宅配便が価格化されるまでは『価格が付かない』側になる）。現状 Buyee が US で日本郵便（EMS）の額で他社と比較・順位付けされている行はすべて誤りで、修正後は他の日本郵便系の社との直接比較から外れ、順位が変わりうる。ただし ZenMarket・Neokyo の可否がまだ揃っていないため、具体的な順位の変化は5社そろってからでないと言えない。",
+        "code_not_touched": "本コミットでは services.ts を変更していない（オーナー方針: 5社そろってから一括修正）。"
       }
     },
     "ups_lower_bound_flag": {
@@ -2234,6 +2710,35 @@
       ],
       "machine_readable_flag": "is_lower_bound: true を該当observationに付与済み（下記 upper_bound_unknown フィールド）",
       "guidance": "将来この額を価格化するときに確定値として扱わないこと。"
+    },
+    "buyee_new_findings_2026_09_12": {
+      "us_customs_clearance_separately_shown": {
+        "value": {
+          "ECMS_jpy": 800,
+          "FedEx_jpy": 1200
+        },
+        "master_check": "master/customs.json の US clearance セクションを確認した。USPS の帯（$2,500以下 $0 /超 $9.35）はある。DHL/FedEx の courier_brokerage は 'rule: {type: unknown}', 'tier: C_unknown' として未確定のまま残されていた。ECMS には対応する既存の記述が無い。今回のBuyee実測（ECMS ¥800 / FedEx ¥1,200）はこの空白を埋める新規情報であり、既存記述と矛盾はしていない（FedExのC_unknownを埋める候補値、ECMSは完全に新規）。",
+        "action": "master/customs.json は本コミットでは変更していない（依頼範囲は courier-rates.json と ROADMAP.md P2）。次の作業者が customs.json 側に反映することを推奨する。"
+      },
+      "air_packet_method_not_in_our_model": {
+        "de_600g_price_jpy": 2373,
+        "significance": "我々が持っていない方式。Small Packet(AIR)とEMSの中間に位置する価格帯（DE 600gで1,410 < 2,373 < 2,500）。"
+      },
+      "item_price_not_supported": "Buyeeの計算機に商品価格の入力欄が無い（item_price_supported: false）。他社との価格走査比較にBuyeeを含められない。"
+    },
+    "markup_varies_by_company_de_600g": {
+      "basis": "同じDE 600gの実測値を突き合わせた。",
+      "jauce": {
+        "EMS": 3400,
+        "Surface": 2750,
+        "surface_vs_official_note": "日本郵便公表額(2,500)に対して+250円の上乗せ"
+      },
+      "buyee": {
+        "EMS": 3400,
+        "Surface": 2500,
+        "surface_vs_official_note": "日本郵便公表額(2,500)そのまま。上乗せ無し"
+      },
+      "finding": "EMSは両社とも日本郵便の公表額そのまま(¥3,400)で一致するが、SurfaceはJauceが公表額+¥250、Buyeeが公表額±0と、社によって上乗せの有無・額が違うことが実測で裏づけられた。これは我々の `markup` モデル（日本郵便5方式＝公表額＋社ごとの上乗せ）の前提——『上乗せは社ごとに違いうる』——そのものを支持する実測。"
     }
   }
 }
