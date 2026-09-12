@@ -14,3 +14,4 @@ dist/
 .scratch/
 # isolation: "worktree" で走るサブエージェントの作業場（成果物ではない）
 .claude/worktrees/
+__pycache__/

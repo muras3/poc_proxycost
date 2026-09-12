@@ -122,6 +122,12 @@ EVAL_HANDLED_TYPES = {
     "greater_of", "rate_of_import_charges_with_min",
     "rate_of_import_charges_with_min_variants", "banded_by_value_mixed",
     "greater_of_by_service", "rate_of_import_charges_with_min_and_max",
+    # 2026-09-12 追加分（PR: clearance-tiered-band-schema）── FedEx GB/DE の3段帯
+    # 構造（帯ごとに計算式そのものが変わる）用。下の eval_clearance() の対応する
+    # if 分岐と手で同期させること。customs.json 側のGB/DE FedEx行はこのPRでは
+    # まだ移行していない（rule.type は "unknown" のまま）── これは「対応する型が
+    # 増えた」だけで「値を埋めた」わけではない。
+    "banded_by_import_tax_mixed",
     # "range" は他と契約が違う: eval_clearance() は単一の金額ではなく (min, max) を返す。
     # これは「算出できる一点の値」ではなく「幅の表明」を評価する型で、実請求額がこの
     # 幅に収まるか（包含）を eval_clearance_range_contains() でチェックする。等号での
@@ -249,6 +255,25 @@ def eval_clearance(rule, ctx):
             if gt is not None and v > gt:
                 return eval_clearance(band["rule"], ctx)
         raise ValueError(f"banded_by_value_mixed: 値 {v} を含む帯が無い")
+    if t == "banded_by_import_tax_mixed":
+        # FedEx GB/DE 型（f34-fedex-seven-countries-2026-09-12.md の raw_findings が
+        # 記録した3段構造）。banded_by_value_mixed と同じ「帯ごとに式そのものが変わる」
+        # 形だが、**帯選びの軸が申告価格(goods_value_per_parcel)ではなく発生した
+        # 関税等(import_tax)である点が違う**——GB/DEの一次情報要約はどちらも
+        # 「Import duties up to £43/…」のように税額そのもので帯を切っており、
+        # 申告価格の帯ではない（banded_by_value / banded_by_value_mixed は
+        # どちらも goods_value で選ぶため、そのままでは流用できない）。
+        # 各帯の式は既存の rule.type（rate_of_import_charges_with_min /
+        # fixed_per_parcel / rate_of_import_charges）をそのまま再帰的に評価する
+        # ──帯の「式」自体に新しい語彙を作らない。
+        # 帯の選び方は banded_by_value と同じ規約: 上限は「以下」（<=）で含み、
+        # None は上限なし。
+        v = ctx["import_tax"]
+        for band in rule["bands"]:
+            up = band["duty_tax_max"]
+            if up is None or v <= up:
+                return eval_clearance(band["rule"], ctx)
+        raise ValueError(f"banded_by_import_tax_mixed: 値 {v} を含む帯が無い")
     if t == "greater_of_by_service":
         # CA UPS。flat側の最低額がサービス種別で変わる greater_of。
         service = ctx.get("service")
