@@ -944,6 +944,97 @@ describe('tax thresholds are judged on intrinsic value, not on CIF', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// F1（外部レビュー）: 個口が決済時徴収の帯をまたぐと、帯の中の個口が払う税は
+// 「決済時に集めた」ことになって国境側の行では0になる（二重計上を避けるため、
+// これ自体は正しい）。**その分を `prepaid-import-tax` が拾わないと、税額が
+// どの行にも `excluded` にも現れず消える。**以前は「カート最大の個口」だけを
+// 見て行を出す/出さないを決めていたため、最大の個口が帯の外（＝国境課税）だと
+// 判定が「集めない」に倒れ、帯の中の小さい個口が実際に払った税がまるごと消えた。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('F1: a checkout-collected VAT/GST parcel is never invisible, even when parcels straddle the threshold', () => {
+  test('AU: one parcel over AUD 1,000 and several under it — the under-threshold parcels\' GST' +
+    ' still shows up as a prepaid-import-tax line, not nowhere', () => {
+    const straddle = [
+      item({ id: 'big', priceYen: 200_000, weightG: 3000 }),
+      ...Array.from({ length: 5 }, (_, i) => item({ id: `small${i}`, priceYen: 3000, weightG: 500 })),
+    ];
+    const row = byId(compare({ items: straddle, country: 'AU' }).rows, 'buyee:default');
+    expect(row.parcels).toBe(6);
+    // 大きい個口は国境課税（vat 行）、小さい5個口は決済時徴収（vat行はseller-collectsで0）。
+    expect(line(row, 'vat').note).toContain('the other 5 parcels owe none');
+    // F1 本体: 消えていた税が prepaid-import-tax として出ている。
+    const prepaid = line(row, 'prepaid-import-tax');
+    expect(prepaid.amount).not.toBeNull();
+    expect(prepaid.amount!).toBeGreaterThan(0);
+    expect(prepaid.note).toContain('collected at checkout on 5 parcels of 6');
+    // 合計はその行を含めて閉じている（消えていない——`sum(lines)` と一致）。
+    expect(row.total.low).toBe(sumLines(row));
+    // 箱ごとの判定（#88 の `ParcelBox.tax`）も嘘をつかない: 小さい個口は
+    // 確かに seller-collects と判定されている。
+    for (let i = 1; i < 6; i++) expect(row.boxes[i]!.tax.vat.kind).toBe('seller-collects');
+    expect(row.boxes[0]!.tax.vat.kind).toBe('rate');
+  });
+
+  test('ZenMarket to DE after a weight-limit split (§2④): the sub-EUR-150 parcel\'s IOSS VAT' +
+    ' is not lost when another parcel in the same shipment is taxed at the border', () => {
+    const straddle = [
+      item({ id: 'big', priceYen: 260_000, weightG: 1000 }),
+      ...Array.from({ length: 8 }, (_, i) => item({ id: `cheap${i}`, priceYen: 4000, weightG: 3500 })),
+    ];
+    const row = byId(compare({ items: straddle, country: 'DE' }).rows, 'zenmarket');
+    expect(row.parcels).toBeGreaterThan(1);
+    const prepaid = row.lines.find((l) => l.key === 'prepaid-import-tax');
+    expect(prepaid).toBeDefined();
+    expect(prepaid!.amount).not.toBeNull();
+    expect(prepaid!.amount!).toBeGreaterThan(0);
+    expect(row.total.low).toBe(sumLines(row));
+  });
+
+  test('never double-counts: a straddling parcel is never taxed by both the border VAT line' +
+    ' and prepaid-import-tax at once', () => {
+    const straddle = [
+      item({ id: 'big', priceYen: 200_000, weightG: 3000 }),
+      ...Array.from({ length: 5 }, (_, i) => item({ id: `small${i}`, priceYen: 3000, weightG: 500 })),
+    ];
+    const row = byId(compare({ items: straddle, country: 'AU' }).rows, 'buyee:default');
+    // seller-collects の個口は taxLines() 側で厳密に0円（二重計上防止のコメントどおり）。
+    for (let i = 1; i < 6; i++) expect(row.boxes[i]!.tax.vat.yen).toBe(0);
+  });
+
+  // **コーディネーター指摘（2026-09-12）への回答として追加。**外部レビューが実際に
+  // 見た症状（3個口・「the other 2 parcels owe none」・首位の逆転）を、3店舗の
+  // 別注文（Buyee default は注文ごとに個口を分ける）で再現する。1店舗だけ
+  // AUD 1,000 超、残り2店舗はそれぞれ単独で閾値未満——均等割りでは絶対に
+  // 起きない構図で、これが実際の運用（買い物は複数店舗にまたがる）で普通に
+  // 起こりうることを示す。
+  test('AU: a 3-order cart reproduces the review\'s exact symptom — before the fix, the missing'
+    + ' checkout tax made Buyee\'s default variant a false #1 ahead of FROM JAPAN', () => {
+    const shopItem = (id: string, shop: string, priceYen: number, weightG: number): Item => item({
+      id, priceYen, weightG, site: 'rakuten', url: `https://item.rakuten.co.jp/${shop}/${id}/`,
+    });
+    const cart = [
+      shopItem('a', 'shop-a', 150_000, 2000), // 1店舗だけ AUD 1,000（≈¥112,550）超。
+      shopItem('b', 'shop-b', 90_000, 1500),  // 残り2店舗は単独で閾値未満。
+      shopItem('c', 'shop-c', 90_000, 1500),
+    ];
+    const rows = compare({ items: cart, country: 'AU' }).rows.filter((r) => r.comparable);
+    const buyee = byId(rows, 'buyee:default');
+    const fj = byId(rows, 'fromjapan');
+    expect(buyee.parcels).toBe(3);
+    // レビューが引用した原文どおりの文言。
+    expect(line(buyee, 'vat').note).toContain('the other 2 parcels owe none (collected at checkout by the service)');
+    // F1修正後: 消えていた決済時徴収分が prepaid-import-tax に出る。
+    const prepaid = line(buyee, 'prepaid-import-tax');
+    expect(prepaid.amount).toBeGreaterThan(0);
+    // 本体の主張: 修正後、Buyee default は FROM JAPAN より高くなる
+    // （消えていた税を足し戻すと、実際には最安ではない）。
+    expect(buyee.total.low).toBeGreaterThan(fj.total.low);
+    // 合計はその行を含めて閉じている。
+    expect(buyee.total.low).toBe(sumLines(buyee));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 国内送料。どの社も込みではないので、CIF 国では課税額に乗る。
 // ─────────────────────────────────────────────────────────────────────────────
 describe('domestic shipping is charged by every service, and taxed where the base is CIF', () => {
@@ -1300,6 +1391,12 @@ describe('Buyee splits parcels by order', () => {
       // 商品行（Items）は依然カート全額——申告額の按分だけを変えたのであって、
       // 買い手が払う商品代の合計自体は動かさない。
       expect(line(dflt, 'items').amount).toBe(36_000);
+      // **T1: このテストが本来 conservation と呼んでいるのは Items 行（カート合計）
+      // ではなく、個口ごとの申告額（`Row.boxes[].declaredYen`）の合計がカート全額と
+      // 1円もずれずに一致すること。** Items 行は `items` から直接合計しているだけで、
+      // 個口分割（`packOfGroup`）の実装を一切通らない——`declaredYen` が壊れても
+      // Items 行は無傷で、このテストは検知できなかった（ミューテーション実証はPR参照）。
+      expect(dflt.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(36_000);
     });
 
     test('a high-value order is taxed on its own declared value, not on an averaged-down figure', () => {
@@ -1400,6 +1497,9 @@ describe('§2④: adding a box when a method\'s own limit is exceeded', () => {
     const row = byId(rows, 'zenmarket');
     expect(row.parcels).toBe(2);
     expect(line(row, 'items').amount).toBe(42_000); // 保全: 商品代の合計は動かない
+    // **T1**: Items 行ではなく箱ごとの申告額（`declaredYen`）の合計で確かめる——
+    // ここが本来「conservation」というテスト名が指しているもの。上のテストと同じ理由。
+    expect(row.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(42_000);
     // 均等割り（¥14,000/個口 ≈ €77、どちらも限度以下）なら定額分だけで済んだはずの
     // 関税が、実際の内訳（片方の個口が限度超）では定額のみより高くなる。
     const eurYen = rateFor('EUR');
