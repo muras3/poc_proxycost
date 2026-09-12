@@ -114,7 +114,7 @@
 <!-- generated:BEGIN countries -->
 | 国 | 関税 | VAT/GST | 通関手数料（経路ごと） |
 |---|---|---|---|
-| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 |
+| **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 ／ FedEx 2.5% |
 | **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 |
 | **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 14.88 |
 | **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 |
