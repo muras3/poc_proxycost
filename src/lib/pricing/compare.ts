@@ -11,6 +11,9 @@ import {
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import {
+  COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, courierCarrierOf, evalClearanceRuleYen,
+} from './courier-clearance';
+import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
   EXPORT_DECLARATION_FEE_YEN, SERVICES, type Service,
 } from './services';
@@ -1434,17 +1437,17 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   };
   lines.push(intlShippingLine);
   // **P2 3（オーナー確定）: 宅配便の上限は目的地側の未知の手数料で開いたままにする。**
-  // FedEx は7か国中5か国、DHL は7か国中6か国で清算/立替手数料の計算式が未公表、
-  // UPS は GB・CA を一切公表せず、遠隔地サーチャージの帯は米国宛にしか無い——
-  // このPRで繋いだ国（米国）もこの「未公表」側に入る。額が出せない未取得の費目として
-  // 積む（`unknownCapYen` を置かない＝上限が置けない）ので、`totalRange`/`rankHighFor`
-  // により `Row.total.high` は必ず `null` になる。**日本郵便はこの行を持たない**
-  // （燃油・遠隔地・通関の立替のいずれも無いと確認済み）ので Japan Post の総額は
-  // 閉じたままになる——この対比が P2 3 の主旨そのもの。
+  // 燃油サーチャージ・遠隔地サーチャージは今も未公表のまま——この行はそれ専用に残す。
+  // **通関/立替手数料（F34）はもう「未公表」ではない**——`master/customs.json#clearance`
+  // を配線した別行 `courier-clearance-fee`（このすぐ下、`taxResult` 計算後）に分離した。
+  // 2つの行を1つに混ぜない理由: counted_absence（例: DE の ECMS）はF34の行そのものを
+  // 出さないが、燃油/遠隔地サーチャージの不明はどの業者にも変わらず残るので、この行は
+  // 引き続き無条件に出す。**日本郵便はこの行を持たない**ので、Japan Post の総額は
+  // この費目では開かない——この対比が P2 3 の主旨のまま変わっていない。
   if (isCourier && shipYen != null) {
     lines.push(L('courier-destination-fees', 'Destination-side courier fees (unpublished)', null,
-      'clearance/disbursement fee formulas and remote-area surcharges are not published for'
-      + ` this route — ${svc.name} may pass through charges the carrier bills after the fact`,
+      'fuel/remote-area surcharges are not published for this route'
+      + ` — ${svc.name} may pass through charges the carrier bills after the fact`,
       'none'));
   }
 
@@ -1491,6 +1494,66 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const taxResult = taxLines(
     ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null, isCourier);
   lines.push(...taxResult.lines);
+
+  // **F34是正（2026-09-12）: 宅配便の目的地側の通関/立替手数料を実際に計算する。**
+  // `master/customs.json#clearance` の48行（3本の監査ノート、`docs/audit/f34-*-2026-09-12.md`）
+  // を配線する。**duty+tax の base はすぐ上で確定した `taxResult`（`taxLines()` の戻り値）を
+  // 使うので、この行はその計算の後（ここ）に置く。**中身は `courier-clearance.ts` に
+  // まとめてある（tier・rule・per-parcel/per-shipmentの決め方の理由も同ファイルのコメント
+  // 参照）。**独立した行 `courier-clearance-fee` にする**（上の `courier-destination-fees`
+  // とは別費目）——counted_absence（例: DE の ECMS）はこの行そのものを出さないが、
+  // 燃油/遠隔地サーチャージの不明（上の行）はどの業者でも変わらず残るので、2つを
+  // 1つの行に混ぜると「ECMSはこの国で何の未知も無い」という誤った印象を与えてしまう。
+  if (isCourier && shipYen != null) {
+    const carrier = courierCarrierOf(method as CourierMethod);
+    const route = carrier ? COURIER_CLEARANCE[ctx.cc]?.[carrier] : undefined;
+    const unknownNote = carrier ? COURIER_CLEARANCE_UNKNOWN[ctx.cc]?.[carrier] : undefined;
+    if (route) {
+      const countryCcyRate = rateFor(COUNTRIES[ctx.cc].ccy);
+      const ccyToJpy = rateFor(route.currency);
+      const dutyTaxYen = (i: number) =>
+        (taxResult.perParcel[i]!.duty.yen ?? 0) + (taxResult.perParcel[i]!.vat.yen ?? 0);
+      const declaredLocal = (i: number) => parcelTaxBases[i]!.itemsYen / countryCcyRate;
+      let feeYen: number;
+      let allZero: boolean;
+      if (route.per === 'per_shipment') {
+        const totalDutyTax = parcelTaxBases.reduce((a, _, i) => a + dutyTaxYen(i), 0);
+        const totalDeclaredLocal = parcelTaxBases.reduce((a, b) => a + b.itemsYen, 0) / countryCcyRate;
+        allZero = totalDutyTax === 0;
+        feeYen = evalClearanceRuleYen(route.rule, totalDutyTax, totalDeclaredLocal, ccyToJpy);
+      } else {
+        allZero = parcelTaxBases.every((_, i) => dutyTaxYen(i) === 0);
+        feeYen = parcelTaxBases.reduce(
+          (a, _, i) => a + evalClearanceRuleYen(route.rule, dutyTaxYen(i), declaredLocal(i), ccyToJpy), 0);
+      }
+      const label = `${carrier} destination clearance fee`;
+      const perNote = route.per === 'per_shipment' ? 'charged once per shipment' : 'charged per parcel';
+      if (allZero) {
+        // **税ゼロ時に課すかは、この費目の一次資料7か国×4社どれにも書かれていない**
+        // （3本の監査ノートが共通して報告）。0円と書けば「無料と確認済み」という嘘、
+        // 最低額を書けば「満額と確認済み」という別の嘘になるので、額を出さず null 行に
+        // する——`totalRange()` により `total.high` が自動的に開く。
+        lines.push(L('courier-clearance-fee', `${label} (unknown when duty/tax is zero)`, null,
+          'no duty or tax is due on this cart, and none of the rate documents say whether the'
+          + ` destination clearance fee still applies when there is nothing to advance — ${route.basisNote}`,
+          'none'));
+      } else {
+        lines.push(L('courier-clearance-fee', label, Math.round(feeYen),
+          `${perNote}; ${route.basisNote}`, route.tier, route.sourceUrl));
+      }
+    } else if (unknownNote) {
+      // schema_gap / C_unknown。額は出せないが費目自体は消さない
+      // （例: GB/DE の FedEx、GB の UPS）。
+      lines.push(L('courier-clearance-fee', `${carrier} destination clearance fee (unknown)`, null,
+        unknownNote, 'none'));
+    }
+    // else: counted_absence（例: DE/FR/AU/CAのECMS——`docs/audit/f34-ups-ecms-…`が法人・T&C
+    // 自体を確認できなかった）か、マスタに一切データの無い便（Buyee-Air/SF Express/Surface）。
+    // どちらも `courier-clearance-fee` 行そのものを出さない——counted_absence は
+    // 「探したが見つからなかった」であって「無いと確認した」ではないので、
+    // 「この社はこの国では通関手数料が無い」と断定する行も出さない
+    // （タスク指示: 「a counted_absence country must produce no clearance line at all」）。
+  }
   // **`ParcelBox[]` はここで初めて完成する。**分割の理由（`boxReasons`）は
   // 上で決めてあり、箱ごとの関税・VAT/GST の判定（`taxResult.perParcel`）は
   // たった今 `taxLines` が出したもの——**どちらも計算をやり直さず、既にある
