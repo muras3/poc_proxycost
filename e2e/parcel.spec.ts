@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addByHand, emptyCart, gotoCompare, openCart, weightBox } from './helpers';
+import { addByHand, emptyCart, gotoCompare, openCart, setMethod, weightBox } from './helpers';
 
 /**
  * 箱の E2E。**実際に足して、消して、重量を打ち込む。**
@@ -43,6 +43,12 @@ async function soloCart(page: Page) {
 
 test('an item you add lands in the box', async ({ page }) => {
   await gotoCompare(page);
+  // **この落下アニメーションは EMS 単箱の実装だけが持つ**（宅配便の単箱ビュー
+  // `CourierSingleBoxView` はアニメーションの状態機械を一切使わない、#88
+  // follow-up）ので、この検査は EMS 側の実装を名指しで固定する。既定の
+  // `cheapest` に任せると、既定カート（例のフィギュア+ねんどろいど）は
+  // 宅配便が最安になり（ZenMarket ECMS Express）、この行自体が実行されない。
+  await setMethod(page, 'ems');
   const before = await page.getByTestId('packed-item').count();
   await addByHand(page, ITEM, 4000);
   await expect(page.getByTestId('packed-item')).toHaveCount(before + 1);
@@ -57,6 +63,12 @@ test('an item you add lands in the box', async ({ page }) => {
 
 test('the box grows only when the parcel crosses an EMS weight step', async ({ page }) => {
   await gotoCompare(page);
+  // **この検査は EMS の段の切り替わり方そのものを見ている**——箱は段の境界を
+  // 跨いだときだけ大きくなり、境界の中では動かない、という EMS 固有の契約。
+  // 宅配便には対応する契約が無く（容積重量は連続的に効く）、`cheapest` に
+  // 任せるとこの重量域（900〜1,100g）は #92 の会社別方式配線の後は宅配便が
+  // 最安になる——固定しないとこの検査自体が成り立たない。
+  await setMethod(page, 'ems');
   const w = await soloCart(page);
 
   // 900 g → 梱包後 1,380 g。1.5 kg の段の中。
@@ -89,6 +101,9 @@ test('the box grows only when the parcel crosses an EMS weight step', async ({ p
 
 test('the postage the box shows is the step it stands on', async ({ page }) => {
   await gotoCompare(page);
+  // EMS のラダーと箱の送料表示が同じ値を指すか、という EMS 固有の検査。
+  // `weight-ladder` は postal 専用（courier には無い）ので固定する。
+  await setMethod(page, 'ems');
   const w = await soloCart(page);
   await w.fill('1000');
   await expect(parcel(page)).toHaveAttribute('data-phase', 'idle', { timeout: 5000 });
@@ -112,6 +127,12 @@ test('over 30 kg the box says there is no published rate, not ¥0', async ({ pag
 
 test('the box is operable with the keyboard alone', async ({ page }) => {
   await gotoCompare(page);
+  // **この検査は「箱が段を跨いで大きくなる」という EMS 固有の動きを見ている**
+  // （最後の `boxWidth` の比較）。宅配便には段（step）という概念自体が無く、
+  // 単箱ビューの箱は段で大きさを変えない（#88 follow-up）ので、方式を明示的に
+  // EMS へ固定する——`cheapest` のままだと、9000g に打ち込んだ時点で宅配便
+  // （courier-ups）が最安に替わり、`parcel-delta` も箱の成長も無くなる。
+  await setMethod(page, 'ems');
   await soloCart(page);
   const w = weightBox(page, ITEM);
   const id = await w.getAttribute('id');
@@ -294,6 +315,12 @@ test.describe('prefers-reduced-motion', () => {
 
   test('nothing moves — the final state is shown at once', async ({ page }) => {
     await gotoCompare(page);
+    // `parcel-delta`（「+¥0」のチップ）は EMS 単箱ビューだけが持つ——宅配便の
+    // 単箱ビューはこのチップに相当するものをまだ出さない（#88 follow-up、
+    // エンジンが容積重量の実値・勝敗をまだ出していないため。PR 本文の
+    // 「エンジンへの質問」参照）。この検査自体は EMS のアニメーション制御
+    // （reduced-motion で止まるか）を見ているので、方式を明示的に固定する。
+    await setMethod(page, 'ems');
     const before = await page.getByTestId('packed-item').count();
     await addByHand(page, ITEM, 4000);
     await expect(page.getByTestId('packed-item')).toHaveCount(before + 1);
@@ -313,6 +340,13 @@ test.describe('prefers-reduced-motion', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 test('the ladder shows the step the parcel is actually on, not the end of the table', async ({ page }) => {
   await gotoCompare(page);
+  // `weight-ladder` は EMS 専用（宅配便には段表そのものが無い、#88
+  // follow-up）。既定の `cheapest` のままだと既定カート（例のフィギュア +
+  // ねんどろいど）は宅配便（ZenMarket ECMS Express）が最安になり、目盛りが
+  // 描かれず、この検査そのものが成り立たなくなる。この検査の主題は
+  // 「目盛りのスクロール位置」という EMS 実装の中身なので、方式を明示的に
+  // EMS へ固定する。
+  await setMethod(page, 'ems');
   const ladder = page.getByTestId('weight-ladder');
   await expect(ladder).toBeVisible();
 
@@ -417,6 +451,72 @@ test('an empty cart still shows the box, and the empty box claims no numbers', a
   await addByHand(page, ITEM, 4000);
   await expect(page.getByTestId('packed-item')).toHaveCount(1);
   expect(await step(page)).not.toBe('empty');
+});
+
+test.describe('method sensitivity — courier vs postal (#88 follow-up)', () => {
+  // フィクスチャは compare() を実際に走らせて確かめたもの（この docstring より
+  // 上の推測ではない）——US 宛・1点・単価3000円・重量200gなら FROM JAPAN の
+  // small-packet-air（郵便）が最安、同じ条件で重量1500gなら ZenMarket の
+  // courier-ecms-express（宅配便）が最安になる。国・点数・重量を変えると
+  // 勝つ方式は入れ替わるので、この2点だけを固定値として当てにする。
+  test('postal-winning row: weight-only prose, EMS ladder, no courier section', async ({ page }) => {
+    await gotoCompare(page);
+    const w = await soloCart(page);
+    await w.fill('200');
+    await expect(parcel(page)).toBeVisible();
+
+    await expect(page.getByTestId('weight-ladder')).toHaveCount(1);
+    await expect(page.getByTestId('parcel-postage')).toHaveCount(1);
+    await expect(page.getByTestId('parcel-courier')).toHaveCount(0);
+    await expect(page.getByTestId('parcel-courier-explainer')).toHaveCount(0);
+
+    const text = await parcel(page).innerText();
+    expect(text).toMatch(/EMS is priced by weight alone/);
+    expect(text).not.toMatch(/chargeable weight/);
+    expect(text).not.toMatch(/volumetric/);
+  });
+
+  test('courier-winning row: volumetric prose, no EMS ladder, no EMS postage figure', async ({ page }) => {
+    await gotoCompare(page);
+    const w = await soloCart(page);
+    await w.fill('1500');
+    await expect(parcel(page)).toBeVisible();
+
+    await expect(page.getByTestId('parcel-courier')).toHaveCount(1);
+    await expect(page.getByTestId('weight-ladder')).toHaveCount(0);
+    await expect(page.getByTestId('parcel-postage')).toHaveCount(0);
+    // 箱の見た目は1つだけ（strict mode violation を今日また作らない）。
+    await expect(page.getByTestId('packing-box-scene')).toHaveCount(1);
+
+    const text = await parcel(page).innerText();
+    expect(text).toMatch(/chargeable weight/);
+    expect(text).toMatch(/volumetric weight/);
+    // 体積が効くという事実だけを言い、EMS 固有の語彙・EMS の料金は出さない。
+    expect(text).not.toMatch(/EMS is priced by weight alone/);
+    expect(text).not.toMatch(/EMS postage/);
+    expect(text).not.toMatch(/EMS steps/);
+    // 除数・端数処理・実際の容積重量の値は会社ごとの一次情報で、エンジンが
+    // まだ出していない——ここで具体的な kg/g の容積重量を言い切らない
+    // （説明文にそれらしき比率・除数の数字を書いていないことの弱いチェック）。
+    expect(text).not.toMatch(/5000|÷\s*5,?000/);
+  });
+
+  test('courier single-box view: no horizontal overflow at 412px', async ({ page }) => {
+    await page.setViewportSize({ width: 412, height: 900 });
+    await gotoCompare(page);
+    const w = await soloCart(page);
+    await w.fill('1500');
+    await expect(page.getByTestId('parcel-courier')).toBeVisible();
+
+    const overflow = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+    }));
+    expect(
+      overflow.scrollWidth,
+      `scrollWidth ${overflow.scrollWidth} > clientWidth ${overflow.clientWidth} at 412px`,
+    ).toBeLessThanOrEqual(overflow.clientWidth);
+  });
 });
 
 test.describe('desktop layout', () => {
