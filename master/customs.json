@@ -1039,5 +1039,139 @@
       },
       "impact": "実装は 2026-09-07 まで**カート全額**で判定していた。注文ごとに別送する Buyee の既定では1個口 €110 ずつ（€150 以下）なのに『€330 超』と判定して 4.1% を掛けており、**個口を分けたほうが税は安くなるのに逆に高く出していた**（DE 3点×¥20,000 で ¥2,876 対 正しくは ¥1,634）。ただし個口を分けると EMS が個口ごとに乗るので総額は上がる（同ケースで ¥91,263 → ¥101,137）。**『分ければ安い』は断言できず、両方計算して初めて言える。**"
     }
-  ]
+  ],
+  "customs_valuation_law": {
+    "$comment": "F39①（代行手数料は課税ベースに含むか）への回答。個社への聞き取りではなく、公式の法体系（WTO協定→各国国内法）から積み上げる。2026-09-12、オーナー方針転換に基づく追加。注意: これは法律の条文が何を定めているかの記録であって、法的助言ではない。また『法律上こう評価されるべき』であることと『実際に代行がCN22/インボイスに何と書くか』は別の問題（F39a参照）。代行が商品代＋手数料を合算して申告すれば、通関はその額で課税する。したがってここでの結論は算出値の根拠にはなるが、上振れ（Row.total.high）を無くす保証にはならない。",
+    "checked_on": "2026-09-12",
+    "wto": {
+      "agreement": "Agreement on Implementation of Article VII of GATT 1994 (WTO Customs Valuation Agreement)",
+      "provision": "Article 8.1(a)(i)",
+      "quote": "In determining the customs value under the provisions of Article 1, there shall be added to the price actually paid or payable for the imported goods: (a) the following, to the extent that they are incurred by the buyer but are not included in the price actually paid or payable for the goods: (i) commissions and brokerage, except buying commissions;",
+      "source": "https://www.wto.org/english/docs_e/legal_e/20-val_01_e.htm",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "tier": "A_confirmed",
+      "reading": "文言上、buying commission（買い手のために売買契約の締結を代理する者への手数料）は明示的に課税価格への加算対象から除外されている。ただし条文自体は『buying commission とは何か』を定義していない――定義と立証責任は各国の国内法・運用（下記 countries）に委ねられている。代行/転送サービスの手数料は、それが『買主の代理として商品を購入する役務』への対価である限り、文言上は buying commission の外形に当てはまる。しかし代行サービスの実態（梱包・転送・保管などの物流役務）が『買付代理』に当たるかは条文だけでは決まらない――これは推論であり、下記 SG の反例（contradiction_found）が示す通り、単なる物流手数料は buying commission とは別に扱われ得る"
+    },
+    "buying_vs_selling_commission_test": {
+      "$comment": "どちらの手数料に当たるかは『会社が何と呼ぶか』ではなく『誰の代理として行動したか』で決まる。各国ガイダンスが共通してこの立場を取っている",
+      "legal_test": "手数料を受け取る者(agent)が、売買契約の締結において買主(purchaser)の代理として行動したか、売主(vendor)の代理として行動したか。買主の代理であれば buying commission（除外）、売主の代理であれば selling commission（加算）。ブローカーのように双方のために契約締結の仲介のみを行う者への手数料（brokerage）は、買主負担分は加算対象",
+      "sources": [
+        {
+          "jurisdiction": "CA",
+          "source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-4-12-eng.html",
+          "provision": "CBSA D13-4-12, paras 2-5",
+          "quote": "An agent can act on behalf of either a purchaser or vendor in concluding a contract of sale for goods... To determine whether a payment to an agent is to be added to the price paid or payable, it is necessary to determine whether the agent is a selling agent acting on behalf of a vendor, a buying agent acting on behalf of a purchaser or a broker.",
+          "checked_on": "2026-09-12",
+          "confidence": "direct_fetch"
+        },
+        {
+          "jurisdiction": "GB",
+          "source": "https://www.gov.uk/guidance/customs-valuation/method-1-transaction-value",
+          "provision": "HMRC guidance, 'Commissions' section",
+          "quote": "Buying agents act for the interests of the buyer. They represent the buyer and help them find and purchase goods... Selling agents act for the interest of the seller and help them to sell their goods... The question of whether or not payments made to intermediaries by the buyer should be added to the price paid or payable for the goods will depend on the final analysis of the role played by the intermediary and not on the term agent or broker by which they are known.",
+          "checked_on": "2026-09-12",
+          "confidence": "direct_fetch"
+        },
+        {
+          "jurisdiction": "AU",
+          "source": "https://www.abf.gov.au/help-and-support-subsite/files/instructions-guidelines-customs-valuation.pdf",
+          "provision": "ABF Instructions and Guidelines, Customs Valuation, 'Buying Commission' (Customs Act 1901 s.155(2))",
+          "quote": "an amount paid or payable by or on behalf of the purchaser of the goods directly or indirectly to a person who, as an agent of the purchaser, represented the purchaser in the purchase of the goods in the import sales transaction.",
+          "checked_on": "2026-09-12",
+          "confidence": "direct_fetch",
+          "note": "オーストラリアは他国と異なり、単に『買付代理である』というだけでは不十分で、s.155(2) が『Collector が認めない限り buying commission とみなさない (shall be taken not to be a buying commission unless a Collector is satisfied)』という立証責任を課す。ABF ガイドは代理店契約書等の証拠提出を要求すると明記。代行が委任契約書を公開・提示していない現状（F39a/F39c）では、豪州において買付手数料としての除外が実務上通るかは不確実"
+        }
+      ]
+    },
+    "countries": {
+      "US": {
+        "statute": "19 U.S.C. § 1401a",
+        "provision": "19 U.S.C. § 1401a(b)(1)(B) (selling commission is added); buying commission is not part of 'price actually paid or payable' under (b)(4)(A) and is defined at 19 CFR 152.102",
+        "quote_price_paid_or_payable": "the total payment (whether direct or indirect...) made, or to be made, for imported merchandise by the buyer to, or for the benefit of, the seller.",
+        "quote_selling_commission_addition": "any selling commission incurred by the buyer with respect to the imported merchandise",
+        "source": "https://www.law.cornell.edu/uscode/text/19/1401a",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "tier": "A_confirmed",
+        "note": "米国は WTO/EU/CA のように『買付手数料は加算しない』を条文で明示するのではなく、逆方向の書き方（『売付手数料は加算する』(b)(1)(B) を明示し、買付手数料は元から price actually paid or payable の外にあるので加算しない）で同じ結論に至る。CBP の解釈通達（Informed Compliance Publication “Buying and Selling Commissions”）が買付手数料の定義・立証要件を定めるが、直接到達できなかったため19CFR152.102本文の再確認は次回課題として残す",
+        "cfr_152_102_confidence": "search_snippet_no_verbatim_quote",
+        "cfr_152_102_note": "19 CFR 152.102(a) が 'bona fide buying commission' を定義していることは複数の二次資料で確認できたが、ecfr.gov への直接到達がプロキシ経由で失敗（302→unblock.federalregister.gov）し、本文を verbatim で取得できなかった。次に調べる人は ecfr.gov を別経路（ブラウザ環境等）で試すこと"
+      },
+      "EU_DE_FR": {
+        "regulation": "Regulation (EU) No 952/2013 (Union Customs Code), Article 71",
+        "provision": "Article 71(1)(a)(i) [buying commission exclusion], Article 71(1)(e) [transport/insurance/handling to the EU border are added -> CIF base]",
+        "quote_commission": "the following, to the extent that they are incurred by the buyer but are not included in the price actually paid or payable for the goods: (i) commissions and brokerage, except buying commissions;",
+        "quote_transport": "the following costs up to the place where goods are brought into the customs territory of the Union: (i) the cost of transport and insurance of the imported goods; and (ii) loading and handling charges associated with the transport of the imported goods.",
+        "source": "https://wipolex-res.wipo.int/edocs/lexdocs/laws/en/eu/eu276en.pdf (WIPO Lex がミラーする欧州官報 Regulation 952/2013 の統合版, consolidated text 02013R0952 — EN — 01.01.2020 — 003.001)",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "tier": "A_confirmed",
+        "note_eurlex_direct_access": "eur-lex.europa.eu への直接到達は、この環境のプロキシ経由では常に同一の JS シェル（Angular風アプリ）しか返らず、記事本文を取得できなかった（TXT/HTML, TXT/PDF いずれも失敗）。WIPO Lex がミラーする欧州官報（Official Journal）の統合版PDFから本文を直接取得した。EUR-Lex 自体への到達を次回試す場合はブラウザ経由を検討",
+        "verify_against_existing": "既存の customs.json の DE/FR duty.base=goods（免税・関税の課税ベースは商品代のみ）と vat.base=goods_plus_shipping（VATはCIF）は Article 71(1)(a)(i)（商品代＋buying commission除外の加算対象）と Article 71(1)(e)（運送・保険はCIFとして加算）に整合する。矛盾なし",
+        "commission_reading": "Article 71(1)(a)(i) は WTO Article 8.1(a)(i) と一言一句同じ実装。EU独自の buying commission 定義規定は本条には無く、解釈は WTO/WCO の一般原則（買主代理か売主代理か）に従う（実務上は欧州委員会 Compendium on Customs Valuation が詳細を補うが未参照）"
+      },
+      "GB": {
+        "statute": "Taxation (Cross-border Trade) Act 2018, s.16 (delegates to Treasury regulations)",
+        "regulation": "The Customs (Import Duty) (EU Exit) Regulations 2018 (SI 2018/1248), Part 12 — regs. 107 (definitions), 111(1)(e) (commissions and brokerage except buying commission added), 115(1)(b) (buying commission excludible if shown separately)",
+        "quote_definition": "“buying commission” means a commission paid by a buyer of goods to an agent of the buyer in respect of services provided by the agent to the buyer to enable the buyer to import chargeable goods;",
+        "source_legislation": "https://www.legislation.gov.uk/uksi/2018/1248/part/12",
+        "guidance_source": "https://www.gov.uk/guidance/customs-valuation/method-1-transaction-value",
+        "guidance_quote": "Providing ‘buying commissions’ are shown separately from the price of the goods on the documentation accompanying the import declaration or in the trading accounts of the importer, they are excludible from the customs value as per Regulation 115(1)(b) CIDEER.",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "tier": "A_confirmed",
+        "condition": "明記された条件: buying commission が商品価格と別建てで書類（インボイス等）または輸入者の帳簿に示されていること。合算されていれば除外できない",
+        "verify_against_existing": "既存の GB duty.threshold_base=goods（£135免税判定は商品代のみ）、duty.base/vat.base=goods_plus_shipping は Post-Brexit も UCC を踏襲した SI 2018/1248 の構造と整合。矛盾なし"
+      },
+      "AU": {
+        "statute": "Customs Act 1901 (Cth), s.154 (definitions: price related costs) and s.155 (Buying commission)",
+        "quote": "an amount paid or payable by or on behalf of the purchaser of the goods directly or indirectly to a person who, as an agent of the purchaser, represented the purchaser in the purchase of the goods in the import sales transaction.",
+        "quote_burden_of_proof": "An amount paid by a purchaser of imported goods to another person in the circumstances referred to in subsection (1) shall be taken not to be a buying commission unless a Collector is satisfied ...",
+        "source": "https://www.abf.gov.au/help-and-support-subsite/files/instructions-guidelines-customs-valuation.pdf （ABF公式 Instructions and Guidelines が s.154/155 条文を引用・解説。austlii.edu.au と legislation.gov.au への直接到達は本環境からは失敗した）",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "tier": "A_confirmed",
+        "note": "austlii.edu.au 等の一次条文サイトへの直接到達は本環境から失敗（Cloudflareブロック）。legislation.gov.au も JS レンダリングのため本文取得に失敗した。ABF自身が公式ガイド文書に条文を verbatim で引用しているため、これを一次資料として採用したが、法律本文そのものには未到達——次に調べる人はブラウザ経由で austlii.edu.au / legislation.gov.au への到達を試すこと",
+        "caveat": "豪州は buying commission 除外に最も強い留保が付く国。s.155(2) は『Collector（税関）が認めない限り buying commission とみなさない』という反証責任を輸入者に課し、ABFガイドは agency contract 等の証拠提出を要求する。代行各社が買付代理契約書を公開していない現状（F39a/c参照）では、豪州で代行手数料が buying commission として認められる保証はない"
+      },
+      "CA": {
+        "statute": "Customs Act (R.S.C., 1985, c. 1 (2nd Supp.)), s.48(5)(a)(i)",
+        "quote": "commissions and brokerage in respect of the goods incurred by the purchaser thereof, other than fees paid or payable by the purchaser to his agent for the service of representing the purchaser abroad in respect of the sale,",
+        "source": "https://laws-lois.justice.gc.ca/eng/acts/c-52.6/section-48.html",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "tier": "A_confirmed",
+        "d_memorandum": {
+          "id": "D13-4-12",
+          "title": "Customs Valuation: Commissions and Brokerage",
+          "note_correction": "依頼で示唆された D13-3系（D13-3-3/D13-3-4と同じ並び）ではなく、D13-4-12 が該当する正しいメモだった。D13-3-7 は別件（Engineering, Development Work等のproduction assist costs）。既存の D13-3-3/D13-3-4引用（送料等の扱い）とは別系列のメモ",
+          "quote": "A payment made by a purchaser to an agent to represent the purchaser abroad in buying imported goods is usually referred to as a buying commission and is not added to the price paid or payable for the imported goods if it is invoiced or identified separately from the price for the goods. However, if the invoiced price for the goods includes such an amount, it cannot be deducted from the price paid or payable.",
+          "source": "https://www.cbsa-asfc.gc.ca/publications/dm-md/d13/d13-4-12-eng.html",
+          "checked_on": "2026-09-12",
+          "confidence": "direct_fetch"
+        },
+        "verify_against_existing": "既存記録『CBSA D13-3-3 para.18/19』（送料・保険の扱い）とは別の論点（commission）であり、矛盾しない。CA の duty.base=goods_plus_shipping / vat.base=duty_paid_value の記録も本条文 s.48(5)(a)(vi)（運送・保険の加算）と整合。矛盾なし",
+        "reading": "カナダの条文は7か国中もっとも proxy/転送代行の実態に即した文言。『purchaser abroad in respect of the sale を代理する役務の対価』は、日本の代行業者が日本国内で買い手（海外の利用者）の代理として商品を購入する役務にほぼそのまま当てはまる"
+      },
+      "SG": {
+        "source": "https://www.customs.gov.sg/doing-business/valuation-duties-and-fees/establishing-customs-value/establishing-customs-value-and-methods/",
+        "checked_on": "2026-09-12",
+        "confidence": "direct_fetch",
+        "tier": "B_inferred",
+        "quote_general_rule": "To calculate the customs value, you must include all charges incidental to the sale and delivery of the goods to Singapore. Examples of charges to include: selling commissions / assists / packing costs / proceeds of resale accruing to the seller / royalties and licence fees / freight charges / insurance charges",
+        "note": "このページは 'selling commissions' を加算対象の例として挙げるのみで、buying commission の除外を明文では述べていない（WTO協定加盟国として国内法上は当然除外されるはずだが、このガイダンスページ自体に verbatim な除外規定の言及がない）。シンガポールの制定法本体（GST Act / Customs Act の評価規定）には未到達——次回はそちらを一次資料として確認すること",
+        "contradiction_found": {
+          "$comment": "このタスクで見つかった最も重要な反証。Singapore Customs公式ページの Example 2 は、まさに代行/転送サービスに相当するケースで、買付代理ではなく物流の手配業者への『手数料（handling charge）』を課税価格に含めている",
+          "quote": "Example 2: Import by an individual\nAn individual buys a bag from an overseas seller. A local service provider (B) arranges collection, storage, packing, and shipping, charging a handling fee and overseas freight. No insurance is purchased.\nCost of bag S$400 / Handling charges S$20 / Overseas freight S$30 / Insurance Nil / Customs value: S$450",
+          "source": "https://www.customs.gov.sg/doing-business/valuation-duties-and-fees/establishing-customs-value/establishing-customs-value-and-methods/",
+          "checked_on": "2026-09-12",
+          "confidence": "direct_fetch",
+          "interpretation": "この例のB（local service provider）は日本の代行業者に相当する役回りだが、Singapore Customsはその handling fee（S$20）を buying commission として除外せず、そのまま課税価格に合算している。これは『買付手数料除外』の一般論と矛盾するように見えるが、法的には矛盾していない可能性が高い——買付手数料の除外は『売買契約の締結を買主の代理として行う役務』への対価に限られ、この例のBが行っているのは『collection, storage, packing, shipping』という物流・梱包・転送の役務であって、売買交渉・購入代理そのものではない。つまり、代行業者の手数料が法的に buying commission として扱われるか、それとも単なる物流手数料（課税価格に含まれる）として扱われるかは、代行業者が実際に何をしているか（seller探し・価格交渉・購入手続きの代理か、それとも購入後の梱包・転送だけか）次第であり、一般論として『代行手数料＝buying commission＝常に除外』とは言えない。多くの代行サービス（Buyee/ZenMarket/Neokyo等）は『ユーザーが既にオークション/ECサイトで購入注文を確定させた後の受取・検品・梱包・転送』を主業務としており、これは Singapore の例のBの役回りに近く、買付代理（本人の代わりに交渉・購入する）とは性質が異なる可能性がある。この点は法文だけでは断定できず、ambiguousとして扱う"
+        },
+        "verify_against_existing": "既存の SG vat.base=goods_plus_shipping と duty.base=goods は本ページの CIF例（Example 1: 商品代+selling commission+運賃諸掛）と整合する。ただし Example 2 の反証は上記の通り別論点として残す"
+      }
+    },
+    "f39_conclusion": "F39①（商品代のみか手数料込みか）について、法制度側の答え: 代行の手数料が『買主の代理として売買契約を成立させる役務（buying agency）』への対価であれば、7か国全てで課税価格から除外される（根拠: WTO協定Art.8.1(a)(i)とその国内法実装）。ただし(1)AUは除外を受けるために税関を納得させる立証責任を輸入者に課す、(2)SGの公式例は、代行が行うのが購入後の物流・梱包・転送だけである場合はbuying commissionではなく通常の役務手数料として課税価格に含めている、(3)全ての国で『商品代と別建てで示されていること』が条件、という留保が付く。この法的結論は『代行が実際にCN22/インボイスに何を書くか』(F39a)を拘束しない――代行が商品代+手数料を合算して申告すれば、宛先国税関はその申告額で課税する。したがってこの結論は算出値の点予測（下限=買付手数料除外を法的根拠として適用）の根拠にはなるが、上振れ（Row.total.high、代行が合算申告する場合）を排除する根拠にはならない。これは法的助言ではなく、条文・公式ガイダンスが何を定めているかの記録に留まる。"
+  }
 }

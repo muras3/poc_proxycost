@@ -1876,12 +1876,17 @@
       "occurrence": "C_conditional_no_input",
       "display": "engine_only",
       "display_reason": "費目ではなく入力。代行が CN22 に何を書くか。F31・F32・F34・F36 の全部がこれに依存する。①③は未取得だが②は5社とも取得済み（2026-09-12 訂正、下記 `questions` 参照）。①は2026-09-12の追加調査でJauce以外の4社が判明。",
+      "legal_basis": {
+        "$comment": "2026-09-12、オーナー方針転換: 『個社に何を書くか』を推測するのではなく、公式の法体系（WTO協定→各国国内法）から課税ベースを積み上げる。詳細は master/customs.json の customs_valuation_law を参照。要旨: 代行の手数料が『買主の代理として売買契約を成立させる役務（buying agency）』への対価なら、WTO協定Art.8.1(a)(i)とその国内法実装（US/EU(DE,FR)/GB/AU/CA/SG）により7か国とも課税価格から除外される。ただしAUは立証責任、SGの公式例は物流手数料を含める例を示す等の留保あり（customs.json参照）。**この法的結論は下記 F39a（代行が実際に何を申告するか）を置き換えるものではなく、独立の根拠として追加する**——法律上除外されるべきでも、代行が商品代+手数料を合算して申告すれば通関はその額で課税するため、上振れ（Row.total.high）はこの法的結論だけでは消えない",
+        "source": "master/customs.json#customs_valuation_law",
+        "checked_on": "2026-09-12"
+      },
       "questions": {
         "$comment": "F39 は1つの tier で表せない。3つの問い（F39a/b/c）に分解し、問いごとに tier と根拠を持つ。tier 語彙は docs/MASTER.md と共通（A_confirmed / B_inferred / C_unknown / D_unpredictable）。confidence は取得経路（direct_fetch / search_snippet / search_snippet_no_verbatim_quote）を区別する追加軸で、同じ tier でも確度の差を残すために使う",
         "F39a": {
           "question": "①商品代のみを申告するか、代行の手数料を含めて申告するか（課税ベースそのもの）",
           "tier": "B_inferred",
-          "note": "2026-09-12、この会話の外のブラウザ環境（我々の環境からは到達できない faq.buyee.jp / zenmarket.jp のヘルプに到達できた）による追加調査で、Neokyo に加えて Buyee / FROM JAPAN / ZenMarket の3社が判明。残るは Jauce のみ。Buyee・FROM JAPAN・Neokyo は商品代のみ。**ZenMarket は商品代＋国際送料を請求書に記載する**（他社と異なる）。ただし ZenMarket の請求書は Item Information（商品ごとの単価・小計）と Freight（送料）を別項目として列挙しており、単一の合算額として書いているわけではない——`master/customs.json` の各国 `base`/`threshold_base` の判定（B の判断、下記コード側の note 参照）と矛盾しない。確度は社ごとに異なる（下記 confirmed 参照）ため、全体の tier は最も弱い ZenMarket/FROM JAPAN の間接的根拠に合わせて B_inferred とする",
+          "note": "2026-09-12、この会話の外のブラウザ環境（我々の環境からは到達できない faq.buyee.jp / zenmarket.jp のヘルプに到達できた）による追加調査で、Neokyo に加えて Buyee / FROM JAPAN / ZenMarket の3社が判明。残るは Jauce のみ。Buyee・FROM JAPAN・Neokyo は商品代のみ。**ZenMarket は商品代＋国際送料を請求書に記載する**（他社と異なる）。ただし ZenMarket の請求書は Item Information（商品ごとの単価・小計）と Freight（送料）を別項目として列挙しており、単一の合算額として書いているわけではない——`master/customs.json` の各国 `base`/`threshold_base` の判定（B の判断、下記コード側の note 参照）と矛盾しない。確度は社ごとに異なる（下記 confirmed 参照）ため、全体の tier は最も弱い ZenMarket/FROM JAPAN の間接的根拠に合わせて B_inferred とする。**2026-09-12 追加: この個社別調査（企業がCN22に何を書くか）とは別に、法制度側の答え（`legal_basis` 参照）が別途確立した。企業側の実務がB_inferredのままでも、法律上の課税ベースは各国法（buying commission除外）で定まる**",
           "confirmed": [
             {
               "company": "neokyo",
