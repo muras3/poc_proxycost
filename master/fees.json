@@ -173,9 +173,18 @@
       "rule": {
         "type": "per_day_per_parcel_by_weight",
         "bands": [
-          { "max_g": 10000, "amount": 100 },
-          { "max_g": 20000, "amount": 200 },
-          { "max_g": null, "amount": 300 }
+          {
+            "max_g": 10000,
+            "amount": 100
+          },
+          {
+            "max_g": 20000,
+            "amount": 200
+          },
+          {
+            "max_g": null,
+            "amount": 300
+          }
         ],
         "currency": "JPY",
         "after_days": 30
@@ -264,7 +273,58 @@
       "source": "https://zenmarket.jp/en/payment.aspx",
       "checked_on": "2026-09-07",
       "quote": "Deposit fee is 3.5% of the total transaction amount, not of the amount you wish to deposit.",
-      "note": "fees ページは「from 1%」。方法別の表は profile/addfunds.aspx（要ログイン）で未取得"
+      "note": "fees ページは「from 1%」。方法別の表は profile/addfunds.aspx（要ログイン）で未取得。2026-09-12 payment-fee-rates 調査で再訪を試みたが、この環境からは https://zenmarket.jp/en/payment.aspx が終始 403 で再取得できなかった（2026-09-07 時点の direct_fetch を上書きしない）。この基本率（3.5%）自体は ZenMarket 自身の一次ページに明記された公表値であり、現在コードが使っている 3.5% とたまたま一致している——ただし ZenMarket の公表文は方法非依存の基本率（'from 1%' の内訳は要ログインで未確認）であって、コード側の 3.5% は台湾の実請求からの逆算値なので、両者が一致する理由（同じ支払方法だったのか偶然か）は不明のまま。詳細は docs/audit/payment-fees-2026-09-12.md"
+    },
+    {
+      "id": "F07",
+      "company": "buyee",
+      "name": "入金・決済手数料（方法別、非公表）",
+      "stage": "purchase",
+      "rule": {
+        "type": "not_included"
+      },
+      "mandatory": true,
+      "tier": "C_unknown",
+      "amount_tier": "C_unknown",
+      "confidence": "direct_fetch",
+      "source": "https://buyee.jp/helpcenter/guide/payment?lang=en ; https://buyee.jp/helpcenter/guide/fees?lang=en",
+      "checked_on": "2026-09-12",
+      "quote": "The settlement currency depends on the issuing country of the credit card and the registration country of PayPal. Alipay will be settled in RMB.",
+      "note": "Payment Methods ページ（PayPal/Credit Card/Alipay/Buyee Wallet/FPX/iDEAL|Wero/Przelewy24）と Fees ページのどちらにも、支払方法別のパーセンテージや固定額の手数料は一切記載がない。書かれているのは決済通貨の決まり方（カード発行国／PayPal登録国／Alipayは人民元）と、方法によらない一律の Purchase fee（¥500/order、F06/F12 相当、本行の対象外）だけ。したがって Buyee については『支払方法別の入金・決済手数料』は非公表と確認できた（推測ではなく、2ページとも direct_fetch で確認）。3.5% との整合／矛盾は判定不能（比較対象となる公表値が無い）"
+    },
+    {
+      "id": "F07",
+      "company": "neokyo",
+      "name": "入金・決済手数料（方法別、非公表・処理会社任せ）",
+      "stage": "purchase",
+      "rule": {
+        "type": "not_included"
+      },
+      "mandatory": true,
+      "tier": "C_unknown",
+      "amount_tier": "C_unknown",
+      "confidence": "direct_fetch",
+      "source": "https://neokyo.com/en/wallet-introduction",
+      "checked_on": "2026-09-12",
+      "quote": "Note : the above-mentioned payment providers collect their own transaction fee at checkout.",
+      "note": "Neokyo は Wallet（PayPal 経由）／Stripe（クレジットカード）／Wise の3方式を挙げるが、手数料は『決済プロバイダ自身が徴収する』と明記するのみで、Neokyo 自身は率も固定額も一切公表していない。同ページには参考として『a single Paypal 40 yen transaction fee』という言及があるが、これは Neokyo の入金を1回にまとめることで PayPal 側の手数料回数を減らせるという文脈の例示であり、Neokyo が定めた料率ではない（PayPal 自身の料率として引用されているだけで、金額の一次情報としては採用しない）。3.5% との整合／矛盾は判定不能（比較対象となる公表値が無い）"
+    },
+    {
+      "id": "F07",
+      "company": "fromjapan",
+      "name": "入金・決済手数料（方法別、この環境では未取得）",
+      "stage": "purchase",
+      "rule": {
+        "type": "not_included"
+      },
+      "mandatory": true,
+      "tier": "C_unknown",
+      "amount_tier": "C_unknown",
+      "confidence": null,
+      "source": "https://www.fromjapan.co.jp/japan/en/help/payment/ ; https://www.fromjapan.co.jp/japan/en/help/fee/ ; http://fjlabo.fromjapan.co.jp/introduction/en/index.html (すべて2026-09-12にこの環境から403で本文未取得)",
+      "checked_on": "2026-09-12",
+      "quote": null,
+      "note": "FROM JAPAN の該当ページ（https://www.fromjapan.co.jp/japan/en/help/payment/ 、https://www.fromjapan.co.jp/japan/en/help/fee/ 、レガシーの http://fjlabo.fromjapan.co.jp/introduction/en/index.html）はいずれもこの環境から終始 403（AWS WAF の CAPTCHA/チャレンジスクリプトが応答に含まれる）。curl はヘッダを整えても本文が空の JS SPA シェルしか返らず（Vue.js のチャンクのみ）、WebFetch も同じ URL 群に 403。ウェブ検索のスニペットには『credit card, PayPal or Alipay』『Payment processing fee (within Japan): Free of charge』『service fee 500 yen per item』という言及があるが、いずれも検索エンジンの要約経由でページ本文の逐語引用ではないため confidence を search_snippet_no_verbatim_quote 未満（このマスタでは null 表記）とし、金額として採用しない。支払方法別の入金・決済手数料は『非公表と確認できた』ではなく『この環境からは検証できなかった』という、Buyee/Neokyoとは異なる第三の状態として区別する。3.5% との整合／矛盾は判定不能"
     },
     {
       "id": "F09",
@@ -1926,7 +1986,11 @@
             }
           ],
           "unresolved": [
-            { "company": "jauce", "status": "not_found_on_public_pages_searched", "note": "2026-09-12 追加調査でも不明のまま。https://www.jauce.com/help/knowledgebase.php?article=36 に『we will record the actual values of your items on invoices and describe them accurately』とあるのみで、手数料・送料を含むかどうかへの言及が無い。加えてこの1件は WebFetch（要約経由）でのみ取得できており、他社（direct_fetch）より逐語性の保証が低い" }
+            {
+              "company": "jauce",
+              "status": "not_found_on_public_pages_searched",
+              "note": "2026-09-12 追加調査でも不明のまま。https://www.jauce.com/help/knowledgebase.php?article=36 に『we will record the actual values of your items on invoices and describe them accurately』とあるのみで、手数料・送料を含むかどうかへの言及が無い。加えてこの1件は WebFetch（要約経由）でのみ取得できており、他社（direct_fetch）より逐語性の保証が低い"
+            }
           ]
         },
         "F39b": {
@@ -1984,15 +2048,27 @@
           "tier": "C_unknown",
           "note": "2026-09-12 の追加調査（faq.buyee.jp / zenmarket.jp に到達できた外部のブラウザ環境による）でも5社とも未取得のまま。『公開ページを探したが見当たらなかった』であり『存在しない』と断定していない。ZenMarket に近接する記述が1件見つかったが、按分方法そのものの明言ではない（下記 note 参照）。各社1〜3ページしか見ていない（Buyee: FAQ記事1本／Neokyo: FAQ記事2本／ZenMarket: FAQ一覧1本＋blog1本＋shipping.aspx／Jauce: 利用規約1本＋knowledgebase1本／FROM JAPAN: ヘルプ3本）。`docs/O3-PLAN.md`（アカウント作成〜明細画面）に委ねる現状の位置づけは維持する",
           "unresolved": [
-            { "company": "buyee", "status": "not_found_on_public_pages_searched" },
-            { "company": "neokyo", "status": "not_found_on_public_pages_searched" },
+            {
+              "company": "buyee",
+              "status": "not_found_on_public_pages_searched"
+            },
+            {
+              "company": "neokyo",
+              "status": "not_found_on_public_pages_searched"
+            },
             {
               "company": "zenmarket",
               "status": "not_found_on_public_pages_searched",
               "note": "按分方法の明言は無いが、近接する記述が1件ある。https://zenmarket.jp/en/shipping.aspx『Split items in two or more parcels ... Each parcel will be treated as a separate one ... Example ... A and C are placed into parcel #1 and B into parcel #2.』は、複数個口になった場合に商品を物理的に振り分ける例を示しており、全額を各荷物に重複記載するのではないことを示唆する。ただし各個口にいくらと申告するか（按分の計算式）そのものは述べていないため、C_unknown のまま据え置く。同ページには豪州向けの注記もある: 『If multiple parcels addressed to the same recipient arrive in Australia on the same plane, and their total price exceeds 1,000 AUD, they may be treated as a single parcel.』（F39c そのものの答えではないが関連情報として残す）"
             },
-            { "company": "jauce", "status": "not_found_on_public_pages_searched" },
-            { "company": "fromjapan", "status": "not_found_on_public_pages_searched" }
+            {
+              "company": "jauce",
+              "status": "not_found_on_public_pages_searched"
+            },
+            {
+              "company": "fromjapan",
+              "status": "not_found_on_public_pages_searched"
+            }
           ]
         }
       }
@@ -2114,6 +2190,56 @@
       "value": "total",
       "basis": "EU VAT 指令の一般規則「the invoiced price, including taxes, duties, levies and charges (excluding VAT itself), and incidental expenses such as commission, packing, transport and insurance costs charged by the supplier」。IOSS では代行が supplier なので代行の請求分は全部入る。**€150 / £135 の閾値判定（intrinsic value＝商品代のみ）とは別物。**最初これを混同して `declared` で置き、ZenMarket の税額が他社の約半分に出ていた（DE で ¥2,850 対 ¥6,199）",
       "open": "€3 の定額関税が課税ベースに入るかは未確定。指令の文言は duties を含むが、代行の請求書を持っていないので入れていない"
+    }
+  },
+  "conclusions": {
+    "F07_payment_fee_publication_survey_2026_09_12": {
+      "text": "5社中『支払方法別の入金・決済手数料』を自社ページで公表しているのは Jauce（¥40+3.9%、方法によらず一律と明記）のみ。ZenMarket は方法非依存の基本率（3.5%、payment.aspx に明記）と『from 1%』（fees.aspx、方法別の内訳は要ログインで未確認）を公表しているが、方法別の表そのものは今回も取得できなかった。Buyee は Payment Methods ページ・Fees ページのどちらにも方法別のパーセンテージ／固定額が無く、非公表と確認できた（direct_fetch）。Neokyo は『決済プロバイダ自身が手数料を徴収する』と明記し、Neokyo 自身は率を持たない（自社の手数料としては非公表、と積極的に書かれている）。FROM JAPAN は該当ページが本セッションの環境から終始 403（AWS WAF）で、非公表なのか公表されているが読めていないだけなのか判定できなかった——これは Buyee/Neokyo の『確認できた非公表』とは別の『未検証』という第三の状態。",
+      "per_company": {
+        "jauce": "publishes_method_independent",
+        "zenmarket": "publishes_base_rate_method_table_unreached",
+        "buyee": "confirmed_not_published",
+        "neokyo": "confirmed_not_published_processor_pass_through",
+        "fromjapan": "unverified_page_blocked"
+      }
+    },
+    "F07_contradiction_check_against_current_3_5_percent_2026_09_12": {
+      "text": "現在コードが使っている 3.5%（支払方法不明の逆算値）と、各社の一次情報を突き合わせた結果: (1) Jauce の公表値 ¥40+3.9% は 3.5% と矛盾する（3.9% は 3.5% より常に高く、¥40 の固定分がさらに上乗せされる。ただし Jauce は元々別の rule で登録済みなので、この矛盾は本タスク以前から fees.json 上は正しく表現されていた）。(2) ZenMarket の公表基本率は 3.5% そのもの（payment.aspx に明記）で、コードの逆算値と数値が一致する——ただし一致した理由（実際にこの基本料率が使われる支払方法だったのか、単なる偶然か）は追跡できていない。方法別の内訳（'from 1%'）は未確認のため、カード決済に限定した場合に 3.5% のままでよいかは依然として未確定。(3) Buyee・Neokyo・FROM JAPAN は比較対象となる公表値が無い／得られなかったため、3.5% との整合・矛盾いずれも判定不能。**もっとも重要な事実**: 3.5% を『非公表3社にも一律適用している』とすれば、その3社について矛盾しているかどうか自体を誰も検証できていない、という状態が今回はっきりした。",
+      "supporting_rows": [
+        "F07/jauce",
+        "F07/zenmarket",
+        "F07/buyee",
+        "F07/neokyo",
+        "F07/fromjapan"
+      ]
+    },
+    "F07_per_payment_vs_per_order_2026_09_12": {
+      "text": "コードは F07 を注文につき1回（stage: purchase）だけ課金する前提になっている。一次情報で二段階（購入時＋後の送料支払い時）の課金構造が明示されていたのは Buyee のみ——Payment Methods ページが『Second Payment stage (Domestic and International Shipping, and other Fees)』を、初回の課金（落札・注文成立時）とは別に明示しているが、この Second Payment に対して入金・決済手数料（%や固定額）が別途かかるとは書かれていない。書かれているのは「二段階で請求される」という支払いタイミングの事実だけで、F07 相当の料率が2回発生するとは一次情報からは読み取れなかった。Jauce・ZenMarket は自社の公表文で入金手数料を『1回の入金につき』の形で説明しており（Jauce: per deposit、ZenMarket: per transaction）、二重課金を示唆する記述は見つからなかった。Neokyo は Order Payment（商品ごと）と Shipment Payment（荷物ごと）を別建てで課金する構造を持つが、これは F07（入金・決済手数料）ではなく F02 相当の商品/送料の請求構造であり、決済手数料自体が2回取られるという記述ではない。したがって、現時点の一次情報からは『F07 は方法によらずどの社も基本的に1回課金』という現行実装の前提を覆す証拠は見つからなかったが、Buyee の二段階請求構造だけは今後の要確認事項として残す。"
+    },
+    "F07_no_disclosure_default_working_treatment": {
+      "treatment": "自社ページで方法別の入金・決済手数料を公表していない会社（Buyee・Neokyo・FROM JAPAN、いずれも今回の調査時点）については、当面は現行の 3.5%（支払方法不明の逆算値）を『一般的な相場に基づく暫定値』として使い続けてよい、というのがオーナーの判断。ただし『各社が公表していないから 3.5% を機械的に流用する』のではなく、『非公表の場合に限り、一般的な相場を暫定値として置くことを許容する』という条件付きの判断であることを明示する。",
+      "grounds": [
+        {
+          "point": "誤差の絶対額が小さい",
+          "strength": "強い",
+          "detail": "F07 は総額に対して数%の費目であり、宅配業者の通関立替手数料（F39 系、案件によっては数千円〜数万円）や申告価格（客観的な課税ベースの取り違え）のように、間違えると総額の順位そのものを動かすほどの絶対額にはなりにくい。基準ケースの1位2位差（¥650、docs/FEE-ITEMS.md）に対し、3.5%と実際の率（1%〜4%程度と推測される）の差は多くの注文で数十円〜数百円に収まる。"
+        },
+        {
+          "point": "上下双方向に誤差が閉じている",
+          "strength": "中程度",
+          "detail": "今回確認できた公表値（Jauce 3.9%+¥40、ZenMarket 3.5%基本）は、3.5%の前後に分布しており、系統的に一方向（常に過小 or 常に過大）に外れているわけではない。申告価格のように『代行側の実務が一貫して過大申告になる』といった片側に偏った誤差とは性質が異なる。"
+        },
+        {
+          "point": "宣言価格（申告価格）の扱いと非対称",
+          "strength": "強い（対比としての根拠）",
+          "detail": "オーナーの立場は『宣言価格の問題には一般相場を使わない』——これは申告価格が関税・VATという、間違えると法的リスクや高額な追徴につながる費目だから。F07 はその対極にあり、代行会社の内部手数料に過ぎず、法的リスクも大きな金額変動も伴わない。この非対称性が「F07 だけは一般相場を認める」根拠になっている。"
+        }
+      ],
+      "counter_considerations": [
+        "『非公表』の中には性質の異なる3社が混ざっている——Buyee/Neokyoは『確認できた非公表』だが、FROM JAPANは『この環境からは検証できなかった』だけで、実際には公表されている可能性が残る。将来ブラウザ操作を持つ環境から再訪すれば FROM JAPAN の実際の値が見つかり、3.5%と大きく異なる可能性は排除できない。",
+        "ZenMarket は基本率が 3.5% と一致する一方、方法別の内訳（'from 1%'）を見る限り、カード決済の実際の率は 3.5% よりかなり低い可能性がある（'1%から'という表現は、少なくとも一部の方法で 1%台があることを示唆する）。オーナー方針の『カード前提』に厳密に従うなら、ZenMarket について 3.5% を使い続けることは過大請求側に倒れている可能性がある。",
+        "Jauce は方法によらず 3.9%+¥40 と判明しており、これは『非公表だから一般相場を使う』対象ではなく『公表されているのに一般相場（3.5%）を使ってしまっている』ケースに当たる——もし現行コードが Jauce にも一律 3.5% を適用しているなら、これは推測の話ではなく実際の公表値との差し替えが必要な既知の不整合として T-F9 に残すべき。"
+      ]
     }
   }
 }
