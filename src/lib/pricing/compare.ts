@@ -258,29 +258,48 @@ function provincialTaxLine(
     'estimate', CA_POPULATION_SOURCE_URL);
 }
 
+/** 個口1つぶんの課税ベース（`taxLines` に渡す配列の要素）。 */
+export interface ParcelTaxBasis {
+  /** その個口に実際に入っている商品の代金（申告額の根拠。均等割ではない）。 */
+  itemsYen: number;
+  domYen: number;
+  emsYen: number;
+  units: number;
+}
+
 // ── 受取国の税。未取得は null を返し、画面で「—」にする。0 と書かない。
 function taxLines(
   cc: CompareInput['country'],
   province: ProvinceCode | null,
   /** カートそのもの。**品目カテゴリでしか言えないこと**（米国の関税・英国の酒税）に使う。 */
   items: Item[],
-  a: { itemsYen: number; domYen: number; emsYen: number; units: number; parcels: number },
+  /**
+   * **個口ごと**の課税ベース。配列の長さが個口数。各要素の `itemsYen` は
+   * その個口に実際に入っている商品の合計額であって、カート全額の均等割ではない
+   * （docs/DESIGN-BOX-SIZE.md §2⑤、オーナー確定 2026-09-12）。
+   */
+  parcels: ParcelTaxBasis[],
   /**
    * **この社がこの荷物の輸入税を決済時に取るか。**国側の `sellerCollectsBelow`
    * （豪・星）は制度がその国の全社に課すもので、社では割れない。EU/UK の IOSS は
    * 任意なので**社で割れる**——だから国の表では表せず、呼び出し側から渡す。
+   * `null` = そういう任意徴収を確認していない社。
    */
-  companyCollects = false,
+  companyCollectsBelow: number | null = null,
 ): Line[] {
   const c = COUNTRIES[cc];
   const rate = rateFor(c.ccy);
-  const cif = a.itemsYen + a.domYen + a.emsYen;
-  const baseYen = c.base === 'CIF' ? cif : a.itemsYen;
+  const out: Line[] = [];
+  /** 限度の文言。個口が2つ以上あるときは「1個口あたり」だと分かるように書く。 */
+  const per = parcels.length > 1 ? ' per parcel' : '';
+  const totalUnits = parcels.reduce((a, p) => a + p.units, 0);
+  const us = cc === 'US' ? readUsDuty(items) : null;
+
   // **免税限度は intrinsic value（商品代）で測る。** 英国の £135 も EU の €150 も
   // 運賃・保険を除いた値で判定する規定で、送料込みの CIF で測ると £110〜135 の帯を
   // 必ず誤判定する。しかも社ごとに送料が違うので、同じ商品で社ごとに限度をまたぐ／
   // またがないが分かれ、順位が歪む。課税ベース自体は従来どおり CIF / FOB。
-  const declared = a.itemsYen / rate;
+  //
   // **免税限度は「1個口あたり」で測る。**制度がどれもそう書いている:
   //   GB「The £135 limit applies to the value of a **total consignment** that is imported,
   //      not the separate value of individual items」／「**Unless sent individually**, the seller
@@ -291,57 +310,95 @@ function taxLines(
   //   AU  ABF 原文に到達できず。代行の運用文言が「**parcels** containing Low-Value Goods
   //      (1000 AUD or less)」なので、観測できる挙動は個口単位（B推論）
   //
-  // **以前はカート全額で判定していた。**そのせいで、注文ごとに別送する Buyee の既定
-  // （3注文＝3個口）で、1個口 €110 ずつなのに「€150 超」と判定して 4.1% を掛けていた
-  // ——**個口を分けたほうが税は安くなるのに、逆に高く出していた。**
-  //
-  // 個口ごとの額が違う場合は表せない（この計算機は全個口を等額とみなす）。
-  // `clearanceBands` は元から個口で割っていたので、そちらと単位が揃った。
-  const declaredPerParcel = declared / a.parcels;
-  /** 限度の文言。個口が2つ以上あるときは「1個口あたり」だと分かるように書く。 */
-  const per = a.parcels > 1 ? ' per parcel' : '';
-  const out: Line[] = [];
+  // **以前はカート全額を個口数で均等割していた。**申告額そのものが均等割の産物
+  // だったので、注文ごとに別送する Buyee の既定（3注文＝3個口）で、実際には
+  // €130/€90/€90 のような不均等な内訳でも「€103.3 ずつ」という架空の値で判定していた。
+  // **いまは個口ごとに実際に入っている商品の代金（`ParcelTaxBasis.itemsYen`）で判定する**
+  // ——`clearanceBands` は元から個口で割っていたので、そちらと単位が揃った。
+  const perParcel = parcels.map((p) => {
+    const cifP = p.itemsYen + p.domYen + p.emsYen;
+    const baseYenP = c.base === 'CIF' ? cifP : p.itemsYen;
+    const declaredP = p.itemsYen / rate;
+    return { ...p, cifP, baseYenP, declaredP };
+  });
 
-  let dutyYen = 0;
-  if (c.flatDutyPerItem != null && declaredPerParcel <= c.dutyFreeLimit) {
-    dutyYen = c.flatDutyPerItem * a.units * rate;
-    out.push(L('duty', 'Duty', Math.round(dutyYen),
-      `${c.ccy} ${c.flatDutyPerItem} flat × ${plural(a.units, 'item')}`, c.dutyTier, c.sourceUrl));
-  } else if (declaredPerParcel <= c.dutyFreeLimit) {
-    // **限度が無い国（SG）に「限度」の文言を出すな。** `Infinity` を文字列に混ぜると
-    // `under the SGD Infinity threshold` になり、画面に意味不明な単語が出ていた。
-    // 限度が無いのは「際限なく免税」なのではなく、この品目に関税が無いということ。
-    out.push(L('duty', 'Duty', 0,
-      Number.isFinite(c.dutyFreeLimit)
-        ? `under the ${c.ccy} ${c.dutyFreeLimit} threshold${per}`
-        : 'no duty on this category',
-      'fixed', c.sourceUrl));
-  } else if (c.dutyRate != null) {
-    // **カナダだけ base を GST/州税と揃える**（外部レビュー2回目 A-6）。CBSA の
-    // value for duty は関税・GST・州税で共通の1つのベース（D13-3-3/D13-3-4。
-    // 上の GST 分岐の `vatBase` コメント参照）——国際送料は除くが国内送料
-    // （出品者→代行業者の倉庫）は含む。以前は関税だけ `itemsYen` のみで計算して
-    // おり、GST のベース（`itemsYen + domYen + dutyYen`）と食い違っていた。
-    const dutyBaseYen = cc === 'CA' ? a.itemsYen + a.domYen : baseYen;
-    dutyYen = dutyBaseYen * c.dutyRate;
-    // **米国だけは、重量表のカテゴリから HTS を引き直して 12.5% の意味を言える**（T24）。
-    // 12.5% は Section 301 が日本産品に置いた**下限**で、MFN がそれを超える品目
-    // （靴・鞄・衣類）では税率ではない。額は変えない——見出しを1つに決めるのは推測で、
-    // 我々は品目分類を持っていない。**言えるのは「下限だ」と「どの見出しを引いたか」だけ。**
-    const us = cc === 'US' ? readUsDuty(items) : null;
-    out.push(L('duty', 'Duty', Math.round(dutyYen),
-      `${(c.dutyRate * 100).toFixed(1)}% of the item price`
-      + (us ? ` — ${us.noteEn}` : ''),
-      // 下限でしかないと分かっている数字を確度そのままで描かない。
-      // **我々の仮定**なので estimate（画面では `~` と琥珀）に落とす。
-      us?.knownFloor ? 'estimate' : c.dutyTier,
-      us ? US_HTS_SOURCE_URL : (c.dutyRateSourceUrl ?? c.sourceUrl)));
-  } else {
+  // ── 関税。国の関税の「仕組み」（flatDutyPerItem の有無・dutyRate の有無）は
+  // 個口によらず1つだが、**免税限度をまたぐかどうかは個口ごとに違いうる**——
+  // だから個口ごとに判定し、額は個口ごとの結果を単純合計する。
+  type DutyKind = 'flat' | 'free' | 'rate' | 'unknown';
+  const dutyPerParcel = perParcel.map((p) => {
+    if (c.flatDutyPerItem != null && p.declaredP <= c.dutyFreeLimit) {
+      return { kind: 'flat' as DutyKind, yen: c.flatDutyPerItem * p.units * rate };
+    }
+    if (p.declaredP <= c.dutyFreeLimit) {
+      return { kind: 'free' as DutyKind, yen: 0 };
+    }
+    if (c.dutyRate != null) {
+      // **カナダだけ base を GST/州税と揃える**（外部レビュー2回目 A-6）。CBSA の
+      // value for duty は関税・GST・州税で共通の1つのベース（D13-3-3/D13-3-4。
+      // 下の GST 分岐の `vatBase` コメント参照）——国際送料は除くが国内送料
+      // （出品者→代行業者の倉庫）は含む。
+      const dutyBaseYenP = cc === 'CA' ? p.itemsYen + p.domYen : p.baseYenP;
+      return { kind: 'rate' as DutyKind, yen: dutyBaseYenP * c.dutyRate };
+    }
+    return { kind: 'unknown' as DutyKind, yen: null as number | null };
+  });
+  const dutyKinds = new Set(dutyPerParcel.map((d) => d.kind));
+  let dutyYen = 0; // 個口ごとの合計。VAT ベースに使うので、行を作る前に確定する。
+  if (dutyKinds.has('unknown')) {
     // P1-4: 税率が未公表であること自体は国の制度の話で、どの社を使っても同じ。
     // 「輸入側でかかる共通の未知」として scope: 'shared' を付ける。
+    // 一部の個口だけ限度内で無税と分かっていても、額を「一部だけ確定」として
+    // 出すと総額の計算が崩れるので、他の集計と同じく丸ごと未取得として扱う。
     out.push(L('duty', 'Duty', null,
-      `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`, 'none', c.sourceUrl,
-      'shared'));
+      parcels.length > 1
+        ? `over the ${c.ccy} ${c.dutyFreeLimit} threshold on at least one parcel — rate not included`
+        : `over the ${c.ccy} ${c.dutyFreeLimit} threshold — rate not included`,
+      'none', c.sourceUrl, 'shared'));
+  } else {
+    dutyYen = dutyPerParcel.reduce((a, d) => a + (d.yen ?? 0), 0);
+    if (dutyKinds.size === 1) {
+      const kind = dutyPerParcel[0]!.kind;
+      if (kind === 'flat') {
+        out.push(L('duty', 'Duty', Math.round(dutyYen),
+          `${c.ccy} ${c.flatDutyPerItem} flat × ${plural(totalUnits, 'item')}`, c.dutyTier, c.sourceUrl));
+      } else if (kind === 'free') {
+        // **限度が無い国（SG）に「限度」の文言を出すな。** `Infinity` を文字列に混ぜると
+        // `under the SGD Infinity threshold` になり、画面に意味不明な単語が出ていた。
+        // 限度が無いのは「際限なく免税」なのではなく、この品目に関税が無いということ。
+        out.push(L('duty', 'Duty', 0,
+          Number.isFinite(c.dutyFreeLimit)
+            ? `under the ${c.ccy} ${c.dutyFreeLimit} threshold${per}`
+            : 'no duty on this category',
+          'fixed', c.sourceUrl));
+      } else {
+        // **米国だけは、重量表のカテゴリから HTS を引き直して 12.5% の意味を言える**（T24）。
+        // 12.5% は Section 301 が日本産品に置いた**下限**で、MFN がそれを超える品目
+        // （靴・鞄・衣類）では税率ではない。額は変えない——見出しを1つに決めるのは推測で、
+        // 我々は品目分類を持っていない。**言えるのは「下限だ」と「どの見出しを引いたか」だけ。**
+        out.push(L('duty', 'Duty', Math.round(dutyYen),
+          `${(c.dutyRate! * 100).toFixed(1)}% of the item price`
+          + (us ? ` — ${us.noteEn}` : ''),
+          // 下限でしかないと分かっている数字を確度そのままで描かない。
+          // **我々の仮定**なので estimate（画面では `~` と琥珀）に落とす。
+          us?.knownFloor ? 'estimate' : c.dutyTier,
+          us ? US_HTS_SOURCE_URL : (c.dutyRateSourceUrl ?? c.sourceUrl)));
+      }
+    } else {
+      // **個口によって免税限度をまたいだりまたがなかったりする混在ケース。**
+      // 分け方によって関税が発生したりしなかったりする、という §5 の開示文どおりの姿。
+      const freeCount = dutyPerParcel.filter((d) => d.kind !== 'rate').length;
+      const rateCount = dutyPerParcel.filter((d) => d.kind === 'rate').length;
+      const freeNote = dutyKinds.has('flat')
+        ? `${c.ccy} ${c.flatDutyPerItem} flat per item`
+        : 'duty-free';
+      out.push(L('duty', 'Duty', Math.round(dutyYen),
+        `${freeNote} on ${plural(freeCount, 'parcel')} at or under the ${c.ccy} ${c.dutyFreeLimit} threshold;`
+        + ` ${(c.dutyRate! * 100).toFixed(1)}% on the other ${plural(rateCount, 'parcel')}`
+        + (us ? ` — ${us.noteEn}` : ''),
+        us?.knownFloor ? 'estimate' : c.dutyTier,
+        us ? US_HTS_SOURCE_URL : (c.dutyRateSourceUrl ?? c.sourceUrl)));
+    }
   }
 
   const vatLabel = cc === 'US' ? 'Sales tax'
@@ -349,22 +406,13 @@ function taxLines(
   // AU（≤A$1,000）と SG（<S$400）は、**国境ではなく代行が販売時点で徴収する**帯がある。
   // その帯で税関側の行に金額を出すと、代行が取る分と二重に積むことになる。
   // 実際にいくら取られるかは社ごとに違うので、社ごとの行（prepaid-import-tax）が持つ。
-  const sellerCollects = companyCollects
-    || (c.sellerCollectsBelow != null && declaredPerParcel <= c.sellerCollectsBelow);
-  if (c.vatRate == null) {
-    // P1-4: 連邦売上税が無いこと自体は国の制度の話で、どの社を使っても同じ。
-    out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl,
-      'shared'));
-  } else if (sellerCollects) {
-    out.push(L('vat', vatLabel, 0,
-      c.sellerCollectsBelow != null
-        ? `under the ${c.ccy} ${c.sellerCollectsBelow} threshold${per}`
-          + ' — collected at checkout by the service, not at the border'
-        : 'collected at checkout by the service, not at the border',
-      'fixed', c.sourceUrl));
-  } else if (c.vatFreeLimit && declaredPerParcel <= c.vatFreeLimit) {
-    out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold${per}`, 'fixed', c.sourceUrl));
-  } else {
+  type VatKind = 'no-rate' | 'seller-collects' | 'free' | 'rate';
+  const vatPerParcel = perParcel.map((p, i) => {
+    const sellerCollectsP = (companyCollectsBelow != null && p.declaredP <= companyCollectsBelow)
+      || (c.sellerCollectsBelow != null && p.declaredP <= c.sellerCollectsBelow);
+    if (c.vatRate == null) return { kind: 'no-rate' as VatKind, yen: null as number | null };
+    if (sellerCollectsP) return { kind: 'seller-collects' as VatKind, yen: 0 };
+    if (c.vatFreeLimit && p.declaredP <= c.vatFreeLimit) return { kind: 'free' as VatKind, yen: 0 };
     // **カナダの GST ベースは「関税込みの申告額」（duty paid value）で、
     // 国際送料（日本→カナダの運賃）を含まないが、国内送料（出品者→代行業者の
     // 倉庫までの送料）は含む**（外部レビュー⑤-b、コーディネーター指摘で
@@ -381,19 +429,43 @@ function taxLines(
     // the goods ... at the point in time when the goods begin their direct
     // and uninterrupted journey to a specific destination in Canada"）に
     // 当てはめると、代行業者が国際発送する地点＝**日本国内の代行業者の倉庫**が
-    // place of direct shipment になる。`a.domYen`（`domesticFor()`）は
+    // place of direct shipment になる。`p.domYen`（`domesticFor()`）は
     // まさに「出品者から各社へ」の国内送料（note「from each listing」）——
     // 倉庫までの運賃なので para.19 の対象で、課税ベースに含める。
-    // 最初の修正（PR #44 初版）は para.18 しか見ておらず、para.19 を見落として
-    // 国内送料まで一緒に外していた（過剰修正）。
     // FOB の他国（豪・米）は根拠が未確認（豪は `base: "varies_by_collector"` で
     // A$1,000 超の課税ベースを記録していない）なので、**カナダだけ**を分けて直す
     // ——一次情報の無い国のベースを一緒に動かさない。
-    const vatBase = c.base === 'CIF' ? cif + dutyYen
-      : cc === 'CA' ? a.itemsYen + a.domYen + dutyYen
-      : a.itemsYen + a.emsYen;
-    out.push(L('vat', vatLabel, Math.round(vatBase * c.vatRate),
-      `${(c.vatRate * 100).toFixed(0)}%`, 'fixed', c.sourceUrl));
+    const dutyYenP = dutyPerParcel[i]!.yen ?? 0;
+    const vatBaseP = c.base === 'CIF' ? p.cifP + dutyYenP
+      : cc === 'CA' ? p.itemsYen + p.domYen + dutyYenP
+      : p.itemsYen + p.emsYen;
+    return { kind: 'rate' as VatKind, yen: vatBaseP * c.vatRate };
+  });
+  const vatKinds = new Set(vatPerParcel.map((v) => v.kind));
+  if (vatKinds.has('no-rate')) {
+    // P1-4: 連邦売上税が無いこと自体は国の制度の話で、どの社を使っても同じ。
+    out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl,
+      'shared'));
+  } else if (vatKinds.size === 1 && vatKinds.has('seller-collects')) {
+    out.push(L('vat', vatLabel, 0,
+      c.sellerCollectsBelow != null
+        ? `under the ${c.ccy} ${c.sellerCollectsBelow} threshold${per}`
+          + ' — collected at checkout by the service, not at the border'
+        : 'collected at checkout by the service, not at the border',
+      'fixed', c.sourceUrl));
+  } else if (vatKinds.size === 1 && vatKinds.has('free')) {
+    out.push(L('vat', vatLabel, 0, `under the ${c.ccy} ${c.vatFreeLimit} threshold${per}`, 'fixed', c.sourceUrl));
+  } else {
+    const vatYen = vatPerParcel.reduce((a, v) => a + (v.yen ?? 0), 0);
+    const note = vatKinds.size === 1
+      ? `${(c.vatRate! * 100).toFixed(0)}%`
+      // **混在ケース**: 一部の個口は限度内／決済時徴収済みで 0、残りに税率がかかる。
+      // §5 の開示文どおり、分け方次第で合計の税額が変わりうることの表れ。
+      : `${(c.vatRate! * 100).toFixed(0)}% on ${plural(vatPerParcel.filter((v) => v.kind === 'rate').length, 'parcel')}`
+        + `; the other ${plural(vatPerParcel.filter((v) => v.kind !== 'rate').length, 'parcel')} owe none`
+        + (vatKinds.has('free') ? ` (under the ${c.ccy} ${c.vatFreeLimit} threshold)` : '')
+        + (vatKinds.has('seller-collects') ? ' (collected at checkout by the service)' : '');
+    out.push(L('vat', vatLabel, Math.round(vatYen), note, 'fixed', c.sourceUrl));
   }
 
   // **カナダの州税は連邦 GST とは別の行。**合計（HST 13% など）ではなく州の取り分だけを
@@ -404,37 +476,69 @@ function taxLines(
   // CAD 1,988.7 に対する率で一致することでも確認できる（このフィクスチャは
   // 申告額を独立入力として持つだけで、国内送料の内訳を持たないので、
   // 国内送料を含めるかどうかの決め手にはならない——決め手は D13-3-3/D13-3-4）。
-  const caTaxed = c.vatFreeLimit == null || declaredPerParcel > c.vatFreeLimit;
+  // **カナダの州税もカート全体ではなく個口ごとに免税判定する。**GST と同じしきい値・
+  // 同じ理由（consignment 単位）。個口ごとの課税ベース（`itemsYen + domYen + dutyYen`）を、
+  // 課税と分かった個口だけ合算する。
   if (cc === 'CA') {
-    out.push(provincialTaxLine(province, a.itemsYen + a.domYen + dutyYen, caTaxed));
+    let provinceBaseYen = 0;
+    let anyTaxed = false;
+    perParcel.forEach((p, i) => {
+      const taxedP = c.vatFreeLimit == null || p.declaredP > c.vatFreeLimit;
+      if (!taxedP) return;
+      anyTaxed = true;
+      provinceBaseYen += p.itemsYen + p.domYen + (dutyPerParcel[i]!.yen ?? 0);
+    });
+    out.push(provincialTaxLine(province, provinceBaseYen, anyTaxed));
   }
 
   // 通関手数料。**帯は郵便物1個ぶんの内容品価格で選ぶ**（手数料は郵便物ごとに課される）。
   // 帯の 0 は**原文がその帯で 0 と書いている**＝取得できた 0 なので tier はそのまま。
   // 未取得は帯そのものを持たないことで表す（そのときだけ null＝「—」）。
+  // **手数料も個口ごとに帯を引く。**申告額が個口ごとに違えば、帯も個口ごとに違いうる
+  // （例: 高額な個口だけ上の帯に乗り、他の個口は0のまま）。
   const clearanceSrc = c.clearanceSourceUrl ?? c.sourceUrl;
-  const band = c.clearanceBands?.find((b) => declaredPerParcel <= b.upTo);
+  const bandsPerParcel = perParcel.map((p, i) => ({
+    band: c.clearanceBands?.find((b) => p.declaredP <= b.upTo),
+    sellerCollectsP: vatPerParcel[i]!.kind === 'seller-collects',
+  }));
   // **手数料は税の徴収に従属する。**5カ国の原文が同じことを言っている
   // （GB「If there is no duty or tax to pay, you will not be charged a handling fee」／
   //  DE Auslagepauschale ／ FR frais de gestion ／ SG SingPost ／
   //  US IMM 712.11「each item on which customs duty ... is collected」）。
   // 決済時に払い済みなら国境で徴収するものが無く、手数料も立たない。
-  if (sellerCollects && band && band.amount > 0) {
-    out.push(L('clearance', 'Customs clearance fee', 0,
-      'nothing is collected at delivery — the tax was paid at checkout, and the fee is'
-      + ' charged only on parcels the carrier has to collect tax on',
-      c.clearanceTier, clearanceSrc));
-  } else if (!band) {
+  if (bandsPerParcel.some((b) => !b.band)) {
     // P1-4: 帯そのものが無いことは国の制度の話で、どの社を使っても同じ。
     out.push(L('clearance', 'Customs clearance fee', null, 'not included', 'none', c.sourceUrl,
       'shared'));
-  } else if (band.amount === 0) {
-    out.push(L('clearance', 'Customs clearance fee', 0, band.note, c.clearanceTier, clearanceSrc));
   } else {
-    out.push(L('clearance', 'Customs clearance fee',
-      Math.round(band.amount * rateFor(c.clearanceCcy) * a.parcels),
-      `${c.clearanceCcy} ${band.amount} × ${plural(a.parcels, 'parcel')} — ${band.note}`,
-      c.clearanceTier, clearanceSrc));
+    const withBand = bandsPerParcel as { band: NonNullable<typeof bandsPerParcel[0]['band']>; sellerCollectsP: boolean }[];
+    const paidCount = withBand.filter((b) => b.sellerCollectsP && b.band.amount > 0).length;
+    const zeroCount = withBand.filter((b) => !b.sellerCollectsP && b.band.amount === 0).length;
+    const chargedParcels = withBand.filter((b) => !b.sellerCollectsP && b.band.amount > 0);
+    const clearanceYen = chargedParcels.reduce((a, b) => a + b.band.amount, 0) * rateFor(c.clearanceCcy);
+    if (chargedParcels.length === 0) {
+      const note = paidCount > 0
+        ? 'nothing is collected at delivery — the tax was paid at checkout, and the fee is'
+          + ' charged only on parcels the carrier has to collect tax on'
+        : withBand[0]!.band.note;
+      out.push(L('clearance', 'Customs clearance fee', 0, note, c.clearanceTier, clearanceSrc));
+    } else {
+      const sameAmount = chargedParcels.every((b) => b.band.amount === chargedParcels[0]!.band.amount);
+      const notes: string[] = [];
+      if (sameAmount) {
+        // **単一の帯が全課金個口に一律で乗る（最も多いケース）は、以前と同じ書式にする**
+        // ——個口数が1なら以前とバイト同一の文言。
+        notes.push(`${c.clearanceCcy} ${chargedParcels[0]!.band.amount}`
+          + ` × ${plural(chargedParcels.length, 'parcel')} — ${chargedParcels[0]!.band.note}`);
+      } else {
+        // **個口ごとに違う帯にまたがる混在ケース。**申告額が個口ごとに違うので起こりうる。
+        notes.push(chargedParcels.map((b) => `${c.clearanceCcy} ${b.band.amount}`).join(' + '));
+      }
+      if (paidCount > 0) notes.push(`${plural(paidCount, 'parcel')} already paid tax at checkout`);
+      if (zeroCount > 0) notes.push(`${plural(zeroCount, 'parcel')} under the fee-free band`);
+      out.push(L('clearance', 'Customs clearance fee', Math.round(clearanceYen),
+        notes.join('; '), c.clearanceTier, clearanceSrc));
+    }
   }
 
   // **英国の酒税。**gov.uk 原文「If you're sent alcohol or tobacco from outside the UK,
@@ -461,7 +565,7 @@ function taxLines(
   // 閾値は郵便物1個の内容品価格なので、個口に割ってから測る。割り切れない分は
   // **費目を出す側に倒す**（持っている情報を隠すより、余分に開示するほうが安全）。
   const dp = c.dutyPrepayment;
-  if (dp && declaredPerParcel <= dp.upTo) {
+  if (dp && perParcel.some((p) => p.declaredP <= dp.upTo)) {
     // P1-4: Zonos の前払い利用料は日本郵便が米国宛に課す条件で、どの社を使っても
     // 同じようにかかる——輸入側の話。scope: 'shared'。
     out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl, 'shared'));
@@ -804,6 +908,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 
   const split = variant === 'default' && svc.parcelDefault === 'per-order';
   const parcels = split ? orders : 1;
+  // **個口ごとに実際に入っている商品の添字。**注文ごとの分割は店舗単位で決まっており
+  // （`grouping.groups`）、1個口に何が入るかは既に分かっている——均等割りにする理由が無い
+  // （docs/DESIGN-BOX-SIZE.md §2⑤）。個口を分けない社は全点が1個口に入る。
+  const parcelItemIndices: number[][] = split
+    ? grouping.groups
+    : [items.map((_, idx) => idx)];
   // 個口も注文の単位で割る。同一店舗の2点が1注文なら、届くのも1個口
   // （Buyee 原文「we process each order respectively … separate domestic shipment fees
   //  for each order」＝**注文ごと**であって点ごとではない）。
@@ -1081,19 +1191,39 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const shippingYen = lines
     .filter((l) => l.key === 'domestic-shipping' || l.key === 'packing' || l.key === 'intl-shipping')
     .reduce((acc, l) => acc + (l.amount ?? 0), 0);
+  // **個口ごとの国際送料。**`priceAll`/`priceCourier` は総額しか返さないので、同じ式を
+  // 個口の重量（`parcelGross`）ごとに再計算する。総額が未取得（`shipYen == null`）なら
+  // 全個口 0（課税ベースの取れる範囲で計算する。他と同じ「未取得は 0 として畳む」扱い）。
+  const shipPerParcelYen: number[] = parcelGross.map((g) => {
+    if (shipYen == null) return 0;
+    if (isCourier) {
+      return courierRate ? (courierPriceFor(courierRate, ctx.cc, g, parcelDims)?.low ?? 0) : 0;
+    }
+    if (!rate) return 0;
+    const each2 = postageFor(method as PostalMethod, ctx.cc, g);
+    return each2 ? each2.yen + markupYen(rate, ctx.cc, g) : 0;
+  });
+  // **個口ごとの課税ベース。**`parcelItemIndices` が実際にその個口に入っている商品の
+  // 添字（均等割りではない、docs/DESIGN-BOX-SIZE.md §2⑤）。
+  const parcelTaxBases: ParcelTaxBasis[] = parcelItemIndices.map((idxs, i) => ({
+    itemsYen: idxs.reduce((a, idx) => a + items[idx]!.priceYen * items[idx]!.qty, 0),
+    domYen: svc.domesticIncluded ? 0 : idxs.reduce((a, idx) => a + dom[idx]!.yen, 0),
+    emsYen: shipPerParcelYen[i] ?? 0,
+    units: idxs.reduce((a, idx) => a + items[idx]!.qty, 0),
+  }));
   // **その社がこの国で自分で税を取るか。**閾値は intrinsic value（商品代）で測る
-  // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declared` と同じ。
-  const declaredForCc = itemsYen / rateFor(COUNTRIES[ctx.cc].ccy);
+  // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declaredP` と同じ。
   const ownPrepaid = svc.prepaidImportTax?.[ctx.cc];
-  const companyCollects = ownPrepaid?.collectsBelow != null
-    && declaredForCc / parcels <= ownPrepaid.collectsBelow;
-  lines.push(...taxLines(ctx.cc, ctx.province, items,
-    { itemsYen, domYen: domCharged, emsYen: shipYen ?? 0, units, parcels }, companyCollects));
+  lines.push(...taxLines(ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null));
+  // **前徴収の判定も個口ごと**。カート全体で一番厳しい（＝一番申告額の大きい）個口を
+  // 代表に使う——1つでも徴収帯を超える個口があれば、その社はその個口では取らない
+  // ため、`prepaidImportTaxLine` の判定は「最も高い個口」を渡すのが安全側
+  // （小さい個口だけ見て「集める」と誤判定しない）。
+  const worstParcelDeclared = Math.max(
+    ...parcelTaxBases.map((p) => p.itemsYen / rateFor(COUNTRIES[ctx.cc].ccy)));
   const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
     itemsYen,
-    // **個口あたり**。閾値は consignment 単位なので、カート全額で渡すと
-    // 個口を分けた行で前徴収の帯を誤判定する。
-    declared: itemsYen / rateFor(COUNTRIES[ctx.cc].ccy) / parcels,
+    declared: worstParcelDeclared,
     preTaxYen,
     shippingYen,
     // その国の課税ベース（CIF）。徴収者が確認できない社の推定に使う。
