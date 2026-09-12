@@ -67,6 +67,45 @@
   DTXの独語通称だったことを一次資料で確認できた。取り違えではなく、**二次情報由来の金額が
   一次資料と食い違っていた**、という別種の問題だった。
 
+## 追記（2026-09-12、マージ後）── FedExの並行成果と合わせて見えた2点
+
+`main` に並行着地した FedEx 7か国分（#98, `docs/audit/f34-fedex-seven-countries-2026-09-12.md`）と
+本ブランチを `git merge` した際に気づいたので、コーディネーターの指示どおりここに書き足す。
+**以下はどちらも観察の記録であり、スキーマ変更や実装はしていない。決定はオーナーに委ねる。**
+
+### per-shipment vs per-parcel は、もはや「未確認」で片付けられる状態ではない
+
+上の表で書いたとおり、DHL側は7か国中**DEだけ** per_shipment を一次資料で確認できた
+（"pro abgefertigter Sendung"）。マージして分かったのは、**FedEx SG行が2件目のper-shipment候補
+になっている**こと（`unit: "per_shipment"`, `unit_tier: "search_snippet_no_verbatim_quote"`、
+"5% of GST amount ... per shipment" という検索結果要約に基づく）。DHL・FedExという別々の2社が、
+別々の情報源から、同じ「per-shipment」という軸に行き着いている。
+
+これは `docs/audit/f34-clearance-fee-by-route-2026-09-12.md` が指摘したスキーマ・ギャップ
+（「per-parcel か per-shipment かを表現する専用フィールドが `rule.type` に無い」）を補強する材料になる
+と考える。**箱分割（#85）は個数を動かす変更なので、per-parcel の費目は分割で増え、per-shipment の
+費目は増えない。** 今は各行に非構造化の `per_parcel_or_shipment` / `unit` フィールドを自己流に
+足してあるだけで、コード側からは読めない。**この2件（DE-DHLの確認済みper_shipmentと、SG-FedExの
+未確認per_shipment候補）を見て、`rule.type` に per-shipment 用の型を追加するかどうかは、
+#97 が既に記録した既知のギャップとしてオーナーの判断に委ねる。** 本PRではフィールドの追加や
+実装は行っていない。
+
+### 「税ゼロ時に課すか」がDHL7か国すべてC_unknownであること自体が結果
+
+これは「埋め残し」ではなく、**確認した上での不在（counted_absence寄りの結果）**として明記する。
+7か国分のDHL Express Service & Rate Guide 2026（PDF、各10ページ程度）全文を
+`duty tax|disbursement`および`de minimis|no duty|duty-free|zero`でgrepし、該当箇所を人力でも
+確認したが、**免除規定の記述はどの国のガイドにも一切無かった。** 対して、`docs/PRINCIPLES.md`
+原則2・および本タスクが前提とした郵便事業者側（USPS/Royal Mail/Deutsche Post/SingPost/ABF）は
+**5か国中5か国**が「税が発生しない場合は課さない」という条件を一次資料に明記している
+（`docs/audit/f34-clearance-fee-by-route-2026-09-12.md`表参照）。
+
+**この非対称性は、このカリキュレータが最も使われる「安いカート」で効く。** 免税帯に収まる注文で
+DHL Expressの通関手数料が「ゼロ」になるのか「最低額（例: US $17.50, DE €15.00+MwSt）が満額課される」
+のかは、総額計算の結論を左右する。今回は7か国×2社（DTX側だけでも7件）の一次資料を確認した上で
+「書かれていない」と分かったのであり、**探し方が足りなかったのではなく、DHL自身が公表する
+一般向け料金表にはこの判断基準が載っていない、という事実**として扱うべきだと考える。
+
 ## 埋められなかったセルと試したこと
 
 - **7か国×「税ゼロ時に課すか」**: 7つのRate Guide PDF全文を`duty tax|disbursement`および

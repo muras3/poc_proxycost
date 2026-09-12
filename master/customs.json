@@ -324,6 +324,36 @@
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
           "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+        },
+        {
+          "route": "courier_brokerage",
+          "carrier": "FedEx",
+          "rule": {
+            "type": "unknown"
+          },
+          "tier": "C_unknown",
+          "schema_gap": true,
+          "schema_gap_note": "FedEx UK の Disbursement Fee は現行 clearance スキーマ（fixed_per_parcel / banded_by_value / greater_of 等）で表現できない3段の帯構造で、各帯の計算式自体が帯ごとに異なる（帯1: 税額の30%・下限あり／帯2: 定額／帯3: 税額の一定率のみ）。既存の banded_by_value は『帯の境界値→出力額』の単純対応しか持てず、帯ごとに異なる計算式（rate_with_min / flat / rate_only）を差し込めない。無理に既存の型に押し込めず、必要な形を raw_findings に記録して停止する。",
+          "raw_findings": {
+            "structure": "税額(duty+tax)の帯で計算式が変わる3段構造",
+            "bands": [
+              {"duty_tax_gbp_max": 43, "formula": "rate_with_min", "rate": 0.30, "min_gbp": 10.50},
+              {"duty_tax_gbp_max": 524, "formula": "flat", "amount_gbp": 12.90},
+              {"duty_tax_gbp_max": null, "formula": "rate_only", "rate": 0.025}
+            ],
+            "effective_from": "2026-01-12",
+            "unit": "課金単位（per parcel/per shipment）は情報源に記述なし。C_unknown",
+            "zero_duty_condition": "情報源に記述なし。C_unknown"
+          },
+          "amount_tier": "search_snippet_no_verbatim_quote",
+          "source": "https://www.fedex.com/en-gb/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "curl -L と WebFetch のいずれでも終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（『FedEx | System Down』インシデントページ、1771バイト）。archive.org の availability API はこのURLのスナップショット（2026-05-15）の存在は返したが、web.archive.org 自体への到達がこの環境のegressポリシーで `Blocked by egress policy` として塞がれており本文を取得できなかった。",
+          "corroborating_search_snippets": [
+            "WebSearch要約: 'FedEx UK's Disbursement Fee structure effective 12 January 2026 is tiered based on duty/tax amounts: if duty/tax is £0.01–£43.00, the fee is 30% of the duty/tax with a minimum of £10.50; if £43.00–£524.00, the fee is £12.90; if £524.00 or more, the fee is 2.5% of the duty/tax.'（検索結果の要約文であり、FedEx一次ページの逐語引用ではない）"
+          ],
+          "verbatim_quote_available": false,
+          "note": "宛先国（英国）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意、DHL Duty Tax Paid/Processing と同型のリスク）。"
         }
       ],
       "conditional": {
@@ -463,6 +493,36 @@
             "note": "出発国/第三国のDHLアカウントに請求される費目。宛先国clearanceには該当しないため本行のruleには含めない。"
           },
           "effective_from": "DHL Express Service & Rate Guide 2026 / Auftragsbedingungen（発効日の明記なし）"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx（Aufwendungspauschale/Disbursement Fee）",
+          "rule": {
+            "type": "unknown"
+          },
+          "tier": "C_unknown",
+          "schema_gap": true,
+          "schema_gap_note": "GB FedEx 行と同型の3段帯構造（DE も帯ごとに計算式が異なる: 帯1=下限付き率、帯2=定額、帯3=率のみ）。GBの schema_gap_note と同じ理由で既存の clearance スキーマに押し込めない。GB/DEで同じ3段構造が確認できたのは、FedExが国別ではなく地域横断で同じ計算方式を使っている可能性を示す発見（下記 note 参照）。",
+          "raw_findings": {
+            "structure": "輸入税(Einfuhrabgaben)の帯で計算式が変わる3段構造",
+            "bands": [
+              {"duty_eur_max": 50, "formula": "rate_with_min", "rate": 0.30, "min_eur_net": 5, "min_eur_gross": 5.95},
+              {"duty_eur_max": 600, "formula": "flat", "amount_eur": 15},
+              {"duty_eur_max": null, "formula": "rate_only", "rate": 0.025}
+            ],
+            "unit": "情報源に記述なし。C_unknown",
+            "zero_duty_condition": "情報源に記述なし。C_unknown"
+          },
+          "amount_tier": "search_snippet_no_verbatim_quote",
+          "source": "https://www.fedex.com/de-de/ancillary-clearance-service.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "curl -L で終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（GB と同一の『FedEx | System Down』1771バイト）。archive.org availability API はこのURLのスナップショットを返さなかった（`archived_snapshots: {}`）。",
+          "corroborating_search_snippets": [
+            "WebSearch要約（fedex.comの検索結果を要約したもので逐語引用ではない）: 'Import duties up to 50 euros: 30% of import duties as fees, minimum 5 euros net (5.95 euros gross); Import duties 50 to 600 euros: 15 euros fees; Import duties over 600 euros: 2.5% of import duties as fees.'",
+            "別のWebSearch要約（ShipScience、汎欧州の別説と食い違う）: 'Europe: Flat €15.00 minimum, 2.5% of duty & tax for all countries'（適用開始日・国範囲は特定できず）"
+          ],
+          "verbatim_quote_available": false,
+          "note": "**矛盾の記録**: 上記2つの二次情報は同じ『€15』という数字を含むが位置づけが違う——1つは『600ユーロまでの帯の定額15ユーロ』、もう1つは『欧州共通の最低額15ユーロ（2.5%との greater_of）』。帯構造そのものが二次情報でしか確認できていないため、どちらが正しいか、あるいは両方とも古い/新しい料率の混在かは一次情報なしに判定できない。GB の帯構造（30%/下限10.50・定額12.90・2.5%）と DE の帯構造（30%/下限5・定額15・2.5%）はしきい値と通貨単位こそ違うが形が同一で、FedExが『下限付き率→定額→率のみ』という共通テンプレートを国ごとに数値だけ変えて適用している可能性を示唆する——次にUPS/DHLの同型行を集める際にも同じテンプレートを想定して検索するとよい。宛先国（ドイツ）の受取人に課される費目として扱う。"
         }
       ],
       "clearance_fee_vat": {
@@ -618,6 +678,30 @@
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
           "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx（frais d'avance / avance de douane）",
+          "rule": {
+            "type": "greater_of",
+            "flat": 18,
+            "rate": 0.025,
+            "base": "duty_and_tax",
+            "currency": "EUR",
+            "flat_includes_vat": true
+          },
+          "amount_tier": "search_snippet_no_verbatim_quote",
+          "tier": "B_inferred",
+          "inference_basis": "FedEx一次ページはWAFに阻まれ本文未読。消費者フォーラム投稿（quechoisir.org）が『2.5% du montant liquidé ou un minimum de 18€ TTC』という具体額を独立して伝えており、GB/DEで確認できた『下限付き率 or 定額 or 率のみ』のFedEx共通テンプレートとも整合するため、reasoned_judgementより確度は高いがFedEx自身の逐語引用ではない",
+          "source": "https://forum.quechoisir.org/fedex-substitution-frais-de-tva-dedouanement-t294550.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "FedEx一次ページ（fedex.com/fr-fr/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html 等）は curl -L で終始 HTTP 200 だが本文は GB/DE と同一の FedEx 自社 WAF 代替失敗ページ。上記の消費者フォーラムは一次情報ではない（利用者による実体験の書き込み）が、フォーラム投稿としては直接引用に近い記述を含む。",
+          "corroborating_search_snippets": [
+            "WebSearch要約（quechoisir.orgフォーラム投稿の要約）: 'filing fees represent 2.5% of the liquidation amount or a minimum of 18 euros inclusive of taxes'",
+            "別のWebSearch要約（ShipScience、汎欧州の別説）: 'Europe: Flat €15.00 minimum, 2.5% of duty & tax for all countries'"
+          ],
+          "verbatim_quote_available": false,
+          "note": "**矛盾の記録**: フォーラム投稿は最低額 €18（TTC）、別の二次情報（ShipScience、欧州共通の記述）は最低額 €15。どちらもFedEx一次ページの逐語引用ではなく、時期（改定前後）や対象（フランス個別 vs 欧州共通の代表値）の違いで説明できる可能性があるが、一次情報が無いため判定できない。区間の両端としてどちらも捨てずに記録する。宛先国（フランス）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意）。zero_duty_condition・per-parcel/per-shipmentの区別は情報源に記述なし（C_unknown）。"
         }
       ],
       "user_action": {
@@ -902,6 +986,35 @@
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
           "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx（Disbursement Fee/Advancement Fee）",
+          "rule": {
+            "type": "greater_of",
+            "flat": 24,
+            "rate": 0.029,
+            "base": "duty_and_tax_and_other_charges",
+            "currency": "AUD"
+          },
+          "amount_tier": "search_snippet_no_verbatim_quote",
+          "tier": "B_inferred",
+          "inference_basis": "FedEx一次ページはWAFに阻まれ本文未読。独立した複数のWebSearch要約（FedEx.com検索結果の要約とfedex-customs-clearance-surcharge-july2026.pdfの検索結果の要約）が『greater of AUD 24.00 or 2.9%』『2026-07-20発効』で一致しており、reasoned_judgementより確度は高いがFedEx自身の逐語引用ではない",
+          "effective_from": "2026-07-20",
+          "corrected_from": {
+            "flat": 20,
+            "rate": 0.029,
+            "why": "2026-07-20 改定前は AUD 20.00 / 2.9%"
+          },
+          "source": "https://www.fedex.com/en-au/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "curl -L で終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（GB/DE と同一）。archive.org availability API はこのURLのスナップショット（2026-05-08）の存在を返したが、web.archive.org 自体への到達がこの環境の egress ポリシーで `Blocked by egress policy` として塞がれ本文を取得できなかった。",
+          "corroborating_search_snippets": [
+            "WebSearch要約: 'Australia's FedEx disbursement fee increased from AUD 20.00 / 2.9% to AUD 24.00 / 2.9% effective July 20, 2026 ... the greater of either a flat AUD 24.00 minimum or 2.9% of the duty and tax amount.'",
+            "別のWebSearch要約（fedex-customs-clearance-surcharge-july2026.pdf の検索結果の要約、本文は未取得）: 'For Australia specifically, this fee is applicable when FedEx has processed any applicable duties, taxes and/or other regulatory charges on behalf of customers who do not have a FedEx account number.'"
+          ],
+          "verbatim_quote_available": false,
+          "note": "**ABF Import Processing Charge（税関当局が課す帯）とは別の費目**。この行はFedEx自身が請求人（宛先国=オーストラリアの受取人）に課す立替手数料で、ABFの帯に上乗せされる想定。二次情報は『FedExアカウントを持たない受取人に適用』という条件を伝えており、これは`zero_when_no_tax`とは別の軸（口座の有無）。**税ゼロ時に課すか、per-parcel/per-shipmentのどちらかは情報源に記述なし（C_unknown）**。"
         }
       ],
       "clearance_fee_vat": {
@@ -1046,6 +1159,34 @@
           },
           "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）",
           "service_label_note": "カナダは他っ6か国と違い、『Duty Tax Processing』ではなく『Customs Clearance』という名称だが、定義文（アカウント有無で分岐、宛先で受取人請求）はDTX相当と一致する。"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx（Disbursement Fee）",
+          "rule": {
+            "type": "greater_of",
+            "flat": 12,
+            "rate": 0.031,
+            "base": "duty_and_tax_advanced",
+            "currency": "CAD"
+          },
+          "amount_tier": "search_snippet_no_verbatim_quote",
+          "tier": "B_inferred",
+          "inference_basis": "FedEx一次ページはWAFに阻まれ本文未読。独立したWebSearch要約（spaceshipapp/ebbLogistics/ShipScience等の料金改定まとめ）が『3.10% or CAD 12.00、2026-08-03発効』で一致しており、reasoned_judgementより確度は高いがFedEx自身の逐語引用ではない",
+          "effective_from": "2026-08-03",
+          "corrected_from": {
+            "flat": 11.40,
+            "rate": 0.031,
+            "why": "2026-08-03 改定前は CAD 11.40 / 3.10%"
+          },
+          "source": "https://www.fedex.com/en-ca/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "curl -L で終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（GB/DE/AU と同一）。archive.org availability API はこのURLのスナップショットを返さなかった（`archived_snapshots: {}`）。",
+          "corroborating_search_snippets": [
+            "WebSearch要約: 'FedEx will increase the Disbursement Fee from 3.10% of the total duty and tax advanced or $11.40 CAD, whichever is greater, to 3.10% of the total duty and tax advanced or $12.00 CAD, whichever is greater.' effective 2026-08-03"
+          ],
+          "verbatim_quote_available": false,
+          "note": "上の `route: courier`（CA$10〜50、業者名なし・時期不明の帯）とこの行は別の一次系統の情報。この行は業者を FedEx に特定し、発効日 2026-08-03 まで持つ点で情報が濃いが、それでも FedEx 自身の一次ページ本文には未到達。CA$10〜50 の帯の下限（CA$10）は FedEx の CA$12.00 とほぼ一致し、上限（CA$50〜）は本行の 3.10% 側で高額貨物なら届き得る範囲。宛先国（カナダ）の受取人に課される費目として扱う。**per-parcel/per-shipment、税ゼロ時の扱いはいずれも情報源に記述なし（C_unknown）**。"
         }
       ],
       "real_invoice": {
@@ -1244,6 +1385,40 @@
             "note": "DTPは出発国/第三国のDHLアカウントに請求される費目で、宛先国のclearanceには該当しない。参考として同じ一次資料から併記する（原則２：混同防止）。混同を避けるため本行の rule には含めていない。"
           },
           "effective_from": "DHL Express Service & Rate Guide 2026（正確な発効日の記載なし。表紙の統計は「end of 2024時点」と注記があるのみで、料金表自体の発効日は不明）"
+        },
+        {
+          "route": "fedex",
+          "carrier": "FedEx（Disbursement Fee/Advancement Fee）",
+          "rule": {
+            "type": "greater_of",
+            "flat": 24,
+            "rate": 0.05,
+            "base": "duty_and_tax",
+            "currency": "SGD",
+            "max": 120
+          },
+          "unit": "per_shipment",
+          "unit_tier": "search_snippet_no_verbatim_quote",
+          "unit_basis": "2022/2023年のFedEx SGサーチャージPDFの検索結果要約が『per shipment』を明記（『5% of GST amount with a minimum charge of SGD 12.00/20.00 and a maximum charge of SGD 120.00 per shipment』）。最新2026年版で同じ単位かは未確認だが、上限付き帯の性質上 per shipment のまま据え置かれている可能性が高い。**per-shipmentの行がmasterに1件も無いという2026-09-12監査の記述を更新する候補（未確定）**",
+          "amount_tier": "search_snippet_no_verbatim_quote",
+          "tier": "B_inferred",
+          "inference_basis": "FedEx一次ページはWAFに阻まれ本文未読。過去複数年（2022/2023）版の同種PDFの検索結果要約が一貫して『5% of duty/GST or SGD下限、上限SGD120、per shipment』の形を伝えており、2026年版もこの形自体は維持されていると判断したが、下限額そのもの（SGD24.00）はFedEx自身の逐語引用ではない",
+          "effective_from": "2026-07-20",
+          "corrected_from": {
+            "flat": 20,
+            "rate": 0.05,
+            "max": 120,
+            "why": "2026-07-20 改定前は SGD 20.00 下限（2023年版）。2022年版はさらに前の SGD 12.00 下限"
+          },
+          "source": "https://www.fedex.com/en-sg/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html",
+          "source_checked_on": "2026-09-12",
+          "source_fetch_result": "curl -L で終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（GB/DE/AU/CA と同一）。archive.org availability API はこのURLのスナップショット（2026-05-17）の存在を返したが、web.archive.org 自体への到達がこの環境の egress ポリシーで `Blocked by egress policy` として塞がれ本文を取得できなかった。",
+          "corroborating_search_snippets": [
+            "WebSearch要約: 'For Singapore, the fee is 5.00% of the Duty and Tax amount or SGD 24.00 per shipment, whichever is greater.' (as of July 2026)",
+            "同じ検索結果内、旧版PDFの要約: '5% of GST amount with a minimum charge of SGD 12.00 and a maximum charge of SGD 120.00 per shipment (from 2022 documents)' / '...SGD 20.00... (from 2023 documents)'"
+          ],
+          "verbatim_quote_available": false,
+          "note": "singpost の S$400 以下 $0 帯（免税帯そのもの）とは別経路。FedEx行は宅配便に限られ、免税帯での扱い（zero_when_no_tax）は情報源に記述なし（C_unknown）。宛先国（シンガポール）の受取人に課される費目として扱う。"
         }
       ],
       "clearance_fee_vat": {
