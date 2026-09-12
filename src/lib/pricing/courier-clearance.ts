@@ -29,11 +29,25 @@ import type { CountryCode, CourierMethod } from './types';
  * 以上ここでは per_parcel を採る——マスタの推論に反する選択なので明記しておく。
  *
  * ## account holder / non-account holder の2系統がある行
- * DHL の DTX 行は口座の有無で率・最低額が変わる（GB/FR/CA）。利用者がDHLに法人
- * 口座を持つかどうかをこちらは知らないので、**率は高い方、最低額も高い方**を採用する
- * （2系統のどちらであっても過小計上しない）——2つの実在の組み合わせのどちらとも
- * 一致しない場合があるが、taxベースの区間なので `docs/PRINCIPLES.md` 原則1（残余
- * リスクは low を動かさず high 側に置く）と整合する側に倒した。
+ * DHL の DTX 行は口座の有無で率・最低額が変わる（GB/FR/CA）。**#101 はここを
+ * 「率・最低額とも高い方を機械的に採用する」ヘッジで埋めていたが、これは誤りだった
+ * ——「どちらが適用されるか分からない」ことへの目くらましであって、答えが分かった
+ * 以上そのヘッジ自体が欠陥になる。#102 が DHL 自身のレートガイド（CA版の定義文）
+ * から一次資料で決着させた: account holder／non-account holder は **shipper では
+ * なく importer（受取人）の DHL 口座の有無**で決まり、DTX は受取人請求の費目
+ * なので、代行経由で荷物を受け取る個人利用者には account を持たない
+ * **non_account_holder が適用される。** その結論は `master/customs.json` の
+ * 該当6行に `variant_applicability.answer` として記録済み（コードの外＝マスタが
+ * 持つ事実）。ここではその値をそのまま転記するだけで、「高い方」のような
+ * コード側の独自ルールを再導入しない。`master-sync.test.ts` がマスタの
+ * `variant_applicability` からこの行を独立に再導出し、一致しなければ落ちる
+ * ——`variant_applicability` が無い行があれば、そのテストは「高い方」に
+ * フォールバックせず例外を投げる（サイレントな先祖返り防止）。
+ * US/AU/SG は両変種の値が同一なのでこの選択自体が効かない。CA は変種の大小関係が
+ * GB/FR と逆（non-account の方が高い）ため、「高い方」でも結果的に
+ * non_account_holder と一致していた——**偶然の一致**であり、方針としては
+ * 誤っていた。以後は明示的に non_account_holder を選んでいるので、この一致は
+ * 意図した一致になった（`master-sync.test.ts` に CA 専用の固定テストがある）。
  *
  * ## 税ゼロ時に課すか
  * **7か国×4社のどの一次資料にも明示の免除規定が無い**（3本の監査ノートが共通して
@@ -93,8 +107,12 @@ const DHL_SOURCES: Record<'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG', string
 };
 
 const DHL_BASIS = 'DHL Duty Tax Processing（宛先国・受取人請求）。DHL自身の Rate Guide 2026 から直接'
-  + ' フェッチ・逐語確認（docs/audit/f34-dhl-seven-countries-2026-09-12.md）。口座有無で率・最低額が'
-  + ' 分かれる国は、過小計上しないよう率・最低額とも高い方を採用。';
+  + ' フェッチ・逐語確認（docs/audit/f34-dhl-seven-countries-2026-09-12.md）。';
+
+const DHL_VARIANT_BASIS = DHL_BASIS
+  + ' 口座有無で率・最低額が分かれる行は non_account_holder（master/customs.json の'
+  + ' variant_applicability.answer、#102）を採用——代行経由で荷物を受け取る個人利用者は'
+  + ' DHLの法人口座を持たないため。旧#101の「高い方を機械的に採用」は誤りとして撤回した。';
 
 export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierClearanceCarrier, CourierClearanceRoute>>> = {
   US: {
@@ -125,8 +143,10 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
     // 呼び出し側は COURIER_CLEARANCE_UNKNOWN を見て額不明の行を出す。
     // UPS: C_unknown（一次資料が取得できず、値そのものが無い）。同様にキーを持たない。
     DHL: {
-      tier: 'fixed', currency: 'GBP', rule: rateMin(0.025, 12.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.GB, basisNote: DHL_BASIS,
+      // #101 は account_holder 側の min(12.0)を使っていた。#102 の一次資料に基づき
+      // non_account_holder 側の min(11.0)へ訂正（rateは両変種とも0.025で同一）。
+      tier: 'fixed', currency: 'GBP', rule: rateMin(0.025, 11.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
+      sourceUrl: DHL_SOURCES.GB, basisNote: DHL_VARIANT_BASIS,
     },
     ECMS: {
       tier: 'fixed', currency: 'GBP', rule: rateMin(0.03, 0), per: 'per_parcel',
@@ -170,8 +190,10 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
         + '（UPS自身のPDF、逐語確認）。',
     },
     DHL: {
-      tier: 'fixed', currency: 'EUR', rule: rateMin(0.02, 16.67), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.FR, basisNote: DHL_BASIS,
+      // #101 は account_holder 側の rate(0.02)を使っていた。#102 の一次資料に基づき
+      // non_account_holder 側の rate(0.018)へ訂正（minは両変種ともnon_account側の16.67と一致）。
+      tier: 'fixed', currency: 'EUR', rule: rateMin(0.018, 16.67), per: DHL_US_GB_FR_AU_CA_SG_PER,
+      sourceUrl: DHL_SOURCES.FR, basisNote: DHL_VARIANT_BASIS,
     },
     // ECMS: counted_absence。
   },
@@ -211,8 +233,11 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
         + '（$11.65、Express系）を採用。',
     },
     DHL: {
+      // CA は non_account_holder 側の min(18.0)——#101 の「高い方」ルールでも同じ値に
+      // 偶然一致していた（CAだけ変種の大小関係がGB/FRと逆）。値自体は変えていないが、
+      // 選択の理由を「高い方」から「non_account_holderが適用される」へ差し替えた。
       tier: 'fixed', currency: 'CAD', rule: rateMin(0.0275, 18.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.CA, basisNote: DHL_BASIS,
+      sourceUrl: DHL_SOURCES.CA, basisNote: DHL_VARIANT_BASIS,
     },
     // ECMS: counted_absence。
   },
