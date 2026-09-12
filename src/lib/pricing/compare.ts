@@ -14,14 +14,16 @@ import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
   EXPORT_DECLARATION_FEE_YEN, SERVICES, type Service,
 } from './services';
-import { groupByShop, oneOrderPerItem, type ShopGrouping } from './shops';
+import { groupByShop, isPerListingSite, oneOrderPerItem, shopIdFor, type ShopGrouping } from './shops';
 import { splitByWeightLimit, type PackableItem, type ParcelPack } from './parcels';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
 import { alcoholItems } from './restricted-goods';
 import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
 import type {
   CourierMethod, PostalMethod,
-  Band, CompareInput, CompareResult, Item, Line, ProvinceCode, Row, Tier, WeightSensitivity,
+  Band, CompareInput, CompareResult, Item, Line, ParcelBox, ParcelSplitReason, ParcelTaxVerdict,
+  ProvinceCode, Row, Tier,
+  WeightSensitivity,
 } from './types';
 
 // 出品ページに重量は書いていない。以下は仮定であって実測ではない。
@@ -287,7 +289,7 @@ function taxLines(
    * `null` = そういう任意徴収を確認していない社。
    */
   companyCollectsBelow: number | null = null,
-): Line[] {
+): { lines: Line[]; perParcel: ParcelTaxVerdict[] } {
   const c = COUNTRIES[cc];
   const rate = rateFor(c.ccy);
   const out: Line[] = [];
@@ -326,13 +328,18 @@ function taxLines(
   // ── 関税。国の関税の「仕組み」（flatDutyPerItem の有無・dutyRate の有無）は
   // 個口によらず1つだが、**免税限度をまたぐかどうかは個口ごとに違いうる**——
   // だから個口ごとに判定し、額は個口ごとの結果を単純合計する。
-  type DutyKind = 'flat' | 'free' | 'rate' | 'unknown';
+  type DutyKind = 'flat' | 'free' | 'no-duty' | 'rate' | 'unknown';
   const dutyPerParcel = perParcel.map((p) => {
     if (c.flatDutyPerItem != null && p.declaredP <= c.dutyFreeLimit) {
       return { kind: 'flat' as DutyKind, yen: c.flatDutyPerItem * p.units * rate };
     }
     if (p.declaredP <= c.dutyFreeLimit) {
-      return { kind: 'free' as DutyKind, yen: 0 };
+      // **限度が無い国（SG、`dutyFreeLimit: Infinity`）は 'no-duty'——この品目に
+      // 関税という費目自体が無い。**限度はあるが今回は下回っている、という
+      // 'free' とは別の状態として区別する（画面が「限度線」を描いていいのは
+      // 'free' のときだけ——`ParcelBox.tax`/`ParcelSplitReason` のコメント参照、
+      // コーディネーター指摘 2026-09-12）。
+      return { kind: (Number.isFinite(c.dutyFreeLimit) ? 'free' : 'no-duty') as DutyKind, yen: 0 };
     }
     if (c.dutyRate != null) {
       // **カナダだけ base を GST/州税と揃える**（外部レビュー2回目 A-6）。CBSA の
@@ -363,7 +370,7 @@ function taxLines(
       if (kind === 'flat') {
         out.push(L('duty', 'Duty', Math.round(dutyYen),
           `${c.ccy} ${c.flatDutyPerItem} flat × ${plural(totalUnits, 'item')}`, c.dutyTier, c.sourceUrl));
-      } else if (kind === 'free') {
+      } else if (kind === 'free' || kind === 'no-duty') {
         // **限度が無い国（SG）に「限度」の文言を出すな。** `Infinity` を文字列に混ぜると
         // `under the SGD Infinity threshold` になり、画面に意味不明な単語が出ていた。
         // 限度が無いのは「際限なく免税」なのではなく、この品目に関税が無いということ。
@@ -571,7 +578,12 @@ function taxLines(
     // 同じようにかかる——輸入側の話。scope: 'shared'。
     out.push(L('duty-prepayment', dp.label, null, dp.note, 'none', dp.sourceUrl, 'shared'));
   }
-  return out;
+  // **箱ごとの関税・VAT/GST の判定を、集計する前の形のまま返す。**
+  // `out` に積んだ行はカート全体の合計・文言（複数個口をまたぐ混在ケースの
+  // 説明を含む）で、箱1つぶんの判定はここでしか手に入らない——
+  // `ParcelBox.tax`（`buildRow` がここの戻り値を使って組み立てる）の元。
+  const perParcelTax: ParcelTaxVerdict[] = dutyPerParcel.map((duty, i) => ({ duty, vat: vatPerParcel[i]! }));
+  return { lines: out, perParcel: perParcelTax };
 }
 
 /**
@@ -1075,6 +1087,44 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const parcels = finalBoxes.length;
   const parcelItemIndices: number[][] = finalBoxes.map((b) => b.indices);
   const parcelGross: number[] = finalBoxes.map((b) => grossG(b.totalWeightG));
+  // **`Row.boxes`（オーナー確定 2026-09-12）: この行が実際に使った個口の内訳を、
+  // 捨てずに公開する。**UI 側（`ParcelView`、当時の `boxSplit.ts`——後に削除）が Row 抜きにこの
+  // 分解を自前で再計算しようとするたびに、この行が実際に選んだ方式・下地と
+  // 食い違うバグを繰り返した（EMS の上限を無条件に使う／店舗の切れ目を
+  // 一律に適用する、の2種）。ここで一度だけ計算し、そのまま Row に載せる。
+  //
+  // `finalBoxes` の各箱は、必ずどれか1つの `baseGroups` の部分集合になる
+  // （`splitByWeightLimit` は下地の**内側**でしか分けず、下地をまたいで
+  // 混ぜない）。そこで箱の先頭商品の添字から、元の下地番号を逆引きする。
+  const groupOfItemIndex = new Map<number, number>();
+  baseGroups.forEach((g, gi) => g.forEach((idx) => groupOfItemIndex.set(idx, gi)));
+  const boxCountByGroup = new Map<number, number>();
+  finalBoxes.forEach((b) => {
+    const gi = groupOfItemIndex.get(b.indices[0]!)!;
+    boxCountByGroup.set(gi, (boxCountByGroup.get(gi) ?? 0) + 1);
+  });
+  /**
+   * ある下地（`baseGroups[gi]`）が他の下地と別である理由。**この4つは対称ではない**
+   * （`ParcelSplitReason` の doc comment、`shops.ts` 参照）。下地の代表商品
+   * （`g[0]`——`split` が true のときは同じ下地内の全商品が同じ判定になる、
+   * `groupByShop` が店舗 ID の一致でしか束ねないため）で判定する。
+   */
+  function groupReason(gi: number): ParcelSplitReason {
+    const rep = items[baseGroups[gi]![0]!]!;
+    const shop = shopIdFor(rep);
+    if (shop != null) return 'identified-shop';
+    if (isPerListingSite(rep.site)) return 'per-listing';
+    return 'unresolved-shop';
+  }
+  // **`tax` は下で `taxLines()` を呼んだ後にしか埋まらない**（`ParcelDutyVat` は
+  // その関数が個口ごとに判定するもの）ので、ここでは分割の理由まで先に決めて
+  // おき、`ParcelBox[]` そのものは taxLines 呼び出しの直後で組み立てる。
+  const boxReasons: ParcelSplitReason[] = finalBoxes.map((b) => {
+    const gi = groupOfItemIndex.get(b.indices[0]!)!;
+    // その下地から2箱以上できていれば、重量上限で増やした箱（§2④）。
+    // 1箱のままなら、下地そのものの理由（店舗の切れ目、`split` のときだけ意味を持つ）。
+    return (boxCountByGroup.get(gi) ?? 1) > 1 ? 'weight-limit' : split ? groupReason(gi) : 'weight-limit';
+  });
   // **`parcels > 1` の理由は2つある**（両方が同時に効くこともある）:
   // 店舗ごとの別送（`split`）と、選ばれた方式の重量上限による分割（§2④）。
   // 表示は理由を問わず「個口が複数ある」ことだけを言う。
@@ -1284,7 +1334,21 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // **その社がこの国で自分で税を取るか。**閾値は intrinsic value（商品代）で測る
   // ——IOSS も UK も運賃を除いた値で判定する規定で、`taxLines` の `declaredP` と同じ。
   const ownPrepaid = svc.prepaidImportTax?.[ctx.cc];
-  lines.push(...taxLines(ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null));
+  const taxResult = taxLines(ctx.cc, ctx.province, items, parcelTaxBases, ownPrepaid?.collectsBelow ?? null);
+  lines.push(...taxResult.lines);
+  // **`ParcelBox[]` はここで初めて完成する。**分割の理由（`boxReasons`）は
+  // 上で決めてあり、箱ごとの関税・VAT/GST の判定（`taxResult.perParcel`）は
+  // たった今 `taxLines` が出したもの——**どちらも計算をやり直さず、既にある
+  // 判定をそのまま箱に載せるだけ。** `parcelTaxBases`/`parcelItemIndices`/
+  // `finalBoxes`/`boxReasons` は全部同じ個口の並び（`finalBoxes` から作った）
+  // なので、添字を揃えるだけで対応が付く。
+  const boxes: ParcelBox[] = finalBoxes.map((b, i) => ({
+    itemIndices: b.indices,
+    declaredYen: b.declaredYen,
+    weightG: grossG(b.totalWeightG),
+    reason: boxReasons[i]!,
+    tax: taxResult.perParcel[i]!,
+  }));
   // **前徴収の判定も個口ごと**。カート全体で一番厳しい（＝一番申告額の大きい）個口を
   // 代表に使う——1つでも徴収帯を超える個口があれば、その社はその個口では取らない
   // ため、`prepaidImportTaxLine` の判定は「最も高い個口」を渡すのが安全側
@@ -1416,6 +1480,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     rankHigh,
     excluded,
     parcels,
+    boxes,
     rank: 0,
     diff: 0,
     cheapest: false,

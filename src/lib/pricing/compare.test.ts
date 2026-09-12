@@ -1414,6 +1414,174 @@ describe('§2④: adding a box when a method\'s own limit is exceeded', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// **`Row.boxes`（オーナー確定 2026-09-12）**: `buildRow` が実際に使った個口の
+// 内訳を、捨てずに公開する。これが無いあいだ、UI 側（`ParcelView`、当時の `boxSplit.ts`——後に削除）
+// はこの分解を自前で再計算しようとして、この行が実際に選んだ方式・下地と
+// 食い違うバグを2種類作った（EMSの上限を無条件に使う／店舗の切れ目を一律に
+// 適用する）。ここで固定するのは「Row を見ればいい」が成り立つこと。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('Row.boxes: the per-parcel breakdown this row actually used', () => {
+  test('**回帰フィクスチャ**: DE/3点×600g/cheapest は Buyee の方式を ems ではなく'
+    + ' small-packet-air に決める（#85）——boxes は small-packet-air の上限（2kg）'
+    + ' で計算されていて、EMS の30kg基準の絵とは箱数・申告額が違って当然', () => {
+    const rows = compare({ items: items(3, 600), country: 'DE', method: 'cheapest' }).rows;
+    const split = byId(rows, 'buyee:default');
+    const together = byId(rows, 'buyee:consolidated');
+    expect(split.method).toBe('small-packet-air');
+    expect(together.method).toBe('small-packet-air');
+
+    // split（店ごと=商品ごと、yahoo-auctions は per-listing）: 3個口、
+    // どれも小形包装物の2kg上限（600g×1.2+300=1,020g）を大きく下回るので
+    // 重量では分かれない——箱ごとの理由は per-listing。
+    expect(split.boxes).toHaveLength(3);
+    expect(split.boxes.every((b) => b.reason === 'per-listing')).toBe(true);
+    expect(split.boxes.every((b) => b.itemIndices.length === 1)).toBe(true);
+    expect(split.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(9000); // 保全
+
+    // consolidated（店の下地が無い=1グループ）: 3点まとめて梱包後
+    // 1,800g×1.2+300=2,460g が小形包装物の2kg上限を超えるので、
+    // **重量上限で**2箱に分かれる——店舗とは無関係な理由。
+    expect(together.boxes.length).toBeGreaterThan(1);
+    expect(together.boxes.every((b) => b.reason === 'weight-limit')).toBe(true);
+    expect(together.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(9000); // 保全
+    expect(together.boxes.length).toBe(together.parcels);
+    expect(split.boxes.length).toBe(split.parcels);
+  });
+
+  test('identified-shop: two items resolved to the same rakuten shop share one box'
+    + ' and are told apart from a per-listing singleton in the same cart', () => {
+    const cart = [
+      item({
+        id: 's1', priceYen: 2000, weightG: 300,
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/s1/',
+      }),
+      item({
+        id: 's2', priceYen: 3000, weightG: 300,
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/s2/',
+      }),
+      item({ id: 'auction', priceYen: 4000, weightG: 300, site: 'yahoo-auctions' }),
+    ];
+    const row = byId(compare({ items: cart, country: 'DE', method: 'small-packet-air' }).rows, 'buyee:default');
+    expect(row.boxes).toHaveLength(2);
+    const shopBox = row.boxes.find((b) => b.itemIndices.length === 2)!;
+    const auctionBox = row.boxes.find((b) => b.itemIndices.length === 1)!;
+    expect(shopBox.reason).toBe('identified-shop');
+    expect(shopBox.declaredYen).toBe(5000); // s1+s2 の合計、均等割りではない
+    expect(auctionBox.reason).toBe('per-listing');
+    expect(auctionBox.declaredYen).toBe(4000);
+  });
+
+  test('unresolved-shop: a listing we cannot read a shop from is its own box,'
+    + ' labeled as unresolved — not claimed to be a known different shop', () => {
+    // 2点以上ないと Buyee の default/consolidated 変種自体が生まれない
+    // （`rowsFor`——1点だけなら変種の区別が無い `null` variant になり、店舗分割
+    // 自体が効かない）。もう1点は識別できる店（rakuten）にして、同じカートの中で
+    // 'unresolved-shop' と他の理由が混ざらないことも一緒に見る。
+    const cart = [
+      item({ id: 'mystery', priceYen: 1000, weightG: 300, site: 'other' }),
+      item({
+        id: 'known', priceYen: 2000, weightG: 300,
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/known/',
+      }),
+    ];
+    const row = byId(compare({ items: cart, country: 'DE', method: 'small-packet-air' }).rows, 'buyee:default');
+    expect(row.boxes).toHaveLength(2);
+    const mysteryBox = row.boxes.find((b) => b.declaredYen === 1000)!;
+    const knownBox = row.boxes.find((b) => b.declaredYen === 2000)!;
+    expect(mysteryBox.reason).toBe('unresolved-shop');
+    expect(knownBox.reason).toBe('identified-shop');
+  });
+
+  test('a row with no shop split at all (variant: null, single item) still reports'
+    + ' its box(es) via Row.boxes, conserving the cart total', () => {
+    const row = byId(compare({ items: items(1, 600), country: 'DE', method: 'small-packet-air' }).rows, 'buyee');
+    expect(row.boxes.length).toBe(row.parcels);
+    expect(row.boxes.reduce((a, b) => a + b.declaredYen, 0)).toBe(3000);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// **`ParcelBox.tax`（コーディネーター指摘 2026-09-12）**: 「免税限度未満＝無税」は
+// 5カ国中5カ国で誤る（GB/DE/FR/AU は VAT 免税限度が実質0、DE/FR は免税限度以下でも
+// 定額関税、SG は関税の限度が無限大）。画面がしきい値と申告額を自分で比べるのではなく、
+// `taxLines()` が個口ごとに出した判定（`kind`+`yen`）をそのまま渡せていることを固定する。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('ParcelBox.tax: the box-level duty/VAT verdict, not a threshold the UI re-derives', () => {
+  test('GB: a box under the £135 duty line is duty-free, but VAT still applies from'
+    + ' the first pound (vatFreeLimit: 0) — under the duty line does not mean untaxed', () => {
+    const row = byId(compare({ items: items(1, 300, 3000), country: 'GB', method: 'small-packet-air' }).rows, 'buyee');
+    expect(row.boxes).toHaveLength(1);
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).toBe('free');
+    expect(box.tax.duty.yen).toBe(0);
+    expect(box.tax.vat.kind).toBe('rate');
+    expect(box.tax.vat.yen).toBeGreaterThan(0);
+  });
+
+  test('DE/FR: a box under the €150 duty line still owes a flat €3/item duty —'
+    + ' \'flat\' is not \'free\', and must not render as duty-free', () => {
+    for (const cc of ['DE', 'FR'] as const) {
+      const row = byId(compare({ items: items(1, 300, 3000), country: cc, method: 'small-packet-air' }).rows, 'buyee');
+      const box = row.boxes[0]!;
+      expect(box.tax.duty.kind, cc).toBe('flat');
+      expect(box.tax.duty.yen, cc).toBeGreaterThan(0);
+      expect(box.tax.duty.kind, cc).not.toBe('free');
+      expect(box.tax.vat.kind, cc).toBe('rate'); // vatFreeLimit: 0 — always taxed
+    }
+  });
+
+  test("SG: duty is 'no-duty' (the limit is infinite — there is no duty line to draw),"
+    + ' distinct from being merely under a real threshold', () => {
+    const row = byId(compare({ items: items(1, 300, 3000), country: 'SG', method: 'small-packet-air' }).rows, 'buyee');
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).toBe('no-duty');
+    expect(box.tax.duty.kind).not.toBe('free'); // 'free' would wrongly imply a threshold line exists
+    expect(box.tax.duty.yen).toBe(0);
+    // 400 SGD 未満は代行が決済時に GST を徴収する（seller-collects）。
+    expect(box.tax.vat.kind).toBe('seller-collects');
+  });
+
+  test('US: the duty-free limit is 0, so nothing can ever be classified \'free\' —'
+    + " every box is 'rate' (or 'unknown'), which itself says the box is taxed", () => {
+    const row = byId(compare({ items: items(1, 300, 100), country: 'US', method: 'small-packet-air' }).rows, 'buyee');
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).not.toBe('free');
+    expect(['rate', 'unknown']).toContain(box.tax.duty.kind);
+  });
+
+  test('CA: the naive mental model (duty and VAT thresholds equal, at 20) actually holds'
+    + ' — both free under CAD 20', () => {
+    const row = byId(compare({ items: items(1, 300, 500), country: 'CA', method: 'small-packet-air' }).rows, 'buyee');
+    const box = row.boxes[0]!;
+    expect(box.tax.duty.kind).toBe('free');
+    expect(box.tax.vat.kind).toBe('free');
+  });
+
+  test('a cart split into boxes on either side of a duty threshold shows each box\'s'
+    + ' own verdict, not one verdict for the whole shipment', () => {
+    // DE の下限 €150 をまたぐよう、安い個口と高い個口を店舗違いで分ける
+    // （Buyee default は店舗ごとに別送——`groupByShop`）。
+    const cheap = item({
+      id: 'cheap', priceYen: 3000, weightG: 300,
+      site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/cheap/',
+    });
+    const pricey = item({
+      id: 'pricey', priceYen: 40_000, weightG: 300,
+      site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-b/pricey/',
+    });
+    const row = byId(
+      compare({ items: [cheap, pricey], country: 'DE', method: 'small-packet-air' }).rows,
+      'buyee:default',
+    );
+    expect(row.boxes).toHaveLength(2);
+    const cheapBox = row.boxes.find((b) => b.declaredYen === 3000)!;
+    const priceyBox = row.boxes.find((b) => b.declaredYen === 40_000)!;
+    expect(cheapBox.tax.duty.kind).toBe('flat'); // 免税限度以下でも定額関税
+    expect(priceyBox.tax.duty.kind).toBe('rate'); // 限度超なので税率課税
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 重量不明。1つの数字を押し付けず、EMS の段ごとに出す。
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────

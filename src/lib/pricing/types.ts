@@ -320,6 +320,104 @@ export interface Row {
     days: string;
     note: string;
   } | null;
+  /**
+   * **この行が実際に価格を計算した個口の内訳。**`parcels` は個数（`number`）
+   * だけだったので、どの商品がどの箱に入ったか・箱ごとの申告額・なぜ他の箱と
+   * 別なのかは `buildRow` の中で計算されて捨てられていた（2026-09-12、
+   * `ParcelView`、当時の `boxSplit.ts`（後に削除）の複数版のレビューで指摘——UI 側がこれを
+   * 再計算しようとするたびに、この行が実際に使った方式・グルーピングと
+   * 食い違うバグを繰り返した。表示側は Row を再計算せず、この配列をそのまま
+   * 描くこと）。
+   *
+   * `parcels === boxes.length` は常に成り立つ。`boxes` は既存の `parcels`
+   * を置き換えない（既存の呼び出し側はそのまま動く）——追加のフィールド。
+   */
+  boxes: ParcelBox[];
+}
+
+/**
+ * ある個口が他の個口と別である理由。**4つは対称ではない**（`shops.ts` 参照）:
+ *   - `'identified-shop'`  … 店舗 ID が判明していて、実際に別の店舗だと分かっている
+ *   - `'per-listing'`      … 出品ごとに1注文（オークション/メルカリ/ラクマ。
+ *                            `isPerListingSite`）。これは Buyee の公表規約どおりの
+ *                            正しい挙動であって、保守的な仮定ではない。
+ *   - `'unresolved-shop'`  … 店舗を読み取れなかった（URL から店舗が引けない等）。
+ *                            まとめない代わりに、合計額は高めに出る、と
+ *                            `compare.ts` 自身が開示している。**4つのうちここだけ
+ *                            が「こちらの数字が高めに外れているかもしれない」と
+ *                            知りながら出している値**——最もユーザーに見せる価値がある。
+ *   - `'weight-limit'`     … 配送方式の重量上限（`maxGramsFor`）を超えたため増やした箱
+ *                            （docs/DESIGN-BOX-SIZE.md §2④）。
+ * `'unresolved-shop'` を `'identified-shop'`（"a different shop"）のように見せては
+ * いけない——知らないことを知っているかのように主張することになる。
+ */
+export type ParcelSplitReason = 'identified-shop' | 'per-listing' | 'unresolved-shop' | 'weight-limit';
+
+/**
+ * この箱の関税の判定（`compare.ts` の `taxLines` が個口ごとに出す判定、そのまま）。
+ * **4種は対称ではない**（コーディネーター指摘 2026-09-12、`docs/DESIGN-BOX-SIZE.md` 参照）:
+ *   - `'flat'`    … 免税限度以下でも1点あたり定額の関税がかかる（DE/FR の `flatDutyPerItem`）。
+ *                   **免税線の下にあっても無税ではない**——画面はこれを「免税」と混同してはいけない。
+ *   - `'free'`    … 免税限度（有限）以下で、関税ゼロ。**限度線を引いてよいのはこのときだけ。**
+ *   - `'no-duty'` … この品目にはそもそも関税という費目が無い国（例: シンガポール、
+ *                   `dutyFreeLimit: Infinity`）。**「限度以下だから免税」ではなく
+ *                   「限度という概念自体が無い」**——画面はここで免税線を描いてはいけない
+ *                   （無限の限度は線ではない）。
+ *   - `'rate'`    … 免税限度を超え、税率で関税がかかる。
+ *   - `'unknown'` … 税率が未公表（`yen` は `null`）。
+ */
+export type ParcelDutyKind = 'flat' | 'free' | 'no-duty' | 'rate' | 'unknown';
+
+export interface ParcelDutyVerdict {
+  kind: ParcelDutyKind;
+  /** 円。`kind === 'unknown'` のときだけ `null`（未取得。0 とは書かない）。 */
+  yen: number | null;
+}
+
+/**
+ * この箱の VAT/GST の判定。**4種は対称ではない:**
+ *   - `'no-rate'`         … 連邦レベルの VAT/GST が無い制度（米国）。
+ *   - `'seller-collects'` … 代行が決済時に徴収する（国境では別途課さない）。`yen` は常に0
+ *                           （社が別途、決済手数料の行で取る額を持つ）。
+ *   - `'free'`            … VAT/GST の免税限度以下で、ゼロ。**免税限度が実質0の国
+ *                           （GB/DE/FR/AU の `vatFreeLimit: 0`）ではこの kind は出ない**
+ *                           ——0円以下の商品は存在しないので、必ず `'rate'` になる。
+ *                           **免税線の下＝無税、という読みが崩れる国がある理由はここ。**
+ *   - `'rate'`            … 税率で VAT/GST がかかる。
+ */
+export type ParcelVatKind = 'no-rate' | 'seller-collects' | 'free' | 'rate';
+
+export interface ParcelVatVerdict {
+  kind: ParcelVatKind;
+  /** 円。`kind === 'no-rate'` のときだけ `null`。 */
+  yen: number | null;
+}
+
+/** この箱の関税・VAT/GST の判定を1組にまとめたもの。`taxLines()` の個口ごとの判定そのもの。 */
+export interface ParcelTaxVerdict {
+  duty: ParcelDutyVerdict;
+  vat: ParcelVatVerdict;
+}
+
+export interface ParcelBox {
+  /** この箱に入っている商品の元の `items` 配列における添字。**重い順**
+   *  （`packHeaviestFirst` の詰め順、docs/DESIGN-BOX-SIZE.md §2⑤）。 */
+  itemIndices: number[];
+  /** この箱の申告額 = 実際にこの箱に入っている商品の代金の合計。均等割りではない。 */
+  declaredYen: number;
+  /** 梱包後重量（g）。`compare.ts` の `grossG` と同じ式。 */
+  weightG: number;
+  /** この箱がなぜ他の箱と別なのか。上の `ParcelSplitReason` 参照。 */
+  reason: ParcelSplitReason;
+  /**
+   * この箱の関税・VAT/GST の判定（コーディネーター指摘 2026-09-12）。
+   * **画面はここから「免税かどうか」を読み取るだけで、しきい値と申告額を
+   * 自分で比べてはいけない。**国によって免税限度が指すものが違いすぎる
+   * （GB/DE/FR/AU は VAT 免税限度が実質0、DE/FR は免税限度以下でも定額関税、
+   * SG は関税の限度が無限大）ため、「限度未満＝無税」という単純な比較は
+   * 5カ国中5カ国で誤る。`taxLines()` が個口ごとに出した判定をそのまま渡す。
+   */
+  tax: ParcelTaxVerdict;
 }
 
 /** 重量が不明なときの EMS の段。段は EMS 料金表の段からしか取らない。 */

@@ -5,20 +5,48 @@ import { singleParcelGrossG } from '@/lib/pricing/compare';
 import { EMS_SOURCE_URL, EMS_ZONE, emsFor } from '@/lib/pricing/ems';
 import { grams as gramsText, yen } from '@/lib/ui/format';
 import { Glyph } from '@/lib/ui/glyphs';
-import type { CountryCode, Item } from '@/lib/pricing/types';
+import type {
+  CountryCode, Item, ParcelBox, ParcelDutyKind, ParcelSplitReason, ParcelVatKind, Row,
+} from '@/lib/pricing/types';
 import { PackingBox, type PackedItem } from './PackingBox';
 import { WeightLadder } from './WeightLadder';
 
 /**
  * 箱・段・送料の差分を1つの区画にまとめる。**「詰める」絵ではない。**
- * EMS は重量だけで決まり体積は一切効かないので、箱は「いくら埋まったか」を言わない。
- * この区画が言うのは3つだけ:
+ * EMS は重量だけで決まり体積は一切効かないので、箱の大きさで「いくら埋まったか」は
+ * 言わない（=中身の詰まり具合を面積で見せることはしない）。
+ *
+ * ただし **カートが複数箱に分かれるときは、その分かれ方自体を見せる**
+ * （2026-09-12、オーナー指示）。1箱のときは従来どおり3つ:
  *   1. いま何が入っていて、どれが推定重量か（半透明）
  *   2. その重量が EMS のどの段に立っているか
  *   3. **直前の操作で送料が動いたか。動かなかったなら「+¥0」と書いて静止する**
  *
- * 数字は全部 `singleParcelGrossG()`（compare() と同じ組み立て）と `emsFor()`
- * ＝日本郵便の公表表から出る。ここで独自に足し引きした数字は無い。
+ * 複数箱に分かれるときは、箱ごとに言う: なぜ分かれたか・詰めた順（重い順）・
+ * その箱の申告額・その箱の関税/VAT・GST の判定。**箱の内訳（`row.boxes`）は一切ここで
+ * 再計算しない。**`compare()`/`buildRow`（`src/lib/pricing/compare.ts`）が
+ * その行に実際に選んだ方式・グルーピングで計算した `Row.boxes` を、そのまま
+ * 描くだけ（2026-09-12、オーナー確定）。
+ *
+ * **経緯（同じ欠陥を3回作った）**: 最初はこの区画が独自に `groupByShop` や
+ * `splitByWeightLimit` を呼び直していた。1回目は店舗が分からない商品を1点ずつ
+ * 別箱にする版で、ほぼ全カートが常に「店舗で分割」して見えた。2回目はそれを
+ * 緩めて店舗不明をまとめる版にしたが、今度は実際の課金（1点＝1注文で高めに
+ * 計算される）と絵（1箱）が食い違った。3回目は店舗分割を諦めて EMS の重量上限
+ * だけを見せたが、選ばれた方式が EMS でない行（例: DE/3点×600g/cheapest は
+ * `small-packet-air`）では上限が実際と違い、箱数・申告額が計算と食い違ったまま
+ * だった。**3回とも同じ形の欠陥——計算はしているが Row の外に出していない値を、
+ * 画面側が当てずっぽうで再現しようとした。**`Row.boxes` を追加して、この区画は
+ * それを受け取るだけの純粋な描画にした。これで箱の内訳が「その行が実際に使った
+ * もの」からズレることは構造的に無くなる。
+ *
+ * **代行が実際に箱をどう分けるかは私たちには分からない**——この分割は「私たちが
+ * 仮に置いた前提」であって実測ではない、という前提そのものを開示文で先に言う
+ * （`SplitDisclosure`）。
+ *
+ * `row` が渡されない、または `row.boxes.length <= 1`（分かれていない）ときは、
+ * 従来どおりの単箱プレビュー（`singleParcelGrossG()`／`emsFor()` ＝日本郵便の
+ * 公表表）にフォールバックする。
  */
 
 /** 追加1回の時間軸（ms、prototypes/README.md）。**直列。** */
@@ -105,14 +133,25 @@ function packedItems(items: readonly Item[]): PackedItem[] {
 export function ParcelView({
   items,
   country,
+  row = null,
   className = '',
 }: {
   items: readonly Item[];
   country: CountryCode;
+  /**
+   * この行に実際に価格が計算された `Row`（`compare()` の結果）。渡すと
+   * `row.boxes` をそのまま描き、複数箱ならその分かれ方を見せる。渡さない、
+   * または `row.boxes.length <= 1` なら、従来どおりの単箱プレビューになる。
+   * **ここでは箱の内訳を再計算しない**——上のモジュール doc comment 参照。
+   */
+  row?: Row | null;
   className?: string;
 }) {
   const target = useMemo(() => parcelStateFor(items, country), [items, country]);
   const packed = useMemo(() => packedItems(items), [items]);
+  // **箱が複数に分かれるなら、それを見せる。**`row` が無い、または1箱のままなら
+  // 下の従来どおりの単箱表示にフォールバックする。
+  const multiBox = row && row.boxes.length > 1 ? row.boxes : null;
   const signature = target
     ? `${target.grams}/${target.stepIndex}/${target.overMax}/${target.yen}/${packed.length}`
     : `none/${packed.length}`;
@@ -216,6 +255,14 @@ export function ParcelView({
     >
       <ParcelHeading />
 
+      {multiBox && <MultiBoxView boxes={multiBox} items={items} />}
+
+      {/* **単箱のときだけマウントする。**以前は `hidden` クラスで隠すだけだったため、
+          分割時にこの単箱と `MultiBoxView` の箱が両方 DOM に残り、
+          `packing-box-scene` などの locator が複数要素にヒットしていた
+          （strict mode violation、CI で発覚）。「隠す」ではなく「描かない」。 */}
+      {!multiBox && (
+      <>
       <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
         <div className="min-w-0 flex-1">
           <PackingBox
@@ -325,7 +372,208 @@ export function ParcelView({
           Japan Post EMS rates ↗
         </a>
       </p>
+      </>
+      )}
     </section>
+  );
+}
+
+/** 箱1つぶんの中身。`box.itemIndices` の順（重い順）をそのまま `order` に写す。 */
+function packedItemsForBox(items: readonly Item[], box: ParcelBox): (PackedItem & { order: number })[] {
+  const out: (PackedItem & { order: number })[] = [];
+  let order = 0;
+  for (const idx of box.itemIndices) {
+    const item = items[idx];
+    if (!item) continue;
+    const n = copiesOf(item);
+    for (let k = 0; k < n; k++) {
+      order += 1;
+      out.push({
+        id: item.weightLineId ?? 'unknown',
+        key: `${item.id}#${k}`,
+        label: item.title,
+        estimated: item.weightOrigin !== 'user',
+        order,
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * 箱がなぜ他の箱と別なのかの文言。**`ParcelSplitReason` の4種は対称ではない**
+ * （`src/lib/pricing/types.ts` の doc comment 参照）——特に `'unresolved-shop'` を
+ * `'identified-shop'`（"a different shop"）のように書いてはいけない。知らないことを
+ * 知っているかのように主張することになる。
+ */
+const REASON_TEXT: Record<ParcelSplitReason, string> = {
+  'identified-shop': 'a different shop',
+  'per-listing': 'a separate listing — this site bills one order per listing',
+  'unresolved-shop': "we couldn't tell if this is the same shop as another box, so we kept it "
+    + 'separate — this can push the total higher than the real one',
+  'weight-limit': "over this shipping method's weight limit",
+};
+
+/**
+ * `box.tax` の文言。**しきい値と申告額を比べ直さない**——`taxLines()`
+ * （`src/lib/pricing/compare.ts`）が個口ごとに出した `kind` をそのまま文にするだけ。
+ *
+ * **なぜ「免税しきい値の下＝無税」で描かないか（コーディネーター指摘 2026-09-12）**:
+ * 7か国中5か国でその読みが崩れる——GB/DE/FR/AU は VAT/GST の免税限度が実質0
+ * （`vatFreeLimit: 0`、金額が1円でもあれば課税）、DE/FR は関税の免税限度以下でも
+ * 1点あたり定額課税（`flatDutyPerItem`）、SG は関税の免税限度が無限大（`no-duty`
+ * ——限度という概念自体が無く、線を引く意味がない）。だから「しきい値の絵」では
+ * なく「`taxLines` が実際に出した結論」を見せる。
+ */
+const DUTY_TEXT: Record<ParcelDutyKind, (amountYen: number | null) => string> = {
+  flat: (y) => `${yen(y ?? 0)} flat per-item duty — still charged under the duty-free line`,
+  free: () => 'none — under the duty-free line',
+  'no-duty': () => 'no duty on this category (no duty-free line applies)',
+  rate: (y) => `${yen(y ?? 0)}`,
+  unknown: () => 'rate not published',
+};
+const VAT_TEXT: Record<ParcelVatKind, (amountYen: number | null) => string> = {
+  'no-rate': () => 'none at federal level',
+  'seller-collects': () => 'collected at checkout, not at the border',
+  free: () => 'none — under the threshold',
+  rate: (y) => `${yen(y ?? 0)}`,
+};
+/** 「何かかかっている」か。色分けの根拠は `kind` そのもの——金額の大小ではない。 */
+function dutyIsCharged(kind: ParcelBox['tax']['duty']['kind']): boolean {
+  return kind === 'flat' || kind === 'rate';
+}
+function vatIsCharged(kind: ParcelBox['tax']['vat']['kind']): boolean {
+  return kind === 'rate';
+}
+
+/**
+ * **箱の分かれ方そのものを見せる区画。**
+ * 前提（`docs/DESIGN-BOX-SIZE.md` §5、オーナー確定 #76）を先に言い、箱ごとに
+ * 4つの事実を出す: 分かれた理由・詰めた順（重い順）・その箱の申告額・その箱の
+ * 関税/VAT・GST の判定（**しきい値との比較は component 側でやり直さない**——
+ * `taxLines()` が個口ごとに出した結論をそのまま渡す。理由は下の `DUTY_TEXT`/
+ * `VAT_TEXT` の doc comment）。すべて文字と数字で言うので `prefers-reduced-motion` でも全部
+ * 読める（この区画自体はアニメーションを使っていない）。
+ * **`boxes` はそのまま `row.boxes`（`compare()` の出力）を描くだけ。** 分割・
+ * グルーピングの計算はここには一切無い。
+ */
+function MultiBoxView({
+  boxes,
+  items,
+}: {
+  boxes: readonly ParcelBox[];
+  items: readonly Item[];
+}) {
+  return (
+    <div data-testid="parcel-split" className="mt-3 min-w-0">
+      <SplitDisclosure />
+      <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+        {boxes.map((box, boxIndex) => {
+          const boxItems = packedItemsForBox(items, box);
+          return (
+            <div
+              key={boxIndex}
+              data-testid="split-box"
+              data-reason={box.reason}
+              data-duty-kind={box.tax.duty.kind}
+              data-vat-kind={box.tax.vat.kind}
+              className={[
+                'min-w-0 rounded border p-2',
+                box.reason === 'weight-limit'
+                  ? 'border-amber-400 dark:border-amber-700'
+                  : 'border-neutral-300 dark:border-neutral-700',
+              ].join(' ')}
+            >
+              <p
+                data-testid="split-box-reason"
+                className="text-xs font-semibold text-neutral-700 dark:text-neutral-300"
+              >
+                Box {boxIndex + 1} of {boxes.length}
+                {' — '}
+                split: {REASON_TEXT[box.reason]}
+              </p>
+
+              <PackingBox
+                stepIndex={0}
+                items={boxItems}
+                label={`Box ${boxIndex + 1} of ${boxes.length}, ${boxItems.length} item${
+                  boxItems.length === 1 ? '' : 's'
+                }, packed heaviest first, declared value ${yen(box.declaredYen)}`}
+                renderGlyph={(p) => (
+                  <div className="relative">
+                    <span
+                      data-testid="pack-order"
+                      className="absolute -left-1 -top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-800 text-[9px] font-bold text-white dark:bg-neutral-200 dark:text-neutral-900"
+                      aria-hidden="true"
+                    >
+                      {(p as PackedItem & { order: number }).order}
+                    </span>
+                    <Glyph lineId={p.id} label={p.label} estimated={p.estimated} size={44} />
+                  </div>
+                )}
+              />
+
+              <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                <dt className="text-neutral-600 dark:text-neutral-400">Packed order</dt>
+                <dd className="num">heaviest first (1 = heaviest)</dd>
+                <dt className="text-neutral-600 dark:text-neutral-400">Declared value</dt>
+                <dd data-testid="split-box-declared" className="num">
+                  {yen(box.declaredYen)}{' '}
+                  <span className="text-neutral-500">sum of what is actually in this box</span>
+                </dd>
+                <dt className="text-neutral-600 dark:text-neutral-400">Duty</dt>
+                <dd data-testid="split-box-duty" className="num">
+                  <span
+                    className={
+                      dutyIsCharged(box.tax.duty.kind)
+                        ? 'font-semibold text-amber-700 dark:text-amber-400'
+                        : 'font-semibold text-emerald-700 dark:text-emerald-400'
+                    }
+                  >
+                    {DUTY_TEXT[box.tax.duty.kind](box.tax.duty.yen)}
+                  </span>
+                </dd>
+                <dt className="text-neutral-600 dark:text-neutral-400">VAT / GST</dt>
+                <dd data-testid="split-box-vat" className="num">
+                  <span
+                    className={
+                      vatIsCharged(box.tax.vat.kind)
+                        ? 'font-semibold text-amber-700 dark:text-amber-400'
+                        : 'font-semibold text-emerald-700 dark:text-emerald-400'
+                    }
+                  >
+                    {VAT_TEXT[box.tax.vat.kind](box.tax.vat.yen)}
+                  </span>
+                </dd>
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+        Each box is priced and duty-checked separately from the others.
+      </p>
+    </div>
+  );
+}
+
+/** 開示文。**owner が確定した文言をそのまま使う（#76）。書き換えない。** */
+function SplitDisclosure() {
+  return (
+    <div
+      data-testid="split-disclosure"
+      className="rounded bg-neutral-100 p-2 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+    >
+      <p className="font-semibold">
+        箱を何個に分けるかは代行会社が決めます。私たちはそれを知ることができないため、次の前提で仮に分けて計算しています。
+      </p>
+      <ul className="mt-1 list-disc pl-4">
+        <li>配送方式の上限を超えたら箱を増やす</li>
+        <li>重い商品から順に詰める</li>
+        <li>各口の申告額は、その口に入っている商品の合計金額（全体を均等に割ってはいません）</li>
+      </ul>
+      <p className="mt-1">実際の分け方が違えば、関税・消費税も変わります。</p>
+    </div>
   );
 }
 
