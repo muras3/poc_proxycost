@@ -836,18 +836,38 @@ function feeLines(
  */
 function prepaidImportTaxLine(
   svc: Service, cc: CompareInput['country'],
-  a: { itemsYen: number; declared: number; preTaxYen: number; shippingYen: number;
-       cifYen: number; shippingKnown: boolean },
+  a: { itemsYen: number; preTaxYen: number; shippingYen: number;
+       cifYen: number; shippingKnown: boolean;
+       /**
+        * **個口ごと**の申告額と、`taxLines` がその個口に下した判定（決済時徴収か否か）。
+        * F1: 以前はここでカート最大の個口だけを見て「決済時に取るか」を再判定しており、
+        * `taxLines` の `vatPerParcel`（個口ごとに `seller-collects` を判定し、そこだけ
+        * VAT/GST を0にする）と**別の場所で同じ問いに別々に答えていた**。個口が徴収帯を
+        * またぐ（一部は決済時徴収・一部は国境で課税）と、2つの判定が食い違い、決済時徴収
+        * 個口の税額がどちらの行にも現れず消えた（外部レビュー F1）。
+        * **判定はもう再計算しない。** `taxLines` が個口ごとに出した `vat.kind` を
+        * そのまま受け取り、`'seller-collects'` の個口だけをここで合算する——
+        * 1箇所が決め、両方がそれに従うので、またぐケースは構造的に起こらない。
+        */
+       parcels: { itemsYen: number; sellerCollectsP: boolean }[] },
 ): Line | null {
   const c = COUNTRIES[cc];
   const p = svc.prepaidImportTax?.[cc];
-  // 制度がその国の全社に課す帯（豪 A$1,000・星 S$400）と、社が自分で言っている帯
-  // （EU/UK の IOSS）の**どちらか**に入っていれば行を出す。
-  const byCountry = c.sellerCollectsBelow != null && a.declared <= c.sellerCollectsBelow;
-  const byCompany = p?.collectsBelow != null && a.declared <= p.collectsBelow;
-  // `a.declared` は呼び出し側で**個口あたり**に割ってから渡している（上の `declaredPerParcel`
-  // と同じ理由。IOSS も UK も consignment 単位）。
-  if (!byCountry && !byCompany) return null;
+  const collecting = a.parcels.filter((pp) => pp.sellerCollectsP);
+  if (collecting.length === 0) return null;
+  // **決済時徴収の個口が一部だけの混在（straddle）ケース。**注文全体のベース
+  // （`itemsYen`/`preTaxYen` 等はカート全体しか持たない——`packing` や代行の
+  // サービス手数料は個口に紐付かない）を、決済時徴収個口の商品代シェアで按分する。
+  // `declared` ベースの社ではシェア×カート`itemsYen` = その個口の`itemsYen`に厳密に
+  // 一致する（按分が個口ごとの実額と一致する）。
+  const totalItemsYen = a.parcels.reduce((s, pp) => s + pp.itemsYen, 0);
+  const collectingItemsYen = collecting.reduce((s, pp) => s + pp.itemsYen, 0);
+  const frac = totalItemsYen > 0 ? collectingItemsYen / totalItemsYen : 0;
+  const straddle = collecting.length < a.parcels.length;
+  const parcelNote = straddle
+    ? ` — collected at checkout on ${plural(collecting.length, 'parcel')} of ${a.parcels.length}`
+      + ' (the rest is taxed at the border instead; see the VAT/GST line)'
+    : '';
 
   const taxName = cc === 'AU' || cc === 'SG' || cc === 'CA' ? 'GST' : 'VAT';
   if (!p) {
@@ -870,7 +890,7 @@ function prepaidImportTaxLine(
     // （`countries.ts` の `clearanceBands`）も乗るが、そこは S$400 以下を
     // 「OVR で徴収済み＝0」として置いている。この社ではその前提が立たない。
     // 額を足さずに、ここに書いて開示する。
-    const est = c.base === 'CIF' ? a.cifYen : a.itemsYen;
+    const est = (c.base === 'CIF' ? a.cifYen : a.itemsYen) * frac;
     if (c.vatRate == null || !a.shippingKnown) {
       return L('prepaid-import-tax', `${taxName} collected at checkout`, null,
         'we cannot complete the base for this parcel', 'none', c.sourceUrl);
@@ -880,13 +900,15 @@ function prepaidImportTaxLine(
       Math.round(est * c.vatRate),
       `${(c.vatRate * 100).toFixed(0)}% either way — ${svc.name} does not say whether it collects at checkout,`
       + ` so this is ${c.name}'s own base. If it is collected at the border instead,`
-      + ` the carrier's handling fee is added on top and we do not show that here.`,
+      + ` the carrier's handling fee is added on top and we do not show that here.${parcelNote}`,
       'estimate', c.sourceUrl);
   }
 
-  const base = p.base === 'declared' ? a.itemsYen
-    : p.base === 'before-shipping' ? a.preTaxYen - a.shippingYen
-    : a.preTaxYen;
+  // **`declared` ベースは按分ではなく実額を使う。**決済時徴収個口の`itemsYen`を
+  // 直接足し上げたもので、`frac × カート全体` と数学的に一致するが、丸め誤差を持ち込まない。
+  const base = p.base === 'declared' ? collectingItemsYen
+    : p.base === 'before-shipping' ? (a.preTaxYen - a.shippingYen) * frac
+    : a.preTaxYen * frac;
   // 送料込みのベースなのに国際送料が取れていない行では、税額も出せない。
   // 送料抜きの額で掛けたら、その社だけ税が安く出る。
   if (!a.shippingKnown && p.base !== 'declared') {
@@ -896,7 +918,7 @@ function prepaidImportTaxLine(
       'none', p.sourceUrl);
   }
   return L('prepaid-import-tax', `${taxName} collected at checkout`,
-    Math.round(base * p.rate), p.note, p.tier, p.sourceUrl);
+    Math.round(base * p.rate), p.note + parcelNote, p.tier, p.sourceUrl);
 }
 
 function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
@@ -1349,21 +1371,25 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     reason: boxReasons[i]!,
     tax: taxResult.perParcel[i]!,
   }));
-  // **前徴収の判定も個口ごと**。カート全体で一番厳しい（＝一番申告額の大きい）個口を
-  // 代表に使う——1つでも徴収帯を超える個口があれば、その社はその個口では取らない
-  // ため、`prepaidImportTaxLine` の判定は「最も高い個口」を渡すのが安全側
-  // （小さい個口だけ見て「集める」と誤判定しない）。
-  const worstParcelDeclared = Math.max(
-    ...parcelTaxBases.map((p) => p.itemsYen / rateFor(COUNTRIES[ctx.cc].ccy)));
+  // **前徴収の判定も個口ごとだが、判定そのものは `taxLines` が既に出している。**
+  // F1: 以前はここでカート最大（＝一番申告額の大きい）個口だけを見て「決済時に
+  // 取るか」を再計算していた。個口が徴収帯をまたぐ（一部は決済時徴収・一部は
+  // 国境課税）と、最大個口が帯の外なら行ごと消え、その決済時徴収個口の税額が
+  // どこにも現れなくなっていた。もう再計算しない——`taxResult.perParcel` の
+  // `vat.kind === 'seller-collects'`（`taxLines` 内の `sellerCollectsP` と同じ式）
+  // をそのまま使うので、2箇所が食い違うこと自体が構造的に無くなる。
   const prepaid = prepaidImportTaxLine(svc, ctx.cc, {
     itemsYen,
-    declared: worstParcelDeclared,
     preTaxYen,
     shippingYen,
     // その国の課税ベース（CIF）。徴収者が確認できない社の推定に使う。
     // `taxLines` が使っているのと同じ組み立て（実際に払う国内送料＋国際送料）。
     cifYen: itemsYen + domCharged + (shipYen ?? 0),
     shippingKnown: shipYen != null,
+    parcels: parcelTaxBases.map((pb, i) => ({
+      itemsYen: pb.itemsYen,
+      sellerCollectsP: taxResult.perParcel[i]!.vat.kind === 'seller-collects',
+    })),
   });
   if (prepaid) lines.push(prepaid);
 
