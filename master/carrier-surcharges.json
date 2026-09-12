@@ -783,6 +783,67 @@
         "resolved": false,
         "reason": "直接『表示運賃に燃油サーチャージを含む/含まない』と明言した文言はページ上に見つからなかった。最も近い記述は、日本サイト(jp-ja)のFAQ『DHL Expressの運送料金はどのように計算されますか？』の回答内の一文: 「オプショナルサービスと追加料金サーチャージ：GoGreen Plusなどの追加サービスや、航空機燃料割増料金、遠隔地配達手数料などが適用される場合があります」。これは燃油サーチャージが『適用される場合がある』追加項目として言及されているのみで、見積り画面に表示される運賃に含まれるか否かを明言するものではない。"
       }
+    },
+    "fuel_surcharge_working_treatment": {
+      "id": "C11_fuel_working_treatment_2026_09_12",
+      "note_on_field": "これは carriers[].*.fuel_surcharge.included_in_displayed_rate（一次ページが実際に何を述べているかの測定）とは別の、独立したフィールドである。UPSの included_in_displayed_rate: true はUPSが『自社の請求先（＝プロキシ）への billing に燃油を含める』と述べていることの記録であり、それ自体はプロキシがそれを我々への表示価格にそのまま転嫁するかを立証しない。FedEx/DHLの included_in_displayed_rate は測定結果どおり null のままで、この working_treatment を理由に書き換えていない。ここに書くのは『我々がどちらの扱いを採用して計算するか』という運用判断であり、上記の一次情報の測定値そのものではない——両者を混同しないこと。",
+      "decided_on": "2026-09-12",
+      "decided_by": "オーナー（Tatsuya氏）",
+      "treatment": "プロキシ5社（FROM JAPAN/Jauce/Buyee/ZenMarket/Neokyo）の宅配便（FedEx/DHL/UPS）の表示送料には、宅配業者側の燃油サーチャージがすでに含まれているものとして扱う。したがって compare.ts 側で燃油サーチャージを追加で乗せる処理はしない（現状の『何もしない』を維持）。",
+      "confidence": "reasoned_judgement_unconfirmed",
+      "confidence_vocabulary_note": "このファイルの既存の confidence 語彙（direct_fetch / search_snippet / search_snippet_no_verbatim_quote）は、いずれも『一次ページの記述にどう到達したか』という取得経路を表すもので、その記述自体が事実として確認されていることを前提にしている。ここで記録するのは事実の取得経路ではなく、事実が未確認のまま下した運用判断の確度であり、既存の3値のどれにも当てはまらない。そのため reasoned_judgement_unconfirmed（一般論からの推論による判断であり、一次情報での確認は得られていない）を新たに導入する。measurement（一次ページで確認された事実）と judgement（確認前提の運用判断）を語彙のレベルでも混同しないため。",
+      "claim_precision_note": "記録している主張は『燃油は込みである』ではなく、『これこれの根拠に基づき、込みであるとして扱うことにした。この判断は未検証であり、以下の実験で決着する』という主張である。両者は別の主張であり、本エントリはこの区別を保つ。",
+      "arithmetic_note": "この判断がどちらに転んでも、2026-09-12時点でcompare.tsが実際に行う計算（燃油サーチャージを追加で乗せない）は変わらない。compare.tsは現時点で燃油サーチャージの処理を一切持たないため、『込みとして扱う』という判断も『未定のまま何もしない』という従来の扱いも、出力される金額は同一。変わるのは記録（このマスタとaudit文書）であって、表示金額ではない。",
+      "grounds_supporting": [
+        {
+          "ref": "G1_operational_argument",
+          "strength": "reasoning_not_evidence",
+          "text": "燃油サーチャージは週次で改定される（例: DHL輸出33.00%〜34.00%、FedEx 49.00%、UPS 49.75%、いずれも2026-09-12時点の取得週限定）。プロキシが顧客に、週次で変わる約49%の乗数を自分で適用させる形の送料計算機を出すのは実用に耐えない。したがって全込みの再販価格を一枚の数字として出すのが通常の形、という論。これは一般論からの推論であり、いずれのプロキシについても一次情報による裏付けではない。"
+        },
+        {
+          "ref": "G2_proxy_is_account_holder",
+          "strength": "reasoning_not_evidence",
+          "text": "宅配業者はプロキシに対して基本運賃＋燃油サーチャージを請求し、プロキシはそれとは別に自社の顧客向け価格を設定する、という取引構造上の推論。プロキシがアカウント保有者（宅配業者の直接の請求先）であり、我々（プロキシの顧客）ではないことに基づく。これも一次情報の裏付けを伴わない推論。"
+        },
+        {
+          "ref": "G3_ups_direct_statement_one_carrier_only",
+          "strength": "direct_statement_single_carrier",
+          "text": "UPSは原文で明言している:「UPSアカウントナンバーをお持ちの場合は、フューエル・サーチャージが請求書に含まれます。UPSを不定期にご利用になる場合は、燃油サーチャージが料金に含まれます。」ただし、これが確立するのはUPSが自社の請求先（＝プロキシ、アカウント保有者）に対する請求に燃油を含めるという事実だけである。プロキシが我々（プロキシの顧客）へ出す見積りに燃油が含まれるかどうかを述べたものではない。UPS 1社・この一点についてのみ成立する直接の記述であり、他社・他の論点への一般化はしない。"
+        },
+        {
+          "ref": "G4_observed_price_spread",
+          "strength": "consistent_with_not_proof_of",
+          "text": "同一条件（FedEx・DE・600g）でプロキシ5社中4社の実測価格は ¥4,612（Buyee）／¥5,437（FROM JAPAN）／¥5,622（ZenMarket）／¥6,471（Neokyo）で、最大最小比は約1.4倍。もし各社が公表済みの単一の宅配業者料率表をそのまま転嫁しているなら、これらは収束するはずだが、実際には収束していない。これは各社が独自に交渉した全込みレートで販売していることと整合する（consistent with）が、それを証明するものではない（proof ofではない）——料率表の版違い・マークアップ率の違い・ゾーン区分の違いなど、燃油の込み/抜き以外の説明でも同じ食い違いは生じ得る。"
+        },
+        {
+          "ref": "G5_from_japan_omission_cuts_our_way",
+          "strength": "weak_positive_evidence",
+          "text": "FROM JAPANはUPSについてのみ「Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge.」と明記している。この一文は住宅地サーチャージと遠隔地サーチャージという2つの費目を名指しで除外対象としているが、燃油サーチャージは名指ししていない。除外リストに載っていないことは、燃油が除外されていないことの弱い傍証にしかならない（このG5自体、G6が指摘する通り絶対の根拠ではない）。"
+        }
+      ],
+      "grounds_against": [
+        {
+          "ref": "G6_from_japan_omission_disproves_universal_rule",
+          "strength": "counter_evidence_from_our_own_data",
+          "text": "G5と同じFROM JAPANの注記は、同時に『プロキシの表示価格が常に全込みである』という普遍則を、我々自身のデータの中で、少なくとも1社1方式について反証している——FROM JAPANはUPSについて住宅地・遠隔地の2サーチャージを明示的に価格から除外すると述べており、『プロキシの表示価格＝全込み』は無条件には成り立たない。燃油サーチャージについても、単に『まだ明言していないだけの同種の例外』である可能性を否定できない。"
+        },
+        {
+          "ref": "G7_fedex_dhl_silent",
+          "strength": "absence_not_evidence",
+          "text": "FedExとDHLについては、2回の別々のブラウザ捕捉（Claude in Chromeによる実クリック・実キーストロークのみ）で一次ページ本文を確認したが、表示運賃に燃油サーチャージが含まれるか否かを明言する文言はどちらの捕捉でも見当たらなかった。原則2の『無かったことは、見たと示せない限り証拠にならない』に従い、これは『含まれない』の証拠ではなく、単に『どちらとも書かれていない』という状態として記録する。"
+        }
+      ],
+      "pending_test": {
+        "status": "requested_not_yet_returned",
+        "condition": "FROM JAPAN / DE / 600g / 20×15×10cm / 申告額¥10,000固定で、UPS・FedEx Economy・FedEx Priority・DHL・ECMSの price_jpy と methods_shown_total を記録する。",
+        "measurement_dates": [
+          "2026-09-19または2026-09-20（1回目）",
+          "2026-09-22または2026-09-23（2回目）"
+        ],
+        "boundary_crossed": "DHL輸出の燃油率が33.25%→34.00%へ切り替わる境界（FedEx・UPSも同時期に週次改定）をまたぐ。",
+        "decision_rule": "この境界をまたいで価格が動かなければ、燃油は表示価格に含まれていない（または反映に遅延がある）。燃油率の変化分にほぼ見合う分だけ価格が動けば、含まれている。",
+        "required_field": "methods_shown_total を両時点で必ず記録する（原則2により必須）。"
+      }
     }
   }
 }
