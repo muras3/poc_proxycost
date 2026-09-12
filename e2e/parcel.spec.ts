@@ -63,6 +63,12 @@ test('an item you add lands in the box', async ({ page }) => {
 
 test('the box grows only when the parcel crosses an EMS weight step', async ({ page }) => {
   await gotoCompare(page);
+  // **この検査は EMS の段の切り替わり方そのものを見ている**——箱は段の境界を
+  // 跨いだときだけ大きくなり、境界の中では動かない、という EMS 固有の契約。
+  // 宅配便には対応する契約が無く（容積重量は連続的に効く）、`cheapest` に
+  // 任せるとこの重量域（900〜1,100g）は #92 の会社別方式配線の後は宅配便が
+  // 最安になる——固定しないとこの検査自体が成り立たない。
+  await setMethod(page, 'ems');
   const w = await soloCart(page);
 
   // 900 g → 梱包後 1,380 g。1.5 kg の段の中。
@@ -95,6 +101,9 @@ test('the box grows only when the parcel crosses an EMS weight step', async ({ p
 
 test('the postage the box shows is the step it stands on', async ({ page }) => {
   await gotoCompare(page);
+  // EMS のラダーと箱の送料表示が同じ値を指すか、という EMS 固有の検査。
+  // `weight-ladder` は postal 専用（courier には無い）ので固定する。
+  await setMethod(page, 'ems');
   const w = await soloCart(page);
   await w.fill('1000');
   await expect(parcel(page)).toHaveAttribute('data-phase', 'idle', { timeout: 5000 });

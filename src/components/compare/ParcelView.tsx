@@ -330,12 +330,9 @@ export function ParcelView({
             stepIndex={shown.stepIndex}
             overMax={shown.overMax}
             items={packed}
-            label={`Parcel box holding ${packed.length} item${packed.length === 1 ? '' : 's'}${
-              estimatedCount > 0 ? `, ${estimatedCount} with an estimated weight` : ''
-            }${
+            label={`Parcel box holding ${packed.length} item${packed.length === 1 ? '' : 's'}`
               // 読み上げでも点線を名指しする。形の違いは目で見た人にしか届かない。
-              placeholders > 0 ? `, ${placeholders} of them at a placeholder weight we chose` : ''
-            }`}
+              + estimatedDataLabelSuffix(estimatedCount, placeholders)}
             renderGlyph={(p) => (
               <div
                 data-entering={entering.has(p.key) ? 'true' : 'false'}
@@ -457,6 +454,21 @@ function EstimatedDataDisclosure({ placeholders }: { placeholders: number }) {
       )}
     </>
   );
+}
+
+/**
+ * `EstimatedDataDisclosure` の読み上げ版（`PackingBox` の `aria-label` に渡す
+ * 素のテキスト）。**同じ理由で存在を分けて持つのではなく、同じ2つの値
+ * （`estimatedCount`/`placeholders`）から同じ判断で組む**——これを2回目に
+ * 別々に組んだ結果、見た目の文言（`EstimatedDataDisclosure`）だけ直して
+ * 読み上げ側（旧来の courier の `aria-label` はここを一切持っていなかった）を
+ * 直し忘れる、という同じ形の回帰をもう一度作った（コーディネーター指摘
+ * 2026-09-12、2回目）。**方式に関係なく必ず付く**——郵便・宅配便のどちらの
+ * `label` を組むときも、必ずこの関数を通す。
+ */
+function estimatedDataLabelSuffix(estimatedCount: number, placeholders: number): string {
+  return (estimatedCount > 0 ? `, ${estimatedCount} with an estimated weight` : '')
+    + (placeholders > 0 ? `, ${placeholders} of them at a placeholder weight we chose` : '');
 }
 
 /** 箱1つぶんの中身。`box.itemIndices` の順（重い順）をそのまま `order` に写す。 */
@@ -668,6 +680,8 @@ function CourierSingleBoxView({
 }) {
   const boxItems = packedItemsForBox(items, box);
   const methodLabel = COURIER_METHODS.find((m) => m.id === method)?.label ?? method;
+  // **推定重量の点数。方式に関係ない事実**（`estimatedDataLabelSuffix` 参照）。
+  const estimatedCount = boxItems.filter((p) => p.estimated).length;
   // **箱の見た目の大きさは `box.weightG`（`compare()` が既に出した梱包後重量、
   // 再計算ではない）だけで決める、点数ではなく重さで大きさを言う装飾。**
   // 値段には一切関係ない——宅配便には EMS の「段」のような価格の刻みが無いので、
@@ -689,8 +703,14 @@ function CourierSingleBoxView({
           <PackingBox
             stepIndex={visualNotch}
             items={boxItems}
-            label={`Parcel box holding ${boxItems.length} item${boxItems.length === 1 ? '' : 's'}, `
-              + 'priced by courier chargeable weight, not by weight alone'}
+            label={`Parcel box holding ${boxItems.length} item${boxItems.length === 1 ? '' : 's'}`
+              // **方式に関係ない事実を先に。**この行を最初に書いたとき「priced by
+              // courier...」の一文しか無く、点線・推定重量の読み上げが courier の
+              // 行だけ消えていた（コーディネーター指摘 2026-09-12、2回目）。
+              // 見た目の文言（`EstimatedDataDisclosure`）と同じ2つの値から
+              // 同じ関数で組む——ここだけ別に組み直さない。
+              + estimatedDataLabelSuffix(estimatedCount, placeholders)
+              + ', priced by courier chargeable weight, not by weight alone'}
             renderGlyph={(p) => <Glyph lineId={p.id} label={p.label} estimated={p.estimated} size={56} />}
           />
 
