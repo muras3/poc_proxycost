@@ -24,7 +24,8 @@
       },
       "note": "同一店舗の複数購入・複数落札でも1回。注文数でも商品数でもない",
       "valid_as_of": "2019-12-18",
-      "inference_basis": "2019-12-18 の BEENOS プレスリリース。7年前の情報で、現行の台湾語版 Buyee の料金ページで再確認していない。英語版公式は台湾を例外として挙げていない"
+      "inference_basis": "2019-12-18 の BEENOS プレスリリース。7年前の情報で、現行の台湾語版 Buyee の料金ページで再確認していない。英語版公式は台湾を例外として挙げていない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -47,7 +48,8 @@
         ]
       },
       "valid_as_of": "2019-12-18",
-      "inference_basis": "2019-12-18 の BEENOS プレスリリース。7年前の情報で、現行の台湾語版 Buyee の料金ページで再確認していない。英語版公式は台湾を例外として挙げていない"
+      "inference_basis": "2019-12-18 の BEENOS プレスリリース。7年前の情報で、現行の台湾語版 Buyee の料金ページで再確認していない。英語版公式は台湾を例外として挙げていない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F12",
@@ -69,7 +71,8 @@
       "tier": "A_confirmed",
       "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
       "checked_on": "2026-09-07",
-      "quote": "Lite Plan 0 yen / Inspection Plan 300 yen / Standard Plan 500 yen / Insured Delivery Plan 500 yen"
+      "quote": "Lite Plan 0 yen / Inspection Plan 300 yen / Standard Plan 500 yen / Insured Delivery Plan 500 yen",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F13",
@@ -89,7 +92,8 @@
       "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
       "checked_on": "2026-09-07",
       "quote": "prices generally range from 150 ~ 1,500 yen … we process each order respectively, even if multiple orders are purchased through the same seller/store. Because of this, there will be separate domestic shipment fees for each order.",
-      "note": "購入手数料は同一店舗で1回だが、国内送料は注文ごと。数え方が違う"
+      "note": "購入手数料は同一店舗で1回だが、国内送料は注文ごと。数え方が違う",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F13b",
@@ -104,7 +108,8 @@
       "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
       "checked_on": "2026-09-07",
       "quote": "domestic shipping fees may occur due to a change of shipping method, even though \"Free shipping\" might be stated on the product page.",
-      "note": "出品ページの freeShipping を ¥0 と信じてはいけない"
+      "note": "出品ページの freeShipping を ¥0 と信じてはいけない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F26",
@@ -127,7 +132,8 @@
       "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
       "checked_on": "2026-09-07",
       "quote": "If you send item(s) valued over 200,000 yen with EMS, AIR, SAL or Japan Post Seamail, a customs clearance commission fee (2,800 yen) will be charged.",
-      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
+      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F14",
@@ -145,7 +151,8 @@
       "checked_on": "2026-09-07",
       "quote": "Once the item arrives at the warehouse, you can apply for package consolidation and/or protective packaging.",
       "inference_basis": "公式はまとめ梱包が申請制のオプションであることを明記。『既定は注文ごと別送・申請すると無料』は REQUIREMENTS.md §8.5 の調査由来で、今回の一次取得では無料であることの引用が取れていない。額は未取得",
-      "amount_tier": "C_unknown"
+      "amount_tier": "C_unknown",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F20",
@@ -163,7 +170,8 @@
       "source": "https://buyee.jp/helpcenter/guide/storage?lang=en",
       "checked_on": "2026-09-07",
       "quote": "free for the first 30 days … Maximum storage period is 90 days",
-      "note": "外部レビュー（2026-09-11、A-1）で判明: この行が無いまま services.ts の storage（無料30日・以後重量帯別/日/個口）がコード側だけに実装されていた。quote・source・checked_on は services.ts の該当コメントに既にあった、2026-09-07 取得の一次引用をそのままマスタへ転記したもの（他の Buyee 行 F13/F14 と同じ取得日）。この作業自体では Buyee に新規到達できていない（この環境から Buyee は403で読めないことを docs/audit/o2-courier-2026-09-11.md で確認済み）——次にこの行を扱う作業者は、まだ現行ページで再確認されていないことに留意すること。"
+      "note": "外部レビュー（2026-09-11、A-1）で判明: この行が無いまま services.ts の storage（無料30日・以後重量帯別/日/個口）がコード側だけに実装されていた。quote・source・checked_on は services.ts の該当コメントに既にあった、2026-09-07 取得の一次引用をそのままマスタへ転記したもの（他の Buyee 行 F13/F14 と同じ取得日）。この作業自体では Buyee に新規到達できていない（この環境から Buyee は403で読めないことを docs/audit/o2-courier-2026-09-11.md で確認済み）——次にこの行を扱う作業者は、まだ現行ページで再確認されていないことに留意すること。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F21",
@@ -194,7 +202,8 @@
       "source": "https://buyee.jp/helpcenter/guide/storage?lang=en",
       "checked_on": "2026-09-07",
       "quote": "～10,000g JPY100 / 1 day、10,001g～20,000g JPY200 / 1 day、20,001g～ JPY300 / 1 day（重量帯は個口の重量で決まる）",
-      "note": "外部レビュー（2026-09-11、A-1）で判明: services.ts の storage.rate（per-day-per-parcel-by-weight）に対応するマスタ行が無かった。quote は services.ts のコメントにあった、2026-09-07 取得の一次引用をそのまま転記したもの。金額はコードから変更していない。この作業自体では Buyee に新規到達できていない（上の F20 と同じ理由）。"
+      "note": "外部レビュー（2026-09-11、A-1）で判明: services.ts の storage.rate（per-day-per-parcel-by-weight）に対応するマスタ行が無かった。quote は services.ts のコメントにあった、2026-09-07 取得の一次引用をそのまま転記したもの。金額はコードから変更していない。この作業自体では Buyee に新規到達できていない（上の F20 と同じ理由）。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -241,7 +250,8 @@
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
       "quote": "Our standard fee of 500 yen applies to Amazon, Rakuten, and most other stores. A discounted fee of 300 yen applies to Recommended Stores, while a fee of 800 yen applies to all Mercari items and JDirectItems Auction bids.",
-      "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。Yahoo オークションの語は原文に出てこない。yahoo_auction: 800 は rule.inferred_marketplaces に印を付けた推論値（JDirectItems Auction = Yahoo Auctions と解釈）であり、他の区分のような一次情報の確定値ではない"
+      "note": "公式が挙げているのは Amazon/楽天/推奨店/メルカリ/JDirectItems Auction のみ。Yahoo オークションの語は原文に出てこない。yahoo_auction: 800 は rule.inferred_marketplaces に印を付けた推論値（JDirectItems Auction = Yahoo Auctions と解釈）であり、他の区分のような一次情報の確定値ではない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F04",
@@ -255,7 +265,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "If you buy 3 identical T-shirts, our service fee will still be the same. But if you buy three T-shirts of different sizes or colors, we will charge our service fee for each item separately."
+      "quote": "If you buy 3 identical T-shirts, our service fee will still be the same. But if you buy three T-shirts of different sizes or colors, we will charge our service fee for each item separately.",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F07",
@@ -273,7 +284,8 @@
       "source": "https://zenmarket.jp/en/payment.aspx",
       "checked_on": "2026-09-07",
       "quote": "Deposit fee is 3.5% of the total transaction amount, not of the amount you wish to deposit.",
-      "note": "fees ページは「from 1%」。方法別の表は profile/addfunds.aspx（要ログイン）で未取得。2026-09-12 payment-fee-rates 調査で再訪を試みたが、この環境からは https://zenmarket.jp/en/payment.aspx が終始 403 で再取得できなかった（2026-09-07 時点の direct_fetch を上書きしない）。この基本率（3.5%）自体は ZenMarket 自身の一次ページに明記された公表値であり、現在コードが使っている 3.5% とたまたま一致している——ただし ZenMarket の公表文は方法非依存の基本率（'from 1%' の内訳は要ログインで未確認）であって、コード側の 3.5% は台湾の実請求からの逆算値なので、両者が一致する理由（同じ支払方法だったのか偶然か）は不明のまま。詳細は docs/audit/payment-fees-2026-09-12.md"
+      "note": "fees ページは「from 1%」。方法別の表は profile/addfunds.aspx（要ログイン）で未取得。2026-09-12 payment-fee-rates 調査で再訪を試みたが、この環境からは https://zenmarket.jp/en/payment.aspx が終始 403 で再取得できなかった（2026-09-07 時点の direct_fetch を上書きしない）。この基本率（3.5%）自体は ZenMarket 自身の一次ページに明記された公表値であり、現在コードが使っている 3.5% とたまたま一致している——ただし ZenMarket の公表文は方法非依存の基本率（'from 1%' の内訳は要ログインで未確認）であって、コード側の 3.5% は台湾の実請求からの逆算値なので、両者が一致する理由（同じ支払方法だったのか偶然か）は不明のまま。詳細は docs/audit/payment-fees-2026-09-12.md",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F07",
@@ -290,7 +302,8 @@
       "source": "https://buyee.jp/helpcenter/guide/payment?lang=en ; https://buyee.jp/helpcenter/guide/fees?lang=en",
       "checked_on": "2026-09-12",
       "quote": "The settlement currency depends on the issuing country of the credit card and the registration country of PayPal. Alipay will be settled in RMB.",
-      "note": "Payment Methods ページ（PayPal/Credit Card/Alipay/Buyee Wallet/FPX/iDEAL|Wero/Przelewy24）と Fees ページのどちらにも、支払方法別のパーセンテージや固定額の手数料は一切記載がない。書かれているのは決済通貨の決まり方（カード発行国／PayPal登録国／Alipayは人民元）と、方法によらない一律の Purchase fee（¥500/order、F06/F12 相当、本行の対象外）だけ。したがって Buyee については『支払方法別の入金・決済手数料』は非公表と確認できた（推測ではなく、2ページとも direct_fetch で確認）。3.5% との整合／矛盾は判定不能（比較対象となる公表値が無い）"
+      "note": "Payment Methods ページ（PayPal/Credit Card/Alipay/Buyee Wallet/FPX/iDEAL|Wero/Przelewy24）と Fees ページのどちらにも、支払方法別のパーセンテージや固定額の手数料は一切記載がない。書かれているのは決済通貨の決まり方（カード発行国／PayPal登録国／Alipayは人民元）と、方法によらない一律の Purchase fee（¥500/order、F06/F12 相当、本行の対象外）だけ。したがって Buyee については『支払方法別の入金・決済手数料』は非公表と確認できた（推測ではなく、2ページとも direct_fetch で確認）。3.5% との整合／矛盾は判定不能（比較対象となる公表値が無い）",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F07",
@@ -307,7 +320,8 @@
       "source": "https://neokyo.com/en/wallet-introduction",
       "checked_on": "2026-09-12",
       "quote": "Note : the above-mentioned payment providers collect their own transaction fee at checkout.",
-      "note": "Neokyo は Wallet（PayPal 経由）／Stripe（クレジットカード）／Wise の3方式を挙げるが、手数料は『決済プロバイダ自身が徴収する』と明記するのみで、Neokyo 自身は率も固定額も一切公表していない。同ページには参考として『a single Paypal 40 yen transaction fee』という言及があるが、これは Neokyo の入金を1回にまとめることで PayPal 側の手数料回数を減らせるという文脈の例示であり、Neokyo が定めた料率ではない（PayPal 自身の料率として引用されているだけで、金額の一次情報としては採用しない）。3.5% との整合／矛盾は判定不能（比較対象となる公表値が無い）"
+      "note": "Neokyo は Wallet（PayPal 経由）／Stripe（クレジットカード）／Wise の3方式を挙げるが、手数料は『決済プロバイダ自身が徴収する』と明記するのみで、Neokyo 自身は率も固定額も一切公表していない。同ページには参考として『a single Paypal 40 yen transaction fee』という言及があるが、これは Neokyo の入金を1回にまとめることで PayPal 側の手数料回数を減らせるという文脈の例示であり、Neokyo が定めた料率ではない（PayPal 自身の料率として引用されているだけで、金額の一次情報としては採用しない）。3.5% との整合／矛盾は判定不能（比較対象となる公表値が無い）",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F07",
@@ -324,7 +338,8 @@
       "source": "https://www.fromjapan.co.jp/japan/en/help/payment/ ; https://www.fromjapan.co.jp/japan/en/help/fee/ ; http://fjlabo.fromjapan.co.jp/introduction/en/index.html (すべて2026-09-12にこの環境から403で本文未取得)",
       "checked_on": "2026-09-12",
       "quote": null,
-      "note": "FROM JAPAN の該当ページ（https://www.fromjapan.co.jp/japan/en/help/payment/ 、https://www.fromjapan.co.jp/japan/en/help/fee/ 、レガシーの http://fjlabo.fromjapan.co.jp/introduction/en/index.html）はいずれもこの環境から終始 403（AWS WAF の CAPTCHA/チャレンジスクリプトが応答に含まれる）。curl はヘッダを整えても本文が空の JS SPA シェルしか返らず（Vue.js のチャンクのみ）、WebFetch も同じ URL 群に 403。ウェブ検索のスニペットには『credit card, PayPal or Alipay』『Payment processing fee (within Japan): Free of charge』『service fee 500 yen per item』という言及があるが、いずれも検索エンジンの要約経由でページ本文の逐語引用ではないため confidence を search_snippet_no_verbatim_quote 未満（このマスタでは null 表記）とし、金額として採用しない。支払方法別の入金・決済手数料は『非公表と確認できた』ではなく『この環境からは検証できなかった』という、Buyee/Neokyoとは異なる第三の状態として区別する。3.5% との整合／矛盾は判定不能"
+      "note": "FROM JAPAN の該当ページ（https://www.fromjapan.co.jp/japan/en/help/payment/ 、https://www.fromjapan.co.jp/japan/en/help/fee/ 、レガシーの http://fjlabo.fromjapan.co.jp/introduction/en/index.html）はいずれもこの環境から終始 403（AWS WAF の CAPTCHA/チャレンジスクリプトが応答に含まれる）。curl はヘッダを整えても本文が空の JS SPA シェルしか返らず（Vue.js のチャンクのみ）、WebFetch も同じ URL 群に 403。ウェブ検索のスニペットには『credit card, PayPal or Alipay』『Payment processing fee (within Japan): Free of charge』『service fee 500 yen per item』という言及があるが、いずれも検索エンジンの要約経由でページ本文の逐語引用ではないため confidence を search_snippet_no_verbatim_quote 未満（このマスタでは null 表記）とし、金額として採用しない。支払方法別の入金・決済手数料は『非公表と確認できた』ではなく『この環境からは検証できなかった』という、Buyee/Neokyoとは異なる第三の状態として区別する。3.5% との整合／矛盾は判定不能",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F09",
@@ -340,7 +355,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "the ZenMarket service fee includes buying items, initial parcel consolidation, shipping insurance for parcels under 5,000,000 yen, and also domestic bank fees."
+      "quote": "the ZenMarket service fee includes buying items, initial parcel consolidation, shipping insurance for parcels under 5,000,000 yen, and also domestic bank fees.",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F10",
@@ -360,7 +376,8 @@
         "item_type": [
           "intangible"
         ]
-      }
+      },
+      "invoice_check": "never_checked"
     },
     {
       "id": "F13",
@@ -374,7 +391,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "You sometimes pay: shipping fees within Japan depending on the seller"
+      "quote": "You sometimes pay: shipping fees within Japan depending on the seller",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F14",
@@ -389,7 +407,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "You never pay: … for initial packing and consolidation of your parcels"
+      "quote": "You never pay: … for initial packing and consolidation of your parcels",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F15",
@@ -406,7 +425,8 @@
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
       "quote": "we recommend using our reinforcement service for 1000 JPY per box … for certain items reinforcement is mandatory",
-      "note": "一部商品は必須。どの商品かは未取得"
+      "note": "一部商品は必須。どの商品かは未取得",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F16",
@@ -440,7 +460,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "Up to 4,999g - 1,000 JPY / 5,000g to 14,999g - 2,000 JPY / 15,000g to 29,999g - 3,000 JPY / 30,000g and heavier - 4,000 JPY"
+      "quote": "Up to 4,999g - 1,000 JPY / 5,000g to 14,999g - 2,000 JPY / 15,000g to 29,999g - 3,000 JPY / 30,000g and heavier - 4,000 JPY",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F18",
@@ -461,7 +482,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "The photography service … costs 500 yen for each item. We will take 3 photographs"
+      "quote": "The photography service … costs 500 yen for each item. We will take 3 photographs",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F19",
@@ -476,7 +498,8 @@
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
       "quote": "any check which would take a non-specialist over 3 minutes is not included and requires an additional commission",
-      "amount_tier": "C_unknown"
+      "amount_tier": "C_unknown",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F20",
@@ -493,7 +516,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "free for 60 days … In total (including the free period), you can keep your items at our warehouse for 90 days."
+      "quote": "free for 60 days … In total (including the free period), you can keep your items at our warehouse for 90 days.",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F21",
@@ -510,7 +534,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "an overstay fee of 50 JPY will start to be taken for each item per day"
+      "quote": "an overstay fee of 50 JPY will start to be taken for each item per day",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F22",
@@ -531,7 +556,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "you will have to pay a 1000 JPY cancellation fee per item"
+      "quote": "you will have to pay a 1000 JPY cancellation fee per item",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F23",
@@ -552,7 +578,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "300 JPY per kilo / 1000 JPY per 15 minutes of additional work / Battery disposal: 300–3200 JPY per unit"
+      "quote": "300 JPY per kilo / 1000 JPY per 15 minutes of additional work / Battery disposal: 300–3200 JPY per unit",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F29",
@@ -569,7 +596,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "shipping insurance for parcels under 5,000,000 yen"
+      "quote": "shipping insurance for parcels under 5,000,000 yen",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -590,7 +618,8 @@
       "tier": "A_confirmed",
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
-      "quote": "we are required to collect 10% GST for all parcels sent to Australia with a total value of 1,000 AUD or less"
+      "quote": "we are required to collect 10% GST for all parcels sent to Australia with a total value of 1,000 AUD or less",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -613,7 +642,8 @@
       "source": "https://zenmarket.jp/en/blog/post/16240/mandatory-vat-precharge-eu-norway",
       "checked_on": "2026-09-11",
       "quote": "Starting March 2, 2026, ZenMarket will make VAT pre-charge mandatory for eligible shipments to the European Union (EU), Norway and the UK. Customers will no longer be able to opt out of VAT pre-charge for applicable shipments.",
-      "note": "T-F6（コードが正）。services.ts のコメントが引く自社ブログ原文（2026-02-19付、2026-03-02施行）に合わせた。マスタが強制化前の記述のまま古くなっていた。"
+      "note": "T-F6（コードが正）。services.ts のコメントが引く自社ブログ原文（2026-02-19付、2026-03-02施行）に合わせた。マスタが強制化前の記述のまま古くなっていた。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -630,7 +660,8 @@
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-11",
       "quote": "Service Cost : 350 yen per item / \"Order and domestic shipping price\" followed by \"350 ¥JPY\" then \"+\" then \"Order Price\"",
-      "note": "T-F4（2026-09-11 再取得）: ¥350に国内送料は含まれない。旧 note の判断を訂正（services.ts は変更なし、正しかった）。"
+      "note": "T-F4（2026-09-11 再取得）: ¥350に国内送料は含まれない。旧 note の判断を訂正（services.ts は変更なし、正しかった）。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F13",
@@ -644,7 +675,8 @@
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-11",
-      "quote": "+ Order Price（Order and domestic shipping price の下に \"+\" を挟んで350¥とは別枠で計上される）"
+      "quote": "+ Order Price（Order and domestic shipping price の下に \"+\" を挟んで350¥とは別枠で計上される）",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F14",
@@ -662,7 +694,8 @@
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-07",
-      "quote": "Up to 2 kg: ¥500 / 2+ kg: ¥500 + ¥150 per additional kilogram (rounded up)"
+      "quote": "Up to 2 kg: ¥500 / 2+ kg: ¥500 + ¥150 per additional kilogram (rounded up)",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F17",
@@ -679,7 +712,8 @@
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-07",
-      "quote": "Unpacking parcel: ¥1,000 + applicable packing fee"
+      "quote": "Unpacking parcel: ¥1,000 + applicable packing fee",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F08",
@@ -695,7 +729,8 @@
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-07",
-      "quote": "Convenience store payment: ¥1,000"
+      "quote": "Convenience store payment: ¥1,000",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F20",
@@ -732,7 +767,8 @@
       "source": "https://neokyo.com/en/storage",
       "checked_on": "2026-09-11",
       "quote": "Dimensions | Additional Order Weekly Storage cost | Additional Parcel Weekly Storage cost — Small 350 / 210 ・ Average 700 / 490 ・ Large 1400 / 980. 45 days for items and 7 days for packages. up to a limit of six unpaid weeks.",
-      "note": "T-F11b（コードが正）。「Neokyoは額が未取得」は誤りで、/en/fees と FAQ しか見ていなかった。/en/storage に週次の表があり、docs/COMPLETENESS.md にも記録済み。寸法最小段(small/order)の¥350をservices.tsに合わせた。"
+      "note": "T-F11b（コードが正）。「Neokyoは額が未取得」は誤りで、/en/fees と FAQ しか見ていなかった。/en/storage に週次の表があり、docs/COMPLETENESS.md にも記録済み。寸法最小段(small/order)の¥350をservices.tsに合わせた。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -752,7 +788,8 @@
       "source": "https://neokyo.com/en/shipping",
       "checked_on": "2026-09-11",
       "quote": "effective March 24th, 2023, we will be charging 10% of the declared value for parcels containing Low-Value Goods (1000 AUD or less) bound for Australia as GST, in addition to international shipping and insurance fees",
-      "note": "T-F6（コードが正）。TODO-NEXT.md の一次情報（2026-09-06 取得、Japan Post 発送は Delivered Duty Unpaid で EU VAT は取らない）に合わせ、対象国をAUのみに絞った。EU27/US_territoriesの記載はマスタ側の古い記述だった。"
+      "note": "T-F6（コードが正）。TODO-NEXT.md の一次情報（2026-09-06 取得、Japan Post 発送は Delivered Duty Unpaid で EU VAT は取らない）に合わせ、対象国をAUのみに絞った。EU27/US_territoriesの記載はマスタ側の古い記述だった。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -769,7 +806,18 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "500 yen per item",
-      "note": "この¥500はProduct Protection Plan（必須）と同一の費目。F12は内包（T-F5、2026-09-11）。"
+      "note": "この¥500はProduct Protection Plan（必須）と同一の費目。F12は内包（T-F5、2026-09-11）。",
+      "invoice_check": "confirmed_calculator",
+      "invoice_check_detail": {
+        "measured_on": "2026-09-13",
+        "method": "オーナー自身がFROM JAPANの自社見積り計算機を7カ国×重量カーブで実測した際（docs/audit/fromjapan-own-calculator-seven-countries-2026-09-13.md）、測定した全条件で結果画面に共通表示される Handling fee を記録した",
+        "observation": "Handling fee: 500 yen/Item という表示が、測定した全条件（複数国・複数重量）で一貫していた",
+        "not_threshold_tested": "F26と異なりF02は金額が申告額等に依存しない定額（fixed_per_item）のため、しきい値をまたぐ検証は成立しない。今回確認できたのは『複数条件・複数回の観測で金額が揺れなかった』という再現性のみ",
+        "calculator_disclaimer_quote": "Your final payment will be determined by actual cost and may vary from the estimate provided in this tool.",
+        "not_an_invoice_because": "計算機はFROM JAPAN自身のシステムであり、他社の実請求と違って会社から独立していない",
+        "scope": "この測定はFROM JAPAN 1社のみ。同じF02行を持つ他社（Buyee等）には一般化していない（原則3）",
+        "source_ref": "master/courier-rates.json の conclusions.fromjapan_handling_fee_cross_check_2026_09_13"
+      }
     },
     {
       "id": "F04",
@@ -783,7 +831,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "If multiple units of the same item are paid together, handling fees will be the same as for one item."
+      "quote": "If multiple units of the same item are paid together, handling fees will be the same as for one item.",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F04",
@@ -797,7 +846,8 @@
       "tier": "A_confirmed",
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-11",
-      "quote": "If you purchase multiples copies of the same item within the same Buy Request, this fee is only applied once."
+      "quote": "If you purchase multiples copies of the same item within the same Buy Request, this fee is only applied once.",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F06",
@@ -819,7 +869,8 @@
           "jdirectitems_auction"
         ]
       },
-      "note": "一般の国内決済手数料ではない。仕入先条件付き"
+      "note": "一般の国内決済手数料ではない。仕入先条件付き",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F08",
@@ -835,7 +886,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "an additional 1,000 yen commission fee will be applied"
+      "quote": "an additional 1,000 yen commission fee will be applied",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F11",
@@ -853,7 +905,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "Whichever is higher of 2,000 yen or 30% of the total bid or order total as a negotiation fee"
+      "quote": "Whichever is higher of 2,000 yen or 30% of the total bid or order total as a negotiation fee",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F12",
@@ -870,7 +923,8 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-11",
       "quote": "help_fee_120: \"Handling Fees\" / help_fee_130: \"Product Protection Plan\" / help_fee_140: \"500 yen per item\" / help_fee_150: \"*If multiple units of the same item are paid together, handling fees will be the same as for one item.\" / title_serviceRule_670: \"Members agree that all purchased items will be covered by our Product Protection Plan. Use of the Product Protection Plan is mandatory for all items.\"",
-      "note": "T-F5（2026-09-11再取得、コードが正）。en_help.txt の並び (help_fee_120 Handling Fees > help_fee_130 Product Protection Plan > help_fee_140 500 yen per item) と help_fee_252/381/382 の対応から、Handling Fees / Plan Fee / Product Protection Plan は同じ¥500/点の呼び分けで、並立しない。必須なので任意欄には出さない。"
+      "note": "T-F5（2026-09-11再取得、コードが正）。en_help.txt の並び (help_fee_120 Handling Fees > help_fee_130 Product Protection Plan > help_fee_140 500 yen per item) と help_fee_252/381/382 の対応から、Handling Fees / Plan Fee / Product Protection Plan は同じ¥500/点の呼び分けで、並立しない。必須なので任意欄には出さない。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F13",
@@ -885,7 +939,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "Actual cost (Items which do not charge shipping fees inside Japan are charged 0 yen)"
+      "quote": "Actual cost (Items which do not charge shipping fees inside Japan are charged 0 yen)",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F14",
@@ -911,7 +966,8 @@
       "checked_on": "2026-09-11",
       "quote": "50 kg or above / 30 kg or above and 300,000 yen or above / Fragile, breakable and delicate items that require special handling",
       "note": "F14（初回梱包・まとめ梱包）とは別種の追加費用として同じ id に置く（総額行 F14 の基本梱包費とは別。発生条件が立ったときだけの上乗せ）。条件は3つ：(1) 50kg以上 (2) 30kg以上かつ30万円以上 (3) 壊れ物等で特別な取扱いを要する。help_logistics_1622 は壊れ物を複数含む荷物も対象になりうるとする。**額は『Actual cost（実費）』としか書かれておらず、上限額・標準価格・価格レンジ・重量別料金表・過去の請求実例・外注業者の料金表はいずれも公表されていない（探して無かったことの記録）。**事前に額を知る手段も無い：help_logistics_1490/1621/1661/1731 は対象商品の Charge 2 が『梱包・計測後』に確定すると説明しており、title_serviceRule_1820 と help_logistics_1540 は利用者による梱包方法の指定・個別要求を原則認めていない。つまり見積提示・事前同意・外注梱包の拒否の仕組みは無い。**公式内の不一致：ヘルプ（en_help.txt の help_logistics_*）は条件を3つ列挙するが、利用規約（title_serviceRule_1870 直後の title_serviceRule_1880/1890）は50kg以上・30kg以上かつ30万円以上の2つしか列挙せず、条件3（壊れ物）が無い。ここではヘルプの3条件を採用する：理由は、ヘルプの方が詳しく、かつ包括条件『FROM JAPAN が梱包できないと判断した商品』（help_logistics_1730）を持つため、条件3はその具体化として整合するから。この不一致自体を消さずに残す。**この計算機にとっての意味：条件1・2はこの計算機では原理的に発生しない（EMS の上限が30kgなので50kgは表現できず、30kgは表の上端ぴったり）。残るのは条件3（壊れ物）だけで、これは FROM JAPAN の主観判断なので我々には検出できない。額は出せないままだが、『ほぼ起きない』と言える根拠が初めて得られた。**",
-      "amount_tier": "C_unknown"
+      "amount_tier": "C_unknown",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F16",
@@ -927,7 +983,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "A repacking fee of at least 1,500 yen is required to modify or cancel confirmed shipping instructions."
+      "quote": "A repacking fee of at least 1,500 yen is required to modify or cancel confirmed shipping instructions.",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F23",
@@ -943,7 +1000,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "Standard disposal: 5.00 USD per item"
+      "quote": "Standard disposal: 5.00 USD per item",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F26",
@@ -966,7 +1024,33 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "Packages with a total value exceeding 200,000 yen sent through Japan Post (EMS, International Parcel) will incur a 2,800 yen Export Clearance Fee.",
-      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
+      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）",
+      "invoice_check": "confirmed_calculator",
+      "invoice_check_detail": {
+        "measured_on": "2026-09-13",
+        "method": "オーナー自身がFROM JAPANの自社見積り計算機を実際に操作（クリック・キーストロークのみ、DOM操作なし、CLAUDE.md §10の手順に従い1条件ずつ・都度SUBMIT・画面表示を目視確認）。条件固定: ドイツ向け/1kg/20x15x10cm/国内送料¥0。商品価格を3水準で変え、各3回ずつ実行",
+        "observations": [
+          {
+            "item_price_jpy": 150000,
+            "export_clearance_fee_jpy": 0,
+            "runs": 3
+          },
+          {
+            "item_price_jpy": 250000,
+            "export_clearance_fee_jpy": 2800,
+            "runs": 3
+          },
+          {
+            "item_price_jpy": 500000,
+            "export_clearance_fee_jpy": 2800,
+            "runs": 3
+          }
+        ],
+        "threshold_behavior": "declared_value_jpy_over: 200000 のしきい値をまたいだ2水準間で Sub-total of charge 2 が ¥4,350→¥7,150 と ¥2,800 分だけ動き、rule.amount(2800) と rule.when.declared_value_jpy_over(200000) の両方が計算機の挙動と一致した。3回ずつ再現した",
+        "calculator_disclaimer_quote": "Your final payment will be determined by actual cost and may vary from the estimate provided in this tool.",
+        "not_an_invoice_because": "計算機はFROM JAPAN自身のシステムであり、他社の実請求と違って会社から独立していない。上記の免責文言が示す通り、見積りが実際の請求と一致する保証もこの測定には含まれない",
+        "scope": "この測定はFROM JAPAN 1社のみ。Buyee・Jauceの同額(¥2,800)は各社自身のページを読んだのみ（quoteあり）でinvoice_checkはnever_checkedのまま——他社に一般化していない（docs/PRINCIPLES.md 原則3）"
+      }
     },
     {
       "id": "F27",
@@ -987,7 +1071,8 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "Shipments destined for an address outside of FedEx's direct distribution area will incur a 2,710 yen Special Delivery Fee.",
-      "note": "郵便番号が入力に無いと判定できない"
+      "note": "郵便番号が入力に無いと判定できない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F30",
@@ -1018,7 +1103,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "International ePacket Light can only be selected for packages with Charge 1 valued under 10,000 yen … PMI can only be selected for packages with Charge 1 valued at 2,499.99 USD or less"
+      "quote": "International ePacket Light can only be selected for packages with Charge 1 valued under 10,000 yen … PMI can only be selected for packages with Charge 1 valued at 2,499.99 USD or less",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1039,7 +1125,8 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "For sales with a customs value under 1,000 AUD, 10% of the total order value (Charge 1(item price) + Charge 2 before GST is added) will be collected as GST.",
-      "note": "課税ベースに全手数料と送料を含む。現行 CIF/FOB の2択では書けない"
+      "note": "課税ベースに全手数料と送料を含む。現行 CIF/FOB の2択では書けない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1057,7 +1144,8 @@
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
       "quote": "15% of the total order value (Charge 1 + Charge 2 before GST is added) will be collected as GST",
-      "inference_basis": "率15%・同一の課税ベース記述。国名が原文に無く NZ と推定。要確認"
+      "inference_basis": "率15%・同一の課税ベース記述。国名が原文に無く NZ と推定。要確認",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1074,7 +1162,8 @@
       "tier": "A_confirmed",
       "source": "https://www.fromjapan.co.jp/translate/en_help.txt",
       "checked_on": "2026-09-07",
-      "quote": "For each LVG settled in Charge 1 after this date, 10% of the amount will be collected as SST"
+      "quote": "For each LVG settled in Charge 1 after this date, 10% of the amount will be collected as SST",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -1097,7 +1186,8 @@
         "marketplace": [
           "yahoo_auction"
         ]
-      }
+      },
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -1120,7 +1210,8 @@
         "marketplace": [
           "off_site_store"
         ]
-      }
+      },
+      "invoice_check": "never_checked"
     },
     {
       "id": "F02",
@@ -1141,7 +1232,8 @@
           "shopping_mall"
         ]
       },
-      "note": "ベータ終了で変わる。恒久ではない"
+      "note": "ベータ終了で変わる。恒久ではない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F07",
@@ -1160,7 +1252,8 @@
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
       "quote": "JPY 40 + 3.9% over the deposit amount",
-      "note": "支払方法によらない"
+      "note": "支払方法によらない",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F09",
@@ -1176,7 +1269,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "JPY 300 flat per payment (once daily per seller)"
+      "quote": "JPY 300 flat per payment (once daily per seller)",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F13",
@@ -1190,7 +1284,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Domestic delivery fee: Seller's cost to warehouse, varies by item"
+      "quote": "Domestic delivery fee: Seller's cost to warehouse, varies by item",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F14",
@@ -1208,7 +1303,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Smart Packing: JPY 300 per package + JPY 120/kg"
+      "quote": "Smart Packing: JPY 300 per package + JPY 120/kg",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F14",
@@ -1226,7 +1322,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Fragile Packing: JPY 600 per package + JPY 240/kg"
+      "quote": "Fragile Packing: JPY 600 per package + JPY 240/kg",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F24",
@@ -1242,7 +1339,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Customized Processing: 2,000¥ per hour"
+      "quote": "Customized Processing: 2,000¥ per hour",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F20",
@@ -1262,7 +1360,8 @@
       "checked_on": "2026-09-11",
       "quote": "Storage fees depend on the item size and value. Very roughly, a music CD would cost around 200yen/month and a guitar around 700yen/month. / Maximum storage time in Jauce.com warehouses is 120 days. Unclaimed items are discarded at the end of 120 days.",
       "note": "無料60日・最大保管120日（＝有料期間は最大60日≒約2か月）。月額は一律ではなく『サイズと価値で変わる』と公式が明記。参考額はCD約¥200/月・ギター約¥700/月の2点のみで料金表ではない（\"Very roughly\"と前置き）。金額そのもの（F21）とは別行に分ける。以前の checked_on 2026-09-07 の quote（Free for 60 days; monthly fee charged days 61-120／同じ https://www.jauce.com/japan_auction_detail ページ）は矛盾しないため rule.after にそのまま残す。",
-      "amount_tier": "C_unknown"
+      "amount_tier": "C_unknown",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F21",
@@ -1285,7 +1384,8 @@
       "checked_on": "2026-09-11",
       "quote": "Storage fees depend on the item size and value. Very roughly, a music CD would cost around 200yen/month and a guitar around 700yen/month. / Maximum storage time in Jauce.com warehouses is 120 days. / Unclaimed items are discarded at the end of 120 days.",
       "note": "有料期間は F20 の無料60日を過ぎた61〜120日目（最大60日≒約2か月）。月額は一律ではなく、サイズと価値で決まると公式が明記。公表されている参考額は CD 約¥200/月・ギター約¥700/月の2点だけで、料金表ではない（\"Very roughly\"の前置き付き）。**¥700 はギターの一例であって上限ではない。大きい・高価な物はこれより高い可能性がある。¥700 を上限として扱ってはいけない。**計算式・最低額・金額の上限・未払い許容回数はいずれも公表されておらず、探しても見つからなかった（無かったことの記録）。120日を過ぎると未回収の荷物は放棄品とみなされ処分される。処分前に通知する旨が利用規約にある：User Agreement（https://www.jauce.com/terms#Storage）\"Items left in our warehouse for over 120 days without shipping directives or communication from the user will be considered abandoned. ... JAUCE reserves the right to dispose of them. JAUCE will notify users as the end of the complimentary storage period nears and again before taking any disposal actions.\"",
-      "amount_tier": "C_unknown"
+      "amount_tier": "C_unknown",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F26",
@@ -1304,7 +1404,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Additional customs fee: JPY 2,800 when package contents exceed JPY 200,000"
+      "quote": "Additional customs fee: JPY 2,800 when package contents exceed JPY 200,000",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F29",
@@ -1321,7 +1422,8 @@
       "source": "https://www.post.japanpost.jp/service/send/oversea/list/delivery/ems/damage_en.html",
       "checked_on": "2026-09-11",
       "quote": "Claim amount under 20,000JPY is free of charge.",
-      "note": "Jauce は『全発送に郵便保険を付ける』とだけ案内している（https://www.jauce.com/help/knowledgebase.php?article=23 \"We ship all items with postal insurance\"、確認日2026-09-11。同ページに料金・補償額・計算式は無い）。Premium Insurance（1.9%、利用者が選ぶ任意）とは別物。額の出どころは Jauce ではなく日本郵便（EMS 損害賠償）なので、source は日本郵便のページに立てる（輸出通関¥2,800と同じ構造）。基準ケース（5点×¥3,000＝¥15,000）はこの¥20,000以内に収まるため、この行では追加費用は発生しない。"
+      "note": "Jauce は『全発送に郵便保険を付ける』とだけ案内している（https://www.jauce.com/help/knowledgebase.php?article=23 \"We ship all items with postal insurance\"、確認日2026-09-11。同ページに料金・補償額・計算式は無い）。Premium Insurance（1.9%、利用者が選ぶ任意）とは別物。額の出どころは Jauce ではなく日本郵便（EMS 損害賠償）なので、source は日本郵便のページに立てる（輸出通関¥2,800と同じ構造）。基準ケース（5点×¥3,000＝¥15,000）はこの¥20,000以内に収まるため、この行では追加費用は発生しない。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F29",
@@ -1340,7 +1442,8 @@
       "checked_on": "2026-09-11",
       "inference_basis": "日本郵便 EMS 損害賠償ページの公表表（基本補償¥20,000までは無料、以降は補償額¥20,000増ごとに¥50、補償上限¥2,000,000）を rule に転記した。表全体を quote として引用していないため tier は B とする。Jauce 自身の料金・計算機（https://www.jauce.com/price_check.php、米国向け1,000g・20x20x20cmで確認、確認日2026-09-11）は EMS ¥5,300 / Smart Packing ¥420 / Postal Insurance『Available』とだけ表示し、標準保険の別料金行も商品価額の入力欄も無い。つまりこの日本郵便の増額保険料を Jauce が利用者に自動で付保・請求するかどうかを一次情報から確認できていない——これが残る問い。",
       "amount_tier": "C_unknown",
-      "note": "我々の計算機での実害の見積もり：基準ケースは5点×¥3,000＝¥15,000で¥20,000の基本補償の内側に収まるため、この行の増額保険料は発生しない。影響が出るのは申告額が¥20,000を超えるカートから。"
+      "note": "我々の計算機での実害の見積もり：基準ケースは5点×¥3,000＝¥15,000で¥20,000の基本補償の内側に収まるため、この行の増額保険料は発生しない。影響が出るのは申告額が¥20,000を超えるカートから。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F29",
@@ -1356,7 +1459,8 @@
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
       "quote": "Premium insurance: 1.9% over the total amount",
-      "note": "利用者が注文時に選ぶ任意のオプション（区分D）。標準の郵便保険（このIDの他の2行）とは別物。課税ベース（『total amount』が何を指すか）・最低額・補償上限は公表されていない。利用規約にある『過去12か月のサービス料累計または$200』はJauce全体の責任上限であり、Premium Insuranceの補償上限としては採らない。総額外・額は出さない（確定）。"
+      "note": "利用者が注文時に選ぶ任意のオプション（区分D）。標準の郵便保険（このIDの他の2行）とは別物。課税ベース（『total amount』が何を指すか）・最低額・補償上限は公表されていない。利用規約にある『過去12か月のサービス料累計または$200』はJauce全体の責任上限であり、Premium Insuranceの補償上限としては採らない。総額外・額は出さない（確定）。",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F30",
@@ -1373,7 +1477,8 @@
       "tier": "A_confirmed",
       "source": "https://www.jauce.com/japan_auction_detail",
       "checked_on": "2026-09-07",
-      "quote": "Expedited shipping: JPY 200 + JPY 80/kg"
+      "quote": "Expedited shipping: JPY 200 + JPY 80/kg",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F26",
@@ -1396,7 +1501,8 @@
       "source": "https://zenmarket.jp/en/fees.aspx",
       "checked_on": "2026-09-07",
       "inference_basis": "Buyee・FROM JAPAN・Jauce の3社が同額・同条件で持つ。日本郵便の輸出通関料の転嫁であり、日本郵便を使う限り発生する。ZenMarket 公式に記載も否定も無い",
-      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
+      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F26",
@@ -1419,7 +1525,8 @@
       "source": "https://neokyo.com/en/fees",
       "checked_on": "2026-09-07",
       "inference_basis": "同上",
-      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）"
+      "note": "便の集合は『日本郵便の全便』に統一（Buyee は EMS/AIR/SAL/船便、FROM JAPAN は EMS/国際小包と書き方が違うが、根拠は同じ日本郵便の輸出通関料）",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F05",
@@ -1435,7 +1542,8 @@
       "source": "https://buyee.jp/helpcenter/guide/fees?lang=en",
       "checked_on": "2026-09-07",
       "inference_basis": "公式料金ページは1回目を3項目（商品代・購入手数料・保証プラン）、2回目を4項目（国内送料・国際送料・通関手数料・オプション）と網羅的に列挙しており、この費目は無い。Buyee Cart の料金ページも同じ構成。→ src/data.js の domesticServicePerOrder: 500 は過大計上",
-      "note": "現行コードが計上している。削除対象"
+      "note": "現行コードが計上している。削除対象",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F07",
@@ -1453,7 +1561,8 @@
       "tier": "B_inferred",
       "source": "teetalk.de ほか独語圏の複数の書き手",
       "checked_on": "2026-09-07",
-      "inference_basis": "複数の独立した書き手が 3.2%＋¥40 で一致。Jauce の ¥40＋3.9% と構造・水準が整合的。公式の方法別表は要ログインで未取得"
+      "inference_basis": "複数の独立した書き手が 3.2%＋¥40 で一致。Jauce の ¥40＋3.9% と構造・水準が整合的。公式の方法別表は要ログインで未取得",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1473,7 +1582,8 @@
       "tier": "A_confirmed",
       "source": "https://buyee.jp/helpcenter/guide/nz-gst?lang=en",
       "quote": "Please pay the 15% GST along with the total price of the goods, Buyee's service fee, and other optional fees during handling.",
-      "checked_on": "2026-09-07"
+      "checked_on": "2026-09-07",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1493,7 +1603,8 @@
       "tier": "A_confirmed",
       "source": "https://buyee.jp/helpcenter/guide/sg-gst?lang=en",
       "quote": "9% of the value of goods shown on the invoice, Buyee's service fees, optional service fees, domestic/international shipping costs",
-      "checked_on": "2026-09-07"
+      "checked_on": "2026-09-07",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1521,7 +1632,8 @@
       "source": "https://buyee.jp/helpcenter/guide/ms-sst?lang=en",
       "quote": "a 10% Sales & Service Tax (SST) will be imposed on packages imported into Malaysia after May 8th, 2024. The SST for items with a unit price of 500 MYR or more will be charged separately by the local delivery company upon delivery.",
       "checked_on": "2026-09-07",
-      "amount_tier": "C_unknown"
+      "amount_tier": "C_unknown",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F36",
@@ -1541,7 +1653,8 @@
       "source": "https://buyee.jp/helpcenter/guide/au-gst?lang=en",
       "quote": "10% GST",
       "note": "T-F6（コードが正）。以前は AU GST サブページが401で取得できず C_unknown だったが、services.ts のコメントにある通り後日 /helpcenter/guide/au-gst を取得し確定済み。",
-      "checked_on": "2026-09-11"
+      "checked_on": "2026-09-11",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F18",
@@ -1558,7 +1671,8 @@
       "tier": "B_inferred",
       "source": "REQUIREMENTS.md §8.5（一次配信ファイルからの取得）",
       "inference_basis": "§8.5 が一次で取得済みだが、今回の再取得で該当文を特定できず",
-      "checked_on": "2026-09-07"
+      "checked_on": "2026-09-07",
+      "invoice_check": "never_checked"
     },
     {
       "id": "F20",
@@ -1573,7 +1687,8 @@
       "tier": "B_inferred",
       "source": "REQUIREMENTS.md §8.5",
       "inference_basis": "同上",
-      "checked_on": "2026-09-07"
+      "checked_on": "2026-09-07",
+      "invoice_check": "never_checked"
     }
   ],
   "catalog": [
@@ -2087,6 +2202,15 @@
   "schema": {
     "tier": "発生の確からしさ（A_confirmed / B_inferred）",
     "amount_tier": "金額の確からしさ。rule に unknown を含む行は C_unknown を必須とする",
+    "invoice_check": "tier/confidenceとは直交する第三の軸。tier/confidenceは『その数値をどう取得したか』（一次ページを直接読んだ、等）を表すのに対し、invoice_checkは『その数値を実際の請求と突き合わせたか』だけを表す。tierがA_confirmedでもinvoice_checkはnever_checkedのままであり得る——公表ページを読んだことと、実際に課金された実例で確認したことは別。省略不可（全行が明示的にnever_checkedを持つ。無記載＝見落としと区別できないため）。master/customs.jsonの同名フィールド・invoice_check_vocabularyと同じ語彙・同じ意味を共有する",
+    "invoice_check_vocabulary": [
+      "never_checked",
+      "confirmed_calculator",
+      "confirmed_independent",
+      "confirmed_circular",
+      "contradicted"
+    ],
+    "invoice_check_vocabulary_note": "never_checked=請求・計算機のいずれとも一度も突き合わせていない（既定値、現状ほぼ全行）。confirmed_calculator=会社自身の見積り計算機が、しきい値をまたぐ複数条件・複数回の操作でその金額を再現した（2026-09-13 F26/FROM JAPANが初例）——一次ページの記述より強い（実際に動く計算に配線されていることを示す）が、実請求より弱い（計算機は会社自身のシステムであり、会社から独立していない。画面自体が『実際の請求は見積りと異なることがある』と明記している場合がある）。confirmed_independent=突き合わせた請求書がこの数値自身の出典と別文書（master/fixtures.jsonのsource_same_as_master: false）——最も強い。confirmed_circular=突き合わせた請求書がこの数値自身の出典と同じ（source_same_as_master: true）ため、確認ではなく数値の由来を示しているだけ——confirmed_independentと混同してはならない。contradicted=請求書と食い違った（現状0件だが、将来最も重要になるため語彙として用意する）。",
     "rule.inferred_marketplaces": "行全体は A_confirmed でも、特定のマーケットプレイス区分だけ我々の推論で埋めた額であることを示す。キーはそのマーケットプレイス名（rule.amounts のキーと対応）、値は { tier: 'B_inferred', mapped_to?: 対応付けた原文の区分名, sources: [{lang, source, checked_on, quote}, ...], inference_basis: 推論の根拠（文字列） } を必須とする。amounts の当該区分に置いた額は一次情報がその区分を名指ししたものではなく推論値であることの機械可読な印",
     "rule_type_vocabulary": [
       "actual_cost_per_order",
