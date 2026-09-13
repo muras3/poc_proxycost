@@ -1,0 +1,71 @@
+{
+  "fetched_at": "2026-09-12",
+  "measurement_policy": "Only values visibly returned by official public calculators are included. Invalid Buyee batch output was discarded.",
+  "fromjapan": {
+    "url": "https://www.fromjapan.co.jp/en/estimate/calc",
+    "interval_seconds": 30,
+    "fixed_for_dimension_scan": {"country":"DE","weight_g":600,"item_price_jpy":10000},
+    "dimension_scan": [
+      {"dims_cm":[10,10,10],"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[20,20,20],"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"FedEx - Economy":6156,"FedEx - Priority":6276,"UPS":6329,"DHL":6900,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[30,20,10],"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"UPS":5411,"FedEx - Economy":5435,"FedEx - Priority":6179,"DHL":6398,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[40,30,20],"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"FedEx - Economy":10542,"FedEx - Priority":10736,"DHL":11322,"UPS":11793,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[60,40,30],"prices":{"EMS":3400,"AirMail":3850,"FedEx - Economy":17799,"DHL":17942,"UPS":26728,"FedEx - Priority":27103,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[25,25,25],"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"FedEx - Economy":8051,"FedEx - Priority":8201,"UPS":9140,"DHL":9435,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[30,30,30],"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"FedEx - Economy":11137,"DHL":11672,"UPS":12452,"FedEx - Priority":12538,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[35,35,35],"prices":{"EMS":3400,"AirMail":3850,"DHL":14116,"FedEx - Economy":14662,"FedEx - Priority":15844,"UPS":16180,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[40,40,40],"prices":{"EMS":3400,"AirMail":3850,"FedEx - Economy":16751,"DHL":16899,"UPS":25437,"FedEx - Priority":25908,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+      {"dims_cm":[45,45,45],"prices":{"FedEx - Economy":20592,"DHL":20722,"UPS":28024,"FedEx - Priority":35044,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410}},
+      {"dims_cm":[50,50,50],"prices":{"DHL":25257,"FedEx - Economy":44924,"FedEx - Priority":47900,"UPS":55487}}
+    ],
+    "default_dimensions": {"dims_cm":null,"weight_g":600,"item_price_jpy":10000,"prices":{"International ePacket Light":1780,"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface (Small Packet)":1300,"AirMail (Small Packet)":1410,"Surface":2500}},
+    "price_scan": [
+      {"item_price_jpy":50000,"shipping":{"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface":2500},"export_clearance_fee_jpy":0},
+      {"item_price_jpy":100000,"shipping":{"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface":2500},"export_clearance_fee_jpy":0},
+      {"item_price_jpy":200000,"shipping":{"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface":2500},"export_clearance_fee_jpy":0},
+      {"item_price_jpy":200001,"shipping":{"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface":2500},"export_clearance_fee_jpy":2800},
+      {"item_price_jpy":500000,"shipping":{"EMS":3400,"AirMail":3850,"UPS":4358,"FedEx - Economy":5309,"FedEx - Priority":5671,"DHL":5895,"Surface":2500},"export_clearance_fee_jpy":2800}
+    ]
+  },
+  "jauce": {
+    "url": "https://www.jauce.com/price_check.php",
+    "input_fields": ["country","weight","dimensions"],
+    "item_price_supported": false,
+    "courier_methods_displayed": [],
+    "methods_displayed": ["EMS","SAL","Surface"],
+    "country_600g_20x15x10": [
+      {"country":"US","EMS":4180,"Surface":null,"smart_packing":420},
+      {"country":"DE","EMS":3400,"Surface":2750,"smart_packing":420},
+      {"country":"GB","EMS":3400,"Surface":2750,"smart_packing":420},
+      {"country":"FR","EMS":3400,"Surface":2750,"smart_packing":420},
+      {"country":"AU","EMS":3400,"Surface":2750,"smart_packing":420,"note":"GST for Australia shown separately without amount"},
+      {"country":"CA","EMS":3400,"Surface":2750,"smart_packing":420},
+      {"country":"SG","EMS":2150,"Surface":2350,"smart_packing":420}
+    ],
+    "germany_weight_curve_20x15x10": [
+      {"weight_g":500,"EMS":3150,"Surface":2750,"smart_packing":420},
+      {"weight_g":600,"EMS":3400,"Surface":2750,"smart_packing":420},
+      {"weight_g":700,"EMS":3650,"Surface":2750,"smart_packing":420},
+      {"weight_g":1000,"EMS":4400,"Surface":2750,"smart_packing":420},
+      {"weight_g":1500,"EMS":5550,"Surface":3600,"smart_packing":540},
+      {"weight_g":2000,"EMS":6700,"Surface":3600,"smart_packing":540},
+      {"weight_g":2500,"EMS":7750,"Surface":4450,"smart_packing":660},
+      {"weight_g":3000,"EMS":8800,"Surface":4450,"smart_packing":660},
+      {"weight_g":5000,"EMS":13000,"Surface":6150,"smart_packing":900},
+      {"weight_g":10000,"EMS":23500,"Surface":10400,"smart_packing":1500},
+      {"weight_g":20000,"EMS":44500,"Surface":16900,"smart_packing":2700}
+    ],
+    "dimension_scan_summary": {"10x10x10_through_40x40x40":"EMS 3400, Surface 2750, smart packing 420; unchanged","45x45x45_and_50x50x50":"all methods unavailable","blank_dimensions":"all methods unavailable"},
+    "limits_shown_for_germany": {"EMS":{"max_weight_g":30000,"max_length_cm":105,"max_length_plus_girth_cm":200},"Surface":{"max_weight_g":30000,"max_length_cm":105,"max_length_plus_girth_cm":200}}
+  },
+  "buyee": {
+    "url": "https://buyee.jp/helpcenter/guide/shipping-fees?lang=en",
+    "input_fields": ["country","weight","dimensions"],
+    "item_price_supported": false,
+    "verified_single_observation": {"country":"DE","weight_g":600,"dims_cm":[20,15,10],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"International Parcel Post (Surface Mail)":2500,"EMS":3400,"International Parcel Post (AIR)":3850,"FedEx":4612,"DHL":5021}},
+    "discarded_batch": "Discarded in full because output included implausible values and unit/state contamination; not used as evidence."
+  },
+  "zenmarket": {"url":"https://zenmarket.jp/calc.aspx","status":"not_measured","reason":"Cloudflare Just a moment challenge blocked this browser; no bypass attempted"},
+  "neokyo": {"url":"https://neokyo.com/en/shipping-rates-estimate","status":"not_measured","reason":"robots.txt Disallow: /*?* applies to calculator query URLs; measurement intentionally skipped"},
+  "coverage": "FROM JAPAN: original country/weight data plus full requested dimension/default/price scans complete. Jauce: requested country/weight/dimension/default scans complete; no courier methods or price input. Buyee: calculator capability confirmed and one DE baseline verified; bulk scan incomplete because contaminated batch was discarded. ZenMarket blocked by Cloudflare. Neokyo skipped by robots policy."
+}

@@ -1,0 +1,172 @@
+{
+  "carrier": "dhl",
+  "sources": [
+    {
+      "url": "https://www.dhl.com/robots.txt",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "# Version 17.07.2026\n# https://www.dhl.com/\n\nUser-agent: dhl-cloud-crawler / dhl-norconex-crawler: Allow: / ; Disallow: /master/ /content/ /DatPublic/ /v1/mailitems /TrackReport/\n\nUser-agent: *\nAllow: /\nDisallow: /master/\nDisallow: /DatPublic/\nDisallow: /v1/mailitems\nDisallow: /TrackReport/\nDisallow: /sureroute-test-object.html\nDisallow: /at-en/home/global-forwarding/help-center/claims-complaints-compliments-form.html\nDisallow: /at-de/home/global-forwarding/help-center/claims-complaints-compliments-form.html\nDisallow: /at-de/home/globale-weiterleitung/hilfecenter/claims-complaints-compliments-form.html\nDisallow: /_sec/*\nDisallow: /discover/*/search-results\nDisallow: /discover/*/download-thanks\nDisallow: /discover/*/open-an-account/thanks\nDisallow: /discover/*/open-an-account/*/thank-you\nDisallow: /express/mydhl/perfectyourshipment\nDisallow: /cp\nDisallow: /fragments/dhl-finder-v1\n\nSitemap: https://www.dhl.com/sitemap-index.xml\nSitemap: https://www.dhl.com/discover/sitemap-index.xml\n\n No Crawl-delay directive is present. This robots.txt governs the entire www.dhl.com domain (all country/language paths such as /jp-ja/, /us-en/, /gb-en/, /au-en/ share this single robots.txt since they are the same domain). None of the pages accessed for this task (/jp-ja/home*, /us-en/home/express/products-and-solutions/*, /gb-en/..., /au-en/...) match any Disallow rule, so none were skipped for robots.txt reasons. Since no Crawl-delay was specified, a manual 10-second sleep was inserted between every same-domain navigation per instructions.",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "Read in full (Japanese '利用規約' page). Searched the text for the keywords 'ロボット'(robot), 'クロール'(crawl), '自動化'/'自動'(automated), 'スクレイピング'(scraping) — none of these terms appear anywhere on the page. The page covers copyright, trademark, reproduction permission, disclaimer of warranty, limitation of liability (caps DHL's liability at 100 EUR), and confidentiality of submitted information. It contains no statement permitting or prohibiting automated/bot access.",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト(jp-ja)のお知らせページ。ただし本文中の『サーチャージの概要』リンクはjp-ja版が存在せず、グローバル/US表(us-en)へ自動フォールバックした（下記参照）"
+    },
+    {
+      "url": "https://www.dhl.com/jp-ja/home/important-information/2026/express-fuel-surcharge-updates.html",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外、User-agent: * / Allow: /）",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "同上（自動アクセスに関する記述なし）",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト(jp-ja)のお知らせページ本文"
+    },
+    {
+      "url": "https://www.dhl.com/us-en/home/express/products-and-solutions/products-and-services-overview/surcharges.html",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "グローバル/US表。jp-ja側の告知ページ内『サーチャージの概要』リンク(https://www.dhl.com/jp-ja/home/important-information/2026/express-fuel-surcharge-updates.html)をクリックしたところ、URLに error=CANDIDATE_PAGE_NOT_FOUND|jp というパラメータが付き、United States of America（us-en）のSurchargesページへ自動フォールバックした。つまり日本(jp-ja)専用の燃油サーチャージ表ページはサイト上に存在せず、日本の利用者もこのUS表にたどり着く構造になっている。ドイツ(de-de)サイトの同種お知らせページでも同じ外部リンク（アイコン表示）による差し替えが確認された。"
+    },
+    {
+      "url": "https://www.dhl.com/jp-ja/home/express.html",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト(jp-ja)のFAQ本文"
+    },
+    {
+      "url": "https://www.dhl.com/us-en/home/express/products-and-solutions/products-and-services-overview/optional-services.html",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "米国(US)サイト。日本(jp-ja)には同種ページが存在しない（後述）ため、7カ国のうちUSのみこの構造のページで確認できた"
+    },
+    {
+      "url": "https://www.dhl.com/gb-en/home/express/products-and-solutions/products-and-services-overview/optional-services.html",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "英国(GB)サイト"
+    },
+    {
+      "url": "https://www.dhl.com/au-en/home/express/products-and-solutions/products-and-services-overview/optional-services.html",
+      "robots_txt_checked": "https://www.dhl.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.dhl.com/jp-ja/home/footer/terms-of-use.html",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "豪州(AU)サイト"
+    }
+  ],
+  "fuel_surcharge": {
+    "percentage": null,
+    "effective_period": "ページ上部表記: 'Updated: July 20, 2026 / Effective: August 03, 2026'。表は毎週区間ごとの率を掲載しており、本日(2026-09-12)時点で有効な行は 'September 07-13 2026'。",
+    "differs_by_service": false,
+    "per_service": [
+      {"service": "Export Surcharge (All Services) — week of Sept 07-13, 2026", "percentage": 33.00},
+      {"service": "Import Surcharge (All Services) — week of Sept 07-13, 2026", "percentage": 36.75}
+    ],
+    "included_in_displayed_rate": null,
+    "included_in_displayed_rate_quote": "直接『表示運賃に燃油サーチャージを含む/含まない』と明言した文言はページ上に見つからなかった。最も近い記述は、日本サイト(jp-ja)のFAQ『DHL Expressの運送料金はどのように計算されますか？』の回答内の一文: 「オプショナルサービスと追加料金サーチャージ：GoGreen Plusなどの追加サービスや、航空機燃料割増料金、遠隔地配達手数料などが適用される場合があります」。これは燃油サーチャージが『適用される場合がある』追加項目として言及されているのみで、見積り画面に表示される運賃に含まれるか否かを明言するものではない。",
+    "source": "https://www.dhl.com/us-en/home/express/products-and-solutions/products-and-services-overview/surcharges.html",
+    "quote": "Fuel Surcharge / Changes in fuel prices result in fluctuating costs for the transport industry, necessitating a variable fuel surcharge which may rise, fall or be removed, in line with movements in fuel prices. / Updated: July 20, 2026 Effective: August 03, 2026 / All Services | Period | Export Surcharge | Import Surcharge / September 21-27 2026: 34.00% / 37.75% / September 14-20 2026: 33.25% / 37.00% / September 07-13 2026: 33.00% / 36.75% / August 31-6 September 2026: 32.75% / 36.50% / August 24-30 2026: 32.25% / 36.00%",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch"
+  },
+  "remote_area_surcharge": {
+    "amount": 50.00,
+    "currency": "USD",
+    "unit": "per_shipment（ただし 0.50 USD per lb.（または1/2kgあたり）のいずれか高い方、と併記）",
+    "postcode_list_url": "https://www.dhl.com/content/dam/dhl/global/dhl-express/documents/docs/dhl-express-remote-area-surcharge-locations.xlsx",
+    "postcode_list_format": "XLSX",
+    "source": "https://www.dhl.com/us-en/home/express/products-and-solutions/products-and-services-overview/surcharges.html",
+    "quote": "Remote Area Delivery — When shipping to a remote area: DHL Express applies a surcharge per shipment when the pick up or delivery destination location is remote. Remote is defined as distant islands and highlands, a postal code, suburb or town that is difficult, inaccessible or infrequently served. Per Shipment: 50.00 USD or 0.50 USD per lb. (or per ½ kg), whichever is higher. [同一文言で Remote Area Pickup も同額] リンク先: 'Check for Remote Locations' → href=/content/dam/dhl/global/dhl-express/documents/docs/dhl-express-remote-area-surcharge-locations.xlsx",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch"
+  },
+  "clearance_fee_by_country": [
+    {
+      "country": "US",
+      "percentage_of_duty_and_tax": 2.0,
+      "minimum_amount": 17.00,
+      "currency": "USD",
+      "formula_note": "Per Shipment: 17.00 USD or 2% of the fiscal charge, if higher",
+      "source": "https://www.dhl.com/us-en/home/express/products-and-solutions/products-and-services-overview/optional-services.html",
+      "quote": "Duty Tax Paid / Duties and taxes can be billed to the shipper or third party. DHL Express can arrange for the shipper or a third party to be billed for any duties and taxes payable at destination, rather than the receiver of the shipment being billed. Charges apply whenever duties, taxes or other regulatory fees occur and shipper has requested that those are to be billed outside of the destination country. Per Shipment: 17.00 USD or 2% of the fiscal charge, if higher",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "GB",
+      "percentage_of_duty_and_tax": 2.0,
+      "minimum_amount": 16.00,
+      "currency": "GBP",
+      "formula_note": "Per Shipment: 16.00 GBP or 2% of the fiscal charge, if higher (Duty Tax Paid). 別サービスとして Duty Tax Processing: 12.00 GBP or 2.5%／11.00 GBP or 2.5%(非アカウント保有者向け) も存在するが、C項目としては 'Duty Tax Paid' の値を採用",
+      "source": "https://www.dhl.com/gb-en/home/express/products-and-solutions/products-and-services-overview/optional-services.html",
+      "quote": "Duty Tax Paid / Duties and taxes can be billed to the shipper or third party. ... Per Shipment: 16.00 GBP or 2% of the fiscal charge, if higher",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "AU",
+      "percentage_of_duty_and_tax": 2.0,
+      "minimum_amount": 30,
+      "currency": "AUD",
+      "formula_note": "Per Shipment: AUD 30 or 2% of fiscal charges, if higher (Duty Tax Paid). 別サービスの Duty Tax Processing は AUD 21 or 3% だが、C項目としては 'Duty Tax Paid' の値を採用",
+      "source": "https://www.dhl.com/au-en/home/express/products-and-solutions/products-and-services-overview/optional-services.html",
+      "quote": "Duty Tax Paid / Duties and taxes can be billed to the shipper or third party. ... Per Shipment: AUD 30 or 2% of fiscal charges, if higher",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "DE",
+      "percentage_of_duty_and_tax": 2.0,
+      "minimum_amount": 17.00,
+      "currency": "EUR",
+      "formula_note": "「Duty Tax Paid: 2% of Duty Tax Amount, min. 17.00 EUR」（出発国または第三国で請求＝仕向国以外での請求、他国のDuty Tax Paidと同じ『第三者請求への切替』の位置づけ）。別に『Duty Tax Processing: 2% of Duty Tax Amount, min. 15.00 EUR』が存在し、こちらは輸出入双方に適用され仕向国側で請求される（つまり通常の受取人請求はこちら側の可能性が高い）。",
+      "source": "https://www.dhl.de/en/geschaeftskunden/express/produkte-und-services/duty-billing-services.html",
+      "quote": "Duty Tax Paid: 2 % of Duty Tax Amount min. 17.00 EUR — Billed in country of departure or third country, never in destination country. / Duty Tax Processing: 2 % of Duty Tax Amount min. 15.00 EUR — For both export and import services, billed in destination country.",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "access_method": "WebFetch（dhl.com配下ではなくドイツ現地法人ドメインdhl.deの英語ページ。WebFetchツールによる直接取得）",
+      "terminology_caveat": "重要：本ページの説明により、DHLの『Duty Tax Paid』は『関税・税金の請求先を仕向国の受取人以外（発送国／第三国）に切り替える』ためのオプション料金であり、US/GB/AUで先に採取した『Duty Tax Paid』の値もこれと同一の性質（第三者請求切替）である可能性が高い。一方『Duty Tax Processing』は仕向国側（＝通常の受取人）に請求される標準的な立替手数料であり、FedExの『支払手数料』やUPSの『支払手数料』とより性質が近いのはこちらの可能性がある。US/GB/AUについてはDuty Tax Processingの値を未取得のため、カテゴリC全体の国間比較に注意が必要（詳細はレポート参照）。"
+    }
+  ],
+  "not_found": [
+    { "item": "fuel_surcharge の origin_scope が日本発（jp-ja）専用の表", "reason": "jp-ja側の告知ページから『サーチャージの概要』リンクを辿ったところ、URLパラメータ error=CANDIDATE_PAGE_NOT_FOUND|jp を伴い us-en (アメリカ) のSurchargesページへ自動フォールバックした。日本専用の燃油サーチャージ％表はサイト上で発見できなかった。" },
+    { "item": "fuel_surcharge の Economy Select（DHL Global Forwarding等）向け個別表", "reason": "発見できた表は『DHL Express』の Surcharges ページのみで『All Services』表記（Export/Importの2区分のみ）。Economy Select等の個別サービスごとの燃油サーチャージ率は見つからなかった。" },
+    { "item": "fuel_surcharge.included_in_displayed_rate（表示運賃に燃油サーチャージが含まれるか否かの明示的な記述）", "reason": "us-en/jp-jaいずれのページでも『燃油サーチャージ』に限定して『表示運賃に含む/含まない』と明言した文言は見つからなかった。関連する記述（通関手続きは含むが関税・税金は含まない、燃油サーチャージ等は適用される場合がある）はあるが、燃油サーチャージそのものの包含有無を直接述べたものではない。" },
+    { "item": "remote_area_surcharge の日本発（jp-ja）専用の金額・通貨", "reason": "同じくus-en(US)ページへのフォールバックにより取得した数値のため、通貨はUSD。日本発送に特有の金額（JPY建てなど）は確認できなかった。" },
+    { "item": "clearance_fee_by_country: FR（フランス）", "reason": "www.dhl.com/fr-en, /fr-fr の当該URLパターンはいずれも404。dhl.de型（現地法人ドメイン）に相当するwww.dhl.frのduty-billing-servicesページはmydhl.express.dhlという別プラットフォームへ302リダイレクトされ、ログインが必要なポータルとみられ料率は取得できなかった。DDP解説ページ(dhl.com/fr-fr/home/expedier/livraison-ddp.html)にも料率記載なし。" },
+    { "item": "clearance_fee_by_country: CA（カナダ）", "reason": "www.dhl.com/ca-en の当該URLパターンは404。dhl.com/discover/en-ca/の一般解説ページ(duties-and-taxes)は仕組みの説明のみで料率非公開。" },
+    { "item": "clearance_fee_by_country: SG（シンガポール）", "reason": "www.dhl.com/sg-en の当該URLパターンは404。dhl.com/discover/en-sg/配下の複数ページ、およびdhlexpress.com.sg（現地フランチャイズとみられる別ドメイン）のFAQでも『ADVANCED PAYMENT』サービスの存在記述のみで、具体的な％・最低額は非公開だった。" }
+  ]
+}
