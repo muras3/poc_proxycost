@@ -1552,11 +1552,19 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       // #106是正: per_shipmentのnoteは「1回だけ課金される」で終わらせず、Air Waybillの
       // 枚数がこちらの推定（開示された仮定）であることを毎回明記する——事実のように
       // 見せない（タスク指示）。
+      // **2026-09-13、per-shipment統一: sourced（一次資料が単位を直接明言）と
+      // inferred（一次資料は沈黙、他行の傾向からの推論）を note の文言で必ず区別する**
+      // ——タスク指示: 「未来の読み手が推論を根拠と取り違えないように」。
       const perNote = route.per === 'per_shipment'
         ? 'charged once per shipment (our assumption: boxes split by different shop are'
           + ' separate shipments/Air Waybills, one fee each; boxes split only by weight limit'
           + ' from the same order are treated as one multi-piece shipment, one fee total —'
           + ' we cannot observe how many Air Waybills the forwarder actually issues)'
+          + (route.unitConfidence === 'sourced'
+            ? '; the per-shipment unit itself is stated by the carrier\'s own source'
+            : '; the per-shipment unit itself is NOT stated by this route\'s own source — it is our'
+              + ' inference (every clearance-fee row across all carriers that states a unit says'
+              + ' shipment, none says parcel), not a confirmed fact')
         : 'charged per parcel';
       if (allZero) {
         // **税ゼロ時に課すかは、この費目の一次資料7か国×4社どれにも書かれていない**

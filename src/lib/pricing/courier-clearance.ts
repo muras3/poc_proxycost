@@ -20,23 +20,43 @@ import type { CountryCode, CourierMethod } from './types';
  *   - どちらにもエントリが無い（例: DE/FR/AU/CA の ECMS） → counted_absence。
  *     その業者はその国に存在しないので、行そのものを出さない。
  *
- * ## per-parcel / per-shipment
- * 一次資料が明言している行（DE DHL、UPS 5か国、FedEx SG）はそのまま採用する。
- * **一次資料が言っていない行は `per: 'per_parcel'` にする**——箱分割（#85）で
- * 個口が増えたときに過小計上しない側に倒す（タスク指示「prefer the treatment
- * that does not understate」）。DHL の US/GB/FR/AU/CA/SG 行はマスタが
- * "unknown_but_likely_per_shipment"（推論、未確認）と書いているが、未確認である
- * 以上ここでは per_parcel を採る——マスタの推論に反する選択なので明記しておく。
+ * ## per-parcel / per-shipment（2026-09-13、オーナー確定でper_shipmentへ統一）
+ * 48行を読み直した結果、**課金単位を明言している行は1件残らず shipment と述べている**
+ * （DHL DE "pro abgefertigter Sendung"、UPS DE/FR/AU/CA/SG、FedEx GB/DEの
+ * Conditions of Carriage："'Shipment' means one or more Packages or Freight,
+ * moving on a single Air Waybill."）。**「per parcel」と明言している行は1件も無い。**
+ * 以前（#101）は一次資料が沈黙している行に安全側デフォルトとして `per_parcel` を
+ * 割り当てていたが、これは「どの業者にも観測されていない課金単位をモデル化する」
+ * ことになっていた——沈黙している行にも、確認済みの8行と同じ方向（shipment）の
+ * 推論を当てる方が根拠に近い。オーナーが確定させたので、**沈黙している行も
+ * `per: 'per_shipment'` にする。**
  *
- * **「per_parcel」はデフォルトであって『一次資料が per parcel と言っている』ことでは
- * ない。** 今回オーナーがFedEx GB/DEを一次資料（Conditions of Carriage）で
- * per_shipment（Air Waybill 1枚＝1 Shipment）だと確認し、DHL DEも既に
- * "pro abgefertigter Sendung" で per_shipment と確認済みなので、48行のうち
- * 「一次資料が明示的に per parcel と述べている」行は**1件も無い**——per_parcel
- * を採っている行は全て「一次資料が沈黙している（unit記述が無い）」ケースへの
- * こちらの安全側デフォルトであり、確認された事実ではない。この事実と方針の
- * 区別を消さないよう、`per` の値をUIに出すときは常に「当社の推定」であることを
- * 明示する（`compare.ts` の `perNote` 参照）。
+ * ただし**「一次資料に書いてある」ことと「推論した」ことを混同してはいけない**
+ * ので、`per` の値だけでなく `unitConfidence` を必ず添える:
+ *   - `'sourced'`（`tier: 'fixed'` の8行——DHL DE、UPS DE/FR/AU/CA/SG、FedEx SG。
+ *     FedEx GB/DEはschema_gapで額自体を出していない）: 一次資料が単位を直接
+ *     明言している。逐語引用が `basisNote` にある。
+ *   - `'inferred'`: 一次資料はこの行の単位について沈黙している。上記8行の方向
+ *     （shipment、parcelと言う行はゼロ）を根拠に per_shipment へ倒したが、
+ *     **この行自体の一次資料がそう述べているわけではない。**
+ *
+ * 対象（`'inferred'` になる行）: DHL の US/GB/FR/AU/CA/SG、FedEx の US/FR/AU/CA、
+ * ECMS 全通貨（US/GB/SG。ECMS自身の条文は "If ECMS EXPRESS advances any Customs
+ * Duties … a duty advance payment fee of 3%" で、手数料が発生する条件＝「いつ」
+ * を述べるだけで「何につき」課金するかには触れていない——ECMSも単位については
+ * 沈黙している）。UPS US は #101 時点で既に `per: 'per_shipment'` だったが、これは
+ * 米国向け一次資料自体の文言ではなく DE/FR/AU/CA/SG の構造を一般化した推測なので、
+ * 同じく `'inferred'` として扱う（原則3: 1社=1国の確認を他国に一般化しない、と同種の
+ * 注意）。
+ *
+ * **この変更は合計額を動かす方向が今までと逆**: #101のper_parcelデフォルトは
+ * 「箱が増えたときに過小計上しない」側の安全策だった。per_shipmentへ倒すと、
+ * 店舗違いで箱が分かれるカート（現状 Buyee のみ）では**合計が下がる**——推論が
+ * 誤っていれば今度は過小評価になる。これは「ゼロ関税ならclearance feeも立たない」
+ * という仮定（`docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md`、別PRで検討中）
+ * と同じ「過大評価より過小評価を選ぶ」方向の2件目の扱いなので、画面のnoteは
+ * `unitConfidence: 'inferred'` の行では必ず「これは当社の推定であり、根拠は
+ * 一次資料の直接確認ではない」と読めるようにする（`compare.ts` の `perNote` 参照）。
  *
  * ## Air Waybill 数の推定（#106、オーナー確定）
  * per_shipment の行は「1 Air Waybill = 1 Shipment = 1回分の手数料」で計算する
@@ -139,6 +159,11 @@ export interface CourierClearanceRoute {
   currency: string;
   rule: Rule;
   per: 'per_parcel' | 'per_shipment';
+  /** `per` の根拠——`'sourced'` は一次資料がこの行の単位を直接明言している
+   * （逐語引用が `basisNote` にある）。`'inferred'` は一次資料が単位について沈黙
+   * しており、「単位を明言する行は全てshipment、parcelはゼロ」という別の根拠から
+   * per_shipmentへ倒した、当社の推論であることを表す。上のdoc comment参照。 */
+  unitConfidence: 'sourced' | 'inferred';
   sourceUrl: string;
   /** 画面の note に出す、この行が何の一次資料からどう来たかの短い説明。 */
   basisNote: string;
@@ -148,7 +173,7 @@ function rateMin(rate: number, minLocal: number): Rule {
   return { kind: 'rate_min', rate, minLocal };
 }
 
-const DHL_US_GB_FR_AU_CA_SG_PER = 'per_parcel' as const; // per-shipmentは推論のみ、未確認（上のコメント参照）
+const DHL_US_GB_FR_AU_CA_SG_PER = 'per_shipment' as const; // 沈黙している行への推論（'inferred'、上のコメント参照）
 
 const DHL_SOURCES: Record<'US' | 'GB' | 'DE' | 'FR' | 'AU' | 'CA' | 'SG', string> = {
   US: 'https://mydhl.express.dhl/content/dam/downloads/us/en/rate-guide/service_and_rate_guide_us_en_2026.pdf.coredownload.pdf',
@@ -168,28 +193,41 @@ const DHL_VARIANT_BASIS = DHL_BASIS
   + ' variant_applicability.answer、#102）を採用——代行経由で荷物を受け取る個人利用者は'
   + ' DHLの法人口座を持たないため。旧#101の「高い方を機械的に採用」は誤りとして撤回した。';
 
+const INFERRED_UNIT_NOTE = ' 課金単位（per shipment）はこの行の一次資料に明言が無い——単位を明言する'
+  + '行が48行中1件残らずshipmentと述べ、parcelと述べる行がゼロという別の根拠からの推論（オーナー確定'
+  + '2026-09-13）であり、この行自体の一次資料の逐語確認ではない（unitConfidence: inferred）。';
+
+const ECMS_INFERRED_UNIT_NOTE = ' 課金単位（per shipment）はECMS自身の条文に明言が無い——条文'
+  + '（"If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled'
+  + ' to charge a duty advance payment fee of 3%."）は手数料が発生する条件（いつ）を述べるだけで、'
+  + '何につき課金するか（parcel/shipment）には触れていない。他の47行のうち単位を明言する行が全て'
+  + 'shipmentでparcelがゼロという根拠からの推論（オーナー確定2026-09-13、unitConfidence: inferred）。';
+
 export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierClearanceCarrier, CourierClearanceRoute>>> = {
   US: {
     FedEx: {
-      tier: 'estimate', currency: 'USD', rule: rateMin(0.025, 17.5), per: 'per_parcel',
+      tier: 'estimate', currency: 'USD', rule: rateMin(0.025, 17.5), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.fedex.com/en-us/shipping/rate-changes/additional-shipping-fees.html',
       basisNote: 'FedEx Disbursement Fee。FedEx一次ページはこの環境のWAFに阻まれ本文未読——独立した'
-        + '複数の二次情報（ShipScience等）が一致する式（2.5%、最低$17.50、2026-07-20発効）を転記。',
+        + '複数の二次情報（ShipScience等）が一致する式（2.5%、最低$17.50、2026-07-20発効）を転記。'
+        + INFERRED_UNIT_NOTE,
     },
     UPS: {
-      tier: 'estimate', currency: 'USD', rule: rateMin(0.025, 17.5), per: 'per_shipment',
+      tier: 'estimate', currency: 'USD', rule: rateMin(0.025, 17.5), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.ups.com/us/en/shipping/international-shipping/import-fees',
       basisNote: 'UPS Disbursement Fee。UPS一次ページ本文は未読（200/503混在・Empty reply）——独立した'
-        + '二次情報が一致する式（2.5%、最低$17.50、2026-09-07発効）を転記。',
+        + '二次情報が一致する式（2.5%、最低$17.50、2026-09-07発効）を転記。UPS DE/FR/AU/CA/SGが'
+        + '一次資料で明言する"per shipment"を米国にも一般化した推測であり、米国向け一次資料自体が'
+        + 'その語を使っていることを確認したものではない（unitConfidence: inferred）。',
     },
     DHL: {
-      tier: 'fixed', currency: 'USD', rule: rateMin(0.02, 17.5), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.US, basisNote: DHL_BASIS,
+      tier: 'fixed', currency: 'USD', rule: rateMin(0.02, 17.5), per: DHL_US_GB_FR_AU_CA_SG_PER, unitConfidence: 'inferred',
+      sourceUrl: DHL_SOURCES.US, basisNote: DHL_BASIS + INFERRED_UNIT_NOTE,
     },
     ECMS: {
-      tier: 'fixed', currency: 'USD', rule: rateMin(0.03, 0), per: 'per_parcel',
+      tier: 'fixed', currency: 'USD', rule: rateMin(0.03, 0), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.ecmsglobal.com/resources/en-us/ECMS%20Express%20US%20Terms%20%20Conditions%20v1.2.pdf',
-      basisNote: 'ECMS duty advance payment fee 3%（ECMS US T&C v1.2、逐語確認）。',
+      basisNote: 'ECMS duty advance payment fee 3%（ECMS US T&C v1.2、逐語確認）。' + ECMS_INFERRED_UNIT_NOTE,
     },
   },
   GB: {
@@ -199,13 +237,14 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
     DHL: {
       // #101 は account_holder 側の min(12.0)を使っていた。#102 の一次資料に基づき
       // non_account_holder 側の min(11.0)へ訂正（rateは両変種とも0.025で同一）。
-      tier: 'fixed', currency: 'GBP', rule: rateMin(0.025, 11.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.GB, basisNote: DHL_VARIANT_BASIS,
+      tier: 'fixed', currency: 'GBP', rule: rateMin(0.025, 11.0), per: DHL_US_GB_FR_AU_CA_SG_PER, unitConfidence: 'inferred',
+      sourceUrl: DHL_SOURCES.GB, basisNote: DHL_VARIANT_BASIS + INFERRED_UNIT_NOTE,
     },
     ECMS: {
-      tier: 'fixed', currency: 'GBP', rule: rateMin(0.03, 0), per: 'per_parcel',
+      tier: 'fixed', currency: 'GBP', rule: rateMin(0.03, 0), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.ecmsglobal.com/resources/en-uk/ECMS%20Express%20UK%20Terms%20Conditions%20v1.34.pdf',
-      basisNote: 'ECMS duty advance payment fee 3%（ECMS UK T&C v1.34、US版と同一条文、逐語確認）。',
+      basisNote: 'ECMS duty advance payment fee 3%（ECMS UK T&C v1.34、US版と同一条文、逐語確認）。'
+        + ECMS_INFERRED_UNIT_NOTE,
     },
   },
   DE: {
@@ -213,85 +252,85 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
     UPS: {
       tier: 'fixed', currency: 'EUR',
       rule: { kind: 'banded_value_mixed', valueLteLocal: 22, flatLocal: 7.2, aboveRate: 0.03, aboveMinLocal: 14.9 },
-      per: 'per_shipment',
+      per: 'per_shipment', unitConfidence: 'sourced',
       sourceUrl: 'https://www.ups.com/assets/resources/webcontent/de_DE/additional-service-charge-de.pdf',
       basisNote: 'UPS Disbursement Fee。申告価格帯で「€22以下=定額€7.20」「€22超=3.00%・最低€14.90'
-        + 'のいずれか大きい方」に分岐（UPS自身のPDF、逐語確認）。',
+        + 'のいずれか大きい方」に分岐（UPS自身のPDF、逐語確認、"per shipment"の語をUPS自身が明記）。',
     },
     DHL: {
-      tier: 'fixed', currency: 'EUR', rule: rateMin(0.02, 15.0 * 1.19), per: 'per_shipment',
+      tier: 'fixed', currency: 'EUR', rule: rateMin(0.02, 15.0 * 1.19), per: 'per_shipment', unitConfidence: 'sourced',
       sourceUrl: DHL_SOURCES.DE,
       basisNote: 'DHL Duty Tax Processing（独称 Kapitalbereitstellungsprovision）。最低額は独語一次資料の'
         + '「€15.00 zzgl. MwSt.」を19%込みで€17.85相当に換算——旧記録の€14.88（二次情報）は使わない'
-        + '（#99の訂正）。DEのみ"pro abgefertigter Sendung"と明記されているので per_shipment。',
+        + '（#99の訂正）。DEのみ"pro abgefertigter Sendung"と明記されているので per_shipment（sourced）。',
     },
     // ECMS: counted_absence（法人・T&C自体が確認できない）。キーを置かない＝行を出さない。
   },
   FR: {
     FedEx: {
-      tier: 'estimate', currency: 'EUR', rule: rateMin(0.025, 18), per: 'per_parcel',
+      tier: 'estimate', currency: 'EUR', rule: rateMin(0.025, 18), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://forum.quechoisir.org/fedex-substitution-frais-de-tva-dedouanement-t294550.html',
       basisNote: 'frais d\'avance / avance de douane。FedEx一次ページはWAFで未読——消費者フォーラム'
         + '投稿（quechoisir.org）が伝える「2.5%・最低€18 TTC」を転記（€15説との食い違いあり、'
-        + '監査ノート参照）。',
+        + '監査ノート参照）。' + INFERRED_UNIT_NOTE,
     },
     UPS: {
       tier: 'fixed', currency: 'EUR',
       rule: { kind: 'banded_value_mixed', valueLteLocal: 22, flatLocal: 8.4, aboveRate: 0.0305, aboveMinLocal: 17.5 },
-      per: 'per_shipment',
+      per: 'per_shipment', unitConfidence: 'sourced',
       sourceUrl: 'https://www.ups.com/assets/resources/webcontent/fr_FR/additional-service-charge-fr.pdf',
       basisNote: 'UPS Disbursement Fee。DEと同型の帯構造（€22以下=定額€8.40、超=3.05%・最低€17.50）'
-        + '（UPS自身のPDF、逐語確認）。',
+        + '（UPS自身のPDF、逐語確認、"per shipment"の語をUPS自身が明記）。',
     },
     DHL: {
       // #101 は account_holder 側の rate(0.02)を使っていた。#102 の一次資料に基づき
       // non_account_holder 側の rate(0.018)へ訂正（minは両変種ともnon_account側の16.67と一致）。
-      tier: 'fixed', currency: 'EUR', rule: rateMin(0.018, 16.67), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.FR, basisNote: DHL_VARIANT_BASIS,
+      tier: 'fixed', currency: 'EUR', rule: rateMin(0.018, 16.67), per: DHL_US_GB_FR_AU_CA_SG_PER, unitConfidence: 'inferred',
+      sourceUrl: DHL_SOURCES.FR, basisNote: DHL_VARIANT_BASIS + INFERRED_UNIT_NOTE,
     },
     // ECMS: counted_absence。
   },
   AU: {
     FedEx: {
-      tier: 'estimate', currency: 'AUD', rule: rateMin(0.029, 24), per: 'per_parcel',
+      tier: 'estimate', currency: 'AUD', rule: rateMin(0.029, 24), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.fedex.com/en-au/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html',
       basisNote: 'Disbursement Fee/Advancement Fee。FedEx一次ページはWAFで未読——二次情報が一致する'
         + '式（2.9%・最低A$24、2026-07-20発効）を転記。ABF Import Processing Charge（税関自身の'
-        + '費目、既存のclearance行）に**上乗せで**発生する別建ての費目。',
+        + '費目、既存のclearance行）に**上乗せで**発生する別建ての費目。' + INFERRED_UNIT_NOTE,
     },
     UPS: {
-      tier: 'fixed', currency: 'AUD', rule: rateMin(0.036, 23.8), per: 'per_shipment',
+      tier: 'fixed', currency: 'AUD', rule: rateMin(0.036, 23.8), per: 'per_shipment', unitConfidence: 'sourced',
       sourceUrl: 'https://www.ups.com/assets/resources/webcontent/en_GB/service_guide_au.pdf',
-      basisNote: 'UPS Disbursement Fee（3.6%・最低A$23.80+GST、UPS自身のPDF、逐語確認）。ABF Import'
-        + ' Processing Chargeに上乗せで発生する別建ての費目。',
+      basisNote: 'UPS Disbursement Fee（3.6%・最低A$23.80+GST、UPS自身のPDF、逐語確認、"per shipment"'
+        + 'の語をUPS自身が明記）。ABF Import Processing Chargeに上乗せで発生する別建ての費目。',
     },
     DHL: {
-      tier: 'fixed', currency: 'AUD', rule: rateMin(0.03, 23.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
+      tier: 'fixed', currency: 'AUD', rule: rateMin(0.03, 23.0), per: DHL_US_GB_FR_AU_CA_SG_PER, unitConfidence: 'inferred',
       sourceUrl: DHL_SOURCES.AU,
-      basisNote: `${DHL_BASIS} ABF Import Processing Chargeに上乗せで発生する別建ての費目。`,
+      basisNote: `${DHL_BASIS} ABF Import Processing Chargeに上乗せで発生する別建ての費目。${INFERRED_UNIT_NOTE}`,
     },
     // ECMS: counted_absence。
   },
   CA: {
     FedEx: {
-      tier: 'estimate', currency: 'CAD', rule: rateMin(0.031, 12), per: 'per_parcel',
+      tier: 'estimate', currency: 'CAD', rule: rateMin(0.031, 12), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.fedex.com/en-ca/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html',
       basisNote: 'Disbursement Fee。FedEx一次ページはWAFで未読——二次情報が一致する式（3.10%・'
-        + '最低CAD12.00、2026-08-03発効）を転記。',
+        + '最低CAD12.00、2026-08-03発効）を転記。' + INFERRED_UNIT_NOTE,
     },
     UPS: {
-      tier: 'fixed', currency: 'CAD', rule: rateMin(0.037, 11.65), per: 'per_shipment',
+      tier: 'fixed', currency: 'CAD', rule: rateMin(0.037, 11.65), per: 'per_shipment', unitConfidence: 'sourced',
       sourceUrl: 'https://www.ups.com/assets/resources/webcontent/en_CA/rate_guide_ca.pdf',
       basisNote: 'UPS Disbursement Fee（3.7%・最低はサービス種別で$7.40〜$11.65、UPS自身のPDF、'
-        + '逐語確認）。利用者がどのサービス級を使うか分からないので、過小計上しない高い方'
-        + '（$11.65、Express系）を採用。',
+        + '逐語確認、"per shipment"の語をUPS自身が明記）。利用者がどのサービス級を使うか分からないので、'
+        + '過小計上しない高い方（$11.65、Express系）を採用。',
     },
     DHL: {
       // CA は non_account_holder 側の min(18.0)——#101 の「高い方」ルールでも同じ値に
       // 偶然一致していた（CAだけ変種の大小関係がGB/FRと逆）。値自体は変えていないが、
       // 選択の理由を「高い方」から「non_account_holderが適用される」へ差し替えた。
-      tier: 'fixed', currency: 'CAD', rule: rateMin(0.0275, 18.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.CA, basisNote: DHL_VARIANT_BASIS,
+      tier: 'fixed', currency: 'CAD', rule: rateMin(0.0275, 18.0), per: DHL_US_GB_FR_AU_CA_SG_PER, unitConfidence: 'inferred',
+      sourceUrl: DHL_SOURCES.CA, basisNote: DHL_VARIANT_BASIS + INFERRED_UNIT_NOTE,
     },
     // ECMS: counted_absence。
   },
@@ -299,25 +338,32 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
     FedEx: {
       tier: 'estimate', currency: 'SGD',
       rule: { kind: 'rate_min_max', rate: 0.05, minLocal: 24, maxLocal: 120 }, per: 'per_shipment',
+      unitConfidence: 'sourced',
       sourceUrl: 'https://www.fedex.com/en-sg/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html',
       basisNote: 'Disbursement Fee/Advancement Fee。FedEx一次ページはWAFで未読——二次情報が一致する'
         + '式（5%・最低S$24・上限S$120、2026-07-20発効）を転記。per shipmentは旧版PDFの検索結果'
-        + '要約による（2026年版での再確認はできていない）。',
+        + '要約が明記（"...maximum charge of SGD 120.00 per shipment"、master/customs.json '
+        + 'raw_findings.unit_tier: search_snippet_no_verbatim_quote）——沈黙している行への'
+        + '一般化推論ではなく、この行自体について"per shipment"の語を伝える検索結果があるので sourced'
+        + '（ただし2026年版本文の逐語確認はできていない）。',
     },
     UPS: {
       tier: 'fixed', currency: 'SGD',
       rule: { kind: 'rate_min_max', rate: 0.056, minLocal: 22.5, maxLocal: 100 }, per: 'per_shipment',
+      unitConfidence: 'sourced',
       sourceUrl: 'https://www.ups.com/assets/resources/webcontent/en_GB/service_guide_sg_2024.pdf',
-      basisNote: 'UPS Disbursement Fee（5.6%・最低S$22.50・上限S$100、UPS自身のPDF、逐語確認）。',
+      basisNote: 'UPS Disbursement Fee（5.6%・最低S$22.50・上限S$100、UPS自身のPDF、逐語確認、'
+        + '"per shipment"の語をUPS自身が明記）。',
     },
     DHL: {
-      tier: 'fixed', currency: 'SGD', rule: rateMin(0.05, 20.0), per: DHL_US_GB_FR_AU_CA_SG_PER,
-      sourceUrl: DHL_SOURCES.SG, basisNote: DHL_BASIS,
+      tier: 'fixed', currency: 'SGD', rule: rateMin(0.05, 20.0), per: DHL_US_GB_FR_AU_CA_SG_PER, unitConfidence: 'inferred',
+      sourceUrl: DHL_SOURCES.SG, basisNote: DHL_BASIS + INFERRED_UNIT_NOTE,
     },
     ECMS: {
-      tier: 'fixed', currency: 'SGD', rule: rateMin(0.03, 0), per: 'per_parcel',
+      tier: 'fixed', currency: 'SGD', rule: rateMin(0.03, 0), per: 'per_shipment', unitConfidence: 'inferred',
       sourceUrl: 'https://www.ecmsglobal.com/resources/en-sg/ECMS%20Express%20Singapore%20Pte%20Ltd_%20Terms%20and%20Conditions_2023.pdf',
-      basisNote: 'ECMS duty advance payment fee 3%（ECMS Singapore T&C 2023、逐語確認）。',
+      basisNote: 'ECMS duty advance payment fee 3%（ECMS Singapore T&C 2023、逐語確認）。'
+        + ECMS_INFERRED_UNIT_NOTE,
     },
   },
 };
