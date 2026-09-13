@@ -564,17 +564,18 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   for (const name of HANDMADE) await tellWeight(page, name, 200);
 
   const before = await readRanking(page);
-  // **2026-09-12、F34（通関手数料・業者軸、`courier-clearance.ts`）の配線でこの並びが
-  // また動いた。**以前は宅配便の目的地側清算/立替手数料が全社¥0（未計算）のまま
-  // だったので、Neokyo（DHL、per-parcel）と FROM JAPAN（UPS、per-shipment）が
-  // 1位・3位に来ていた。**いまはこの2社の手数料が最低額の床（DHL/UPS とも
-  // 概ね$17.50相当＝¥2,734、このカートの実際の関税・税額 [約¥1,867] を大きく
-  // 上回るので床が効く）で決まり、床を持たない ECMS（3%のみ、最低額0）を使う
-  // Buyee/ZenMarket より高くつくようになった**——これは実額を計算した結果の
-  // 正しい入れ替わりで、退行ではない（`compare()` を直接叩いて確認済み。
-  // 通関手数料を除けば元の並び Neokyo→Buyee consolidated→FROM JAPAN→ZenMarket→Jauce
-  // →Buyee default に戻ることも確認済み）。
-  // （実測の新しい並び: Buyee consolidated → ZenMarket → Neokyo → FROM JAPAN → Jauce
+  // **2026-09-13、F-total是正（Fable 5.1 監査、PR #cheapest-by-total）でこの並びが
+  // また動いた。**以前は `cheapest` が国際送料**だけ**で方式を選んでいたので、
+  // ZenMarket/Neokyo は「送料が一番安い宅配便」を選んでいて、着地側の通関/立替
+  // 手数料（DHL/UPS の最低額の床、概ね$17.50相当＝¥2,734）を払う羽目になっていた。
+  // **いまは総額（送料＋通関手数料込み）が最小の方式を選ぶ**ので、ZenMarket は
+  // 送料がやや高い ECMS Express（通関手数料の床が無い）に切り替わり、FROM JAPAN も
+  // 同じ理由で ECMS を選んで総額が下がり、Neokyo（送料最安の DHL のまま——ECMS
+  // Express を売っていないためこの選択自体は変わらない）を追い越して2位に上がった。
+  // これは実額を計算した結果の正しい入れ替わりで、退行ではない
+  // （`compare()` を直接叩いて確認済み、`src/lib/pricing/compare.test.ts` の
+  // 「'cheapest' selects by landed total」にも同種の逆転を固定してある）。
+  // （実測の新しい並び: Buyee consolidated → FROM JAPAN → ZenMarket → Neokyo → Jauce
   // → Buyee default）。
   expect(before).toHaveLength(6);
   expect(priced(before)).toHaveLength(6);
@@ -586,9 +587,9 @@ test('7. seller-paid shipping takes the same domestic shipping off every row —
   // だった。**readRanking が `data-row-id` から構造的に variant を読むようになった
   // いま、ZenMarket は他社と同じく default/consolidated の変種を持たない
   // （`variant: null`）ので、素直に名前だけで引ける。
-  expect(rankOf(before, 'ZenMarket')).toBe(2);
-  expect(rankOf(before, 'Neokyo')).toBe(3);
-  expect(rankOf(before, 'FROM JAPAN')).toBe(4);
+  expect(rankOf(before, 'FROM JAPAN')).toBe(2);
+  expect(rankOf(before, 'ZenMarket')).toBe(3);
+  expect(rankOf(before, 'Neokyo')).toBe(4);
   expect(rankOf(before, 'Jauce')).toBe(5);
 
   // 国内送料が無くなる前の内訳。仮定の ~¥800 × 5点。

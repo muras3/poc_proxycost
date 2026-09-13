@@ -1342,19 +1342,29 @@ describe('the international method is an input, and the default is now cheapest-
     expect(row.total.high).toBeNull();
   });
 
-  test("'cheapest' never picks a method that costs more than another eligible non-surface one", () => {
-    // **Surface はこの比較から外す**（P2 4）——最安の定義そのものが Surface を
-    // 除外しているので、Surface と比べて負けることは意図した挙動（ZenMarket→US
-    // 600g で EMS ¥7,900 が Surface ¥3,300 より高いまま選ばれるのがまさにこの例）。
+  // **是正（PR #cheapest-by-total、Fable 5.1 監査、docs/audit/cheapest-by-total-2026-09-13.md）。**
+  // 以前のこのテストは「`cheapest` は他の非Surface方式より**送料が**安いものを選ぶ」
+  // ことを検証していた——これは「送料だけで選ぶ」という直していた側の欠陥そのものを
+  // 固定するテストだった。着地側の通関/立替手数料まで含めた**総額**では、送料が
+  // 一番安い方式が最安とは限らない（実証: US・1,000g・¥3,000・FROM JAPAN で
+  // UPS は送料¥4,124/ECMSは¥4,250——UPSの方が送料は安いが、通関手数料がUPS¥2,734・
+  // ECMS¥11なので総額はECMSが¥2,593安く、`cheapest` はECMSを選ぶのが正しい）。
+  // したがって検証する不変条件を「送料が最小」から「総額（`total.low`）が最小」に
+  // 差し替える——Surfaceを比較対象から外す理由（P2 4、最安の定義自体がSurfaceを
+  // 除外している）はそのまま変わらない。
+  test("'cheapest' never picks a method that costs more (total) than another eligible non-surface one", () => {
     for (const cc of COUNTRIES_ALL) {
       for (const n of [1, 3, 5]) {
         for (const row of compare({ items: items(n, 600), country: cc, method: 'cheapest' }).rows) {
           const chosen = shipOf(row).amount;
           if (chosen == null) continue;
+          const chosenTotal = row.total.low;
           for (const m of ['ems', 'small-packet-air', 'parcel-air'] as const) {
-            const alt = line(byId(compare({ items: items(n, 600), country: cc, method: m }).rows,
-              row.id), 'intl-shipping').amount;
-            if (alt != null) expect(chosen, `${cc} ${n}点 ${row.id} vs ${m}`).toBeLessThanOrEqual(alt);
+            const altRow = byId(compare({ items: items(n, 600), country: cc, method: m }).rows, row.id);
+            const alt = line(altRow, 'intl-shipping').amount;
+            if (alt != null) {
+              expect(chosenTotal, `${cc} ${n}点 ${row.id} vs ${m}`).toBeLessThanOrEqual(altRow.total.low);
+            }
           }
         }
       }
@@ -2917,5 +2927,61 @@ describe('F3: Japan-Post-only fees must not appear on courier-resolved rows', ()
     expect(courier.method).toBe('courier-ecms');
     expect(line(courier, 'clearance').amount).toBe(line(postal, 'clearance').amount);
     expect(line(courier, 'clearance').note).toBe(line(postal, 'clearance').note);
+  });
+});
+
+// **F-total是正（Fable 5.1 監査、PR #137、docs/audit/cheapest-by-total-2026-09-13.md）。**
+// `cheapest` は「運べる中で送料が最安」ではなく「運べる中で**総額**が最安」を選ぶ。
+// 送料の順位と総額の順位が食い違う3条件（3社・3国、日本郵便と宅配便の組み合わせを
+// それぞれ違えてある）を固定する。**mutation で確認済み**（選択基準を
+// `priceAll`/`priceCourier().low` の送料だけの比較に戻すと、この3件はいずれも
+// 失敗する — 手順と結果は `docs/audit/cheapest-by-total-2026-09-13.md` 参照）。
+describe("'cheapest' selects by landed total, not by international shipping price alone", () => {
+  const cart = (weightG: number, priceYen: number): Item[] => [
+    { id: 'i1', site: 'yahoo-auctions', priceYen, qty: 1, weightG } as unknown as Item,
+  ];
+
+  test('US, 1,000 g, ¥3,000 item, FROM JAPAN: ECMS (cheap clearance) beats UPS (cheaper ship, expensive clearance)', () => {
+    const cheapest = byId(
+      compare({ items: cart(1000, 3000), country: 'US', method: 'cheapest' }).rows, 'fromjapan',
+    );
+    const ups = byId(
+      compare({ items: cart(1000, 3000), country: 'US', method: 'courier-ups' }).rows, 'fromjapan',
+    );
+    const upsShip = line(ups, 'intl-shipping').amount!;
+    const chosenShip = line(cheapest, 'intl-shipping').amount!;
+    // 送料はUPSの方が安い（このテストの前提そのものを固定する）。
+    expect(upsShip).toBeLessThan(chosenShip);
+    // それでも `cheapest` はUPSではなくECMSを選ぶ——総額がECMSの方が安いから。
+    expect(cheapest.method).toBe('courier-ecms');
+    expect(cheapest.total.low).toBeLessThan(ups.total.low);
+  });
+
+  test('GB, 300 g, ¥500 item, Neokyo: a courier with worse shipping but a cheaper clearance fee wins on total', () => {
+    const cheapest = byId(
+      compare({ items: cart(300, 500), country: 'GB', method: 'cheapest' }).rows, 'neokyo',
+    );
+    const ems = byId(
+      compare({ items: cart(300, 500), country: 'GB', method: 'ems' }).rows, 'neokyo',
+    );
+    const emsShip = line(ems, 'intl-shipping').amount!;
+    const chosenShip = line(cheapest, 'intl-shipping').amount!;
+    expect(emsShip).toBeLessThan(chosenShip);
+    expect(cheapest.method).not.toBe('ems');
+    expect(cheapest.total.low).toBeLessThan(ems.total.low);
+  });
+
+  test('FR, 3,000 g, ¥500 item, ZenMarket: ECMS Express ships dearer than FedEx but still wins on total', () => {
+    const cheapest = byId(
+      compare({ items: cart(3000, 500), country: 'FR', method: 'cheapest' }).rows, 'zenmarket',
+    );
+    const fedex = byId(
+      compare({ items: cart(3000, 500), country: 'FR', method: 'courier-fedex' }).rows, 'zenmarket',
+    );
+    const fedexShip = line(fedex, 'intl-shipping').amount!;
+    const chosenShip = line(cheapest, 'intl-shipping').amount!;
+    expect(fedexShip).toBeLessThan(chosenShip);
+    expect(cheapest.method).toBe('courier-ecms-express');
+    expect(cheapest.total.low).toBeLessThan(fedex.total.low);
   });
 });
