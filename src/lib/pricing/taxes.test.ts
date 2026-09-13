@@ -466,6 +466,88 @@ describe('every destination has a duty rate above its threshold', () => {
     expect(COUNTRIES.AU.dutyRateSourceUrl).toContain('AU_e.pdf');
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // GB: 監査 (docs/audit/close-coverage-gaps-2026-09-13.md ①) で見つかった穴。
+  // `dutyRate: 0.029` を別の値に書き換えても、これを足すまでどのテストも落ちなかった
+  // ——他6カ国は AU と同じ形の固定テストを持っていたが、GB だけこの表明が無かった。
+  //
+  // 出典は `countries.ts` の GB エントリのコメントに既にある: WTO World Tariff
+  // Profiles 2025 の英国プロファイル Part A.1、非農産品 (Non-Ag) の単純平均
+  // (Simple average) 2.9%（`dutyRateSourceUrl` が指す GB_e.pdf）。EU 4.1%・
+  // カナダ 2.3%〜2.0% と同じ選び方（非農産品の単純平均）で、`countries.ts` の
+  // コメントは同じページの反証（非農産品の税表の行の 55.2% が無税で、最頻値は
+  // 0%）も記録している——だから tier は 'estimate'。
+  //
+  // **master/customs.json には対応する値が無い。** GB エントリの `duty.rule` は
+  // `{ "type": "threshold", "free_below": 135, "rate_above": "unknown" }`、
+  // `tier: "C_unknown"` のまま——`src/lib/pricing/countries.ts` の 0.029 は
+  // master 側の追加確認を経ておらず、コード側だけが持つ値だという欠落を
+  // ここに記録する（master に値を足すかどうかはこのPRの範囲外の別判断）。
+  test('GB: zero below the GBP 135 threshold, the 2.9% WTO estimate above it', () => {
+    // £135 以下 = 免税。
+    const low = line(rowsFor('GB', 3000, 5)[0]!, 'duty');
+    expect(low.amount).toBe(0);
+    expect(low.tier).toBe('fixed');
+    expect(low.note).toContain('under the GBP 135 threshold');
+
+    // £135 超（5点 ¥40,000 = 現行レートで約 £189）= WTO 英国プロファイルの
+    // 非農産品 単純平均 2.9%。**推定と名乗る。**
+    const high = line(rowsFor('GB', 40_000, 5)[0]!, 'duty');
+    expect(high.amount).toBeGreaterThan(0);
+    expect(high.tier).toBe('estimate');
+    expect(COUNTRIES.GB.dutyRate).toBe(0.029);
+    expect(COUNTRIES.GB.dutyRateSourceUrl).toContain('GB_e.pdf');
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 監査 (docs/audit/close-coverage-gaps-2026-09-13.md ②): 箱詰めの順番
+  // (`packHeaviestFirst`, `parcels.ts`) が、免税限度をまたぐかどうかという
+  // **実際の税額**を動かす具体的なカートを固定する。
+  //
+  // カート: 900g/¥27,000・700g/¥30,000・500g/¥1,000 の3点。小形包装物・航空便
+  // (`small-packet-air`, GB向け上限 `maxGramsFor` = 2000g gross) に収めるには
+  // 2箱要る（3点合計は梱包後 grossG(2100)=2820g で上限超）。
+  //
+  // 「重い順」(現行実装) は 900g を単独の箱に、700g+500g を同じ箱に詰める
+  // （`parcels.test.ts` の対応するテスト参照）ので:
+  //   箱A = {900g}    申告額 ¥27,000 → GBP 127.7 → £135 以下・免税
+  //   箱B = {700g,500g} 申告額 ¥31,000 → GBP 146.6 → £135 超・関税対象
+  // 「軽い順」に変えていたら組み合わせが逆転し:
+  //   箱A = {500g,900g} 申告額 ¥28,000 → GBP 132.4 → 免税
+  //   箱B = {700g}      申告額 ¥30,000 → GBP 141.9 → 関税対象
+  // 免税/課税の**箱の数**自体は変わらない(1/1)が、課税対象になる箱の申告額が
+  // ¥31,000 と ¥30,000 で違うので、関税の**額**が変わる——だから重い順/軽い順は
+  // 総額に対して中立ではない。
+  test('packing order changes the duty amount when a shipment splits into multiple GB parcels', () => {
+    const cart: Item[] = [
+      { id: 'heavy', title: 'heavy', priceYen: 27_000, priceTier: 'fixed',
+        site: 'yahoo-auctions', weightG: 900, weightTier: 'estimate', qty: 1 },
+      { id: 'mid', title: 'mid', priceYen: 30_000, priceTier: 'fixed',
+        site: 'yahoo-auctions', weightG: 700, weightTier: 'estimate', qty: 1 },
+      { id: 'light', title: 'light', priceYen: 1_000, priceTier: 'fixed',
+        site: 'yahoo-auctions', weightG: 500, weightTier: 'estimate', qty: 1 },
+    ];
+    const row = compare({ method: 'small-packet-air', items: cart, country: 'GB' })
+      .rows.find((r) => r.serviceId === 'zenmarket')!;
+    // 3点が2個口に分かれ、重い順で {900g}単独 と {700g,500g}同居 になっている
+    // ことをまず確認する——これが崩れたら下の関税額の期待値も前提から崩れる。
+    expect(row.boxes).toHaveLength(2);
+    const declared = row.boxes!.map((b) => b.declaredYen).sort((a, b) => a - b);
+    expect(declared).toEqual([27_000, 31_000]);
+
+    const duty = line(row, 'duty');
+    // 混在（1個口免税・1個口課税）: 関税は31,000円の個口だけにかかる。
+    // dutyBaseYenP は GB が base:'CIF' なので itemsYen(31,000)+送料等（>0）——
+    // ここでは「31,000円の2.9%を下回らない」ことまでを固定し、送料内訳の
+    // 厳密な内訳は postage.test.ts / compare.test.ts の管轄として立ち入らない。
+    expect(duty.amount).not.toBeNull();
+    expect(duty.amount!).toBeGreaterThanOrEqual(Math.round(31_000 * 0.029));
+    // 「軽い順」（もし箱詰めが軽い順に変わっていたら）の額 30,000円の2.9%
+    // ちょうどより厳密に大きいことも確認する——これが変わらなければ、
+    // 詰め方が税額に効いていないことになる。
+    expect(duty.amount!).toBeGreaterThan(Math.round(30_000 * 0.029));
+  });
+
   test('the dash that remains is always a dash on purpose', () => {
     // **総額から漏れている費目は米国の3つ＋7カ国 × 2つ（0e/A-3）だけ**で、全部
     // 「取れていない」ではなく「そこには無い／額が公表されていない／その社が

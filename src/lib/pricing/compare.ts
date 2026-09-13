@@ -274,7 +274,13 @@ export interface ParcelTaxBasis {
 }
 
 // ── 受取国の税。未取得は null を返し、画面で「—」にする。0 と書かない。
-function taxLines(
+// **監査 (docs/audit/close-coverage-gaps-2026-09-13.md ③) のためだけに export する。**
+// `taxLines` は `compare()` からの間接検査しか持っておらず、「関税→VAT」という
+// 積み上げ順序そのものを主張するテストが無かった。`compare()` 経由だと個口ごとの
+// `domYen`/`emsYen`（配送方式・社ごとに解決される内部値）を呼び出し側から
+// 制御できず、順序が効く条件を狙って作れない——`taxLines` を直接呼べば
+// `ParcelTaxBasis` の全フィールドをテストが握れる。ロジックは一切変えていない。
+export function taxLines(
   cc: CompareInput['country'],
   province: ProvinceCode | null,
   /** カートそのもの。**品目カテゴリでしか言えないこと**（米国の関税・英国の酒税）に使う。 */
