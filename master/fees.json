@@ -2354,6 +2354,64 @@
       ],
       "ui_consequence": "src/components/compare/WhatCouldBeOff.tsx は既存のtier分岐（'estimate'→Estimated/'unverified'→Second-hand/欠落→Not included）をそのまま使うため、UI側の新規コンポーネントは不要——上記のservices.ts変更だけで、ZenMarketのdeposit行はConfirmed扱いに、Buyee/Neokyo/FROM JAPANのdeposit行は新たにEstimated扱いとしてWhatCouldBeOffに表示されるようになる。オーナーが見せたい『同じ3.5%が1社では確定値、3社では仮定である』という区別は、この変更だけで画面に反映される。",
       "blocked_by": "PR #73（src/lib/pricing/* を書き換え中）。#73 マージ後の別PRで実装すること。本PR (#74) はこの仕様を記録するだけで src/ には触れていない。"
+    },
+    "F26_export_clearance_fee_screen_zero_risk_2026_09_13": {
+      "id": "F26_export_clearance_fee_screen_zero_risk_2026_09_13",
+      "note_on_field": "これは F26 の rule（我々が5社に課している¥2,800、carrier_in: [\"JapanPost_all\"]）の測定値そのものとは別の、独立したフィールドである。ここに書くのは「F26の金額・条件・適用挙動を変更する」ではなく「オーナーがFROM JAPANの自社計算機を実際に操作して見た画面表示との食い違いをリスクとして記録する」という運用上の判断であり、rule 自体は本エントリを理由に一切変更していない（振る舞い不変）。",
+      "observed_on": "2026-09-13",
+      "observed_by": "オーナー（Tatsuya氏）",
+      "observation": "FROM JAPANの自社送料計算機で見積りを行うと、日本郵便の各方式（EMS・AirMail・Surface・Surface (Small Packet)・AirMail (Small Packet)）を含むすべての結果画面で \"Export Clearance Fee: 0 yen\" と表示された。",
+      "observation_confidence": "direct_fetch",
+      "observation_confidence_note": "この observation 自体（画面がそう表示した、という事実）は direct_fetch として扱う——オーナー自身がFROM JAPANの計算機を実際に操作して見た画面の記述であり、伝聞・要約ではない。ただし、この表示が『何を意味するか』（F26が誤っている、FROM JAPANが別枠で請求する、等）についてのいかなる解釈も、この observation_confidence を継承しない——下記 readings はいずれも judgement であり、reasoned_judgement_unconfirmed 以上には格上げしない。observation（見た事実）と reading（それが何を意味するかの読み）を混同しないこと。",
+      "direction_of_error_if_from_japan_screen_is_authoritative": "readings のうち reading 1（FROM JAPANが自己負担している）が正しいと仮定した場合に限り言えることとして: 我々はFROM JAPANの日本郵便経由の全ルートについて、実際には利用者に転嫁されていない¥2,800を利用者請求額に上乗せしている、すなわち本マスタの見積りをルートあたり¥2,800だけ過大（overstating）に出している。ただし本エントリはこの仮定を採用も棄却もしない——readings セクションが記録する4つの読みのうち、どれが正しいかは確定していない。",
+      "confidence": "reasoned_judgement_unconfirmed",
+      "confidence_vocabulary_note": "master/carrier-surcharges.json の C11/C12（fuel_surcharge_working_treatment / remote_area_surcharge_working_treatment）と同じ語彙上の区別を適用する。direct_fetch / search_snippet / search_snippet_no_verbatim_quote はいずれも『一次ページの記述にどう到達したか』という取得経路を表し、記述自体が事実として確認されていることを前提にする。ここで記録するのは、observation（direct_fetch）そのものではなく、その observation が F26 に対して何を意味するかという、事実未確定のまま残す判断の確度であり、reasoned_judgement_unconfirmed を用いる。",
+      "claim_precision_note": "記録している主張は『F26の¥2,800は誤りである』でも『正しい』でもなく、『FROM JAPANの自社計算機は日本郵便ルートで輸出通関手数料を¥0と表示するが、F26は同じルートに¥2,800を課しており、この矛盾をどう解釈すべきかは未決着である。以下の4つの読みを順位付けせずに記録し、以下の検証で決着する』という主張である。",
+      "decision": "オーナーの判断（2026-09-13）: 金額・条件・振る舞いは変更しない。F26の¥2,800はそのまま維持し、本件はリスクとして登録するに留める。",
+      "readings": [
+        {
+          "ref": "R1_from_japan_absorbs",
+          "text": "FROM JAPANが¥2,800相当を自社で負担しており、利用者には転嫁していない（＝FROM JAPAN自身の計算機の¥0表示は正確で、F26の¥2,800はFROM JAPANに関する限り我々側の過大計上）。"
+        },
+        {
+          "ref": "R2_billed_later_outside_estimate",
+          "text": "輸出通関手数料は見積り画面には出ず、実際の請求時に別途課金される。同じ計算機の結果画面自身が次の一文を掲げている: \"Your final payment will be determined by actual cost and may vary from the estimate provided in this tool.\" この一文はR2を裏付ける最有力の根拠であり、原文のまま引用する。"
+        },
+        {
+          "ref": "R3_different_service_or_circumstance",
+          "text": "F26の¥2,800とFROM JAPANの計算機が¥0を示す場面は、そもそも同じ役務・同じ状況を指していない可能性がある（例: 申告価格帯・梱包内容・時期・計算機のバージョンの違いなど）。F26は\"Packages with a total value exceeding 200,000 yen sent through Japan Post (EMS, International Parcel) will incur a 2,800 yen Export Clearance Fee.\" というテキストページの記述に基づき、declared_value_jpy_over: 200000 を条件としている。2026-09-13の計測がこの申告額しきい値を実際に跨いだ入力で行われたかどうかは、本エントリの範囲では確認していない。"
+        },
+        {
+          "ref": "R4_calculator_unreliable",
+          "text": "FROM JAPANの計算機の表示自体を信頼できる証拠として扱えない可能性がある。同じ2026-09-13の計測ラウンドで、SGの500g条件においてUPSの結果がある試行では¥2,891、別の試行ではUPSの行自体が表示されない、という非決定的な挙動が観測されている。加えて、別途行われたJauceの計測ではクライアント側の送信バグ（古い値が残留する）が文書化されている（該当計測ログを参照）。したがって『画面が¥0と表示した』というobservation は direct_fetch として正しく記録されるべきだが、それが『真の値が¥0である』ことの証拠になるかどうかは、この計算機自体の信頼性が未確立である以上、別問題として扱う。"
+        }
+      ],
+      "do_not_rank_note": "上記4つの読みに順位・優先度はつけない。CLAUDE.md §9（『状況は理由にならない』）に従い、¥0表示という状況そのものからは、どの読みが正しいかを一つに決められない。",
+      "what_would_distinguish": [
+        {
+          "test": "T1_real_invoice",
+          "text": "FROM JAPAN経由で日本郵便ルートを実際に発送した際の実請求書（invoice）に、¥2,800（またはそれに近い）の輸出通関手数料の行項目が現れるかどうかを確認する。現れれば R2（後日請求）を支持する。現れず、かつ他の名目でも同等額が請求されていなければ R1（FROM JAPANが負担）を支持する。"
+        },
+        {
+          "test": "T2_f26_source_re_read_for_billing_timing",
+          "text": "F26自身の一次ソース（FROM JAPAN: https://www.fromjapan.co.jp/translate/en_help.txt、Buyee: https://buyee.jp/helpcenter/guide/fees?lang=en）を、『誰が・いつ課金されるか』の観点で再度読み、見積り画面表示分とは別に後日請求される旨の記述があるかを確認する。本エントリの時点でこの再読は行っていない——次点で最も安価に実施できる検証。"
+        },
+        {
+          "test": "T3_reproduce_with_declared_value_boundary",
+          "text": "2026-09-13の計測が declared_value_jpy_over: 200000 のしきい値を実際に跨いだ申告額で行われていたかを確認し、跨いでいなかった場合はしきい値を跨ぐ申告額で再計測する。跨いだ状態でも¥0のままなら R3（別の役務・状況を指している）の可能性は下がる。"
+        },
+        {
+          "test": "T4_repeat_measurement_for_calculator_stability",
+          "text": "同一条件でFROM JAPANの計算機を複数回・日を跨いで再実行し、Export Clearance Fee欄の¥0表示が安定して再現するかを確認する。SGのUPS行が試行間で¥2,891⇔非表示と揺れた前例に照らし、1回の観測だけでR4（計算機の信頼性）を除外しない。"
+        }
+      ],
+      "cross_reference": "master/carrier-surcharges.json の conclusions.fuel_surcharge_working_treatment（id: C11_fuel_working_treatment_2026_09_12）・conclusions.remote_area_surcharge_working_treatment（id: C12_remote_area_working_treatment_2026_09_12）と同じ形——『measurementそのもの』と『それをどう扱うかの運用判断』を分離するパターン——に倣って本エントリを記録した。ただしC11/C12は『金額を動かさない』という現状維持の判断だった点で本エントリと共通するが、C11/C12が『含まれている』という一方向の仮定を採用したのに対し、本エントリは4つの読みのいずれも採用せず並記する点で異なる。",
+      "f26_provenance_check": {
+        "checked_on": "2026-09-13",
+        "text": "本PRの一環としてF26の既存レコード5社分を確認した。tier / confidence の実体は次の通り: Buyee・FROM JAPAN・Jauceの3社は tier: A_confirmed、いずれも quoteフィールドに一次ページ本文からの引用符付き原文があり、source URLもヘルプページ・FAQページ（fees / en_help.txt / japan_auction_detail）で、checked_on: 2026-09-07。ZenMarket・Neokyoの2社は tier: B_inferred で、『Buyee・FROM JAPAN・Jauceの3社が同額・同条件で持つ』ことを根拠にした推論（inference_basis）であり、ZenMarket・Neokyo自身の公表ページには記載も否定も無いと明記されている。",
+        "was_amount_ever_invoice_confirmed": "否。5社ともF26の¥2,800は実請求書（invoice）との突き合わせを一度も経ていない。A_confirmedの3社は『公表ページの文言を直接読んだ（quoteあり）』ことのみを意味し、実際にその金額で請求された実例（invoice）による裏付けは無い。tier A_confirmedという名称は『一次ページを直接確認した』ことを示すものであり、『実請求で確認した』ことを意味しない——この区別を本記録として明示しておく。",
+        "relation_to_past_overconfidence_incidents": "CLAUDE.mdが記録するDE DHL最低額（本来secondary sourceの由来だったものをA_confirmedと記録し、PR #99で訂正）やロードマップの『primary source obtained』主張（実際はmasterではunknownのままだった、PR #89）と同じ形の過大表示には該当しない、と判断する。理由: F26のA_confirmed 3社は実際にquoteフィールドに一次ページからの引用符付き原文を持っており、tierの語彙定義（一次ページをdirect_fetchで確認）にそのまま合致する。過去2件の事故は『一次ページを見ていないのに見たかのように記録した』ことが問題だったが、F26についてはページを見たこと自体は成立している。ただし、これは『ページを見た』ことの確認であって『実請求と一致する』ことの確認ではない——tier A_confirmedの定義自体が最初から実請求照合を含んでいないため、F26は定義通りの運用がされているに過ぎない。この定義の射程の狭さ（一次ページ＝正、実請求との突合せは範囲外）自体は、本マスタ全体に共通する未解決のギャップとして別途認識しておく価値がある。"
+      }
     }
   }
 }
