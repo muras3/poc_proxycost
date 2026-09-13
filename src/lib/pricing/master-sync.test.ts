@@ -428,14 +428,17 @@ const MAPPED: MappedEntry[] = [
   // ── 0e: catalog F14 は display: total。マスタ側の rule.amount は unknown（実費のみで
   // 上限・料金表が無い）なので額そのものは繋げないが、**額が出せないことは「行を作らない
   // 理由」にはならない**（docs/FEE-ITEMS.md §1、オーナー決定 2026-09-11 で「任意欄」は
-  // 廃止された）。`services.ts` の `unpricedFees` として毎行の総額に amount: null
-  // （画面「—」）で足し、excluded に名前を載せる（`compare.ts` の `buildRow`）。
-  // 発生条件（50kg以上／30kg以上かつ30万円以上／壊れ物）はこの計算機では条件1・2が
-  // 原理的に発生せず、条件3（壊れ物）は FROM JAPAN の主観判断で検出不能——だから
-  // 条件判定そのものは繋がない。繋いだのは「行の存在」であって「条件」ではない。
+  // 廃止された）。`services.ts` の `outsourcedPackingFee` として、条件（重量・商品価格・
+  // 壊れ物）を満たした行にだけ `compare.ts` の `buildRow` が amount: null（画面「—」）
+  // で足し、excluded に名前を載せる。
+  // **2026-09-13 更新: 発生条件（50kg以上／30kg以上かつ30万円以上／壊れ物）を
+  // `requiresOutsourcedPacking`（`services.ts`）としてコード側に繋いだ。**普通の商品
+  // ではどの条件も成立しないので行を立てない（0円）——以前は条件を見ずに毎行へ
+  // 無条件で立てており過剰だった。
   {
     id: 'F14', company: 'fromjapan', name: '外注梱包（Outsourced Packing）',
-    read: () => (svc('fromjapan').unpricedFees ?? []).some((o) => o.key === 'outsourced-packing'),
+    read: () => !!svc('fromjapan').outsourcedPackingFee
+      && (svc('fromjapan').unpricedFees ?? []).every((o) => o.key !== 'outsourced-packing'),
     expect: () => true,
   },
 ];
@@ -950,16 +953,25 @@ describe('display ── マスタの `display` 分類がコードに効いて�
     expect(optionalItems.map((c) => c.id)).toEqual([]);
   });
 
-  it('display: total の F14外注梱包は、額が無くても総額の行になる', () => {
+  it('display: total の F14外注梱包は、条件を満たす行では額が無くても総額の行になる', () => {
     // catalog 側の分類そのものが total であること（マスタを直接読む。ハードコードしない）。
     expect(displayOf('F14')).toBe('total');
-    // コード側 ── `unpricedFees` として `compare.ts` の `buildRow` が毎行の `lines[]` に足す。
-    // 額は公表されていないので amount: null（画面「—」）で、`excluded` に名前が載る。
-    const fj = rowsOf().find((r) => r.serviceId === 'fromjapan')!;
-    const outsourced = fj.lines.find((l) => l.key === 'outsourced-packing');
+    // **2026-09-13、オーナー決定で条件付き化。**普通の商品（`testItem`、600g・¥3,000）
+    // はどの条件（50kg以上／30kg以上かつ30万円以上／壊れ物）も満たさないので行を
+    // 立てない（0円・未知にしない）——旧テストは条件を見ない無条件仕様を検証していた。
+    const fjNormal = compare({ items: [testItem], country: 'US' }).rows
+      .find((r) => r.serviceId === 'fromjapan')!;
+    expect(fjNormal.lines.find((l) => l.key === 'outsourced-packing')).toBeUndefined();
+
+    // 条件3（壊れ物）を満たす行では、額は公表されていないので amount: null
+    // （画面「—」）で足し、`excluded` に名前が載る。
+    const fragileItem = { ...testItem, id: 'b', fragile: true };
+    const fjFragile = compare({ items: [fragileItem], country: 'US' }).rows
+      .find((r) => r.serviceId === 'fromjapan')!;
+    const outsourced = fjFragile.lines.find((l) => l.key === 'outsourced-packing');
     expect(outsourced, 'F14 outsourced-packing must be a total line, not dropped').toBeDefined();
     expect(outsourced!.amount).toBeNull();
-    expect(fj.excluded).toContain(outsourced!.label);
+    expect(fjFragile.excluded).toContain(outsourced!.label);
   });
 
   it('display: total だが**任意**の F29 Premium insurance は、選ばれていない既定では行にしない', () => {

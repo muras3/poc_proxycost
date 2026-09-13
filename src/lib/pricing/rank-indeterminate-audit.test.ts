@@ -14,6 +14,16 @@
  * `rankIndeterminate` 以外のフィールドの期待値は本 PR の影響を受けないので
  * そのまま。
  *
+ * **2026-09-13 追記その2（外注梱包の条件付き化、オーナー決定、`docs/ledger/`
+ * の rankIndeterminate 集計対象）**: この監査が再現に使った「600g・¥3,000」と
+ * いう入力は、元は**別のバグ**（FROM JAPAN の外注梱包 `unpricedFees` が重量・
+ * 商品価格・壊れ物という条件を一切見ずに毎行へ無条件で `amount: null` を
+ * 立てていた）に依存していた。そのバグを `requiresOutsourcedPacking()`
+ * （`services.ts`）で塞いだ今、普通の商品（この監査が使っていた入力そのもの）
+ * はもう unbounded にならない——ここで検査したい `isIndeterminate` 自体の
+ * 挙動（PR #127）は生きているので、以下のテストは入力に `fragile: true`
+ * を足して同じ形（1位自身が社固有の未知で unbounded）を作り直す。
+ *
  * 見つけたことは大きく2つ（元の記述、直った今も歴史的事実として正しい）:
  *
  * 1. `rankIndeterminate` が真になる条件（`isIndeterminate`、compare.ts）は
@@ -41,6 +51,9 @@ import type { Item } from './types';
 const singleItem = (weightG: number): Item[] => [{
   id: 'a', title: 'a', priceYen: 3000, priceTier: 'fixed', site: 'yahoo-auctions',
   weightG, weightTier: 'estimate', qty: 1,
+  // 2026-09-13: 外注梱包が条件付き化された後もこの監査の形（FROM JAPAN が
+  // 社固有の未知で unbounded）を保つため、条件3（壊れ物）を明示的に立てる。
+  fragile: true,
 }];
 
 describe('rank-indeterminate audit (2026-09-13) — pins current behaviour, does not change it', () => {

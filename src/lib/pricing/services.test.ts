@@ -2,8 +2,8 @@ import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
 import { markupYen } from './postage';
 import {
-  EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_YEN,
-  SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
+  EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_YEN, OUTSOURCED_PACKING_THRESHOLD,
+  requiresOutsourcedPacking, SERVICES, SERVICES_CHECKED_ON, SERVICE_BY_ID, type Service,
 } from './services';
 import type { Item, Line, Row, SiteId } from './types';
 
@@ -290,18 +290,29 @@ describe('display: total fees without a published amount are still total lines',
     // 選ぶ）で、既定では加入しない。以前は無条件で乗せており、選んでいない利用者にも
     // 常に上限不明を課していた。この計算機はまだ加入するかどうかを選ぶ UI を持たない
     // ので、既定では出さない。
+    //
+    // **2026-09-13 更新**: FROM JAPAN の outsourced-packing も無条件の `unpricedFees`
+    // から、条件（重量・商品価格・壊れ物）を満たしたときだけ足す `outsourcedPackingFee`
+    // に移った（オーナー決定）。だから `unpricedFees` はどの社も空。
     const keysOf = (id: string) => (SERVICES.find((s) => s.id === id)!.unpricedFees ?? [])
       .map((u) => u.key).sort();
     expect(keysOf('neokyo')).toEqual([]);
     expect(keysOf('zenmarket')).toEqual([]);
     expect(keysOf('buyee')).toEqual([]);
-    expect(keysOf('fromjapan')).toEqual(['outsourced-packing']);
+    expect(keysOf('fromjapan')).toEqual([]);
     expect(keysOf('jauce')).toEqual([]);
+    // 条件付きの費目自体は FROM JAPAN だけが持つ。
+    expect(SERVICES.filter((s) => s.outsourcedPackingFee).map((s) => s.id)).toEqual(['fromjapan']);
   });
 
-  test('outsourced packing is a total line, amount null, and named in excluded', () => {
+  test('a normal item (no threshold met) does not get an outsourced-packing line', () => {
     const row = one('fromjapan');
-    const l = unpriced('fromjapan', 'outsourced-packing');
+    expect(row.lines.some((l) => l.key === 'outsourced-packing')).toBe(false);
+  });
+
+  test('outsourced packing is a total line, amount null, and named in excluded ── when the fragile condition is met', () => {
+    const row = one('fromjapan', { fragile: true });
+    const l = unpriced('fromjapan', 'outsourced-packing', { fragile: true });
     expect(l.amount).toBeNull();
     expect(l.tier).toBe('none');
     expect(l.note).toContain('actual cost');
@@ -945,5 +956,41 @@ describe('an optional fee points at whoever sets the amount', () => {
         expect(u.sourceUrl, `${svc.id}/${u.key}`).toMatch(/^https:\/\//);
       }
     }
+  });
+});
+
+describe('requiresOutsourcedPacking — FROM JAPAN outsourced-packing gate (oner decision 2026-09-13)', () => {
+  // 一次情報（en_help.txt、2026-09-13 再確認）の3条件そのものを境界値で検査する。
+  // `OUTSOURCED_PACKING_THRESHOLD` の値を動かすとここが落ちるので、しきい値が
+  // マジックナンバーとして他所に紛れ込んでいないかも合わせて守る。
+
+  test('普通の商品（重量・価格帯が閾値未満、壊れ物でもない）では発生しない', () => {
+    expect(requiresOutsourcedPacking(1000, 3000, false)).toBe(false);
+  });
+
+  test('条件1（50kg以上）の境界: 49.9kg では発生せず、50kg ちょうどで発生する', () => {
+    expect(requiresOutsourcedPacking(49_900, 0, false)).toBe(false);
+    expect(requiresOutsourcedPacking(50_000, 0, false)).toBe(true);
+  });
+
+  test('条件2（30kg以上 かつ 30万円以上）の境界: 片方だけでは発生しない', () => {
+    // 29.9kg + ¥300,000 ── 重量が足りない
+    expect(requiresOutsourcedPacking(29_900, 300_000, false)).toBe(false);
+    // 30kg + ¥299,999 ── 価格が足りない
+    expect(requiresOutsourcedPacking(30_000, 299_999, false)).toBe(false);
+    // 30kg + ¥300,000 ── 両方ちょうど揃って発生する
+    expect(requiresOutsourcedPacking(30_000, 300_000, false)).toBe(true);
+    // 30.1kg + ¥300,001 ── 両方超えていれば当然発生する
+    expect(requiresOutsourcedPacking(30_100, 300_001, false)).toBe(true);
+  });
+
+  test('条件3（壊れ物・特別な取扱い）は重量・価格に関係なく発生する', () => {
+    expect(requiresOutsourcedPacking(100, 100, true)).toBe(true);
+  });
+
+  test('しきい値そのもの（マジックナンバーの一元化を確認）', () => {
+    expect(OUTSOURCED_PACKING_THRESHOLD).toEqual({
+      soloWeightG: 50_000, heavyWeightG: 30_000, heavyPriceYen: 300_000,
+    });
   });
 });

@@ -95,10 +95,19 @@ describe('F34: a zero-duty courier row does not present as bounded (owner-decide
     // quantifying exactly what this assumption is worth if it turns out to be wrong: DHL SG's own
     // minimum fee (S$20 -> ~¥2,467 at the fixed rate used in tests).
     expect(fee!.amountHighYen).toBeGreaterThan(fee!.amount!);
-    // `total.high` は courier 行に常に付随する `courier-destination-fees`（燃油/遠隔地の
-    // 未知、F28/F40）で既に無条件に開いている——この行の range 自体が `total.high` を
-    // 開閉するわけではないが、その開いた状態は正しく維持される（決して閉じない）。
-    expect(row.total.high).toBeNull();
+    // **2026-09-13 訂正**: 元のコメントは「`total.high` は courier 行に常に付随する
+    // `courier-destination-fees`（F28/F40）で無条件に開いている」としていたが、これは
+    // 誤りだった——この籠（1点・600g・¥3,000、SG・DHL）には `courier-destination-fees`
+    // 行そのものが立たない。実際に `total.high` を開いたままにしていたのは、当時
+    // FROM JAPAN の外注梱包（`unpricedFees`）が条件を見ずに毎行へ無条件で
+    // `amount: null` を立てていたという**別のバグ**だった。そのバグを塞いだ今
+    // （`requiresOutsourcedPacking`、`services.ts`、オーナー決定 2026-09-13）、
+    // この行に残る未知は `courier-clearance-fee` 自身の range（`amountHighYen`）だけ
+    // ——`total.high` はそれを反映した具体的な数値に閉じる。これは正しい：
+    // range の上端は「置ける」上端なので、他に未知が無ければ `high` を数値にする
+    // （`Row.total` の doc comment）。
+    expect(row.total.high).not.toBeNull();
+    expect(row.total.high).toBe(row.total.low + (fee!.amountHighYen! - fee!.amount!));
     expect(fee!.note).toContain('nothing to advance');
     expect(fee!.note).toContain('owner-decided working treatment');
     expect(fee!.tier).toBe('estimate'); // 仮定に基づく行——DHL SGのtier: 'fixed'をそのまま流用しない

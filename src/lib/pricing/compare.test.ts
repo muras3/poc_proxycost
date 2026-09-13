@@ -167,15 +167,30 @@ describe('the breakdown explains the total', () => {
 
   test('a display:total fee we cannot price is still a line, not a dropped feature', () => {
     // 0e: 「任意欄」はマスタに存在しない（`optionalLines` は撤去した）。額を公表していない
-    // 費目（FROM JAPAN の外注梱包・Jauce の Premium insurance）も総額の行として現れ、
-    // amount: null（画面「—」）で excluded に名前が載る。行ごと消えたら「そんな費目は
-    // 無い」という嘘になる。
-    const fj = byId(compare({ method: 'ems', items: items(1, 600), country: 'US' }).rows, 'fromjapan');
+    // 費目（FROM JAPAN の外注梱包・Jauce の Premium insurance）は、発生条件を満たす行では
+    // 総額の行として現れ、amount: null（画面「—」）で excluded に名前が載る。行ごと消えたら
+    // 「そんな費目は無い」という嘘になる。
+    //
+    // **2026-09-13 更新**: 外注梱包は条件（重量・商品価格・壊れ物）を満たしたときだけ
+    // 出るようになった（オーナー決定）ので、条件3（壊れ物）を明示的に立てて検証する
+    // ——普通の商品（600g・¥3,000）ではもう出ない（別テストがそれを固定する）。
+    const fj = byId(
+      compare({ method: 'ems', items: items(1, 600, 3000, { fragile: true }), country: 'US' }).rows,
+      'fromjapan',
+    );
     const outsourced = fj.lines.find((l) => l.key === 'outsourced-packing');
     expect(outsourced).toBeDefined();
     expect(outsourced!.amount).toBeNull();
     expect(fj.excluded).toContain(outsourced!.label);
     expect(fj.total.low).toBe(sumLines(fj));
+  });
+
+  test('a normal item (no threshold met) does not get an outsourced-packing line', () => {
+    // 0e の裏側: 普通の商品（重量・価格帯が閾値未満、壊れ物でもない）では
+    // 外注梱包の行を立てない——旧仕様（条件を見ず無条件で立てる）は過剰だった
+    // （オーナー決定 2026-09-13、`requiresOutsourcedPacking`、`services.ts`）。
+    const fj = byId(compare({ method: 'ems', items: items(1, 600), country: 'US' }).rows, 'fromjapan');
+    expect(fj.lines.find((l) => l.key === 'outsourced-packing')).toBeUndefined();
   });
 });
 
@@ -1887,8 +1902,17 @@ describe('one item at a time: whose weight decides the winner', () => {
     // 胴の広いスプレッドだけで枠が動く）が残るのはカナダ。袴の帯も
     // 1,500–2,500 g だと胴と一緒に枠を動かしてしまうようになったので、
     // 1,500–2,000 g に狭めて「動かない」方を保った。
+    //
+    // **2026-09-13 追記**: 外注梱包の条件付き化（オーナー決定）で、この重量帯
+    // （最大 7,500 g）では FROM JAPAN の総額はもう上限不明ではなくなった
+    // ——`do` に `fragile: true` を明示して条件3を満たし、このテストが検証したい
+    // 「1位が unbounded なまま枠が動く」形を保つ。
     const r = compare({ method: 'ems',
-      items: [table('do', 2000, [1500, 7500]), table('hakama', 1500, [1500, 2000]), table('tare', 1500, [1500, 1500])],
+      items: [
+        table('do', 2000, [1500, 7500], { fragile: true }),
+        table('hakama', 1500, [1500, 2000]),
+        table('tare', 1500, [1500, 1500]),
+      ],
       country: 'CA',
     });
     expect(r.rows[0]!.id).toBe('fromjapan');
@@ -1977,8 +2001,15 @@ describe('unknown weight falls back to EMS steps', () => {
    * FROM JAPAN のまま＝「重量が分からないと1位が決まらない」という現象自体が
    * 米国では観測できないので、観測できる国で縛る。
    */
+  // **2026-09-13 追記**: 外注梱包の条件付き化（オーナー決定）で、普通の商品では
+  // FROM JAPAN の総額はもう上限不明ではない。この describe 配下の2テストは
+  // 「1位（FROM JAPAN）自身が unbounded」という形に依存しているので、条件3
+  // （壊れ物）を明示的に立てて維持する。
   const unknown = (n: number) => compare({ method: 'ems',
-    items: Array.from({ length: n }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none' })),
+    items: Array.from(
+      { length: n },
+      (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none', fragile: true }),
+    ),
     country: 'CA',
   });
 
@@ -2087,7 +2118,16 @@ describe('unknown weight falls back to EMS steps', () => {
    * 呼ぶ利用者には嘘になる）。
    */
   test('an uncapped row (FROM JAPAN) keeps high: null across every band — no false closed interval', () => {
-    const r = unknown(2);
+    // **2026-09-13 更新**: 外注梱包（outsourced-packing）は条件（重量・商品価格・壊れ物）
+    // を満たしたときだけ未取得になった（オーナー決定）ので、`unknown(2)` の普通の商品
+    // （軽量・低価格）ではもう発生しない——`total.high` は実数に解決してよい
+    // （旧仕様の無条件・過剰計上のほうがバグだった）。この検証（未取得の費目がある行は
+    // 全段で `high: null` のまま伝播すること）自体は生きているので、壊れ物フラグで
+    // 条件3を満たし、確実に未取得のまま保つ。
+    const r = compare({ method: 'ems',
+      items: Array.from({ length: 2 }, (_, i) => item({ id: `u${i}`, weightG: null, weightTier: 'none', fragile: true })),
+      country: 'CA',
+    });
     for (const band of r.bands!) {
       const fj = band.rows.find((x) => x.id === 'fromjapan')!;
       expect(fj.total.high).toBeNull();
@@ -2703,8 +2743,16 @@ describe('the recommended bracket and the equivalent mark (P1-2)', () => {
     // 「Buyeeは重ならない」という対照そのものが米国では作れなくなった——同じ形は
     // ドイツで成り立つ。1点・150 g・¥500・保管90日（ドイツ）は Jauce の保管超過
     // （額に幅がある）が ZenMarket の総額と実際に重なる、閉区間同士の正真正銘の重なり。
-    const rows = compare({ method: 'ems', items: items(1, 150, 500), country: 'DE', storageDays: 90 })
-      .rows.filter((r) => r.comparable);
+    // **2026-09-13 追記**: 外注梱包（outsourced-packing）が条件付き化された（オーナー
+    // 決定）ので、普通の商品（軽量・低価格）では FROM JAPAN の総額はもう上限不明では
+    // ない——このテストの検証対象（zenmarket/buyee の閉区間重なり）とは無関係な
+    // FROM JAPAN 自身の順位が変わってしまう。このテストの狙いは FROM JAPAN の
+    // 未確定性ではないので、`fragile: true` で条件3を満たし FROM JAPAN を
+    // 引き続き上限不明のまま保つ（旧仕様の無条件計上と同じ状態を、この1テストに
+    // 限って意図的に作る）。
+    const rows = compare({
+      method: 'ems', items: items(1, 150, 500, { fragile: true }), country: 'DE', storageDays: 90,
+    }).rows.filter((r) => r.comparable);
     const zenmarket = byId(rows, 'zenmarket');
     const buyee = byId(rows, 'buyee');
     expect(zenmarket.recommended).toBe(false);
@@ -2812,11 +2860,17 @@ describe('rankStable is judged on the recommended bracket as a set (P1-2, coordi
     // 直接検査。`kendo armour` テストと同じ入力で、ここでは decisive の規則
     // そのものに焦点を当てる）。**F07（2026-09-12）でこの形が残るのはドイツから
     // カナダに変わった**（`kendo armour` テストのコメント参照）。
-    const table = (id: string, weightG: number, range: [number, number]) =>
-      item({ id, weightG, weightOrigin: 'table', weightRangeG: range });
+    // **2026-09-13 追記**: 外注梱包が条件付き化された（オーナー決定）ので、この重量帯
+    // （最大でも 7,500 g、閾値の 30,000/50,000 g には遠く届かない）では FROM JAPAN の
+    // 総額はもう上限不明ではなく、両端で枠の顔ぶれが変わらなくなった
+    // （decisive=false になってしまい、このテストが検証したい「集合が動けば decisive」
+    // のケースを作れない）。このテストの狙いは外注梱包の条件そのものではないので、
+    // `do` にだけ `fragile: true` を付けて FROM JAPAN を意図的に上限不明のまま保つ。
+    const table = (id: string, weightG: number, range: [number, number], over: Partial<Item> = {}) =>
+      item({ id, weightG, weightOrigin: 'table', weightRangeG: range, ...over });
     const r = compare({ method: 'ems',
       items: [
-        table('do', 2000, [1500, 7500]),
+        table('do', 2000, [1500, 7500], { fragile: true }),
         table('hakama', 1500, [1500, 2000]),
         table('tare', 1500, [1500, 1500]),
       ],
