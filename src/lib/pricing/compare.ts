@@ -689,8 +689,24 @@ function filterJapanPostOnlyLines(lines: Line[], isCourier: boolean): Line[] {
  * 消すと「調べていない」と区別が付かない。**この行自体が宅配便では立たない
  * ことは呼び出し側で `filterJapanPostOnlyLines()` により弾く（この関数はまだ
  * `isCourier` を知らないので、ここでは判定しない）。**
+ *
+ * **確度は社ごとに違う（PR #137）。**日本郵便自身の制度である以上、額
+ * （`EXPORT_DECLARATION_FEE_YEN`）はどの社でも同じだが、`master/fees.json` の F26 行は
+ * 5社のうち buyee/fromjapan/jauce の3社だけが A_confirmed（各社が自分のページで
+ * この費目を明記）で、zenmarket/neokyo の2社は B_inferred（他3社が同額・同条件で
+ * 持つことからの推論——ZenMarket/Neokyo 自身のページでの直接の quote が
+ * 無い）。以前はこの関数が全社一律 `'fixed'` を付けており、zenmarket/neokyo の
+ * 未確認を隠していた。`EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE` で社ごとに切り替える。
  */
-function exportClearanceLine(itemsYen: number): Line {
+export const EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE: Readonly<Record<string, Tier>> = {
+  buyee: 'fixed',
+  fromjapan: 'fixed',
+  jauce: 'fixed',
+  zenmarket: 'unverified',
+  neokyo: 'unverified',
+};
+
+function exportClearanceLine(itemsYen: number, tier: Tier): Line {
   const over = itemsYen > EXPORT_DECLARATION_FEE_THRESHOLD_JPY;
   return L(
     'export-clearance', 'Export clearance fee',
@@ -700,7 +716,7 @@ function exportClearanceLine(itemsYen: number): Line {
         + ` ¥${EXPORT_DECLARATION_FEE_THRESHOLD_JPY.toLocaleString('en-US')}, charged once per`
         + ' shipment (Japan Post treats parcels sent together to the same recipient as one)'
       : `only over ¥${EXPORT_DECLARATION_FEE_THRESHOLD_JPY.toLocaleString('en-US')}`,
-    'fixed',
+    tier,
     EXPORT_DECLARATION_FEE_SOURCE,
   );
 }
@@ -860,7 +876,8 @@ function feeLines(
 
   if (f.perOrderYen != null) {
     out.push(L('purchase-fee', 'Purchase fee', f.perOrderYen * orders,
-      `¥${f.perOrderYen} × ${plural(orders, 'order')}${shopNote}`, f.tier, svc.sourceUrl));
+      `¥${f.perOrderYen} × ${plural(orders, 'order')}${shopNote}`,
+      f.perOrderYenTier ?? f.tier, svc.sourceUrl));
   }
   if (f.protectionPlanPerOrderYen != null) {
     out.push(L('protection-plan', 'Protection plan', f.protectionPlanPerOrderYen * orders,
@@ -1504,7 +1521,10 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
 
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
   // **宅配便の行では立たない**——`filterJapanPostOnlyLines()` 参照。
-  lines.push(...filterJapanPostOnlyLines([exportClearanceLine(itemsYen)], isCourier));
+  lines.push(...filterJapanPostOnlyLines(
+    [exportClearanceLine(itemsYen, EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE[svc.id] ?? 'unverified')],
+    isCourier,
+  ));
 
   // **この行が実際に払う国内送料**を課税ベースに使う。以前は domesticIncluded の社でも
   // 生の domYen を渡していたので、画面のどの行にも出ない ¥800 が CIF に混ざっていた。

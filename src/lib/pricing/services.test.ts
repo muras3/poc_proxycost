@@ -333,13 +333,19 @@ describe('the ¥200,000 export clearance fee matches company pages', () => {
     // 0b: 以前は任意欄で FROM JAPAN と Buyee にしか無かった。同じ EMS を使う5社で
     // 費目の在り無しが分かれていたら、それは料金差ではなく我々の調査量の差である。
     // いまは総額の行（`lines`）として5社すべてに条件判定つきで出る。
-    // 額は日本郵便の「輸出申告代行手数料 2,800円／件」＝一次情報なので5社とも fixed。
+    // 額そのもの（日本郵便の「輸出申告代行手数料 2,800円／件」）は5社とも同じ一次情報。
+    // だが「この費目がその社にも当てはまる」という確度は社ごとに違う（PR #137）──
+    // buyee/fromjapan/jauce の3社は各社ページ自身が明記（fixed）、zenmarket/neokyo の
+    // 2社は他3社からの推論（unverified、master/fees.json F26 B_inferred）。
     expect(EXPORT_DECLARATION_FEE_YEN).toBe(2800);
+    const tierFor: Record<string, string> = {
+      buyee: 'fixed', fromjapan: 'fixed', jauce: 'fixed', zenmarket: 'unverified', neokyo: 'unverified',
+    };
     // ¥200,000 ちょうどの商品代 → ¥0（超えていない）
     const at = rowsFor([item({ id: 'a', priceYen: 200000 })]);
     for (const r of at) {
       expect(line(r, 'export-clearance').amount, r.serviceId).toBe(0);
-      expect(line(r, 'export-clearance').tier, r.serviceId).toBe('fixed');
+      expect(line(r, 'export-clearance').tier, r.serviceId).toBe(tierFor[r.serviceId]);
     }
     // ¥200,001 → ¥2,800（超えた）
     const over = rowsFor([item({ id: 'a', priceYen: 200001 })]);

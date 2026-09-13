@@ -29,6 +29,15 @@ export interface FeeModel {
   /** 注文あたりの定額手数料（Buyee）。 */
   perOrderYen?: number;
   /**
+   * `perOrderYen` 単体の確度の上書き。未指定なら `tier` に従う。
+   * PR #137 の Fable 監査で見つかった食い違い（`master/fees.json` F02/buyee は
+   * B_inferred ── 2019年の BEENOS プレスリリース由来で現行ページで再確認していない ──
+   * なのに、この `fee` オブジェクト全体の `tier` が `fixed` だったため、
+   * `protectionPlanPerOrderYen`（F12、A_confirmed）と同じ確度に見えていた）。
+   * `tier-vocab.ts` の対応表で B_inferred → `unverified`。
+   */
+  perOrderYenTier?: Tier;
+  /**
    * 同一サイト・同一店舗の複数点が1注文になるか（Buyee のショッピング）。
    * **その社が自分のページで「同じ店なら1回」と書いているときだけ true。**
    * 店舗は出品URLから引く（`shops.ts`）。URL から引けない点はまとめない
@@ -1657,6 +1666,13 @@ export const SERVICES: Service[] = [
     // オークション・フリマは「One successful bid or purchase / flat rate ¥500」なので出品ごと。
     fee: {
       perOrderYen: 500, protectionPlanPerOrderYen: 500, ordersGroupedByShop: true, tier: 'fixed',
+      // PR #137: master/fees.json F02/buyee (購入手数料) は B_inferred ──
+      // 2019-12-18 の BEENOS プレスリリース由来で、現行の Buyee 自身のページで
+      // 再確認していない（7年前の情報。台湾除外の扱いも英語版公式には無い）。
+      // F12（保証プラン、A_confirmed）と同じ `fee.tier: 'fixed'` を共有していたため、
+      // 画面がこの¥500を「料金表どおり」と断定していた。¥500 自体は変えない
+      // （Fable の mutation テストが確認した通り、額そのものへの疑義ではない）。
+      perOrderYenTier: 'unverified',
     },
     domesticIncluded: false,
     // F07（2026-09-12、`master/fees.json` conclusions.F07_payment_fee_working_treatment）。
