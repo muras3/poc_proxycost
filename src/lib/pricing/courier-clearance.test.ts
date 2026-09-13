@@ -23,16 +23,25 @@ const byId = (rows: Row[], id: string) => {
 };
 
 describe('F34: C_unknown carrier×country cells never produce a point figure', () => {
-  test('GB UPS (C_unknown, one-time acquisition failure — #81) opens without a computed amount', () => {
+  // **2026-09-13是正**: GB UPS はオーナーが一次情報（2026-06-07改定のURL）を提示し
+  // 価格化された（`master-sync.test.ts` の「F34 OWNER_PROVIDED_2026_09_13」参照）。
+  // したがってこのテストは「まだ埋まっていないセル」の代表として GB を使い続けることは
+  // できない——C_unknown が今も点推定を出さないこと自体は他のセルに一般化した形で
+  // `master-sync.test.ts` の F34 網羅性テストが見ている。ここでは GB UPS が価格化
+  // されたこと自体（旧C_unknownの反対の主張）をpinし、意味を失った旧テストの単純な
+  // 削除ではなく置き換えであることを明記する。
+  test('GB UPS (2026-09-13、オーナー提供の一次情報で価格化) now opens with a computed amount, still openly unverified', () => {
     const rows = compare({ items: items(1, 600), country: 'GB', method: 'courier-ups' }).rows;
     const row = byId(rows, 'fromjapan');
     const ship = row.lines.find((l) => l.key === 'intl-shipping')!;
-    expect(ship.amount).not.toBeNull(); // 便自体は実測済み、無いのは通関手数料の一次資料だけ
+    expect(ship.amount).not.toBeNull();
     const fee = row.lines.find((l) => l.key === 'courier-clearance-fee');
     expect(fee).toBeDefined();
-    expect(fee!.amount).toBeNull(); // C_unknown — 点推定を出さない
-    expect(fee!.note.toLowerCase()).toContain('c_unknown');
-    expect(row.total.high).toBeNull(); // 額不明の行が total.high を開く
+    // このカートは免税帯に収まらず税が発生するので、手数料も実額(0ではない)で出る。
+    expect(fee!.amount).not.toBeNull();
+    expect(fee!.amount).toBeGreaterThan(0);
+    // 「オーナー提供・我々は本文未取得」であることが note からも読み取れること。
+    expect(fee!.note.toLowerCase()).toContain('webfetch');
   });
 });
 
@@ -246,21 +255,24 @@ describe('F34 tiered band schema (banded_duty_tax_mixed) — capability only, no
     expect(feeA + feeB).toBeCloseTo(10.50 + 0.025 * 700, 10);
   });
 
-  test('GB/DE FedEx still produce no figure through compare() — this PR adds the shape, not the data', () => {
-    // #5（タスク指示）の最重要アサーション: スキーマが表現できるようになったことが、
-    // GB/DEの実際の行を勝手に価格化してしまう副作用を持たないことを固定する。
-    // `master/customs.json` のGB/DE FedEx行は依然 `rule.type: "unknown"`（tier:
-    // C_unknown, schema_gap: true）のままで、COURIER_CLEARANCE にもエントリを
-    // 追加していない。
+  test('GB/DE FedEx now DO produce a figure through compare() — 2026-09-13, owner-provided rate replaced the'
+    + ' unresolved tiered-band structure with max(rate, min)', () => {
+    // **このアサーションは2026-09-13に反転した。** 当時（このdescribeの他のテスト群が
+    // 固定した`banded_duty_tax_mixed`）は「表現できる形を用意しただけで、GB/DEのFedEx行
+    // 自体はまだ`rule.type: "unknown"`のまま」だった。オーナーが一次情報
+    // （2026-07-20改定、rate 2.5%・最低£12.90/€15.00 per shipment）を提示したことで、
+    // GB/DE FedExは3段帯構造ではなく単純な rate_min（`Rule.kind: 'rate_min'`）で
+    // 表現できることが判明し、`banded_duty_tax_mixed` はどの実データにも使われない
+    // ままになった（能力だけが残る、上のテスト群の通り）。
     for (const cc of ['GB', 'DE'] as const) {
       const rows = compare({ items: items(1, 600, 300_000), country: cc, method: 'courier-fedex' }).rows;
       const row = byId(rows, 'zenmarket'); // fromjapan/neokyo/buyee/jauceはFedEx×GB/DEの便レート自体が未収載
       const fee = row.lines.find((l) => l.key === 'courier-clearance-fee');
       expect(fee, `${cc} FedEx: courier-clearance-fee 行が消えている`).toBeDefined();
-      expect(fee!.amount, `${cc} FedEx: 額不明のはずが数値を返している——スキーマ追加が誤って値の移行を伴ってしまった`)
-        .toBeNull();
-      expect(row.total.high, `${cc} FedEx: total.high が閉じている——C_unknownの費目がある間は開いたままのはず`)
-        .toBeNull();
+      expect(fee!.amount, `${cc} FedEx: オーナー提供の一次情報で価格化されたはずが額不明のまま`)
+        .not.toBeNull();
+      expect(fee!.amount).toBeGreaterThan(0);
+      expect(fee!.note.toLowerCase()).toContain('webfetch');
     }
   });
 });

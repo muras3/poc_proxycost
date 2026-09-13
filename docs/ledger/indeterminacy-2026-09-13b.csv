@@ -1,0 +1,344 @@
+﻿country,weightG,priceYen,itemCount,storageDays,site,leaderCompany,leaderMethod,leaderLow,leaderHigh,rankIndeterminate,blockingKeys,blockingLabels,blockingTiers,blockingUnknownReasons,blockingSourceUrls,runnerUpCompany,runnerUpLow
+US,200,3000,1,0,mercari,buyee,courier-ecms,7731,,false,,,,,,fromjapan,7738
+US,200,10000,1,0,mercari,buyee,courier-ecms,15887,,false,,,,,,fromjapan,15894
+US,200,30000,1,0,mercari,buyee,courier-ecms,39187,,false,,,,,,fromjapan,39195
+US,200,60000,1,0,mercari,zenmarket,small-packet-air,74123,,false,,,,,,buyee,74137
+US,200,100000,1,0,mercari,zenmarket,small-packet-air,120574,,false,,,,,,buyee,120738
+US,200,150000,1,0,mercari,zenmarket,small-packet-air,178637,,false,,,,,,buyee,178990
+US,200,250000,1,0,mercari,buyee,courier-ecms,295492,,false,,,,,,fromjapan,295499
+US,500,3000,1,0,mercari,buyee,courier-ecms,7731,,false,,,,,,fromjapan,8475
+US,500,10000,1,0,mercari,buyee,courier-ecms,15887,,false,,,,,,fromjapan,16631
+US,500,30000,1,0,mercari,buyee,courier-ecms,39187,,false,,,,,,fromjapan,39931
+US,500,60000,1,0,mercari,buyee,courier-ecms,74137,,false,,,,,,zenmarket,74874
+US,500,100000,1,0,mercari,buyee,courier-ecms,120738,,false,,,,,,zenmarket,121325
+US,500,150000,1,0,mercari,buyee,courier-ecms,178990,,false,,,,,,zenmarket,179388
+US,500,250000,1,0,mercari,buyee,courier-ecms,295492,,false,,,,,,fromjapan,296236
+US,1000,3000,1,0,mercari,buyee,courier-ecms,7731,,false,,,,,,fromjapan,9246
+US,1000,10000,1,0,mercari,buyee,courier-ecms,15887,,false,,,,,,fromjapan,17402
+US,1000,30000,1,0,mercari,buyee,courier-ecms,39187,,false,,,,,,fromjapan,40702
+US,1000,60000,1,0,mercari,buyee,courier-ecms,74137,,false,,,,,,fromjapan,75652
+US,1000,100000,1,0,mercari,buyee,courier-ecms,120738,,false,,,,,,fromjapan,122253
+US,1000,150000,1,0,mercari,buyee,courier-ecms,178990,,false,,,,,,fromjapan,180505
+US,1000,250000,1,0,mercari,buyee,courier-ecms,295492,,false,,,,,,fromjapan,297007
+US,2000,3000,1,0,mercari,buyee,courier-ecms,9030,,false,,,,,,zenmarket,10015
+US,2000,10000,1,0,mercari,buyee,courier-ecms,17185,,false,,,,,,zenmarket,18171
+US,2000,30000,1,0,mercari,buyee,courier-ecms,40486,,false,,,,,,zenmarket,41471
+US,2000,60000,1,0,mercari,buyee,courier-ecms,75436,,false,,,,,,zenmarket,76421
+US,2000,100000,1,0,mercari,buyee,courier-ecms,122037,,false,,,,,,zenmarket,123022
+US,2000,150000,1,0,mercari,buyee,courier-ecms,180288,,false,,,,,,zenmarket,181274
+US,2000,250000,1,0,mercari,buyee,courier-ecms,296790,,false,,,,,,zenmarket,297776
+US,3000,3000,1,0,mercari,buyee,courier-ecms,9214,,false,,,,,,zenmarket,10579
+US,3000,10000,1,0,mercari,buyee,courier-ecms,17370,,false,,,,,,zenmarket,18735
+US,3000,30000,1,0,mercari,buyee,courier-ecms,40670,,false,,,,,,zenmarket,42035
+US,3000,60000,1,0,mercari,buyee,courier-ecms,75620,,false,,,,,,zenmarket,76985
+US,3000,100000,1,0,mercari,buyee,courier-ecms,122221,,false,,,,,,zenmarket,123586
+US,3000,150000,1,0,mercari,buyee,courier-ecms,180473,,false,,,,,,zenmarket,181837
+US,3000,250000,1,0,mercari,buyee,courier-ecms,296975,,false,,,,,,zenmarket,298339
+US,5000,3000,1,0,mercari,buyee,courier-ecms,11364,,false,,,,,,zenmarket,13010
+US,5000,10000,1,0,mercari,buyee,courier-ecms,19520,,false,,,,,,zenmarket,21166
+US,5000,30000,1,0,mercari,buyee,courier-ecms,42821,,false,,,,,,zenmarket,44466
+US,5000,60000,1,0,mercari,buyee,courier-ecms,77771,,false,,,,,,zenmarket,79416
+US,5000,100000,1,0,mercari,buyee,courier-ecms,124371,,false,,,,,,zenmarket,126017
+US,5000,150000,1,0,mercari,buyee,courier-ecms,182623,,false,,,,,,zenmarket,184268
+US,5000,250000,1,0,mercari,buyee,courier-ecms,299125,,false,,,,,,zenmarket,300770
+US,8000,3000,1,0,mercari,buyee,courier-ecms,11364,,false,,,,,,zenmarket,13010
+US,8000,10000,1,0,mercari,buyee,courier-ecms,19520,,false,,,,,,zenmarket,21166
+US,8000,30000,1,0,mercari,buyee,courier-ecms,42821,,false,,,,,,zenmarket,44466
+US,8000,60000,1,0,mercari,buyee,courier-ecms,77771,,false,,,,,,zenmarket,79416
+US,8000,100000,1,0,mercari,buyee,courier-ecms,124371,,false,,,,,,zenmarket,126017
+US,8000,150000,1,0,mercari,buyee,courier-ecms,182623,,false,,,,,,zenmarket,184268
+US,8000,250000,1,0,mercari,buyee,courier-ecms,299125,,false,,,,,,zenmarket,300770
+GB,200,3000,1,0,mercari,zenmarket,small-packet-air,8265,8265,false,,,,,,fromjapan,8650
+GB,200,10000,1,0,mercari,zenmarket,small-packet-air,16970,16970,false,,,,,,fromjapan,17304
+GB,200,30000,1,0,mercari,zenmarket,courier-ecms-express,42969,43370,false,,,,,,fromjapan,43150
+GB,200,60000,1,0,mercari,zenmarket,courier-ecms-express,81313,81714,false,,,,,,buyee,81801
+GB,200,100000,1,0,mercari,zenmarket,courier-ecms-express,132437,132838,false,,,,,,buyee,132643
+GB,200,150000,1,0,mercari,buyee,small-packet-air,196197,196197,false,,,,,,zenmarket,196343
+GB,200,250000,1,0,mercari,zenmarket,courier-ecms-express,324154,324555,false,,,,,,buyee,325683
+GB,500,3000,1,0,mercari,zenmarket,courier-ecms-express,8918,8918,false,,,,,,fromjapan,9318
+GB,500,10000,1,0,mercari,zenmarket,courier-ecms-express,17623,17623,false,,,,,,fromjapan,17972
+GB,500,30000,1,0,mercari,zenmarket,courier-ecms-express,43482,43482,false,,,,,,fromjapan,43837
+GB,500,60000,1,0,mercari,zenmarket,courier-ecms-express,81825,81825,false,,,,,,buyee,82487
+GB,500,100000,1,0,mercari,zenmarket,courier-ecms-express,132950,132950,false,,,,,,buyee,133330
+GB,500,150000,1,0,mercari,zenmarket,courier-ecms-express,196856,196856,false,,,,,,buyee,196883
+GB,500,250000,1,0,mercari,zenmarket,courier-ecms-express,324668,324668,false,,,,,,buyee,325683
+GB,1000,3000,1,0,mercari,zenmarket,courier-ecms-express,9751,9751,false,,,,,,fromjapan,10653
+GB,1000,10000,1,0,mercari,zenmarket,courier-ecms-express,18456,18456,false,,,,,,fromjapan,19307
+GB,1000,30000,1,0,mercari,zenmarket,courier-ecms-express,44339,44339,false,,,,,,fromjapan,45209
+GB,1000,60000,1,0,mercari,zenmarket,courier-ecms-express,82682,82682,false,,,,,,buyee,83859
+GB,1000,100000,1,0,mercari,zenmarket,courier-ecms-express,133807,133807,false,,,,,,buyee,134702
+GB,1000,150000,1,0,mercari,zenmarket,courier-ecms-express,197712,197712,false,,,,,,buyee,198256
+GB,1000,250000,1,0,mercari,zenmarket,courier-ecms-express,325523,325523,false,,,,,,buyee,325683
+GB,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,11713,12409,false,,,,,,buyee,13392
+GB,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,20418,21114,false,,,,,,buyee,22046
+GB,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,46354,47050,false,,,,,,buyee,48058
+GB,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,84697,85393,false,,,,,,buyee,86190
+GB,2000,100000,1,0,mercari,zenmarket,courier-ecms-express,135822,136518,false,,,,,,buyee,137033
+GB,2000,150000,1,0,mercari,zenmarket,courier-ecms-express,199727,200423,false,,,,,,buyee,200586
+GB,2000,250000,1,0,mercari,zenmarket,courier-ecms-express,327539,328235,false,,,,,,buyee,327693
+GB,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,12578,15361,false,,,,,,buyee,13392
+GB,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,21283,24066,false,,,,,,buyee,22046
+GB,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,47244,50027,false,,,,,,buyee,48058
+GB,3000,60000,1,0,mercari,zenmarket,courier-ecms-express,85587,88370,false,,,,,,buyee,86190
+GB,3000,100000,1,0,mercari,zenmarket,courier-ecms-express,136712,139495,false,,,,,,buyee,137033
+GB,3000,150000,1,0,mercari,buyee,courier-buyee-air,200586,203466,false,,,,,,zenmarket,200617
+GB,3000,250000,1,0,mercari,buyee,courier-buyee-air,327693,330573,false,,,,,,zenmarket,328428
+GB,5000,3000,1,0,mercari,zenmarket,courier-fedex-lowcost,14987,24967,false,,,,,,buyee,16952
+GB,5000,10000,1,0,mercari,zenmarket,courier-fedex-lowcost,23691,33671,false,,,,,,buyee,25606
+GB,5000,30000,1,0,mercari,zenmarket,courier-ecms-express,50800,57756,false,,,,,,buyee,51718
+GB,5000,60000,1,0,mercari,zenmarket,courier-ecms-express,89144,96100,false,,,,,,buyee,89851
+GB,5000,100000,1,0,mercari,zenmarket,courier-ecms-express,140268,147224,false,,,,,,buyee,140693
+GB,5000,150000,1,0,mercari,zenmarket,courier-ecms-express,204174,211130,false,,,,,,buyee,204247
+GB,5000,250000,1,0,mercari,buyee,courier-buyee-air,331354,337362,false,,,,,,zenmarket,331812
+GB,8000,3000,1,0,mercari,zenmarket,courier-fedex-lowcost,14987,24967,false,,,,,,buyee,16952
+GB,8000,10000,1,0,mercari,zenmarket,courier-fedex-lowcost,23691,33671,false,,,,,,buyee,25606
+GB,8000,30000,1,0,mercari,zenmarket,courier-ecms-express,50800,57756,false,,,,,,buyee,51718
+GB,8000,60000,1,0,mercari,zenmarket,courier-ecms-express,89144,96100,false,,,,,,buyee,89851
+GB,8000,100000,1,0,mercari,zenmarket,courier-ecms-express,140268,147224,false,,,,,,buyee,140693
+GB,8000,150000,1,0,mercari,zenmarket,courier-ecms-express,204174,211130,false,,,,,,buyee,204247
+GB,8000,250000,1,0,mercari,buyee,courier-buyee-air,331354,337362,false,,,,,,zenmarket,331812
+DE,200,3000,1,0,mercari,zenmarket,small-packet-air,8742,8742,false,,,,,,fromjapan,8917
+DE,200,10000,1,0,mercari,zenmarket,small-packet-air,17374,17374,false,,,,,,fromjapan,17501
+DE,200,30000,1,0,mercari,fromjapan,small-packet-air,42950,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,43469
+DE,200,60000,1,0,mercari,buyee,small-packet-air,81721,81721,false,,,,,,zenmarket,82146
+DE,200,100000,1,0,mercari,buyee,small-packet-air,132722,132722,false,,,,,,zenmarket,133149
+DE,200,150000,1,0,mercari,buyee,small-packet-air,196476,196476,false,,,,,,zenmarket,196901
+DE,200,250000,1,0,mercari,zenmarket,courier-ecms-express,324407,324662,false,,,,,,buyee,326883
+DE,500,3000,1,0,mercari,zenmarket,small-packet-air,9508,9508,false,,,,,,fromjapan,9580
+DE,500,10000,1,0,mercari,zenmarket,small-packet-air,18140,18140,false,,,,,,fromjapan,18164
+DE,500,30000,1,0,mercari,fromjapan,small-packet-air,43639,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,44157
+DE,500,60000,1,0,mercari,buyee,small-packet-air,82408,82408,false,,,,,,zenmarket,82732
+DE,500,100000,1,0,mercari,buyee,small-packet-air,133411,133411,false,,,,,,zenmarket,133734
+DE,500,150000,1,0,mercari,buyee,small-packet-air,197163,197163,false,,,,,,zenmarket,197487
+DE,500,250000,1,0,mercari,zenmarket,courier-ecms-express,324993,325622,false,,,,,,buyee,327571
+DE,1000,3000,1,0,mercari,fromjapan,small-packet-air,10904,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,11039
+DE,1000,10000,1,0,mercari,fromjapan,small-packet-air,19488,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,19671
+DE,1000,30000,1,0,mercari,fromjapan,small-packet-air,45015,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,45533
+DE,1000,60000,1,0,mercari,buyee,small-packet-air,83785,83785,false,,,,,,zenmarket,84700
+DE,1000,100000,1,0,mercari,buyee,small-packet-air,134788,134788,false,,,,,,zenmarket,135703
+DE,1000,150000,1,0,mercari,buyee,small-packet-air,198541,198541,false,,,,,,zenmarket,199455
+DE,1000,250000,1,0,mercari,zenmarket,courier-ecms-express,327398,327398,false,,,,,,buyee,328948
+DE,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,15798,16852,false,,,,,,fromjapan,16086
+DE,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,24430,25484,false,,,,,,fromjapan,25578
+DE,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,50007,51061,false,,,,,,fromjapan,51293
+DE,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,88258,89312,false,,,,,,fromjapan,89544
+DE,2000,100000,1,0,mercari,zenmarket,courier-ecms-express,139261,140315,false,,,,,,fromjapan,140547
+DE,2000,150000,1,0,mercari,zenmarket,courier-ecms-express,203013,204067,false,,,,,,fromjapan,204300
+DE,2000,250000,1,0,mercari,zenmarket,courier-ecms-express,330519,331573,false,,,,,,fromjapan,331806
+DE,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,17097,22214,false,,,,,,fromjapan,17183
+DE,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,25729,30846,false,,,,,,fromjapan,26511
+DE,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,51351,56468,false,,,,,,fromjapan,52264
+DE,3000,60000,1,0,mercari,zenmarket,courier-ecms-express,89603,94720,false,,,,,,fromjapan,90516
+DE,3000,100000,1,0,mercari,zenmarket,courier-ecms-express,140605,145722,false,,,,,,fromjapan,141518
+DE,3000,150000,1,0,mercari,zenmarket,courier-ecms-express,204358,209475,false,,,,,,fromjapan,205271
+DE,3000,250000,1,0,mercari,zenmarket,courier-ecms-express,331864,336981,false,,,,,,fromjapan,332777
+DE,5000,3000,1,0,mercari,zenmarket,courier-fedex,21435,29959,false,,,,,,fromjapan,21477
+DE,5000,10000,1,0,mercari,fromjapan,courier-fedex-economy,30061,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,30067
+DE,5000,30000,1,0,mercari,zenmarket,courier-fedex,55743,64267,false,,,,,,fromjapan,55956
+DE,5000,60000,1,0,mercari,zenmarket,courier-fedex,93994,102518,false,,,,,,fromjapan,94208
+DE,5000,100000,1,0,mercari,zenmarket,courier-fedex,144996,153520,false,,,,,,fromjapan,145209
+DE,5000,150000,1,0,mercari,zenmarket,courier-fedex,208750,217274,false,,,,,,fromjapan,208963
+DE,5000,250000,1,0,mercari,zenmarket,courier-fedex,336256,344780,false,,,,,,fromjapan,336469
+DE,8000,3000,1,0,mercari,zenmarket,courier-fedex,21435,29959,false,,,,,,fromjapan,21477
+DE,8000,10000,1,0,mercari,fromjapan,courier-fedex-economy,30061,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,30067
+DE,8000,30000,1,0,mercari,zenmarket,courier-fedex,55743,64267,false,,,,,,fromjapan,55956
+DE,8000,60000,1,0,mercari,zenmarket,courier-fedex,93994,102518,false,,,,,,fromjapan,94208
+DE,8000,100000,1,0,mercari,zenmarket,courier-fedex,144996,153520,false,,,,,,fromjapan,145209
+DE,8000,150000,1,0,mercari,zenmarket,courier-fedex,208750,217274,false,,,,,,fromjapan,208963
+DE,8000,250000,1,0,mercari,zenmarket,courier-fedex,336256,344780,false,,,,,,fromjapan,336469
+FR,200,3000,1,0,mercari,zenmarket,small-packet-air,8810,8810,false,,,,,,fromjapan,9066
+FR,200,10000,1,0,mercari,zenmarket,small-packet-air,17515,17515,false,,,,,,fromjapan,17720
+FR,200,30000,1,0,mercari,fromjapan,small-packet-air,43376,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,43895
+FR,200,60000,1,0,mercari,buyee,small-packet-air,82459,82459,false,,,,,,zenmarket,82984
+FR,200,100000,1,0,mercari,buyee,small-packet-air,133877,133877,false,,,,,,zenmarket,134403
+FR,200,150000,1,0,mercari,buyee,small-packet-air,198151,198151,false,,,,,,zenmarket,198676
+FR,200,250000,1,0,mercari,zenmarket,courier-ecms-express,327223,327682,false,,,,,,buyee,329361
+FR,500,3000,1,0,mercari,zenmarket,small-packet-air,9583,9583,false,,,,,,fromjapan,9734
+FR,500,10000,1,0,mercari,zenmarket,small-packet-air,18288,18288,false,,,,,,fromjapan,18388
+FR,500,30000,1,0,mercari,fromjapan,small-packet-air,44071,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,44589
+FR,500,60000,1,0,mercari,buyee,small-packet-air,83153,83153,false,,,,,,zenmarket,83837
+FR,500,100000,1,0,mercari,buyee,small-packet-air,134572,134572,false,,,,,,zenmarket,135256
+FR,500,150000,1,0,mercari,buyee,small-packet-air,198845,198845,false,,,,,,zenmarket,199529
+FR,500,250000,1,0,mercari,zenmarket,courier-ecms-express,328076,328705,false,,,,,,buyee,329361
+FR,1000,3000,1,0,mercari,fromjapan,small-packet-air,11069,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,11127
+FR,1000,10000,1,0,mercari,fromjapan,small-packet-air,19723,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,19832
+FR,1000,30000,1,0,mercari,fromjapan,small-packet-air,45458,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,45976
+FR,1000,60000,1,0,mercari,buyee,small-packet-air,84540,84540,false,,,,,,zenmarket,85465
+FR,1000,100000,1,0,mercari,buyee,small-packet-air,135959,135959,false,,,,,,zenmarket,136884
+FR,1000,150000,1,0,mercari,buyee,small-packet-air,200233,200233,false,,,,,,zenmarket,201157
+FR,1000,250000,1,0,mercari,buyee,courier-buyee-air,329947,329947,false,,,,,,zenmarket,330611
+FR,2000,3000,1,0,mercari,buyee,courier-buyee-air,14046,14822,false,,,,,,zenmarket,16400
+FR,2000,10000,1,0,mercari,buyee,courier-buyee-air,22700,23476,false,,,,,,zenmarket,25105
+FR,2000,30000,1,0,mercari,buyee,courier-buyee-air,48591,49367,false,,,,,,zenmarket,51347
+FR,2000,60000,1,0,mercari,buyee,courier-buyee-air,87155,87931,false,,,,,,zenmarket,89911
+FR,2000,100000,1,0,mercari,buyee,courier-buyee-air,138574,139350,false,,,,,,zenmarket,141330
+FR,2000,150000,1,0,mercari,buyee,courier-buyee-air,202847,203623,false,,,,,,zenmarket,205604
+FR,2000,250000,1,0,mercari,buyee,courier-buyee-air,331394,332170,false,,,,,,zenmarket,334151
+FR,3000,3000,1,0,mercari,buyee,courier-buyee-air,15005,17109,false,,,,,,fromjapan,17694
+FR,3000,10000,1,0,mercari,buyee,courier-buyee-air,23659,25763,false,,,,,,zenmarket,26851
+FR,3000,30000,1,0,mercari,buyee,courier-buyee-air,49589,51693,false,,,,,,zenmarket,52704
+FR,3000,60000,1,0,mercari,buyee,courier-buyee-air,88153,90257,false,,,,,,zenmarket,91268
+FR,3000,100000,1,0,mercari,buyee,courier-buyee-air,139572,141676,false,,,,,,zenmarket,142686
+FR,3000,150000,1,0,mercari,buyee,courier-buyee-air,203845,205949,false,,,,,,zenmarket,206960
+FR,3000,250000,1,0,mercari,buyee,courier-buyee-air,332392,334496,false,,,,,,zenmarket,335507
+FR,5000,3000,1,0,mercari,buyee,courier-buyee-air,17606,23614,false,,,,,,zenmarket,21197
+FR,5000,10000,1,0,mercari,buyee,courier-buyee-air,26260,32268,false,,,,,,zenmarket,29902
+FR,5000,30000,1,0,mercari,buyee,courier-buyee-air,52293,58301,false,,,,,,zenmarket,55746
+FR,5000,60000,1,0,mercari,buyee,courier-buyee-air,90858,96866,false,,,,,,zenmarket,94310
+FR,5000,100000,1,0,mercari,buyee,courier-buyee-air,142276,148284,false,,,,,,zenmarket,145729
+FR,5000,150000,1,0,mercari,buyee,courier-buyee-air,206550,212558,false,,,,,,zenmarket,210003
+FR,5000,250000,1,0,mercari,buyee,courier-buyee-air,335097,341105,false,,,,,,zenmarket,338550
+FR,8000,3000,1,0,mercari,buyee,courier-buyee-air,17606,23614,false,,,,,,zenmarket,21197
+FR,8000,10000,1,0,mercari,buyee,courier-buyee-air,26260,32268,false,,,,,,zenmarket,29902
+FR,8000,30000,1,0,mercari,buyee,courier-buyee-air,52293,58301,false,,,,,,zenmarket,55746
+FR,8000,60000,1,0,mercari,buyee,courier-buyee-air,90858,96866,false,,,,,,zenmarket,94310
+FR,8000,100000,1,0,mercari,buyee,courier-buyee-air,142276,148284,false,,,,,,zenmarket,145729
+FR,8000,150000,1,0,mercari,buyee,courier-buyee-air,206550,212558,false,,,,,,zenmarket,210003
+FR,8000,250000,1,0,mercari,buyee,courier-buyee-air,335097,341105,false,,,,,,zenmarket,338550
+AU,200,3000,1,0,mercari,fromjapan,small-packet-air,6509,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,6850
+AU,200,10000,1,0,mercari,fromjapan,small-packet-air,14488,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,14829
+AU,200,30000,1,0,mercari,fromjapan,small-packet-air,37286,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,37627
+AU,200,60000,1,0,mercari,buyee,small-packet-air,71824,71824,false,,,,,,zenmarket,71990
+AU,200,100000,1,0,mercari,buyee,small-packet-air,117420,117420,false,,,,,,zenmarket,117585
+AU,200,150000,1,0,mercari,buyee,small-packet-air,188388,188388,false,,,,,,fromjapan,188635
+AU,200,250000,1,0,mercari,fromjapan,courier-ecms,304562,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,304630
+AU,500,3000,1,0,mercari,fromjapan,small-packet-air,7124,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,7409
+AU,500,10000,1,0,mercari,fromjapan,small-packet-air,15104,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,15389
+AU,500,30000,1,0,mercari,fromjapan,small-packet-air,37902,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,38187
+AU,500,60000,1,0,mercari,buyee,small-packet-air,72383,72383,false,,,,,,zenmarket,72501
+AU,500,100000,1,0,mercari,buyee,small-packet-air,117979,117979,false,,,,,,zenmarket,118096
+AU,500,150000,1,0,mercari,fromjapan,courier-ecms,188973,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,189001
+AU,500,250000,1,0,mercari,fromjapan,courier-ecms,304900,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,305229
+AU,1000,3000,1,0,mercari,fromjapan,courier-ecms,7898,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,7932
+AU,1000,10000,1,0,mercari,fromjapan,courier-ecms,15878,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,15911
+AU,1000,30000,1,0,mercari,fromjapan,courier-ecms,38676,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,38709
+AU,1000,60000,1,0,mercari,fromjapan,courier-ecms,72873,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,72906
+AU,1000,100000,1,0,mercari,fromjapan,courier-ecms,118468,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,118502
+AU,1000,150000,1,0,mercari,fromjapan,courier-ecms,189255,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,189707
+AU,1000,250000,1,0,mercari,fromjapan,courier-ecms,305182,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,305634
+AU,2000,3000,1,0,mercari,fromjapan,courier-ecms,8295,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,8495
+AU,2000,10000,1,0,mercari,fromjapan,courier-ecms,16275,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,16475
+AU,2000,30000,1,0,mercari,fromjapan,courier-ecms,39073,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,39273
+AU,2000,60000,1,0,mercari,fromjapan,courier-ecms,73269,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,73469
+AU,2000,100000,1,0,mercari,fromjapan,courier-ecms,118865,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,119065
+AU,2000,150000,1,0,mercari,fromjapan,courier-ecms,189651,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,190326
+AU,2000,250000,1,0,mercari,fromjapan,courier-ecms,305577,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,306253
+AU,3000,3000,1,0,mercari,fromjapan,courier-ecms,8578,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,9006
+AU,3000,10000,1,0,mercari,fromjapan,courier-ecms,16558,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,16985
+AU,3000,30000,1,0,mercari,fromjapan,courier-ecms,39355,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,39783
+AU,3000,60000,1,0,mercari,fromjapan,courier-ecms,73552,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,73980
+AU,3000,100000,1,0,mercari,fromjapan,courier-ecms,119148,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,119576
+AU,3000,150000,1,0,mercari,fromjapan,courier-ecms,189933,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,190886
+AU,3000,250000,1,0,mercari,fromjapan,courier-ecms,305859,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,306813
+AU,5000,3000,1,0,mercari,fromjapan,courier-ecms,10180,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,10768
+AU,5000,10000,1,0,mercari,fromjapan,courier-ecms,18160,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,18747
+AU,5000,30000,1,0,mercari,fromjapan,courier-ecms,40958,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,41545
+AU,5000,60000,1,0,mercari,fromjapan,courier-ecms,75154,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,75742
+AU,5000,100000,1,0,mercari,fromjapan,courier-ecms,120750,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,121338
+AU,5000,150000,1,0,mercari,fromjapan,courier-ecms,191530,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,192818
+AU,5000,250000,1,0,mercari,fromjapan,courier-ecms,307456,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,308745
+AU,8000,3000,1,0,mercari,fromjapan,courier-ecms,10180,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,10768
+AU,8000,10000,1,0,mercari,fromjapan,courier-ecms,18160,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,18747
+AU,8000,30000,1,0,mercari,fromjapan,courier-ecms,40958,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,41545
+AU,8000,60000,1,0,mercari,fromjapan,courier-ecms,75154,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,75742
+AU,8000,100000,1,0,mercari,fromjapan,courier-ecms,120750,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,121338
+AU,8000,150000,1,0,mercari,fromjapan,courier-ecms,191530,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,192818
+AU,8000,250000,1,0,mercari,fromjapan,courier-ecms,307456,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,308745
+CA,200,3000,1,0,mercari,fromjapan,small-packet-air,7597,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,8115
+CA,200,10000,1,0,mercari,fromjapan,small-packet-air,15869,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,16387
+CA,200,30000,1,0,mercari,fromjapan,small-packet-air,39502,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,40021
+CA,200,60000,1,0,mercari,buyee,small-packet-air,75472,75472,false,,,,,,zenmarket,75924
+CA,200,100000,1,0,mercari,buyee,small-packet-air,122739,122739,false,,,,,,zenmarket,123192
+CA,200,150000,1,0,mercari,buyee,small-packet-air,181824,181824,false,,,,,,zenmarket,182277
+CA,200,250000,1,0,mercari,fromjapan,courier-ups,301469,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,302095
+CA,500,3000,1,0,mercari,fromjapan,small-packet-air,8157,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,8675
+CA,500,10000,1,0,mercari,fromjapan,small-packet-air,16429,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,16947
+CA,500,30000,1,0,mercari,fromjapan,small-packet-air,40062,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,40580
+CA,500,60000,1,0,mercari,buyee,small-packet-air,76031,76031,false,,,,,,zenmarket,76568
+CA,500,100000,1,0,mercari,buyee,small-packet-air,123299,123299,false,,,,,,zenmarket,123836
+CA,500,150000,1,0,mercari,buyee,small-packet-air,182383,182383,false,,,,,,zenmarket,182920
+CA,500,250000,1,0,mercari,fromjapan,courier-ups,301469,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,302095
+CA,1000,3000,1,0,mercari,fromjapan,small-packet-air,9276,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,9794
+CA,1000,10000,1,0,mercari,fromjapan,small-packet-air,17548,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,18066
+CA,1000,30000,1,0,mercari,fromjapan,small-packet-air,41181,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,41699
+CA,1000,60000,1,0,mercari,buyee,small-packet-air,77150,77150,false,,,,,,fromjapan,77554
+CA,1000,100000,1,0,mercari,buyee,small-packet-air,124418,124418,false,,,,,,fromjapan,124822
+CA,1000,150000,1,0,mercari,buyee,small-packet-air,183503,183503,false,,,,,,fromjapan,183906
+CA,1000,250000,1,0,mercari,fromjapan,courier-ups,302075,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,302095
+CA,2000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,11453
+CA,2000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,19725
+CA,2000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,43359
+CA,2000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,78810
+CA,2000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,126077
+CA,2000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,185162
+CA,2000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,303331
+CA,3000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,12081
+CA,3000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,20353
+CA,3000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,43987
+CA,3000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,79438
+CA,3000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,126705
+CA,3000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,185790
+CA,3000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,303959
+CA,5000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,14303
+CA,5000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,22575
+CA,5000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,46208
+CA,5000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,81659
+CA,5000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,128927
+CA,5000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,188012
+CA,5000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,306181
+CA,8000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,14303
+CA,8000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,22575
+CA,8000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,46208
+CA,8000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,81659
+CA,8000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,128927
+CA,8000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,188012
+CA,8000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,306181
+SG,200,3000,1,0,mercari,fromjapan,small-packet-air,5964,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,6465
+SG,200,10000,1,0,mercari,fromjapan,small-packet-air,13870,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,14372
+SG,200,30000,1,0,mercari,fromjapan,small-packet-air,36461,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,36963
+SG,200,60000,1,0,mercari,fromjapan,courier-ecms,70635,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,70813
+SG,200,100000,1,0,mercari,fromjapan,courier-ecms,115793,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,115972
+SG,200,150000,1,0,mercari,fromjapan,courier-ecms,172242,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,172421
+SG,200,250000,1,0,mercari,fromjapan,courier-ecms,285139,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,285318
+SG,500,3000,1,0,mercari,fromjapan,small-packet-air,6371,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,6657
+SG,500,10000,1,0,mercari,fromjapan,small-packet-air,14278,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,14564
+SG,500,30000,1,0,mercari,fromjapan,small-packet-air,36868,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,37154
+SG,500,60000,1,0,mercari,fromjapan,courier-ecms,70951,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,71006
+SG,500,100000,1,0,mercari,fromjapan,courier-ecms,116110,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,116164
+SG,500,150000,1,0,mercari,fromjapan,courier-ecms,172558,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,172613
+SG,500,250000,1,0,mercari,fromjapan,courier-ecms,285455,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,285510
+SG,1000,3000,1,0,mercari,zenmarket,courier-ecms-express,6811,6811,false,,,,,,fromjapan,6892
+SG,1000,10000,1,0,mercari,zenmarket,courier-ecms-express,14718,14718,false,,,,,,fromjapan,14799
+SG,1000,30000,1,0,mercari,zenmarket,courier-ecms-express,37309,37309,false,,,,,,fromjapan,37390
+SG,1000,60000,1,0,mercari,zenmarket,courier-ecms-express,71159,71159,false,,,,,,fromjapan,71194
+SG,1000,100000,1,0,mercari,zenmarket,courier-ecms-express,116318,116318,false,,,,,,fromjapan,116352
+SG,1000,150000,1,0,mercari,zenmarket,courier-ecms-express,172767,172767,false,,,,,,fromjapan,172801
+SG,1000,250000,1,0,mercari,zenmarket,courier-ecms-express,285664,285664,false,,,,,,fromjapan,285698
+SG,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,7195,7331,false,,,,,,fromjapan,7509
+SG,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,15102,15238,false,,,,,,fromjapan,15416
+SG,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,37692,37828,false,,,,,,fromjapan,38006
+SG,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,71543,71679,false,,,,,,fromjapan,71809
+SG,2000,100000,1,0,mercari,zenmarket,courier-ecms-express,116702,116838,false,,,,,,fromjapan,116968
+SG,2000,150000,1,0,mercari,zenmarket,courier-ecms-express,173150,173286,false,,,,,,fromjapan,173417
+SG,2000,250000,1,0,mercari,zenmarket,courier-ecms-express,286047,286183,false,,,,,,fromjapan,286314
+SG,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,7348,8096,false,,,,,,fromjapan,7827
+SG,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,15255,16003,false,,,,,,fromjapan,15734
+SG,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,37846,38594,false,,,,,,fromjapan,38324
+SG,3000,60000,1,0,mercari,zenmarket,courier-ecms-express,71696,72444,false,,,,,,fromjapan,72128
+SG,3000,100000,1,0,mercari,zenmarket,courier-ecms-express,116854,117602,false,,,,,,fromjapan,117286
+SG,3000,150000,1,0,mercari,zenmarket,courier-ecms-express,173303,174051,false,,,,,,fromjapan,173735
+SG,3000,250000,1,0,mercari,zenmarket,courier-ecms-express,286200,286948,false,,,,,,fromjapan,286632
+SG,5000,3000,1,0,mercari,zenmarket,courier-ecms-express,8194,10200,false,,,,,,fromjapan,8631
+SG,5000,10000,1,0,mercari,zenmarket,courier-ecms-express,16101,18107,false,,,,,,fromjapan,16538
+SG,5000,30000,1,0,mercari,zenmarket,courier-ecms-express,38691,40697,false,,,,,,fromjapan,39128
+SG,5000,60000,1,0,mercari,zenmarket,courier-ecms-express,72542,74548,false,,,,,,fromjapan,72931
+SG,5000,100000,1,0,mercari,zenmarket,courier-ecms-express,117701,119707,false,,,,,,fromjapan,118090
+SG,5000,150000,1,0,mercari,zenmarket,courier-ecms-express,174149,176155,false,,,,,,fromjapan,174539
+SG,5000,250000,1,0,mercari,zenmarket,courier-ecms-express,287046,289052,false,,,,,,fromjapan,287436
+SG,8000,3000,1,0,mercari,zenmarket,courier-ecms-express,8194,10200,false,,,,,,fromjapan,8631
+SG,8000,10000,1,0,mercari,zenmarket,courier-ecms-express,16101,18107,false,,,,,,fromjapan,16538
+SG,8000,30000,1,0,mercari,zenmarket,courier-ecms-express,38691,40697,false,,,,,,fromjapan,39128
+SG,8000,60000,1,0,mercari,zenmarket,courier-ecms-express,72542,74548,false,,,,,,fromjapan,72931
+SG,8000,100000,1,0,mercari,zenmarket,courier-ecms-express,117701,119707,false,,,,,,fromjapan,118090
+SG,8000,150000,1,0,mercari,zenmarket,courier-ecms-express,174149,176155,false,,,,,,fromjapan,174539
+SG,8000,250000,1,0,mercari,zenmarket,courier-ecms-express,287046,289052,false,,,,,,fromjapan,287436

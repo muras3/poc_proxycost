@@ -39,7 +39,9 @@ import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVI
 import type { Service } from './services';
 import { compare, EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE } from './compare';
 import type { Item } from './types';
-import { COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, evalClearanceRuleYen } from './courier-clearance';
+import {
+  aggregateClearanceFee, COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, evalClearanceRuleYen,
+} from './courier-clearance';
 import type { CountryCode } from './types';
 import { MASTER_TIER_TO_CODE_TIER } from './tier-vocab';
 import type { MasterTier } from './tier-vocab';
@@ -1482,11 +1484,19 @@ describe('F34 DELIBERATELY_UNPRICED ── C_unknown/schema_gap は点推定を�
   // ない行（= 一次資料が取得できなかった／既存スキーマで表現できない、のどちらか）。
   // これらは COURIER_CLEARANCE に値を持たず、代わりに COURIER_CLEARANCE_UNKNOWN に
   // 説明を持つ——「意図的に価格化していない」ことをここで assert する。
-  const cases: Array<{ cc: CountryCode; carrier: F34Carrier }> = [
-    { cc: 'GB', carrier: 'FedEx' }, // schema_gap（3段帯）
-    { cc: 'GB', carrier: 'UPS' },   // C_unknown（一次資料未達）
-    { cc: 'DE', carrier: 'FedEx' }, // schema_gap（3段帯）
-  ];
+  //
+  // **2026-09-13、GB FedEx・GB UPS・DE FedEx はこのバケットから外れた**——オーナーが
+  // 一次情報（2026-07-20/06-07改定のURL）を提示し、rate_of_import_charges_with_min
+  // （max(rate, min) per shipment）1本で表現できることが分かったため。master側は
+  // tier: 'B_inferred'（owner_provided_url_unverified、direct_fetchは未達のため）へ
+  // 更新し、COURIER_CLEARANCE に値を持つ（下の
+  // 「F34 OWNER_PROVIDED_2026_09_13」describe が価格化そのものを固定する）。
+  // 対象セルが今は無いので、このバケットが空になっていること自体を1本のテストで
+  // 固定する（describe に it が0本だとテストランナーがエラーにするため）。
+  const cases: Array<{ cc: CountryCode; carrier: F34Carrier }> = [];
+  it('現時点で DELIBERATELY_UNPRICED バケットは空（GB FedEx/UPS・DE FedEx は価格化済み）', () => {
+    expect(cases.length).toBe(0);
+  });
   for (const { cc, carrier } of cases) {
     it(`${f34Key(cc, carrier)}: master が C_unknown ⇒ コードは意図的に未価格化`, () => {
       const row = findClearanceRow(cc, carrier);
@@ -1502,6 +1512,78 @@ describe('F34 DELIBERATELY_UNPRICED ── C_unknown/schema_gap は点推定を�
       expect(COURIER_CLEARANCE_UNKNOWN[cc]?.[carrier]).toBeTruthy();
     });
   }
+});
+
+describe('F34 OWNER_PROVIDED_2026_09_13 ── GB FedEx・GB UPS・DE FedEx（オーナー提供・URL付き・未取得）', () => {
+  // 3件とも master 側 tier は B_inferred（owner_provided_url_unverified）に留めてある
+  // ——WebFetchが本文に到達できていない（FedEx: WAF代替ページ、UPS: HTTP 503）ため
+  // direct_fetch を名乗らない。F34 MAPPED の一般ループが tier/rule/per/currency の
+  // 一致は既に見ているので、ここでは「価格化されたこと」と「税ゼロなら0円になる
+  // working treatment」をmutationで壊れるレベルまで固定する。
+  const cases: Array<{
+    cc: CountryCode; carrier: F34Carrier; rate: number; minLocal: number; ccy: string;
+  }> = [
+    { cc: 'GB', carrier: 'FedEx', rate: 0.025, minLocal: 12.90, ccy: 'GBP' },
+    { cc: 'GB', carrier: 'UPS', rate: 0.03, minLocal: 14.35, ccy: 'GBP' },
+    { cc: 'DE', carrier: 'FedEx', rate: 0.025, minLocal: 15.00, ccy: 'EUR' },
+  ];
+  for (const { cc, carrier, rate, minLocal, ccy } of cases) {
+    it(`${f34Key(cc, carrier)}: max(rate, min) per shipment、税ゼロなら0円`, () => {
+      const code = COURIER_CLEARANCE[cc]?.[carrier];
+      expect(code, `${f34Key(cc, carrier)} が COURIER_CLEARANCE に無い`).toBeDefined();
+      expect(code!.currency).toBe(ccy);
+      expect(code!.per).toBe('per_shipment');
+      const rule = code!.rule as { kind: string; rate: number; minLocal: number };
+      expect(rule.kind).toBe('rate_min');
+      expect(rule.rate).toBeCloseTo(rate, 10);
+      expect(rule.minLocal).toBeCloseTo(minLocal, 10);
+
+      // 立替対象額(duty+tax)=0 → 手数料0。evalClearanceRuleYen自体はduty+tax=0でも
+      // max(min, 0)=minを返す（rate_minの定義通り）——税ゼロ時に0円にするのは
+      // aggregateClearanceFeeが担う working treatment の役割（courier-clearance.ts
+      // のisZeroDutyAssumptionCarrier/aggregateClearanceFee参照）なので、ここも
+      // aggregateClearanceFeeを通して確認する。
+      const zeroAgg = aggregateClearanceFee(
+        rule as unknown as Parameters<typeof aggregateClearanceFee>[0], carrier, [{ dutyPlusTaxYen: 0, declaredLocal: 0 }], 1);
+      expect(zeroAgg.knownFeeYen).toBe(0);
+      expect(zeroAgg.assumedZeroCount).toBe(1);
+      expect(zeroAgg.assumedZeroCapYen).toBeCloseTo(minLocal, 10); // 仮定が外れていた場合に乗り得た額
+      // 率側が最低額を上回る（rate優位）。
+      const highDutyTax = (minLocal / rate) * 2; // 税額を十分大きくして rate*dutyTax > min にする
+      const rateWins = evalClearanceRuleYen(rule as unknown as Parameters<typeof evalClearanceRuleYen>[0], highDutyTax, 0, 1);
+      expect(rateWins).toBeCloseTo(rate * highDutyTax, 6);
+      // 最低額側が率を上回る（小額の立替）。
+      const smallDutyTax = 1;
+      const minWins = evalClearanceRuleYen(rule as unknown as Parameters<typeof evalClearanceRuleYen>[0], smallDutyTax, 0, 1);
+      expect(minWins).toBeCloseTo(minLocal, 10);
+      // 境界ちょうど（rate*dutyTax === min）でも最低額と一致する。
+      const boundaryDutyTax = minLocal / rate;
+      const boundary = evalClearanceRuleYen(rule as unknown as Parameters<typeof evalClearanceRuleYen>[0], boundaryDutyTax, 0, 1);
+      expect(boundary).toBeCloseTo(minLocal, 6);
+    });
+  }
+
+  it('per_shipment はshipment単位でのみ課金される（個口数で二重計上されない）', () => {
+    const code = COURIER_CLEARANCE.GB!.FedEx!;
+    const rule = code.rule as { kind: 'rate_min'; rate: number; minLocal: number };
+    // 3個口(=3 units)でも per_shipment なら1回分の集計にまとまる、という契約は
+    // compare.ts 側の shipmentGroups が担う（courier-clearance.ts のコメント参照）。
+    // ここでは aggregateClearanceFee が「1 shipment = 1 unit」で呼ばれたときに
+    // 最低額が1回しか乗らないことを、個口3つ分を1つのunitへ事前合算した呼び出しと
+    // 個口ごとに3回呼ぶ呼び出しを比較して確認する。
+    const perParcelDutyTax = [0, 0, 0]; // 税ゼロの3個口
+    const singleShipmentUnit = [{ dutyPlusTaxYen: 0, declaredLocal: 0 }];
+    const threeUnits = perParcelDutyTax.map((d) => ({ dutyPlusTaxYen: d, declaredLocal: 0 }));
+    const aggShipment = aggregateClearanceFee(rule, 'FedEx', singleShipmentUnit, 1);
+    const aggThree = aggregateClearanceFee(rule, 'FedEx', threeUnits, 1);
+    // 税ゼロなのでどちらも実額0——ただし「仮定を適用した単位数」(assumedZeroCount)は
+    // per_shipmentなら1、per_parcel相当に3回呼べば3になる、という違いで二重計上が
+    // 起きていないことを確認する。
+    expect(aggShipment.assumedZeroCount).toBe(1);
+    expect(aggThree.assumedZeroCount).toBe(3);
+    expect(aggShipment.knownFeeYen).toBe(0);
+    expect(aggThree.knownFeeYen).toBe(0);
+  });
 });
 
 describe('F34 tiered band schema (banded_by_import_tax_mixed ↔ banded_duty_tax_mixed) ── 能力の突き合わせ', () => {

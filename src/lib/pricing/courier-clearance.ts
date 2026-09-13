@@ -210,7 +210,22 @@ export interface CourierClearanceRoute {
   sourceUrl: string;
   /** 画面の note に出す、この行が何の一次資料からどう来たかの短い説明。 */
   basisNote: string;
+  /** この rule が有効になる日（YYYY-MM-DD）。無ければ発効日不明（従来通り）。
+   * 2026-09-13、GB/DE FedEx・GB UPS の改定（この行のコメント参照）で追加した。 */
+  effectiveFrom?: string;
 }
+
+/** オーナーが2026-09-13に提示した一次情報（GB/DE FedEx・GB UPS の改定）。
+ * 本環境の WebFetch はいずれも本文へ到達できていない
+ * （FedEx: 自社WAFの代替失敗ページ、UPS: HTTP 503 Service Unavailable、
+ * いずれも2026-09-13に再確認）——したがって `unitConfidence` は
+ * `'sourced'` を名乗らず、この定数で「オーナー提供・URL付き・我々は未取得」と
+ * 明示する。数値そのものはオーナー提供のものを採用する（タスク指示）。 */
+const OWNER_PROVIDED_UNVERIFIED_NOTE = 'オーナーが2026-09-13に一次情報として提示した数値。本環境の'
+  + 'WebFetchは本文に到達できていない（FedExはHTTP 200のWAF代替失敗ページ、UPSはHTTP 503、'
+  + 'いずれも2026-09-13に確認）——`direct_fetch`ではなく「オーナー提供・URL付き・我々は未取得」'
+  + 'として記録する。立替対象額（duty+tax）が0の単位は0円（税ゼロなら手数料も0の working '
+  + 'treatment、`isZeroDutyAssumptionCarrier` 参照）。';
 
 function rateMin(rate: number, minLocal: number): Rule {
   return { kind: 'rate_min', rate, minLocal };
@@ -274,9 +289,29 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
     },
   },
   GB: {
-    // FedEx: schema_gap（3段の帯構造で既存rule.typeに収まらない）。キーを持たず、
-    // 呼び出し側は COURIER_CLEARANCE_UNKNOWN を見て額不明の行を出す。
-    // UPS: C_unknown（一次資料が取得できず、値そのものが無い）。同様にキーを持たない。
+    // FedEx/UPS: 2026-09-13、オーナー提示の一次情報（2026-07-20/06-07改定）で埋めた。
+    // 従来のschema_gap（FedEx、3段帯構造）/C_unknown（UPS、一次資料未取得）はこの改定で
+    // 解消——新しい式はどちらも rate_min（max(rate, min)）1本で表現できる。
+    // 監査メモ: docs/audit/gb-de-fedex-ups-disbursement-2026-09-13.md
+    FedEx: {
+      tier: 'estimate', currency: 'GBP', rule: rateMin(0.025, 12.90), per: 'per_shipment',
+      unitConfidence: 'inferred', effectiveFrom: '2026-07-20',
+      sourceUrl: 'https://www.fedex.com/content/dam/fedex/apac-asia-pacific/downloads/fedex-customs-clearance-surcharge-20july2026.pdf',
+      basisNote: 'FedEx UK Disbursement/Customs Clearance Surcharge。2026-07-20改定で従来の3段帯構造'
+        + '（下限付き率/定額/率のみ）から max(2.5% of duties/taxes advanced, £12.90) per shipment へ'
+        + '変更（旧構造は master/customs.json raw_findings に保持、削除していない）。' + OWNER_PROVIDED_UNVERIFIED_NOTE
+        + INFERRED_UNIT_NOTE,
+    },
+    UPS: {
+      tier: 'estimate', currency: 'GBP', rule: rateMin(0.03, 14.35), per: 'per_shipment',
+      unitConfidence: 'inferred', effectiveFrom: '2026-06-07',
+      sourceUrl: 'https://assets.ups.com/adobe/assets/urn:aaid:aem:879d1ff1-c879-445f-9151-4f46ce1959f4/original/as/service-guide-base-gb-en.pdf',
+      basisNote: 'UPS UK Service Guide（2026-06-07版）。max(3.0% of duties/taxes advanced, £14.35) '
+        + 'per shipment。UPS自身がDE/FR/AU/CA/SGで一貫して"per shipment"を明記する構造と同型だが、'
+        + 'この行自体（GB）はWebFetchが本文に到達できておらず"per shipment"の語自体を我々は未確認'
+        + '——他行の傾向からの推論（unitConfidence: inferred）。'
+        + OWNER_PROVIDED_UNVERIFIED_NOTE,
+    },
     DHL: {
       // #101 は account_holder 側の min(12.0)を使っていた。#102 の一次資料に基づき
       // non_account_holder 側の min(11.0)へ訂正（rateは両変種とも0.025で同一）。
@@ -291,7 +326,16 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
     },
   },
   DE: {
-    // FedEx: schema_gap、DE も rule:null。
+    // FedEx: 2026-09-13、GBと同じ2026-07-20改定でオーナー提示の一次情報を採用。
+    FedEx: {
+      tier: 'estimate', currency: 'EUR', rule: rateMin(0.025, 15.00), per: 'per_shipment',
+      unitConfidence: 'inferred', effectiveFrom: '2026-07-20',
+      sourceUrl: 'https://www.fedex.com/content/dam/fedex/apac-asia-pacific/downloads/fedex-customs-clearance-surcharge-20july2026.pdf',
+      basisNote: 'FedEx DE Disbursement/Customs Clearance Surcharge。GBと同一PDF・同一改定日で'
+        + 'max(2.5% of duties/taxes advanced, €15.00) per shipment（旧3段帯構造の推定は '
+        + 'master/customs.json raw_findings に保持、削除していない）。' + OWNER_PROVIDED_UNVERIFIED_NOTE
+        + INFERRED_UNIT_NOTE,
+    },
     UPS: {
       tier: 'fixed', currency: 'EUR',
       rule: { kind: 'banded_value_mixed', valueLteLocal: 22, flatLocal: 7.2, aboveRate: 0.03, aboveMinLocal: 14.9 },
@@ -413,28 +457,12 @@ export const COURIER_CLEARANCE: Record<CountryCode, Partial<Record<CourierCleara
 
 // GB は FedEx/UPS 両方とも rule を持たないが「schema_gap」と「一次資料未達（C_unknown）」を
 // 区別して note を出したいので、値を持たない行専用のメタ情報をここに置く。
-export const COURIER_CLEARANCE_UNKNOWN: Partial<Record<CountryCode, Partial<Record<CourierClearanceCarrier, string>>>> = {
-  GB: {
-    FedEx: 'FedEx UK の Disbursement Fee は税額の帯で計算式自体が変わる3段構造'
-      + '（下限付き率→定額→率のみ）で、既存のclearanceスキーマでは表現できない'
-      + '（schema_gap、docs/audit/f34-fedex-seven-countries-2026-09-12.md）。額は出さない。'
-      + ' 課金単位（per parcel/shipment）はオーナーがFedEx Conditions of Carriage'
-      + '（July 2025, en-gb）から直接フェッチし確認済み（direct_fetch）: "\'Shipment\' means'
-      + ' one or more Packages or Freight, moving on a single Air Waybill." ── per_shipment。'
-      + ' 帯の率・下限そのものは依然search_snippet_no_verbatim_quoteのまま未確認なので、'
-      + ' 額はまだ出さない（master/customs.json GB FedEx raw_findings 参照）。',
-    UPS: 'UPS UK の Disbursement Fee は一次資料が取得できていない（#81から継続、'
-      + 'assets.ups.comがこの環境からEmpty reply/503）。二次情報（フォーラム）はあるが'
-      + 'UPS自身の逐語引用ではないため C_unknown のまま。額は出さない。',
-  },
-  DE: {
-    FedEx: 'FedEx DE の Aufwendungspauschale/Disbursement Fee はGBと同型の3段帯構造'
-      + '（schema_gap、docs/audit/f34-fedex-seven-countries-2026-09-12.md）。額は出さない。'
-      + ' 課金単位はGBと同じくオーナーがFedEx Conditions of Carriage（Jan 2026, en-de）から'
-      + ' 直接フェッチし確認済み（direct_fetch、per_shipment、master/customs.json DE FedEx'
-      + ' raw_findings 参照）。帯の率・下限は未確認のまま。',
-  },
-};
+// GB FedEx・GB UPS・DE FedEx は2026-09-13、オーナー提示の一次情報（2026-07-20/06-07改定）で
+// COURIER_CLEARANCE 側に額が入ったため、このテーブルからは削除した（過去の schema_gap/C_unknown
+// だった経緯は master/customs.json 側の raw_findings / 旧note に保持——削除ではなく追記、#122の先例）。
+// 現時点でこのテーブルに残るキーは無い。COURIER_CLEARANCE に無く、このテーブルにも無い組み合わせは
+// counted_absence（その業者はその国に存在しない）として扱われる。
+export const COURIER_CLEARANCE_UNKNOWN: Partial<Record<CountryCode, Partial<Record<CourierClearanceCarrier, string>>>> = {};
 
 /** duty+tax の額（JPY）から、この rule に従う手数料をJPYで返す。 */
 export function evalClearanceRuleYen(
