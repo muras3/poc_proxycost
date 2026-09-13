@@ -413,7 +413,15 @@
               }
             ],
             "effective_from": "2026-01-12",
-            "unit": "課金単位（per parcel/per shipment）は情報源に記述なし。C_unknown",
+            "unit": "per_shipment",
+            "unit_tier": "direct_fetch",
+            "unit_fetch_route": "owner（本環境の curl/WebFetch はこのページで WAF 代替失敗ページしか返さなかったため、オーナー自身が fedex.com から直接フェッチして確認した）",
+            "unit_source": "https://www.fedex.com/en-gb/conditions-of-carriage/july-2025.html",
+            "unit_quote": "'Shipment' means one or more Packages or Freight, moving on a single Air Waybill.",
+            "unit_fee_definition_source": "https://www.fedex.com/en-gb/billing/duty-tax.html",
+            "unit_fee_definition_quote": "If duty and tax charges are due when importing a shipment then FedEx may pay the duty and tax charges…",
+            "multi_piece_quote": "Multi-Piece Shipments. There is no limit on the aggregate weight of a multiple piece Shipment…",
+            "unit_note": "Air Waybill 1枚＝Shipment 1件。複数個口でも同一Air Waybillに載っていればShipmentは1件のまま（Multi-Piece Shipments条項）——したがって課金は個口数ではなくAir Waybill数に従う。金額（帯の率・下限）自体は引き続きsearch_snippet_no_verbatim_quoteのまま未確認。",
             "zero_duty_condition": "情報源に記述なし。C_unknown"
           },
           "amount_tier": "search_snippet_no_verbatim_quote",
@@ -638,7 +646,15 @@
                 "rate": 0.025
               }
             ],
-            "unit": "情報源に記述なし。C_unknown",
+            "unit": "per_shipment",
+            "unit_tier": "direct_fetch",
+            "unit_fetch_route": "owner（本環境の curl はこのページで WAF 代替失敗ページしか返さなかったため、オーナー自身が fedex.com から直接フェッチして確認した）",
+            "unit_source": "https://www.fedex.com/en-de/conditions-of-carriage/jan-2026.html",
+            "unit_quote": "'Shipment' means one or more Packages or Freight, moving on a single Air Waybill.",
+            "unit_fee_definition_source": "https://www.fedex.com/en-de/billing/duty-tax.html",
+            "unit_fee_definition_quote": "This incurs a Disbursement Fee, dependent on the duty and tax amount…",
+            "multi_piece_quote": "Multi-Piece Shipments. There is no limit on the aggregate weight of a multiple piece Shipment…",
+            "unit_note": "GBと同一の定義（Air Waybill 1枚＝Shipment 1件、2026年1月版 Conditions of Carriage）。金額（帯の率・下限）自体は引き続きsearch_snippet_no_verbatim_quoteのまま未確認。",
             "zero_duty_condition": "情報源に記述なし。C_unknown"
           },
           "amount_tier": "search_snippet_no_verbatim_quote",
