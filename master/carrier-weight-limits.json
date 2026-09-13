@@ -1,0 +1,340 @@
+{
+  "$schema_note": "docs/DESIGN-BOX-SIZE.md §2④の分割ロジックは日本郵便のみ実装済み（PR #85）で、宅配便4社はmaxGramsFor相当の値を一切持たない。本キーはその欠落を埋めるための一次情報収集で、US/GB/DE/FR/AU/CA/SGの7か国×DHL Express/UPS/FedEx/ECMSについて、各社公式の一次資料（レートガイド・Terms of Carriage/Service）から重量・寸法の上限を集めた。**このタスクは値を追加するだけで、src/配下の配線（maxGramsFor・splitByWeightLimit・DimensionLimitへの接続）はスコープ外——別PRに委ねる。**重要な結論を先に書く: DHL Express Worldwideは各国の一次資料が明記する『1ピース最大重量（150lb/US, 70kg/他6か国）』を超えても即座に拒否されるのではなく、Overweight Piece Surchargeという追加料金が課される（€50〜€100等）。実際に拒否されるのはもっと高い『ネットワーク全体の上限（1,000kg/300cm、7か国共通の一次資料の文言で確認）を超えた場合のみ。UPSも同様の構造（Over MaximumWeight/Length/Sizeという追加料金）をUS/CA/AU/GBのTerms文書で確認したが、SGのService Guideだけは『not accepted for transportation（受け付けない）』と明記しており、文書の性質（法的なTerms文書 vs 顧客向けのService Guide要約）によって記述が割れている——これ自体を未解決の所見として残す。したがって、DHL・UPSに関しては§2④（超えたら箱を増やす）をそのまま適用してよいかは自明ではなく、『サーチャージが付くだけで1箱のまま送れる』可能性を先に潰す必要がある、というのが本タスクの最大の発見。FedExは自社ページがWAFチャレンジ（HTTP 200だが本文が'FedEx | System Down'というフェイルオーバーページ）を返すため一次資料に到達できず、全7か国 input_rejected のまま。ECMSはUS/UK/SGのTerms & Conditionsに重量上限の記載が無く（課金方式＝実重量or体積重量の大きい方、を明記するのみ）、独自の上限を公表していないと判断した（counted_absence）。DE/FR/AU/CAはECMSの法人自体が確認できない（docs/audit/f34-ups-ecms-seven-countries-2026-09-12.md と同じ結果）。vocabulary: confidence = direct_fetch/search_snippet/search_snippet_no_verbatim_quote/reasoned_judgement_unconfirmed。evidence_class = declared/counted_absence/input_rejected。",
+  "checked_on": "2026-09-13",
+  "carriers": [
+    {
+      "carrier": "dhl_express",
+      "service_note": "数値はフラッグシップ商品『DHL Express Worldwide』のもの（各国レートガイドの巻頭比較表、より軽量/高速の2つの姉妹サービスは表に別列である）。",
+      "refused_or_surcharged": "surcharged_below_network_hard_cap",
+      "refused_or_surcharged_note": "サービス自体の1ピース上限（150lb/70kg）を超えても、その場で拒否されるのではなくOverweight Pieceサーチャージ（US $100.00・DE €100.00/€50.00等、per piece）が課金される。実際に『受け付けない』と明言されるのは、各国の脚注（*DHL Express does not accept shipments exceeding ... or containing pieces exceeding 1,000kg/2,200lb or 300cm/118in length）に書かれた、はるかに高いネットワーク全体の上限を超えた場合のみ。したがって§2④の『分割』は、150lb/70kgの壁でボックスを増やすのではなく、1,000kg/300cmの壁で増やすべきという設計上の含意がある——ただし現実の荷物がその壁に達することは稀。",
+      "destination_varies": false,
+      "destination_varies_note": "US(150lb=68.0kg)とその他6か国(70kg=154.3lb)は数値がわずかに異なる（単位換算の丸めではなく、レートガイドがそれぞれ現地単位系でキリのよい数字を掲げているため）。ネットワーク全体の拒否ライン（1,000kg/300cm）は7か国とも一致——グローバルで一つの値と言ってよい。",
+      "by_country": {
+        "US": {
+          "max_weight_per_piece": "150 lb (68.0 kg)",
+          "max_weight_per_shipment": "6,600 lb (2,993 kg)",
+          "max_piece_dimensions_lwh": "48 x 32 x 32 in (121.9 x 81.3 x 81.3 cm)",
+          "network_hard_cap": "2,200 lb (1,000 kg) per piece, or 118 in (300 cm) length, per shipment 6,600 lb (3,000 kg)",
+          "quote_service_limit": "Our most popular product, DHL Express Worldwide, offers an end of business day delivery service around the world for pieces up to 150 lb. and shipments up to 6,600 lb.",
+          "quote_table": "Maximum piece weight (not on pallet) 150 lb. | Maximum pieces per shipment – | Maximum piece dimensions (L x W x H) 48 x 32 x 32 in. | Maximum pallet weight 2,200 lb. | Maximum shipment weight 6,600 lb.",
+          "quote_hard_cap": "DHL Express does not accept shipments exceeding 6,600 lb, or containing pieces exceeding 2,200 lb or 118 inches length, or not meeting DHL standards for packing.",
+          "quote_surcharge": "A fixed surcharge is applied to every piece, including a pallet, that exceeds a scale or volumetric weight of 150 lbs. for shipments ... Overweight Piece surcharge. / Overweight Piece Per piece $100.00"
+        },
+        "GB": {
+          "max_weight_per_piece": "70 kg",
+          "max_weight_per_shipment": "3,000 kg (top service tier; 300kg/250kg for the two lighter-weight services)",
+          "max_piece_dimensions_lwh": "120 x 80 x 80 cm",
+          "network_hard_cap": "1,000 kg per piece, or 300 cm length; shipment 3,000 kg (or 1,000kg depending on service tier)",
+          "quote_table": "Maximum piece weight (not on pallet) 70kg | Maximum shipment weight 3,000kg",
+          "quote_hard_cap": "DHL Express does not accept shipments exceeding 3,000kg, or containing pieces exceeding 1,000kg or 300cm in length, and/or not meeting [DHL standards for packing].",
+          "quote_surcharge": "not independently re-quoted for GB; same Overweight Piece surcharge structure confirmed for US and DE (see below), reasoned_judgement_unconfirmed that GB matches"
+        },
+        "DE": {
+          "max_weight_per_piece": "70 kg",
+          "max_weight_per_shipment": "3,000 kg (top tier)",
+          "max_piece_dimensions_lwh": "120 x 80 x 80 cm",
+          "network_hard_cap": "1,000 kg per piece, or 300 cm length",
+          "quote_table": "Maximum piece weight (not on pallet) 70kg | Maximum shipment weight 3,000kg",
+          "quote_hard_cap": "DHL Express does not accept shipments exceeding 3,000kg, or containing pieces exceeding 1,000kg or 300cm in length, and/or not meeting [DHL standards for packing].",
+          "quote_surcharge": "Overweight Piece / A fixed surcharge is applied to every piece, including a pallet that exceeds a scale or volumetric weight of 70kg. / Overweight Piece Per piece € 100.00 (also € 50.00 tier for a lighter service level)"
+        },
+        "FR": {
+          "max_weight_per_piece": "70 kg",
+          "max_weight_per_shipment": "3,000 kg (top tier)",
+          "max_piece_dimensions_lwh": "120 x 80 x 80 cm",
+          "network_hard_cap": "1,000 kg per piece, or 300 cm length",
+          "quote_table": "Maximum piece weight (not on pallet) 70kg | Maximum shipment weight 3,000kg",
+          "quote_hard_cap": "DHL Express does not accept shipments exceeding 3,000kg, or containing pieces exceeding 1,000kg or 300cm in length, and/or not meeting [DHL standards for packing].",
+          "quote_surcharge": "not independently re-quoted for FR; reasoned_judgement_unconfirmed that FR matches US/DE structure"
+        },
+        "AU": {
+          "max_weight_per_piece": "70 kg",
+          "max_weight_per_shipment": "3,000 kg (top tier)",
+          "max_piece_dimensions_lwh": "120 x 80 x 80 cm",
+          "network_hard_cap": "1,000 kg per piece, or 300 cm length",
+          "quote_table": "Maximum piece weight (not on pallet) 70kg | Maximum shipment weight 3,000kg",
+          "quote_hard_cap": "DHL Express does not accept shipments exceeding 3,000kg, or containing pieces exceeding 1,000kg or 300cm in length, and/or not meeting [DHL standards for packing].",
+          "quote_surcharge": "not independently re-quoted for AU; reasoned_judgement_unconfirmed that AU matches US/DE structure"
+        },
+        "CA": {
+          "max_weight_per_piece": "70 kg (150 lb)",
+          "max_weight_per_shipment": "3,000 kg (6,600 lb) (top tier)",
+          "max_piece_dimensions_lwh": "not read verbatim in this pass (table row present but value not captured in extracted text)",
+          "network_hard_cap": "2,200 lb (1,000 kg) per piece, or 118 in (300 cm) length",
+          "quote_table": "Maximum piece weight (not on pallet) 70 kg (150 lb) | Maximum shipment weight 3,000 kg (6,600 lb)",
+          "quote_hard_cap": "DHL Express does not accept shipments exceeding 6,600 lb (3,000 kg), or containing pieces exceeding 2,200 lb (1,000 kg) or 118 in (300 cm) in length, and/or [not meeting DHL standards for packing].",
+          "quote_surcharge": "not independently re-quoted for CA; reasoned_judgement_unconfirmed that CA matches US/DE structure"
+        },
+        "SG": {
+          "max_weight_per_piece": "70 kg",
+          "max_weight_per_shipment": "3,000 kg (top tier)",
+          "max_piece_dimensions_lwh": "120 x 80 x 80 cm",
+          "network_hard_cap": "1,000 kg per piece, or 300 cm length",
+          "quote_table": "Maximum piece weight (not on pallet) 70kg | Maximum shipment weight 3,000kg",
+          "quote_hard_cap": "*DHL Express does not accept shipments exceeding 3,000kg, or containing pieces exceeding 1,000kg or 300cm in length, and/or not meeting [DHL standards for packing].",
+          "quote_surcharge": "not independently re-quoted for SG; reasoned_judgement_unconfirmed that SG matches US/DE structure"
+        }
+      },
+      "sources_by_country": {
+        "US": "https://mydhl.express.dhl/content/dam/downloads/us/en/rate-guide/service_and_rate_guide_us_en_2026.pdf.coredownload.pdf",
+        "GB": "https://mydhl.express.dhl/content/dam/downloads/gb/en/rate-guide/service_and_rate_guide_gb_en.pdf.coredownload.pdf",
+        "DE": "https://www.dhl.de/dam/jcr:66008de1-5933-4497-a194-ab7f4626d671/dhl-express-produkte-services-und-preise-en.pdf",
+        "FR": "https://mydhl.express.dhl/content/dam/downloads/fr/en/rate-guide/service_and_rate_guide_fr_en_2026.pdf.coredownload.pdf",
+        "AU": "https://mydhl.express.dhl/content/dam/downloads/au/en/rate-guide/service_and_rate_guide_au_en_2026.pdf.coredownload.pdf",
+        "CA": "https://mydhl.express.dhl/content/dam/downloads/ca/en/rate-guide/service_and_rate_guide_ca_en_2026.pdf.coredownload.pdf",
+        "SG": "https://mydhl.express.dhl/content/dam/downloads/sg/en/rate-guide/service_and_rate_guide_sg_en_2026.pdf.coredownload.pdf"
+      },
+      "date_read": "2026-09-13",
+      "confidence": "direct_fetch",
+      "verbatim_quote": true,
+      "http_status": "200 (curl -L, all 7 documents)"
+    },
+    {
+      "carrier": "ups",
+      "refused_or_surcharged": "mixed_and_unresolved",
+      "refused_or_surcharged_note": "US/CA(rate guide)/AU・GB(共通のTerms and Conditions of Service文書)は『150lb(68kg超は各国語で70kg)/108in(274cm)/165inまたは157in(419cmまたは400cm)の長さ+胴回りを超えるものはUPSシステムで見つかった場合、Over Maximum Weight/Length/Sizeという追加料金の対象』と明記している。ところがSGの顧客向けService Guideは同じ数値（70kg/274cm/400cm）について『Packages that exceed UPS weight and size limit are not accepted for transportation. Contact our Customer Service Representatives for details.』——拒否（refused）と明記している。**この食い違いを解決していない。** 法的なTerms文書と顧客向けService Guideという文書の性質の違いによるのか、実際に地域で運用が異なるのか、一次資料だけでは判定できない、というのがこの調査の所見。",
+      "destination_varies": true,
+      "destination_varies_note": "1ピース最大重量(150lb/70kg)と最大長(108in/274cm)は7か国で一致すると見られる（US/CA/AU/GB/DE/FR/SGのいずれかで確認）。**しかし長さ+胴回りの合計上限は2つの値に割れている**: US Terms of Carriage・CA Rate & Service Guideは165in(419cm)、AU/GB共通Terms文書は157in(400cm)、DE/FR/SGはWeb検索の要約が157in(400cm)寄り（SGは一次資料で400cmを直接確認）。したがって『UPSはグローバルで単一の胴回り上限を持つ』とは言えず、最低でも2系統(419cm系/400cm系)ある。",
+      "by_country": {
+        "US": {
+          "max_weight_per_piece": "150 lb",
+          "max_weight_per_shipment": "no stated maximum found in US Terms of Carriage (silence, not a confirmed 'no limit')",
+          "max_length_cm": "108 in (274 cm)",
+          "max_length_plus_girth_cm": "165 in (419 cm) [(2×width)+(2×height)+length]",
+          "quote": "Packages with an actual weight of more than 150 pounds, or Packages that when measured to determine the billable weight exceed 108 inches in length, or exceed a total of 165 inches in length plus girth [(2 x width) + (2 x height)] combined. ... they are subject to one or more of the following additional charges: Over Maximum Weight, Over Maximum Length, or Over Maximum Size.",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:c6bf8a2f-018f-4aa0-838b-ffc1a75eb1d9/original/as/terms-carriage-us-en.pdf",
+          "date_read": "2026-09-13",
+          "confidence": "direct_fetch",
+          "verbatim_quote": true,
+          "http_status": 200
+        },
+        "CA": {
+          "max_weight_per_piece": "150 lb (68 kg)",
+          "max_weight_per_shipment": "explicitly no limit",
+          "max_length_cm": "108 in (274 cm)",
+          "max_length_plus_girth_cm": "165 in (419 cm)",
+          "quote": "There is no limit on the number of pieces per shipment or the total weight of a shipment. However, for each individual package, the following weight and size restrictions apply: – maximum weight of 150 pounds or 68 kilograms per package – maximum length of 108 inches or 274 centimetres per package – maximum total of 165 inches or 419 centimetres for length and girth [(2 x width) + (2 x height)] combined",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:e359415f-4c37-47c2-b57d-c2ab60b6f527/original/as/rate-guide-ca-en.pdf",
+          "date_read": "2026-09-13",
+          "confidence": "direct_fetch",
+          "verbatim_quote": true,
+          "http_status": 200
+        },
+        "AU": {
+          "max_weight_per_piece": "70 kg (150 lb)",
+          "max_weight_per_shipment": "not stated in this document (silence)",
+          "max_length_cm": "274 cm (108 in)",
+          "max_length_plus_girth_cm": "400 cm (157 in)",
+          "quote": "weight of more than 70 kilograms (or 150 lbs) or exceed 274 centimeters (or 108 inches) in length or a total of 400 centimeters (or 157 inches) in length and girth combined. If found in the UPS system, they are subject to one or more of the following additional charges: Over Maximum Weight, Over Maximum Length, or Over Maximum Size.",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:47e1afa5-edd6-476c-a0a9-4daeed41648a/original/as/terms-service-au-gb-en.pdf",
+          "note": "この文書はタイトル上AU/GB共通(au-gb-en)——GB行はこの同一文書を根拠にしている",
+          "date_read": "2026-09-13",
+          "confidence": "direct_fetch",
+          "verbatim_quote": true,
+          "http_status": 200
+        },
+        "GB": {
+          "max_weight_per_piece": "70 kg (150 lb)",
+          "max_weight_per_shipment": "not stated in this document (silence)",
+          "max_length_cm": "274 cm (108 in)",
+          "max_length_plus_girth_cm": "400 cm (157 in)",
+          "quote": "(same document/quote as AU — terms-service-au-gb-en.pdf is issued jointly for AU and GB)",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:47e1afa5-edd6-476c-a0a9-4daeed41648a/original/as/terms-service-au-gb-en.pdf",
+          "date_read": "2026-09-13",
+          "confidence": "direct_fetch",
+          "verbatim_quote": true,
+          "http_status": 200
+        },
+        "SG": {
+          "max_weight_per_piece": "70 kg",
+          "max_weight_per_shipment": "explicitly no limit",
+          "max_length_cm": "274 cm",
+          "max_length_plus_girth_cm": "400 cm",
+          "quote": "Packages that exceed UPS weight and size limit are not accepted for transportation. Contact our Customer Service Representatives for details. ... Maximum weight per package is 70 kg. Maximum length per package is 274 cm. Maximum size per package is 400 cm in length and girth [(2 x width) + (2 x height)] combined. There is no limit to the total shipment weight or number of packages in [a shipment].",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:b6e1facb-372a-49d8-a6c4-81e471a98857/original/as/service-guide-sg-gb-en.pdf",
+          "note": "唯一『not accepted for transportation』と明記した文書。US/CA/AU/GBのTerms文書とは記述が食い違う（上記refused_or_surcharged_note参照）。",
+          "date_read": "2026-09-13",
+          "confidence": "direct_fetch",
+          "verbatim_quote": true,
+          "http_status": 200
+        },
+        "DE": {
+          "max_weight_per_piece": "70 kg (150 lb) — not verbatim-confirmed this pass",
+          "max_weight_per_shipment": null,
+          "max_length_cm": "274 cm (108 in) — not verbatim-confirmed this pass",
+          "max_length_plus_girth_cm": "400 cm (157 in) — not verbatim-confirmed this pass",
+          "quote": null,
+          "source_attempted": "web search only returned a paraphrase, not a fetched document; DE-specific UPS Terms and Conditions PDF URL not located within the time budget",
+          "date_read": "2026-09-13",
+          "confidence": "search_snippet_no_verbatim_quote",
+          "verbatim_quote": false,
+          "evidence_class": "declared",
+          "note": "検索エンジンの要約は『DE/FRとも157in/400cm(AU/GBと同じ体系)』と述べたが、一次PDFを自分でフェッチして確認していないためsearch_snippet_no_verbatim_quoteに留める。"
+        },
+        "FR": {
+          "max_weight_per_piece": "70 kg (150 lb) — not verbatim-confirmed this pass",
+          "max_weight_per_shipment": null,
+          "max_length_cm": "274 cm (108 in) — not verbatim-confirmed this pass",
+          "max_length_plus_girth_cm": "400 cm (157 in) — not verbatim-confirmed this pass",
+          "quote": null,
+          "source_attempted": "web search only returned a paraphrase, not a fetched document; FR-specific UPS Terms and Conditions PDF URL not located within the time budget",
+          "date_read": "2026-09-13",
+          "confidence": "search_snippet_no_verbatim_quote",
+          "verbatim_quote": false,
+          "evidence_class": "declared",
+          "note": "同上（DEと同じ限界）。"
+        }
+      }
+    },
+    {
+      "carrier": "fedex",
+      "evidence_class": "input_rejected",
+      "confidence": null,
+      "refused_or_surcharged": null,
+      "by_country": {
+        "US": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        },
+        "GB": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        },
+        "DE": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        },
+        "FR": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        },
+        "AU": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        },
+        "CA": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        },
+        "SG": {
+          "attempted_urls": [
+            "https://www.fedex.com/en-us/shipping/international/rates-and-transit-times.html",
+            "https://www.fedex.com/content/dam/fedex/us-united-states/services/InternationalPackageServiceGuide.pdf"
+          ],
+          "result": "HTTP 200 but body is FedEx-side WAF failover page (title 'FedEx | System Down'), not the requested content",
+          "evidence_class": "input_rejected",
+          "date_read": "2026-09-13"
+        }
+      },
+      "note": "タスク指示が事前に警告した通りの症状を再現した: HTTP 200が返るがボディは『FedEx | System Down』というWAF側のフェイルオーバーページで、実際のレートガイド/サービスガイドの本文には一度も到達できなかった。7か国とも同一の結果。二次情報（フォワーダーのブログ等）による代替は行っていない（タスク指示により禁止——本リポジトリには既にNeokyoによるFedEx disbursement rateの陳腐化した孫引き例が1件ある）。"
+    },
+    {
+      "carrier": "ecms",
+      "own_limit_or_inherits": "no_published_own_limit_found",
+      "own_limit_or_inherits_note": "US/UK/SGで確認できるECMS EXPRESSのTerms & Conditions（3法人版とも同一条文、docs/audit/f34-ups-ecms-seven-countries-2026-09-12.mdが既に確認した通り）には、重量・寸法の具体的な上限値（kg/cm の数字）が一切記載されていない。あるのは課金方式の説明のみ: 'Delivery charge: ECMS EXPRESS's shipment charges are calculated according to the higher of actual or volumetric weight per piece and any piece will be re-weighed and re-measured by ECMS EXPRESS or ECMS EXPRESS's partner to confirm this calculation.' 上限を明言しないまま『再計量・再測定する』とだけ書かれているのは、ECMSが最終的な実配送を担うパートナー宅配業者（ECMSはコンソリデータ/フォワーダー）の上限をそのまま運用で使っている可能性を示唆するが、これは推論であり、'inherits' を断定できる記述はどこにもない。したがって counted_absence として記録する——『ECMS自身が独自の重量上限を公表している』という主張は成立しない、という否定形の結論。",
+      "by_country": {
+        "US": {
+          "evidence_class": "counted_absence",
+          "confidence": "direct_fetch",
+          "source": "https://www.ecmsglobal.com/resources/en-us/ECMS%20Express%20US%20Terms%20Conditions%20v1.34.pdf",
+          "date_read": "2026-09-13",
+          "http_status": 200,
+          "verbatim_quote": true,
+          "quote": "Delivery charge: ECMS EXPRESS's shipment charges are calculated according to the higher of actual or volumetric weight per piece and any piece will be re-weighed and re-measured by ECMS EXPRESS or ECMS EXPRESS's partner to confirm this calculation."
+        },
+        "GB": {
+          "evidence_class": "counted_absence",
+          "confidence": "reasoned_judgement_unconfirmed",
+          "note": "US版と一言一句同一条文であることは docs/audit/f34-ups-ecms-seven-countries-2026-09-12.md が既に確認済み（3法人版のT&C文言は同一）。本タスクではUK版PDFを個別に再フェッチしていない。",
+          "date_read": "2026-09-13"
+        },
+        "SG": {
+          "evidence_class": "counted_absence",
+          "confidence": "reasoned_judgement_unconfirmed",
+          "note": "同上（US版と一言一句同一と既に確認済み）。本タスクではSG版PDFを個別に再フェッチしていない。",
+          "date_read": "2026-09-13"
+        },
+        "DE": {
+          "evidence_class": "counted_absence",
+          "confidence": null,
+          "note": "ECMSの法人自体がDE向けに存在するか未確認（docs/audit/f34-ups-ecms-seven-countries-2026-09-12.md と同じ結果）。重量上限以前に、ECMSという配送方式自体がこの国向けに存在しない可能性が高い。",
+          "date_read": "2026-09-13"
+        },
+        "FR": {
+          "evidence_class": "counted_absence",
+          "confidence": null,
+          "note": "同上（DE）。",
+          "date_read": "2026-09-13"
+        },
+        "AU": {
+          "evidence_class": "counted_absence",
+          "confidence": null,
+          "note": "同上（DE）。",
+          "date_read": "2026-09-13"
+        },
+        "CA": {
+          "evidence_class": "counted_absence",
+          "confidence": null,
+          "note": "同上（DE）。",
+          "date_read": "2026-09-13"
+        }
+      }
+    }
+  ],
+  "conclusions": [
+    {
+      "id": "W1_dhl_surcharges_not_refuses",
+      "text": "DHL Express Worldwideは、公表されている1ピース上限（150lb/70kg）を超えても即座に拒否しない。Overweight Pieceという固定サーチャージ（US $100.00・DE €100.00/€50.00等）が課金されるだけで、実際に『受け付けない』のはピース1,000kg/300cm・出荷全体3,000kgというはるかに高いネットワーク上限を超えた場合のみ（US/CA/GB/DE/FR/AU/SGの脚注で共通の文言を確認）。したがって、DHLについて§2④（上限超過で箱を増やす）を150lb/70kgの壁に適用するのは誤りで、適用するなら1,000kg/300cmの壁にすべき——だが本製品が想定する荷物の重量域では後者に達することはまず無い。§2④はこの調査結果を踏まえてDHLに接続しないか、接続するとしても『サーチャージが付くだけで1箱のまま送れる』ことを前提にする必要がある。"
+    },
+    {
+      "id": "W2_ups_mixed_refused_and_surcharged",
+      "text": "UPSは文書の種類によって記述が割れている。US Terms of Carriage・CA Rate & Service Guide・AU/GB共通のTerms and Conditions of Serviceは、150lb/70kg・108in/274cm・165inまたは157inの長さ+胴回りを超えたパッケージについて『UPSシステムで検知された場合、Over Maximum Weight/Length/Sizeという追加料金の対象になる』と明記——サーチャージ方式。一方、SGのService Guideは同じ数値について『not accepted for transportation. Contact our Customer Service Representatives for details.』——拒否方式。二次資料に頼らず一次資料のみで両方を確認したが、この矛盾は解けていない。おそらく法的なTerms文書は『検知されれば課金する（実運用でも受け付けてしまう）』という運用実態を書き、顧客向けService Guideは『そもそも超えるものは送るな』という案内を書いている、という整理があり得るが、これは本タスクの推論であり一次資料に明記されていない。"
+    },
+    {
+      "id": "W3_ups_length_plus_girth_two_families",
+      "text": "UPSの長さ+胴回り合計上限は単一の値ではない。US Terms of Carriage・CA Rate & Service Guideは165in(419cm)、AU/GB共通Terms文書・SG Service Guideは157in(400cm)。1ピース最大重量(150lb/70kg)と最大長(108in/274cm)は7か国で一致するとみられるが、『UPSはグローバルで単一の胴回り上限を持つ』という単純化は成立しない——最低でも419cm系(US/CA)と400cm系(AU/GB/SG)の2系統がある。DE/FRはこの2系統のどちらに属するかsearch_snippet_no_verbatim_quote止まりで確定できていない。"
+    },
+    {
+      "id": "W4_fedex_input_rejected_all_seven",
+      "text": "FedExは7か国すべてinput_rejected。fedex.comの複数URLがHTTP 200で応答するが、本文は『FedEx | System Down』というWAF側フェイルオーバーページで、実際のレートガイド/サービスガイドには一度も到達できなかった。タスク指示が予告した症状の再現。二次情報（フォワーダーのブログ等）による代替は行っていない。"
+    },
+    {
+      "id": "W5_ecms_no_own_limit",
+      "text": "ECMSはUS/UK/SGのTerms & Conditionsに重量・寸法の具体的な上限値を一切記載していない。課金方式（実重量or体積重量の大きい方、再計量あり）は明記するが、上限の数字が無いため、『ECMSが独自の上限を公表している』は成立しない（counted_absence）。『パートナー宅配業者の上限を継承している』という説明はもっともらしいが、T&C自身がそう明言しているわけではないので推論に留める。DE/FR/AU/CAはECMSの法人自体が未確認（docs/audit/f34-ups-ecms-seven-countries-2026-09-12.md と同じ結果、重量上限以前の問題）。"
+    },
+    {
+      "id": "W6_scope_boundary",
+      "text": "本キーはmaster/のデータのみで、src/lib/pricing/postage.ts の maxGramsFor・splitByWeightLimit・services.ts の DimensionLimit への配線は一切行っていない（タスクのスコープ外、別PRの担当）。§2④をDHL/UPSに接続する設計判断は、上記W1/W2の『サーチャージか拒否か』が解決してから行うべき、というのがこの調査の提言。"
+    }
+  ]
+}
