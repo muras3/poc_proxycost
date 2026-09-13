@@ -27,7 +27,8 @@
     "preview:build": "node scripts/preview/build.mjs",
     "deeplinks:check": "tsx scripts/deeplinks-check.ts",
     "fx:fetch": "tsx scripts/fx-fetch.ts",
-    "ties:scan": "tsx scripts/ties-scan.ts"
+    "ties:scan": "tsx scripts/ties-scan.ts",
+    "ledger:indeterminacy": "tsx scripts/indeterminacy-ledger.ts && tsx scripts/indeterminacy-summary.ts && python3 scripts/indeterminacy-xlsx.py --date $(date +%Y-%m-%d)"
   },
   "dependencies": {
     "next": "16.3.4",
