@@ -1201,14 +1201,38 @@ function expectedDutyTaxBandsFrom(rule: {
   });
 }
 
-/** master row → 期待する per-parcel/per-shipment。「per_shipment」と明記されている
- * ときだけ per_shipment、それ以外（未確認の推論・記述なし）は per_parcel——これは
- * マスタの転記ではなく、`courier-clearance.ts` 冒頭コメントに書いた**こちらの方針**
- * （箱分割で過小計上しない側に倒す）なので、ここでは「方針どおりコードがそうなって
- * いること」を確認する（マスタの生の値をそのまま真似するのではない）。 */
+/** master row → 期待する per-parcel/per-shipment。**2026-09-13、オーナー確定でper_shipmentへ
+ * 統一**——単位を明言する行が48行中shipmentのみでparcelがゼロという理由により、一次資料が
+ * 沈黙している行も含めて `per_shipment` を採る（`courier-clearance.ts` 冒頭コメント参照）。
+ * ここではマスタの生の値（`per`/`per_parcel_or_shipment`/`unit`のいずれか）をそのまま
+ * `per_shipment`かどうかで突き合わせる——マスタ自体が今回この方針に沿って更新されている
+ * ので、コード独自の既定値ロジックは持たない（無言のフォールバックを防ぐ、というF34の
+ * 一貫方針）。マスタにこれらのキーが1つも無い行（=課金単位についての記述が一切見つかって
+ * いない行）は、このテストの対象外（呼び出し側 `findClearanceRow` のフィルタで弾く）。 */
 function expectedPerFrom(row: { per?: string; per_parcel_or_shipment?: string; unit?: string }): 'per_parcel' | 'per_shipment' {
   const raw = row.per ?? row.per_parcel_or_shipment ?? row.unit;
-  return raw === 'per_shipment' ? 'per_shipment' : 'per_parcel';
+  if (raw !== 'per_shipment') {
+    throw new Error(
+      `master row の課金単位フィールド（per/per_parcel_or_shipment/unit）が 'per_shipment' ではない`
+      + `（raw=${String(raw)}）── 2026-09-13のper-shipment統一で48行の沈黙行も含め全て`
+      + `per_shipmentになったはず。per_parcelへの無言のフォールバックはしない。`,
+    );
+  }
+  return 'per_shipment';
+}
+
+/** master row → 期待する unitConfidence。単位フィールドに専用の `*_tier` が
+ * `'reasoned_judgement_unconfirmed'` として付いていれば、この行の一次資料自体は
+ * 単位について沈黙しており、他行の傾向からの推論で per_shipment にした
+ * （`courier-clearance.ts`: `unitConfidence: 'inferred'`）。それが無ければ、この行の
+ * 一次資料自体が単位を述べている（`'sourced'`）——SG FedExの`search_snippet_no_verbatim_quote`
+ * も「この行自体について"per shipment"を伝える情報源がある」という点で sourced 側に含む
+ * （courier-clearance.ts の basisNote 参照）。 */
+function expectedUnitConfidenceFrom(
+  row: { per_parcel_or_shipment_tier?: string; unit_tier?: string; per_tier?: string },
+): 'sourced' | 'inferred' {
+  const tier = row.per_parcel_or_shipment_tier ?? row.unit_tier ?? row.per_tier;
+  return tier === 'reasoned_judgement_unconfirmed' ? 'inferred' : 'sourced';
 }
 
 describe('F34 MAPPED ── master/customs.json#clearance と courier-clearance.ts が一致しなければならない行', () => {
@@ -1246,6 +1270,20 @@ describe('F34 MAPPED ── master/customs.json#clearance と courier-clearance.
         }
         if (expectedRule.currency != null) expect(code!.currency).toBe(expectedRule.currency);
         expect(code!.per).toBe(expectedPerFrom(row));
+        // **2026-09-13、per-shipment統一の追加分**: 単位が「一次資料が明言した事実」
+        // （sourced）なのか「他行の傾向からのこちらの推論」（inferred）なのかを、
+        // `unitConfidence` が master の `*_tier` と一致していることまで確認する。
+        // 一致しなければ、推論を確認済みの事実に見せてしまう（またはその逆）ので、
+        // ここも他の軸と同じく無言のフォールバックを許さない。
+        expect(
+          code!.unitConfidence,
+          `${f34Key(cc, carrier)}: unitConfidence がmasterの*_tier（`
+          + `${JSON.stringify({
+            per_parcel_or_shipment_tier: row.per_parcel_or_shipment_tier,
+            unit_tier: row.unit_tier,
+            per_tier: row.per_tier,
+          })}）と食い違う`,
+        ).toBe(expectedUnitConfidenceFrom(row));
       });
     }
   }

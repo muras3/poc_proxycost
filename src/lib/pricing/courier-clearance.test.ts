@@ -251,14 +251,111 @@ describe('F34/#106: the weight-limit multi-piece-shipment rule is unreachable fo
       },
     ];
     // Buyeeはショップごとに別送がデフォルト（'default'変種）で、`split`が効く唯一の社。
-    // ただしBuyeeが持つ宅配便は courier-buyee-air（自社便、carrierOfがnull）と
-    // courier-ecms（per_parcelなので本テストの対象外）のみ——per_shipmentの宅配便を
-    // 持たないため、店舗分割とper_shipment計算が実際に組み合わさる例は今のデータには
-    // 存在しない。ここでは「箱の理由に'weight-limit'は出ない」ことだけを確認する。
+    // Buyeeが持つ宅配便は courier-buyee-air（自社便、carrierOfがnull、通関データ無し）と
+    // courier-ecms。ECMSは2026-09-13のper-shipment統一で `per: 'per_shipment'`（inferred）に
+    // なったが、店舗違いの分割は既に「別Shipment」としてグループ化される（compare.tsの
+    // `shipmentGroups`はgi=店舗グループ単位）ため、店舗分割1つにつき箱も1つ・shipmentも1つ
+    // ——per_parcelだった頃と同じ分割になり、金額は変わらない（下の
+    // 'F34/#106是正 per-shipment統一' 参照）。ここでは「箱の理由に'weight-limit'は出ない」
+    // ことだけを確認する。
     const rows = compare({ items: cart, country: 'DE', method: 'courier-ecms' }).rows;
     const row = byId(rows, 'buyee:default');
     expect(row.boxes.length).toBeGreaterThan(1); // 店舗違いで2箱に分かれている
     expect(row.boxes.every((b) => b.reason !== 'weight-limit')).toBe(true);
     expect(row.boxes.map((b) => b.reason).sort()).toEqual(['identified-shop', 'identified-shop']);
+  });
+});
+
+// #112（per-shipment統一、オーナー確定2026-09-13）── 48行を読み直した結果、単位を
+// 明言する行は全てshipment・parcelはゼロなので、一次資料が沈黙している行も
+// per_shipmentへ統一した。だが「一次資料が単位を明言している」(sourced) 行と
+// 「他行の傾向からの推論」(inferred) 行を混同してはいけない——タスク指示
+// 「未来の読み手が推論を根拠と取り違えないように」。
+describe('#112: sourced vs inferred per_shipment rows must be distinguishable in the output note', () => {
+  test('DE DHL (sourced: "pro abgefertigter Sendung") does not read as an inference', () => {
+    const rows = compare({ items: items(1, 600, 300_000), country: 'DE', method: 'courier-dhl' }).rows;
+    const fee = byId(rows, 'fromjapan').lines.find((l) => l.key === 'courier-clearance-fee')!;
+    expect(fee.note).toContain('stated by the carrier\'s own source');
+    expect(fee.note).not.toContain('NOT stated by this route\'s own source');
+  });
+
+  test('US DHL (inferred: DHL\'s own US rate guide is silent on the unit) reads as our inference,'
+    + ' not a confirmed fact', () => {
+    const rows = compare({ items: items(1, 600, 300_000), country: 'US', method: 'courier-dhl' }).rows;
+    const fee = byId(rows, 'fromjapan').lines.find((l) => l.key === 'courier-clearance-fee')!;
+    expect(fee.note).toContain('NOT stated by this route\'s own source');
+    expect(fee.note).toContain('our inference');
+    expect(fee.note).not.toContain('stated by the carrier\'s own source');
+  });
+
+  test('US FedEx and US ECMS (both silent, both inferred) read the same way as US DHL', () => {
+    for (const method of ['courier-fedex', 'courier-ecms'] as const) {
+      const rows = compare({ items: items(1, 600, 300_000), country: 'US', method }).rows;
+      const row = rows.find((r) => r.lines.some((l) => l.key === 'courier-clearance-fee'));
+      expect(row, `${method}: courier-clearance-fee 行を持つ行が無い`).toBeDefined();
+      const fee = row!.lines.find((l) => l.key === 'courier-clearance-fee')!;
+      expect(fee.note, method).toContain('NOT stated by this route\'s own source');
+    }
+  });
+});
+
+// #112: 実際に何が動いたか（タスク指示: 「動くと期待し、実際にcompare()を走らせて
+// 報告する」）。**答えは「動かない」——ただし#111と同じ理由ではなく、その理由が
+// この統一によっても解消されていないことを確認する。**
+// per_shipmentは「shipmentグループ（=店舗ごとのbaseGroups）ごとに1回課金」で実装されて
+// いる（compare.tsのshipmentGroups）。宅配便のbaseBoxesは常に「店舗グループ=1箱」
+// （重量超過分割が宅配便に到達しないため、#106で確認済み）なので、**shipmentの単位と
+// 箱の単位が今日のコードでは常に一致する**——店舗違いの分割は「別のshipment」に
+// なるが、それは同時に「別の箱（別のparcel）」でもある。したがってper_parcelから
+// per_shipmentへ切り替えても、**同じ箱の集合に同じ回数だけ課金することになり、
+// 合計は変わらない。** これは「#111のグルーピング修正がBuyeeで実質no-opだった」のと
+// 表面上は似ているが理由が違う: #111はBuyeeにShipment単位確定済みの宅配便が無かった
+// ことがno-opの理由だったが、このPRでBuyeeのECMSがper_shipment(inferred)になった今も
+// なお金額は動かない——動かない理由が「shipment単位の宅配便が無いから」から
+// 「shipment＝店舗グループ＝箱、という一致が崩れる分割方法（重量超過）が宅配便に
+// 存在しないから」に変わっただけで、**両者とも最終的には同じ到達不能ブランチ
+// （'weight-limit'分割）に帰着する。**
+describe('#112: totals do not move for shop-split carts, and why', () => {
+  const shopSplitCart: Item[] = [
+    {
+      id: 's1', title: 's1', priceYen: 30_000, priceTier: 'fixed',
+      site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/s1/',
+      weightG: 500, weightTier: 'estimate', qty: 1,
+    },
+    {
+      id: 's2', title: 's2', priceYen: 30_000, priceTier: 'fixed',
+      site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-b/s2/',
+      weightG: 500, weightTier: 'estimate', qty: 1,
+    },
+  ];
+
+  test('Buyee ECMS in the US: a 2-shop cart produces 2 boxes = 2 shipment groups —'
+    + ' per_shipment charges once per group, which is once per box, same as per_parcel would', () => {
+    const splitRows = compare({ items: shopSplitCart, country: 'US', method: 'courier-ecms' }).rows;
+    const splitRow = splitRows.find((r) => r.id === 'buyee:default')!;
+    expect(splitRow.boxes).toHaveLength(2); // 店舗違いで2箱
+
+    // 同じ合計duty+taxを1店舗にまとめたカートと比較する:
+    // 1店舗なら1箱=1shipment、feeは1回分（duty+taxの合計に対して評価）。
+    // 2店舗なら2箱=2shipment、feeは2回分（duty+taxをそれぞれの箱ごとに評価して合算）。
+    // rate_of_import_charges（ECMS、下限なしの単純比率）は線形なので、
+    // 「合計に1回」と「2つに分けて2回、合算」が一致する——これが「動かない」ことの
+    // 数式的な理由（下限つきのrateだと一般には一致しないが、ECMSの下限は0）。
+    const singleShopCart: Item[] = [
+      { ...shopSplitCart[0]!, url: shopSplitCart[0]!.url },
+      { ...shopSplitCart[1]!, url: shopSplitCart[0]!.url }, // 同じ店舗URLに揃える
+    ];
+    const oneRows = compare({ items: singleShopCart, country: 'US', method: 'courier-ecms' }).rows;
+    const oneRow = oneRows.find((r) => r.id === 'buyee:default')!;
+    expect(oneRow.boxes).toHaveLength(1); // 同一店舗なので1箱
+
+    const splitFee = splitRow.lines.find((l) => l.key === 'courier-clearance-fee')!;
+    const oneFee = oneRow.lines.find((l) => l.key === 'courier-clearance-fee')!;
+    expect(splitFee.amount).not.toBeNull();
+    expect(oneFee.amount).not.toBeNull();
+    // 数量・単価が同一なので合計duty+taxも同一——**clearance feeそのものは分割方法に
+    // 依らず一致する**（他の行——送料など——は店舗数で変わり得るので、ここで比べるのは
+    // clearance fee単体に留める）。
+    expect(splitFee.amount).toBe(oneFee.amount);
   });
 });
