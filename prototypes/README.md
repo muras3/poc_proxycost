@@ -8,6 +8,9 @@
 | `packing-box.html` | 段ボール箱に商品が入っていく画面 |
 | `shape-book.html` | 69品目の形の見本帳（生成物） |
 | `shape-book.tpl.html` + `lines69.json` | 上の元。テンプレートにデータを流して作る |
+| `proposal-ac-ledger-manifest.html` | **採用する方向。**比較画面の試作（台帳の見た目 × 発着ボードの構造、箱のアニメーション、注意書きの3段階）。根拠は `docs/design/benchmarks/2026-09-13/` と `docs/design/caveat-tiers.md` |
+| `proposal-{a,b,c}-*.html` | 上に至る前の3案（税関の台帳／秤と計器盤／発着ボード） |
+| `proposals-data.json` / `proposals-data-boxes.json` | 試作に埋め込んだ数字の元。`compare()` の実出力（カナダ宛・5点×¥3,000・EMS、2026-09-13 時点のコード）。**手で編集するな** |
 
 `lines69.json` は `src/data/weights.ts` から書き出した69ライン。
 **手で編集するな。**重量表を直したら書き出し直す。

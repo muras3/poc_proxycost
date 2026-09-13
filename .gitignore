@@ -15,3 +15,6 @@ dist/
 # isolation: "worktree" で走るサブエージェントの作業場（成果物ではない）
 .claude/worktrees/
 __pycache__/
+
+# UI ベンチマークのスクショはローカルにのみ置く（容量が大きいため）
+docs/design/benchmarks/*/shots/

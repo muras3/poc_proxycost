@@ -1,0 +1,542 @@
+[
+  {
+    "name": "s01-buyee",
+    "url": "https://buyee.jp/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://buyee.jp/",
+    "title": "403 Forbidden",
+    "height": 900
+  },
+  {
+    "name": "s04-fromjapan",
+    "url": "https://www.fromjapan.co.jp/en/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.fromjapan.co.jp/en/",
+    "title": "403 Forbidden",
+    "height": 900
+  },
+  {
+    "name": "s02-zenmarket",
+    "url": "https://zenmarket.jp/en/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://zenmarket.jp/en/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s03-neokyo",
+    "url": "https://neokyo.com/en",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://neokyo.com/en",
+    "title": "Neokyo : Your hassle-free shopping proxy in Japan",
+    "height": 6161
+  },
+  {
+    "name": "s04-fromjapan",
+    "url": "https://www.fromjapan.co.jp/en/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.fromjapan.co.jp/en/",
+    "title": "One Map by FROM JAPAN | Japan and US auction bidding and shopping proxy service",
+    "height": 4931
+  },
+  {
+    "name": "s02-zenmarket",
+    "url": "https://zenmarket.jp/en/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://zenmarket.jp/en/",
+    "title": "ZenMarket, Discover Japan - Buy from Japanese websites worldwide",
+    "height": 7051
+  },
+  {
+    "name": "s01-buyee",
+    "url": "https://buyee.jp/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://buyee.jp/",
+    "title": "Buyee - Japanese Proxy Service | Buy from Japan!",
+    "height": 5877
+  },
+  {
+    "name": "s03-neokyo",
+    "url": "https://neokyo.com/en",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://neokyo.com/en",
+    "title": "Neokyo : Your hassle-free shopping proxy in Japan",
+    "height": 6780
+  },
+  {
+    "name": "s06-tenso",
+    "url": "https://www.tenso.com/en",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.tenso.com/en",
+    "title": "Forwarding service connecting overseas customers and Japanese online stores [tenso.com]",
+    "height": 6081
+  },
+  {
+    "name": "s05-jauce",
+    "url": "https://www.jauce.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.jauce.com/",
+    "title": "Yahoo! Japan Auctions English | eBay Japan | Japan Proxy Shopping",
+    "height": 4609
+  },
+  {
+    "name": "s08-sendico",
+    "url": "https://www.sendico.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.sendico.com/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s07-blackship",
+    "url": "https://blackship.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://blackship.com/",
+    "title": "Blackship | Package Forwarding from Japan",
+    "height": 4732
+  },
+  {
+    "name": "s08-sendico",
+    "url": "https://www.sendico.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.sendico.com/",
+    "title": "Just a moment...",
+    "height": 664
+  },
+  {
+    "name": "s06-tenso",
+    "url": "https://www.tenso.com/en",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.tenso.com/en",
+    "title": "Forwarding service connecting overseas customers and Japanese online stores [tenso.com]",
+    "height": 5150
+  },
+  {
+    "name": "s07-blackship",
+    "url": "https://blackship.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://blackship.com/",
+    "title": "Blackship | Package Forwarding from Japan",
+    "height": 8228
+  },
+  {
+    "name": "s05-jauce",
+    "url": "https://www.jauce.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.jauce.com/",
+    "title": "Yahoo! Japan Auctions English | eBay Japan | Japan Proxy Shopping",
+    "height": 9141
+  },
+  {
+    "name": "s09-whiterabbitexpress",
+    "url": "https://whiterabbitexpress.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://japanrabbit.com/",
+    "title": "Japan Rabbit | Proxy-buying from Japan",
+    "height": 6550
+  },
+  {
+    "name": "s11-remambo",
+    "url": "https://remambo.jp/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.remambo.jp/",
+    "title": "Buy, Ship & Resell Goods from Japan | Proxy Shopping Service – Remambo",
+    "height": 5720
+  },
+  {
+    "name": "s10-doorzo",
+    "url": "https://www.doorzo.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.doorzo.com/en/",
+    "title": "Doorzo - The ultimate Japan proxy shopping service.",
+    "height": 5034
+  },
+  {
+    "name": "s12-easyship",
+    "url": "https://www.easyship.com/shipping-calculator",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.easyship.com/shipping-calculator",
+    "title": "Page Not Found | Easyship",
+    "height": 2637
+  },
+  {
+    "name": "s09-whiterabbitexpress",
+    "url": "https://whiterabbitexpress.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://japanrabbit.com/",
+    "title": "Japan Rabbit | Proxy-buying from Japan",
+    "height": 9469
+  },
+  {
+    "name": "s10-doorzo",
+    "url": "https://www.doorzo.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://nh5.doorzo.com/en?isNew=15",
+    "title": "Doorzo - The ultimate Japan proxy shopping service.",
+    "height": 664
+  },
+  {
+    "name": "s12-easyship",
+    "url": "https://www.easyship.com/shipping-calculator",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.easyship.com/shipping-calculator",
+    "title": "Page Not Found | Easyship",
+    "height": 2550
+  },
+  {
+    "name": "s11-remambo",
+    "url": "https://remambo.jp/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.remambo.jp/",
+    "title": "Buy, Ship & Resell Goods from Japan | Proxy Shopping Service – Remambo",
+    "height": 12503
+  },
+  {
+    "name": "s13-parcelmonkey",
+    "url": "https://www.parcelmonkey.co.uk/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.parcelmonkey.co.uk/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s16-googleflights",
+    "url": "https://www.google.com/travel/flights",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.google.com/travel/flights",
+    "title": "Find Cheap Flights Worldwide & Book Your Ticket - Google Flights",
+    "height": 3042
+  },
+  {
+    "name": "s13-parcelmonkey",
+    "url": "https://www.parcelmonkey.co.uk/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.parcelmonkey.co.uk/",
+    "title": "Just a moment...",
+    "height": 806
+  },
+  {
+    "name": "s14-zonos",
+    "url": "https://zonos.com/landed-cost",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://zonos.com/landed-cost",
+    "title": "Landed Cost Calculator for Duties and Taxes | Zonos",
+    "height": 11165
+  },
+  {
+    "name": "s15-wise",
+    "url": "https://wise.com/gb/compare/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://wise.com/gb/compare/",
+    "title": "Money transfer comparison | Compare best exchange rates - Wise",
+    "height": 7494
+  },
+  {
+    "name": "s16-googleflights",
+    "url": "https://www.google.com/travel/flights",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.google.com/travel/flights",
+    "title": "Find Cheap Flights Worldwide & Book Your Ticket - Google Flights",
+    "height": 3582
+  },
+  {
+    "name": "s17-skyscanner",
+    "url": "https://www.skyscanner.net/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.skyscanner.net/sttc/px/captcha-v2/index.html?url=Lz8=&uuid=67dd8bc8-af3b-11f1-b656-9ab8954f30bd&vid=",
+    "title": "Skyscanner",
+    "height": 900
+  },
+  {
+    "name": "s14-zonos",
+    "url": "https://zonos.com/landed-cost",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://zonos.com/landed-cost",
+    "title": "Landed Cost Calculator for Duties and Taxes | Zonos",
+    "height": 17941
+  },
+  {
+    "name": "s15-wise",
+    "url": "https://wise.com/gb/compare/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://wise.com/gb/compare/",
+    "title": "Money transfer comparison | Compare best exchange rates - Wise",
+    "height": 9736
+  },
+  {
+    "name": "s17-skyscanner",
+    "url": "https://www.skyscanner.net/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.skyscanner.net/sttc/px/captcha-v2/index.html?url=Lz8=&uuid=6b75ec0f-af3b-11f1-b9d3-b21f79f85c6d&vid=",
+    "title": "Skyscanner",
+    "height": 664
+  },
+  {
+    "name": "s18-pricerunner",
+    "url": "https://www.pricerunner.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.pricerunner.com/",
+    "title": "Access Denied",
+    "height": 900
+  },
+  {
+    "name": "s19-nerdwallet",
+    "url": "https://www.nerdwallet.com/best/banking/savings-accounts",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.nerdwallet.com/banking/best/savings-accounts",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s20-monito",
+    "url": "https://www.monito.com/en",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.monito.com/",
+    "title": "Money transfer: compare ways to send money online with Monito",
+    "height": 13978
+  },
+  {
+    "name": "a01-linear",
+    "url": "https://linear.app/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://linear.app/",
+    "title": "Linear – The system for product development",
+    "height": 9960
+  },
+  {
+    "name": "s18-pricerunner",
+    "url": "https://www.pricerunner.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.pricerunner.com/",
+    "title": "PriceRunner UK - Save by comparing prices from 4,900 stores",
+    "height": 7999
+  },
+  {
+    "name": "s19-nerdwallet",
+    "url": "https://www.nerdwallet.com/best/banking/savings-accounts",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.nerdwallet.com/banking/best/high-yield-online-savings-accounts",
+    "title": "Best High-Yield Savings Accounts of September 2026: Up to 4.21% - NerdWallet",
+    "height": 31177
+  },
+  {
+    "name": "a01-linear",
+    "url": "https://linear.app/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://linear.app/",
+    "title": "Linear – The system for product development",
+    "height": 5876
+  },
+  {
+    "name": "s20-monito",
+    "url": "https://www.monito.com/en",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.monito.com/",
+    "title": "Money transfer: compare ways to send money online with Monito",
+    "height": 24966
+  },
+  {
+    "name": "a03-vercel",
+    "url": "https://vercel.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://vercel.com/",
+    "title": "Agentic Infrastructure - Vercel",
+    "height": 5930
+  },
+  {
+    "name": "a02-stripe",
+    "url": "https://stripe.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://stripe.com/jp",
+    "title": "Stripe | 収益向上のための金融インフラ",
+    "height": 15412
+  },
+  {
+    "name": "a05-family",
+    "url": "https://family.co/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://family.co/",
+    "title": "Family",
+    "height": 11315
+  },
+  {
+    "name": "a03-vercel",
+    "url": "https://vercel.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://vercel.com/",
+    "title": "Agentic Infrastructure - Vercel",
+    "height": 6555
+  },
+  {
+    "name": "a02-stripe",
+    "url": "https://stripe.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://stripe.com/jp",
+    "title": "Stripe | 収益向上のための金融インフラ",
+    "height": 22007
+  },
+  {
+    "name": "a04-raycast",
+    "url": "https://www.raycast.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.raycast.com/",
+    "title": "Raycast - Your shortcut to everything",
+    "height": 15983
+  },
+  {
+    "name": "a05-family",
+    "url": "https://family.co/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://family.co/",
+    "title": "Family",
+    "height": 14802
+  },
+  {
+    "name": "a06-framer",
+    "url": "https://www.framer.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.framer.com/",
+    "title": "Framer: AI design agent",
+    "height": 10858
+  },
+  {
+    "name": "a07-arc",
+    "url": "https://arc.net/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://arc.net/",
+    "title": "Arc from The Browser Company",
+    "height": 6125
+  },
+  {
+    "name": "a08-superhuman",
+    "url": "https://superhuman.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://superhuman.com/",
+    "title": "Superhuman: Docs, Mail, and AI That Work Everywhere",
+    "height": 7376
+  },
+  {
+    "name": "a06-framer",
+    "url": "https://www.framer.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.framer.com/",
+    "title": "Framer: AI design agent",
+    "height": 10723
+  },
+  {
+    "name": "a07-arc",
+    "url": "https://arc.net/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://arc.net/",
+    "title": "Arc from The Browser Company",
+    "height": 3688
+  },
+  {
+    "name": "a04-raycast",
+    "url": "https://www.raycast.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.raycast.com/",
+    "title": "Raycast - Your shortcut to everything",
+    "height": 15948
+  },
+  {
+    "name": "a08-superhuman",
+    "url": "https://superhuman.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://superhuman.com/",
+    "title": "Superhuman: Docs, Mail, and AI That Work Everywhere",
+    "height": 8465
+  },
+  {
+    "name": "a09-perplexity",
+    "url": "https://www.perplexity.ai/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.perplexity.ai/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "a10-teenage-engineering",
+    "url": "https://teenage.engineering/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://teenage.engineering/",
+    "title": "teenage engineering",
+    "height": 15233
+  },
+  {
+    "name": "a09-perplexity",
+    "url": "https://www.perplexity.ai/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.perplexity.ai/",
+    "title": "Perplexity",
+    "height": 664
+  },
+  {
+    "name": "a10-teenage-engineering",
+    "url": "https://teenage.engineering/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://teenage.engineering/",
+    "title": "teenage engineering",
+    "height": 2993
+  }
+]

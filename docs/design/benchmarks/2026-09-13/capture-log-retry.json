@@ -1,0 +1,182 @@
+[
+  {
+    "name": "s01-buyee",
+    "url": "https://buyee.jp/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://buyee.jp/",
+    "title": "403 Forbidden",
+    "height": 900
+  },
+  {
+    "name": "s04-fromjapan",
+    "url": "https://www.fromjapan.co.jp/en/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.fromjapan.co.jp/en/",
+    "title": "403 Forbidden",
+    "height": 900
+  },
+  {
+    "name": "s08-sendico",
+    "url": "https://www.sendico.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.sendico.com/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s02-zenmarket",
+    "url": "https://zenmarket.jp/en/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://zenmarket.jp/en/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s08-sendico",
+    "url": "https://www.sendico.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.sendico.com/",
+    "title": "Just a moment...",
+    "height": 664
+  },
+  {
+    "name": "s04-fromjapan",
+    "url": "https://www.fromjapan.co.jp/en/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.fromjapan.co.jp/en/",
+    "title": "One Map by FROM JAPAN | Japan and US auction bidding and shopping proxy service",
+    "height": 4807
+  },
+  {
+    "name": "s02-zenmarket",
+    "url": "https://zenmarket.jp/en/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://zenmarket.jp/en/",
+    "title": "ZenMarket, Discover Japan - Buy from Japanese websites worldwide",
+    "height": 7083
+  },
+  {
+    "name": "s01-buyee",
+    "url": "https://buyee.jp/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://buyee.jp/",
+    "title": "Buyee - Japanese Proxy Service | Buy from Japan!",
+    "height": 5880
+  },
+  {
+    "name": "s13-parcelmonkey",
+    "url": "https://www.parcelmonkey.co.uk/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.parcelmonkey.co.uk/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "s17-skyscanner",
+    "url": "https://www.skyscanner.net/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.skyscanner.net/sttc/px/captcha-v2/index.html?url=Lz8=&uuid=d43ae34a-af3b-11f1-a5c3-9ab8954f30bd&vid=",
+    "title": "Skyscanner",
+    "height": 900
+  },
+  {
+    "name": "s12-easyship",
+    "url": "https://www.easyship.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.easyship.com/",
+    "title": "Easyship: Multi-Carrier Shipping Software for eCommerce & Business",
+    "height": 10068
+  },
+  {
+    "name": "s18-pricerunner",
+    "url": "https://www.pricerunner.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.pricerunner.com/",
+    "title": "Access Denied",
+    "height": 900
+  },
+  {
+    "name": "s13-parcelmonkey",
+    "url": "https://www.parcelmonkey.co.uk/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.parcelmonkey.co.uk/",
+    "title": "Just a moment...",
+    "height": 806
+  },
+  {
+    "name": "s17-skyscanner",
+    "url": "https://www.skyscanner.net/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.skyscanner.net/sttc/px/captcha-v2/index.html?url=Lz8=&uuid=dad70bb6-af3b-11f1-941f-46cd0562a6f9&vid=",
+    "title": "Skyscanner",
+    "height": 664
+  },
+  {
+    "name": "s12-easyship",
+    "url": "https://www.easyship.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.easyship.com/",
+    "title": "Easyship: Multi-Carrier Shipping Software for eCommerce & Business",
+    "height": 15064
+  },
+  {
+    "name": "s18-pricerunner",
+    "url": "https://www.pricerunner.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.pricerunner.com/",
+    "title": "PriceRunner UK - Save by comparing prices from 4,900 stores",
+    "height": 7999
+  },
+  {
+    "name": "s19-nerdwallet",
+    "url": "https://www.nerdwallet.com/best/banking/savings-accounts",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.nerdwallet.com/banking/best/savings-accounts",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "a09-perplexity",
+    "url": "https://www.perplexity.ai/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.perplexity.ai/",
+    "title": "Just a moment...",
+    "height": 900
+  },
+  {
+    "name": "a09-perplexity",
+    "url": "https://www.perplexity.ai/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.perplexity.ai/",
+    "title": "Perplexity",
+    "height": 664
+  },
+  {
+    "name": "s19-nerdwallet",
+    "url": "https://www.nerdwallet.com/best/banking/savings-accounts",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.nerdwallet.com/banking/best/high-yield-online-savings-accounts",
+    "title": "Best High-Yield Savings Accounts of September 2026: Up to 4.21% - NerdWallet",
+    "height": 31177
+  }
+]
