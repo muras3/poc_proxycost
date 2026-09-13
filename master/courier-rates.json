@@ -128994,7 +128994,9 @@
           "SAL": "not_available",
           "confidence": "direct_fetch",
           "submit_clicks_to_stabilize": 2,
-          "contamination_note": "click1ではAUの残留値(¥3,150 + GST for Australia)が誤表示され、click2で正しいCAの値に切り替わり以降安定。"
+          "contamination_note": "click1ではAUの残留値(¥3,150 + GST for Australia)が誤表示され、click2で正しいCAの値に切り替わり以降安定。",
+          "reliability_flag": "needs_remeasurement_2026_09_13_audit",
+          "reliability_note": "CA/GBの500g EMS/Surfaceは、同一データ内のSG@600g(grid_c)とEMS/Surface双方でビット一致(EMS¥2,150 / Surface¥2,350)——我々のZone2(SG)計算と完全一致し、Zone3(CA/GB, 公式出典で確認済み)とは一致しない。タブ間状態汚染(CLAUDE.md §10)による取り違いの可能性が高く、再測定が必要。詳細: docs/audit/jauce-oracle-mismatch-2026-09-13.md"
         },
         {
           "country": "CA",
@@ -129085,7 +129087,9 @@
           "smart_packing": 420,
           "SAL": "not_available",
           "confidence": "direct_fetch",
-          "submit_clicks_to_stabilize": 1
+          "submit_clicks_to_stabilize": 1,
+          "reliability_flag": "needs_remeasurement_2026_09_13_audit",
+          "reliability_note": "CA/GBの500g EMS/Surfaceは、同一データ内のSG@600g(grid_c)とEMS/Surface双方でビット一致(EMS¥2,150 / Surface¥2,350)——我々のZone2(SG)計算と完全一致し、Zone3(CA/GB, 公式出典で確認済み)とは一致しない。タブ間状態汚染(CLAUDE.md §10)による取り違いの可能性が高く、再測定が必要。詳細: docs/audit/jauce-oracle-mismatch-2026-09-13.md"
         },
         {
           "country": "GB",
