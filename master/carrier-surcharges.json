@@ -1013,6 +1013,15 @@
         "decision_rule": "その請求書上にDuty Tax Processing／Disbursement Fee相当の行が存在するか、存在しないかを見る。存在すれば『税ゼロでも課す』、存在しなければ『税ゼロなら課さない』の直接証拠になる——推論を挟まず、行の有無だけで決着する。",
         "required_field": "現状 master/fixtures.json にはこの形の実請求が1件も無い（f34-zero-duty-clearance-fee-2026-09-12.md 参照）。"
       }
+    },
+    "invoice_verification_gap_2026_09_13": {
+      "id": "C15_fuel_remote_area_invoice_verification_gap_2026_09_13",
+      "note_on_field": "C11（燃油）・C12（遠隔地）の working_treatment 自体は reasoned_judgement_unconfirmed として既に記録済み。ここに追加するのは、それを決着させる唯一確実な手段（実請求との照合）が、他の working treatment と比べても特に現実的な経路を欠いているという、検証手段そのものについての記録であり、判断の中身（treatment/confidence）は変更しない。",
+      "recorded_on": "2026-09-13",
+      "text": "`docs/audit/confidence-census-2026-09-13.md` が記録する通り、`master/fees.json`・`master/customs.json` を合わせた128行のうち、独立した実請求と一致が取れているのは1行のみ（PR #117、ZenMarketの入金手数料）。燃油サーチャージ（C11）・遠隔地サーチャージ（C12）の working treatment は、この1行にすら含まれない——どちらの pending_test（週次改定境界をまたぐ再測定、遠隔地/非遠隔地郵便番号の比較測定）も、プロキシの見積り画面の再測定であって、実際に発送された荷物の実請求書ではない。",
+      "no_realistic_route": "実請求で決着させるには、対象7か国（US/GB/DE/FR/AU/CA/SG）宛てに実際に荷物を出し、宅配便を選び、届いた請求書上で燃油サーチャージ・遠隔地サーチャージが別立てで加算されているか、既に織り込まれているかを確認する必要がある。オーナー（Tatsuya氏）は日本在住であり、これら7か国は出荷先であって出荷元ではないため、自分自身にテスト発送して実請求を得るという、これまでの他の未検証項目（例: ZenMarketの3.5%）で使えた経路が、この2件については使えない。第三者（実際にこれらの国へ発送した利用者）が請求書を公開してくれるのを待つ以外の現実的な手段は今のところ無い。",
+      "status": "未検証のまま残す。C11/C12のconfidenceを reasoned_judgement_unconfirmed から引き上げる予定は無い——検証手段が無いことと、判断が正しいことは別である（CLAUDE.md §9）。",
+      "cross_reference": "master/carrier-surcharges.json の C11 (fuel_surcharge_working_treatment) / C12 (remote_area_surcharge_working_treatment) の各 pending_test。docs/audit/confidence-census-2026-09-13.md（128件中1件の全体像）。docs/ROADMAP.md の暫定的な運用判断8件索引、assumption 1・2。"
     }
   }
 }
