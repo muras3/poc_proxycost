@@ -153,6 +153,53 @@ export interface UnpricedFee {
 }
 
 /**
+ * **FROM JAPAN の外注梱包（F14 の追加費用側。基本梱包費とは別）を課す条件。**
+ * 一次情報は `en_help.txt`（`https://www.fromjapan.co.jp/translate/en_help.txt`、
+ * 2026-09-13 に再取得・base64 デコードして確認。オーナーが提示した
+ * `https://www.fromjapan.co.jp/japan/en/help/logistics/` は WebFetch・curl とも
+ * HTTP 403 で到達不能——`en_help.txt` は同じヘルプ本文の配信元で、以前から
+ * `master/fees.json` F14（`checked_on: 2026-09-11`）の出典として使われている）。
+ *
+ * 条件（原文はヘルプ側 `help_logistics_*` の3条件。利用規約側 `title_serviceRule_1880/1890`
+ * は条件1・2のみを列挙し条件3が無い——この不一致はそのまま残す。ヘルプの3条件を採用する
+ * 理由は `master/fees.json` F14 の note 参照）:
+ *   1. `title_serviceRule_1880`「An item weighing 50 kg or above」
+ *   2. `title_serviceRule_1890`「An item weighing 30 kg or above and priced 300,000 yen or above」
+ *   3. `help_logistics_1622`「Packages containing multiple fragile items may require
+ *      outsourced packing」／`title_serviceRule_1870`「Items that meet any of the
+ *      conditions below will require outsourced packing」
+ *
+ * **マジックナンバーはここ1箇所だけに置く。**
+ */
+export const OUTSOURCED_PACKING_THRESHOLD = {
+  /** 条件1: この重量（g）以上で単独に発生。 */
+  soloWeightG: 50_000,
+  /** 条件2: この重量（g）以上、かつ商品価格がこの円以上のときに発生。 */
+  heavyWeightG: 30_000,
+  heavyPriceYen: 300_000,
+} as const;
+
+/**
+ * FROM JAPAN の外注梱包（実費・上限非公表）が発生する条件を満たすか。
+ * `totalWeightG` はその行の実際の総重量（梱包後グロス）、`itemsYen` は商品代合計。
+ * `fragile` は壊れ物・特別取扱いを要する商品が1点でも含まれるか
+ * （`Item.fragile` / `Item.specialHandling`）。
+ *
+ * 普通の商品（この計算機の既定の重量・価格帯）ではどの条件も成立しない
+ * ── 行を立てない（0円）。旧実装は条件を見ずに全条件で `amount: null` を
+ * 無条件に立てており過剰だった（オーナー決定 2026-09-13）。
+ */
+export function requiresOutsourcedPacking(
+  totalWeightG: number, itemsYen: number, fragile: boolean,
+): boolean {
+  if (fragile) return true;
+  if (totalWeightG >= OUTSOURCED_PACKING_THRESHOLD.soloWeightG) return true;
+  if (totalWeightG >= OUTSOURCED_PACKING_THRESHOLD.heavyWeightG
+    && itemsYen >= OUTSOURCED_PACKING_THRESHOLD.heavyPriceYen) return true;
+  return false;
+}
+
+/**
  * 代行が販売時点で徴収する輸入税（AU の GST・SG の GST）。
  *
  * **確認できた国だけ入れる。入っていない国は「徴収しない」ではなく「確認できていない」。**
@@ -410,6 +457,14 @@ export interface Service {
    * insurance の2件のみ、0e）。**「任意欄」ではない**——total として毎行に足す。
    */
   unpricedFees?: UnpricedFee[];
+  /**
+   * `display: total` だが額を公表していない、**条件（重量・商品価格・壊れ物）を
+   * 満たしたときだけ**発生する費目。いま該当するのは FROM JAPAN の外注梱包
+   * （F14 の追加費用側）1件のみ。`unpricedFees` と違い毎行無条件では足さない
+   * ——`compare.ts` の `buildRow` が `requiresOutsourcedPacking` で判定してから足す
+   * （オーナー決定 2026-09-13、`OUTSOURCED_PACKING_THRESHOLD` 参照）。
+   */
+  outsourcedPackingFee?: UnpricedFee;
   /**
    * `display: total` だが額を公表していない、**同梱（consolidation）を申請した
    * ときだけ**発生しうる費目（F14）。`unpricedFees` は毎行（default/consolidated
@@ -1598,21 +1653,27 @@ export const SERVICES: Service[] = [
     // all items.」＝必須で、その ¥500/点 は既に service-fee として総額に入っている。
     //
     // 外注梱包（F14 の変種。catalog の F14 自体は display: total）は残す。
-    // 翻訳ファイル原文（2026-09-07 読了）: help_fee_720「Outsourced Packing」＋
-    // help_fee_721「Actual cost」、help_logistics_1730「Items that cannot be packed by
-    // FROM JAPAN will require outsourced packing. You must pay the actual cost to have a
-    // packing company pack the items.」、title_serviceRule_1870「Items that meet any of the
-    // conditions below will require outsourced packing.」
+    // 翻訳ファイル原文（2026-09-07 読了、2026-09-13 条件を再確認）: help_fee_720
+    // 「Outsourced Packing」＋ help_fee_721「Actual cost」、help_logistics_1730「Items
+    // that cannot be packed by FROM JAPAN will require outsourced packing. You must
+    // pay the actual cost to have a packing company pack the items.」、
+    // title_serviceRule_1870「Items that meet any of the conditions below will
+    // require outsourced packing.」
     // **額は「実費」としか書かれていない。**社が決める額ではないので推定もできない。
     // display: total なので行そのものは消せない——null（画面「—」）で総額の行にし、
     // excluded に名前を載せる。0 と書けば、掛かる社を掛からない社として見せる。
-    unpricedFees: [
-      {
-        key: 'outsourced-packing', label: 'Outsourced packing',
-        note: 'actual cost — charged when FROM JAPAN judges an item too difficult to pack itself,'
-          + ' and the amount is never published',
-      },
-    ],
+    //
+    // **2026-09-13、オーナーが一次情報から発生条件を特定（`OUTSOURCED_PACKING_THRESHOLD`
+    // の doc comment に原文引用）。**以前はこの費目を条件を見ずに毎行へ無条件で
+    // 立てていたが過剰だった——普通の商品（この計算機の既定の重量・価格帯）では
+    // どの条件も原理的に成立しない。`unpricedFees`（毎行無条件）から
+    // `outsourcedPackingFee`（条件を満たした行にだけ `buildRow` が足す）へ移した。
+    unpricedFees: [],
+    outsourcedPackingFee: {
+      key: 'outsourced-packing', label: 'Outsourced packing',
+      note: 'actual cost, amount never published — applies at 50kg+, or 30kg+ and'
+        + ' ¥300,000+ item price, or fragile/special-handling items',
+    },
     // F27（`master/fees.json` A_confirmed）。この計算機は宅配便を価格化しておらず、
     // 住所も入力に無いので、いま総額にも画面にも出さない。データだけ繋いで寝かせる
     // （`DormantCourierFee` のコメント、および PR 本文の判断3参照）。

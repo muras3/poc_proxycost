@@ -1,0 +1,344 @@
+﻿country,weightG,priceYen,itemCount,storageDays,site,leaderCompany,leaderMethod,leaderLow,leaderHigh,rankIndeterminate,blockingKeys,blockingLabels,blockingTiers,blockingUnknownReasons,blockingSourceUrls,runnerUpCompany,runnerUpLow
+US,200,3000,1,0,mercari,buyee,courier-ecms,7731,,false,,,,,,fromjapan,7738
+US,200,10000,1,0,mercari,buyee,courier-ecms,15887,,false,,,,,,fromjapan,15894
+US,200,30000,1,0,mercari,buyee,courier-ecms,39187,,false,,,,,,fromjapan,39195
+US,200,60000,1,0,mercari,zenmarket,small-packet-air,74123,,false,,,,,,buyee,74137
+US,200,100000,1,0,mercari,zenmarket,small-packet-air,120574,,false,,,,,,buyee,120738
+US,200,150000,1,0,mercari,zenmarket,small-packet-air,178637,,false,,,,,,buyee,178990
+US,200,250000,1,0,mercari,buyee,courier-ecms,295492,,false,,,,,,fromjapan,295499
+US,500,3000,1,0,mercari,buyee,courier-ecms,7731,,false,,,,,,fromjapan,8475
+US,500,10000,1,0,mercari,buyee,courier-ecms,15887,,false,,,,,,fromjapan,16631
+US,500,30000,1,0,mercari,buyee,courier-ecms,39187,,false,,,,,,fromjapan,39931
+US,500,60000,1,0,mercari,buyee,courier-ecms,74137,,false,,,,,,zenmarket,74874
+US,500,100000,1,0,mercari,buyee,courier-ecms,120738,,false,,,,,,zenmarket,121325
+US,500,150000,1,0,mercari,buyee,courier-ecms,178990,,false,,,,,,zenmarket,179388
+US,500,250000,1,0,mercari,buyee,courier-ecms,295492,,false,,,,,,fromjapan,296236
+US,1000,3000,1,0,mercari,buyee,courier-ecms,7731,,false,,,,,,fromjapan,9246
+US,1000,10000,1,0,mercari,buyee,courier-ecms,15887,,false,,,,,,fromjapan,17402
+US,1000,30000,1,0,mercari,buyee,courier-ecms,39187,,false,,,,,,fromjapan,40702
+US,1000,60000,1,0,mercari,buyee,courier-ecms,74137,,false,,,,,,fromjapan,75652
+US,1000,100000,1,0,mercari,buyee,courier-ecms,120738,,false,,,,,,fromjapan,122253
+US,1000,150000,1,0,mercari,buyee,courier-ecms,178990,,false,,,,,,fromjapan,180505
+US,1000,250000,1,0,mercari,buyee,courier-ecms,295492,,false,,,,,,fromjapan,297007
+US,2000,3000,1,0,mercari,buyee,courier-ecms,9030,,false,,,,,,zenmarket,10015
+US,2000,10000,1,0,mercari,buyee,courier-ecms,17185,,false,,,,,,zenmarket,18171
+US,2000,30000,1,0,mercari,buyee,courier-ecms,40486,,false,,,,,,zenmarket,41471
+US,2000,60000,1,0,mercari,buyee,courier-ecms,75436,,false,,,,,,zenmarket,76421
+US,2000,100000,1,0,mercari,buyee,courier-ecms,122037,,false,,,,,,zenmarket,123022
+US,2000,150000,1,0,mercari,buyee,courier-ecms,180288,,false,,,,,,zenmarket,181274
+US,2000,250000,1,0,mercari,buyee,courier-ecms,296790,,false,,,,,,zenmarket,297776
+US,3000,3000,1,0,mercari,buyee,courier-ecms,9214,,false,,,,,,zenmarket,10579
+US,3000,10000,1,0,mercari,buyee,courier-ecms,17370,,false,,,,,,zenmarket,18735
+US,3000,30000,1,0,mercari,buyee,courier-ecms,40670,,false,,,,,,zenmarket,42035
+US,3000,60000,1,0,mercari,buyee,courier-ecms,75620,,false,,,,,,zenmarket,76985
+US,3000,100000,1,0,mercari,buyee,courier-ecms,122221,,false,,,,,,zenmarket,123586
+US,3000,150000,1,0,mercari,buyee,courier-ecms,180473,,false,,,,,,zenmarket,181837
+US,3000,250000,1,0,mercari,buyee,courier-ecms,296975,,false,,,,,,zenmarket,298339
+US,5000,3000,1,0,mercari,buyee,courier-ecms,11364,,false,,,,,,zenmarket,13010
+US,5000,10000,1,0,mercari,buyee,courier-ecms,19520,,false,,,,,,zenmarket,21166
+US,5000,30000,1,0,mercari,buyee,courier-ecms,42821,,false,,,,,,zenmarket,44466
+US,5000,60000,1,0,mercari,buyee,courier-ecms,77771,,false,,,,,,zenmarket,79416
+US,5000,100000,1,0,mercari,buyee,courier-ecms,124371,,false,,,,,,zenmarket,126017
+US,5000,150000,1,0,mercari,buyee,courier-ecms,182623,,false,,,,,,zenmarket,184268
+US,5000,250000,1,0,mercari,buyee,courier-ecms,299125,,false,,,,,,zenmarket,300770
+US,8000,3000,1,0,mercari,buyee,courier-ecms,11364,,false,,,,,,zenmarket,13010
+US,8000,10000,1,0,mercari,buyee,courier-ecms,19520,,false,,,,,,zenmarket,21166
+US,8000,30000,1,0,mercari,buyee,courier-ecms,42821,,false,,,,,,zenmarket,44466
+US,8000,60000,1,0,mercari,buyee,courier-ecms,77771,,false,,,,,,zenmarket,79416
+US,8000,100000,1,0,mercari,buyee,courier-ecms,124371,,false,,,,,,zenmarket,126017
+US,8000,150000,1,0,mercari,buyee,courier-ecms,182623,,false,,,,,,zenmarket,184268
+US,8000,250000,1,0,mercari,buyee,courier-ecms,299125,,false,,,,,,zenmarket,300770
+GB,200,3000,1,0,mercari,zenmarket,small-packet-air,8265,8265,false,,,,,,fromjapan,8650
+GB,200,10000,1,0,mercari,zenmarket,small-packet-air,16970,16970,false,,,,,,fromjapan,17304
+GB,200,30000,1,0,mercari,zenmarket,courier-ecms-express,42969,43370,false,,,,,,fromjapan,43150
+GB,200,60000,1,0,mercari,zenmarket,courier-ecms-express,81313,81714,false,,,,,,buyee,81801
+GB,200,100000,1,0,mercari,zenmarket,courier-ecms-express,132437,132838,false,,,,,,buyee,132643
+GB,200,150000,1,0,mercari,buyee,small-packet-air,196197,196197,false,,,,,,zenmarket,196343
+GB,200,250000,1,0,mercari,zenmarket,courier-ecms-express,324154,324555,false,,,,,,fromjapan,324933
+GB,500,3000,1,0,mercari,zenmarket,courier-ecms-express,8918,8918,false,,,,,,fromjapan,9318
+GB,500,10000,1,0,mercari,zenmarket,courier-ecms-express,17623,17623,false,,,,,,fromjapan,17972
+GB,500,30000,1,0,mercari,zenmarket,courier-ecms-express,43482,43482,false,,,,,,fromjapan,43837
+GB,500,60000,1,0,mercari,zenmarket,courier-ecms-express,81825,81825,false,,,,,,buyee,82487
+GB,500,100000,1,0,mercari,zenmarket,courier-ecms-express,132950,132950,false,,,,,,buyee,133330
+GB,500,150000,1,0,mercari,zenmarket,courier-ecms-express,196856,196856,false,,,,,,buyee,196883
+GB,500,250000,1,0,mercari,zenmarket,courier-ecms-express,324668,324668,false,,,,,,fromjapan,324933
+GB,1000,3000,1,0,mercari,zenmarket,courier-ecms-express,9751,9751,false,,,,,,fromjapan,10653
+GB,1000,10000,1,0,mercari,zenmarket,courier-ecms-express,18456,18456,false,,,,,,fromjapan,19307
+GB,1000,30000,1,0,mercari,zenmarket,courier-ecms-express,44339,44339,false,,,,,,fromjapan,45209
+GB,1000,60000,1,0,mercari,zenmarket,courier-ecms-express,82682,82682,false,,,,,,buyee,83859
+GB,1000,100000,1,0,mercari,zenmarket,courier-ecms-express,133807,133807,false,,,,,,buyee,134702
+GB,1000,150000,1,0,mercari,zenmarket,courier-ecms-express,197712,197712,false,,,,,,buyee,198256
+GB,1000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,324937,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,325683
+GB,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,11713,12409,false,,,,,,buyee,13392
+GB,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,20418,21114,false,,,,,,buyee,22046
+GB,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,46354,47050,false,,,,,,buyee,48058
+GB,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,84697,85393,false,,,,,,buyee,86190
+GB,2000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,135597,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,137033
+GB,2000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,199150,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,200586
+GB,2000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,326257,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,327693
+GB,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,12578,15361,false,,,,,,buyee,13392
+GB,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,21283,24066,false,,,,,,buyee,22046
+GB,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,47244,50027,false,,,,,,buyee,48058
+GB,3000,60000,1,0,mercari,zenmarket,courier-fedex-lowcost,85418,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,86190
+GB,3000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,136260,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,137033
+GB,3000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,199814,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,200586
+GB,3000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,326921,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,327693
+GB,5000,3000,1,0,mercari,zenmarket,courier-fedex-lowcost,14987,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,16952
+GB,5000,10000,1,0,mercari,zenmarket,courier-fedex-lowcost,23691,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,25606
+GB,5000,30000,1,0,mercari,zenmarket,courier-fedex-lowcost,49449,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,51718
+GB,5000,60000,1,0,mercari,zenmarket,courier-fedex-lowcost,87581,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,89851
+GB,5000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,138424,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,140693
+GB,5000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,201978,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,204247
+GB,5000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,329085,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,331354
+GB,8000,3000,1,0,mercari,zenmarket,courier-fedex-lowcost,14987,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,16952
+GB,8000,10000,1,0,mercari,zenmarket,courier-fedex-lowcost,23691,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,25606
+GB,8000,30000,1,0,mercari,zenmarket,courier-fedex-lowcost,49449,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,51718
+GB,8000,60000,1,0,mercari,zenmarket,courier-fedex-lowcost,87581,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,89851
+GB,8000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,138424,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,140693
+GB,8000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,201978,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,204247
+GB,8000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,329085,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,buyee,331354
+DE,200,3000,1,0,mercari,zenmarket,small-packet-air,8742,8742,false,,,,,,fromjapan,8917
+DE,200,10000,1,0,mercari,zenmarket,small-packet-air,17374,17374,false,,,,,,fromjapan,17501
+DE,200,30000,1,0,mercari,fromjapan,small-packet-air,42950,42950,false,,,,,,buyee,43469
+DE,200,60000,1,0,mercari,buyee,small-packet-air,81721,81721,false,,,,,,zenmarket,82146
+DE,200,100000,1,0,mercari,buyee,small-packet-air,132722,132722,false,,,,,,zenmarket,133149
+DE,200,150000,1,0,mercari,buyee,small-packet-air,196476,196476,false,,,,,,zenmarket,196901
+DE,200,250000,1,0,mercari,zenmarket,courier-ecms-express,324407,324662,false,,,,,,buyee,326883
+DE,500,3000,1,0,mercari,zenmarket,small-packet-air,9508,9508,false,,,,,,fromjapan,9580
+DE,500,10000,1,0,mercari,zenmarket,small-packet-air,18140,18140,false,,,,,,fromjapan,18164
+DE,500,30000,1,0,mercari,fromjapan,small-packet-air,43639,43639,false,,,,,,buyee,44157
+DE,500,60000,1,0,mercari,buyee,small-packet-air,82408,82408,false,,,,,,zenmarket,82732
+DE,500,100000,1,0,mercari,buyee,small-packet-air,133411,133411,false,,,,,,zenmarket,133734
+DE,500,150000,1,0,mercari,buyee,small-packet-air,197163,197163,false,,,,,,zenmarket,197487
+DE,500,250000,1,0,mercari,zenmarket,courier-ecms-express,324993,325622,false,,,,,,fromjapan,327072
+DE,1000,3000,1,0,mercari,fromjapan,small-packet-air,10904,10904,false,,,,,,zenmarket,11039
+DE,1000,10000,1,0,mercari,fromjapan,small-packet-air,19488,19488,false,,,,,,zenmarket,19671
+DE,1000,30000,1,0,mercari,fromjapan,small-packet-air,45015,45015,false,,,,,,buyee,45533
+DE,1000,60000,1,0,mercari,buyee,small-packet-air,83785,83785,false,,,,,,zenmarket,84700
+DE,1000,100000,1,0,mercari,buyee,small-packet-air,134788,134788,false,,,,,,zenmarket,135703
+DE,1000,150000,1,0,mercari,buyee,small-packet-air,198541,198541,false,,,,,,zenmarket,199455
+DE,1000,250000,1,0,mercari,fromjapan,courier-fedex-economy,327234,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,327398
+DE,2000,3000,1,0,mercari,fromjapan,courier-fedex-economy,14270,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,14748
+DE,2000,10000,1,0,mercari,fromjapan,courier-fedex-economy,22854,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,23380
+DE,2000,30000,1,0,mercari,fromjapan,courier-fedex-economy,48569,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,48921
+DE,2000,60000,1,0,mercari,fromjapan,courier-fedex-economy,86820,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,87173
+DE,2000,100000,1,0,mercari,fromjapan,courier-fedex-economy,137823,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,138176
+DE,2000,150000,1,0,mercari,fromjapan,courier-fedex-economy,201576,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,201928
+DE,2000,250000,1,0,mercari,fromjapan,courier-fedex-economy,329082,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,329434
+DE,3000,3000,1,0,mercari,fromjapan,courier-fedex-economy,15203,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,15818
+DE,3000,10000,1,0,mercari,fromjapan,courier-fedex-economy,23787,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,24450
+DE,3000,30000,1,0,mercari,fromjapan,courier-fedex-economy,49540,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,50027
+DE,3000,60000,1,0,mercari,fromjapan,courier-fedex-economy,87792,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,88279
+DE,3000,100000,1,0,mercari,fromjapan,courier-fedex-economy,138794,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,139281
+DE,3000,150000,1,0,mercari,fromjapan,courier-fedex-economy,202547,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,203035
+DE,3000,250000,1,0,mercari,fromjapan,courier-fedex-economy,330053,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,330541
+DE,5000,3000,1,0,mercari,zenmarket,courier-fedex,18711,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,18753
+DE,5000,10000,1,0,mercari,fromjapan,courier-fedex-economy,27337,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,27343
+DE,5000,30000,1,0,mercari,zenmarket,courier-fedex,53019,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,53232
+DE,5000,60000,1,0,mercari,zenmarket,courier-fedex,91270,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,91484
+DE,5000,100000,1,0,mercari,zenmarket,courier-fedex,142272,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,142485
+DE,5000,150000,1,0,mercari,zenmarket,courier-fedex,206026,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,206239
+DE,5000,250000,1,0,mercari,zenmarket,courier-fedex,333532,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,333745
+DE,8000,3000,1,0,mercari,zenmarket,courier-fedex,18711,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,18753
+DE,8000,10000,1,0,mercari,fromjapan,courier-fedex-economy,27337,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,zenmarket,27343
+DE,8000,30000,1,0,mercari,zenmarket,courier-fedex,53019,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,53232
+DE,8000,60000,1,0,mercari,zenmarket,courier-fedex,91270,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,91484
+DE,8000,100000,1,0,mercari,zenmarket,courier-fedex,142272,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,142485
+DE,8000,150000,1,0,mercari,zenmarket,courier-fedex,206026,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,206239
+DE,8000,250000,1,0,mercari,zenmarket,courier-fedex,333532,,true,courier-clearance-fee,FedEx destination clearance fee (unknown),none,,,fromjapan,333745
+FR,200,3000,1,0,mercari,zenmarket,small-packet-air,8810,8810,false,,,,,,fromjapan,9066
+FR,200,10000,1,0,mercari,zenmarket,small-packet-air,17515,17515,false,,,,,,fromjapan,17720
+FR,200,30000,1,0,mercari,fromjapan,small-packet-air,43376,43376,false,,,,,,buyee,43895
+FR,200,60000,1,0,mercari,buyee,small-packet-air,82459,82459,false,,,,,,zenmarket,82984
+FR,200,100000,1,0,mercari,buyee,small-packet-air,133877,133877,false,,,,,,zenmarket,134403
+FR,200,150000,1,0,mercari,buyee,small-packet-air,198151,198151,false,,,,,,zenmarket,198676
+FR,200,250000,1,0,mercari,zenmarket,courier-ecms-express,327223,327682,false,,,,,,buyee,329361
+FR,500,3000,1,0,mercari,zenmarket,small-packet-air,9583,9583,false,,,,,,fromjapan,9734
+FR,500,10000,1,0,mercari,zenmarket,small-packet-air,18288,18288,false,,,,,,fromjapan,18388
+FR,500,30000,1,0,mercari,fromjapan,small-packet-air,44071,44071,false,,,,,,buyee,44589
+FR,500,60000,1,0,mercari,buyee,small-packet-air,83153,83153,false,,,,,,zenmarket,83837
+FR,500,100000,1,0,mercari,buyee,small-packet-air,134572,134572,false,,,,,,zenmarket,135256
+FR,500,150000,1,0,mercari,buyee,small-packet-air,198845,198845,false,,,,,,zenmarket,199529
+FR,500,250000,1,0,mercari,zenmarket,courier-ecms-express,328076,328705,false,,,,,,buyee,329361
+FR,1000,3000,1,0,mercari,fromjapan,small-packet-air,11069,11069,false,,,,,,zenmarket,11127
+FR,1000,10000,1,0,mercari,fromjapan,small-packet-air,19723,19723,false,,,,,,zenmarket,19832
+FR,1000,30000,1,0,mercari,fromjapan,small-packet-air,45458,45458,false,,,,,,buyee,45976
+FR,1000,60000,1,0,mercari,buyee,small-packet-air,84540,84540,false,,,,,,zenmarket,85465
+FR,1000,100000,1,0,mercari,buyee,small-packet-air,135959,135959,false,,,,,,zenmarket,136884
+FR,1000,150000,1,0,mercari,buyee,small-packet-air,200233,200233,false,,,,,,zenmarket,201157
+FR,1000,250000,1,0,mercari,buyee,courier-buyee-air,329947,329947,false,,,,,,zenmarket,330611
+FR,2000,3000,1,0,mercari,buyee,courier-buyee-air,14046,14822,false,,,,,,zenmarket,16400
+FR,2000,10000,1,0,mercari,buyee,courier-buyee-air,22700,23476,false,,,,,,zenmarket,25105
+FR,2000,30000,1,0,mercari,buyee,courier-buyee-air,48591,49367,false,,,,,,zenmarket,51347
+FR,2000,60000,1,0,mercari,buyee,courier-buyee-air,87155,87931,false,,,,,,zenmarket,89911
+FR,2000,100000,1,0,mercari,buyee,courier-buyee-air,138574,139350,false,,,,,,zenmarket,141330
+FR,2000,150000,1,0,mercari,buyee,courier-buyee-air,202847,203623,false,,,,,,zenmarket,205604
+FR,2000,250000,1,0,mercari,buyee,courier-buyee-air,331394,332170,false,,,,,,zenmarket,334151
+FR,3000,3000,1,0,mercari,buyee,courier-buyee-air,15005,17109,false,,,,,,fromjapan,17694
+FR,3000,10000,1,0,mercari,buyee,courier-buyee-air,23659,25763,false,,,,,,zenmarket,26851
+FR,3000,30000,1,0,mercari,buyee,courier-buyee-air,49589,51693,false,,,,,,zenmarket,52704
+FR,3000,60000,1,0,mercari,buyee,courier-buyee-air,88153,90257,false,,,,,,zenmarket,91268
+FR,3000,100000,1,0,mercari,buyee,courier-buyee-air,139572,141676,false,,,,,,zenmarket,142686
+FR,3000,150000,1,0,mercari,buyee,courier-buyee-air,203845,205949,false,,,,,,zenmarket,206960
+FR,3000,250000,1,0,mercari,buyee,courier-buyee-air,332392,334496,false,,,,,,zenmarket,335507
+FR,5000,3000,1,0,mercari,buyee,courier-buyee-air,17606,23614,false,,,,,,zenmarket,21197
+FR,5000,10000,1,0,mercari,buyee,courier-buyee-air,26260,32268,false,,,,,,zenmarket,29902
+FR,5000,30000,1,0,mercari,buyee,courier-buyee-air,52293,58301,false,,,,,,zenmarket,55746
+FR,5000,60000,1,0,mercari,buyee,courier-buyee-air,90858,96866,false,,,,,,zenmarket,94310
+FR,5000,100000,1,0,mercari,buyee,courier-buyee-air,142276,148284,false,,,,,,zenmarket,145729
+FR,5000,150000,1,0,mercari,buyee,courier-buyee-air,206550,212558,false,,,,,,zenmarket,210003
+FR,5000,250000,1,0,mercari,buyee,courier-buyee-air,335097,341105,false,,,,,,zenmarket,338550
+FR,8000,3000,1,0,mercari,buyee,courier-buyee-air,17606,23614,false,,,,,,zenmarket,21197
+FR,8000,10000,1,0,mercari,buyee,courier-buyee-air,26260,32268,false,,,,,,zenmarket,29902
+FR,8000,30000,1,0,mercari,buyee,courier-buyee-air,52293,58301,false,,,,,,zenmarket,55746
+FR,8000,60000,1,0,mercari,buyee,courier-buyee-air,90858,96866,false,,,,,,zenmarket,94310
+FR,8000,100000,1,0,mercari,buyee,courier-buyee-air,142276,148284,false,,,,,,zenmarket,145729
+FR,8000,150000,1,0,mercari,buyee,courier-buyee-air,206550,212558,false,,,,,,zenmarket,210003
+FR,8000,250000,1,0,mercari,buyee,courier-buyee-air,335097,341105,false,,,,,,zenmarket,338550
+AU,200,3000,1,0,mercari,fromjapan,small-packet-air,6509,6509,false,,,,,,buyee,6850
+AU,200,10000,1,0,mercari,fromjapan,small-packet-air,14488,14488,false,,,,,,buyee,14829
+AU,200,30000,1,0,mercari,fromjapan,small-packet-air,37286,37286,false,,,,,,buyee,37627
+AU,200,60000,1,0,mercari,buyee,small-packet-air,71824,71824,false,,,,,,zenmarket,71990
+AU,200,100000,1,0,mercari,buyee,small-packet-air,117420,117420,false,,,,,,zenmarket,117585
+AU,200,150000,1,0,mercari,buyee,small-packet-air,188388,188388,false,,,,,,fromjapan,188635
+AU,200,250000,1,0,mercari,fromjapan,courier-ecms,304562,304859,false,,,,,,zenmarket,304630
+AU,500,3000,1,0,mercari,fromjapan,small-packet-air,7124,7124,false,,,,,,buyee,7409
+AU,500,10000,1,0,mercari,fromjapan,small-packet-air,15104,15104,false,,,,,,buyee,15389
+AU,500,30000,1,0,mercari,fromjapan,small-packet-air,37902,37902,false,,,,,,buyee,38187
+AU,500,60000,1,0,mercari,buyee,small-packet-air,72383,72383,false,,,,,,zenmarket,72501
+AU,500,100000,1,0,mercari,buyee,small-packet-air,117979,117979,false,,,,,,zenmarket,118096
+AU,500,150000,1,0,mercari,fromjapan,courier-ecms,188973,188973,false,,,,,,buyee,189001
+AU,500,250000,1,0,mercari,fromjapan,courier-ecms,304900,304900,false,,,,,,zenmarket,305229
+AU,1000,3000,1,0,mercari,fromjapan,courier-ecms,7898,7898,false,,,,,,zenmarket,7932
+AU,1000,10000,1,0,mercari,fromjapan,courier-ecms,15878,15878,false,,,,,,zenmarket,15911
+AU,1000,30000,1,0,mercari,fromjapan,courier-ecms,38676,38676,false,,,,,,zenmarket,38709
+AU,1000,60000,1,0,mercari,fromjapan,courier-ecms,72873,72873,false,,,,,,zenmarket,72906
+AU,1000,100000,1,0,mercari,fromjapan,courier-ecms,118468,118468,false,,,,,,zenmarket,118502
+AU,1000,150000,1,0,mercari,fromjapan,courier-ecms,189255,189255,false,,,,,,zenmarket,189707
+AU,1000,250000,1,0,mercari,fromjapan,courier-ecms,305182,305182,false,,,,,,zenmarket,305634
+AU,2000,3000,1,0,mercari,fromjapan,courier-ecms,8295,8543,false,,,,,,zenmarket,8495
+AU,2000,10000,1,0,mercari,fromjapan,courier-ecms,16275,16523,false,,,,,,zenmarket,16475
+AU,2000,30000,1,0,mercari,fromjapan,courier-ecms,39073,39321,false,,,,,,zenmarket,39273
+AU,2000,60000,1,0,mercari,fromjapan,courier-ecms,73269,73517,false,,,,,,zenmarket,73469
+AU,2000,100000,1,0,mercari,fromjapan,courier-ecms,118865,119113,false,,,,,,zenmarket,119065
+AU,2000,150000,1,0,mercari,fromjapan,courier-ecms,189651,189899,false,,,,,,zenmarket,190326
+AU,2000,250000,1,0,mercari,fromjapan,courier-ecms,305577,305825,false,,,,,,zenmarket,306253
+AU,3000,3000,1,0,mercari,fromjapan,courier-ecms,8578,9984,false,,,,,,zenmarket,9006
+AU,3000,10000,1,0,mercari,fromjapan,courier-ecms,16558,17964,false,,,,,,zenmarket,16985
+AU,3000,30000,1,0,mercari,fromjapan,courier-ecms,39355,40761,false,,,,,,zenmarket,39783
+AU,3000,60000,1,0,mercari,fromjapan,courier-ecms,73552,74958,false,,,,,,zenmarket,73980
+AU,3000,100000,1,0,mercari,fromjapan,courier-ecms,119148,120554,false,,,,,,zenmarket,119576
+AU,3000,150000,1,0,mercari,fromjapan,courier-ecms,189933,191339,false,,,,,,zenmarket,190886
+AU,3000,250000,1,0,mercari,fromjapan,courier-ecms,305859,307265,false,,,,,,zenmarket,306813
+AU,5000,3000,1,0,mercari,fromjapan,courier-ecms,10180,14017,false,,,,,,zenmarket,10768
+AU,5000,10000,1,0,mercari,fromjapan,courier-ecms,18160,21997,false,,,,,,zenmarket,18747
+AU,5000,30000,1,0,mercari,fromjapan,courier-ecms,40958,44795,false,,,,,,zenmarket,41545
+AU,5000,60000,1,0,mercari,fromjapan,courier-ecms,75154,78991,false,,,,,,zenmarket,75742
+AU,5000,100000,1,0,mercari,fromjapan,courier-ecms,120750,124587,false,,,,,,zenmarket,121338
+AU,5000,150000,1,0,mercari,fromjapan,courier-ecms,191530,195367,false,,,,,,zenmarket,192818
+AU,5000,250000,1,0,mercari,fromjapan,courier-ecms,307456,311293,false,,,,,,zenmarket,308745
+AU,8000,3000,1,0,mercari,fromjapan,courier-ecms,10180,14017,false,,,,,,zenmarket,10768
+AU,8000,10000,1,0,mercari,fromjapan,courier-ecms,18160,21997,false,,,,,,zenmarket,18747
+AU,8000,30000,1,0,mercari,fromjapan,courier-ecms,40958,44795,false,,,,,,zenmarket,41545
+AU,8000,60000,1,0,mercari,fromjapan,courier-ecms,75154,78991,false,,,,,,zenmarket,75742
+AU,8000,100000,1,0,mercari,fromjapan,courier-ecms,120750,124587,false,,,,,,zenmarket,121338
+AU,8000,150000,1,0,mercari,fromjapan,courier-ecms,191530,195367,false,,,,,,zenmarket,192818
+AU,8000,250000,1,0,mercari,fromjapan,courier-ecms,307456,311293,false,,,,,,zenmarket,308745
+CA,200,3000,1,0,mercari,fromjapan,small-packet-air,7597,7597,false,,,,,,buyee,8115
+CA,200,10000,1,0,mercari,fromjapan,small-packet-air,15869,15869,false,,,,,,buyee,16387
+CA,200,30000,1,0,mercari,fromjapan,small-packet-air,39502,39502,false,,,,,,buyee,40021
+CA,200,60000,1,0,mercari,buyee,small-packet-air,75472,75472,false,,,,,,zenmarket,75924
+CA,200,100000,1,0,mercari,buyee,small-packet-air,122739,122739,false,,,,,,zenmarket,123192
+CA,200,150000,1,0,mercari,buyee,small-packet-air,181824,181824,false,,,,,,zenmarket,182277
+CA,200,250000,1,0,mercari,fromjapan,courier-ups,301469,301469,false,,,,,,buyee,302095
+CA,500,3000,1,0,mercari,fromjapan,small-packet-air,8157,8157,false,,,,,,buyee,8675
+CA,500,10000,1,0,mercari,fromjapan,small-packet-air,16429,16429,false,,,,,,buyee,16947
+CA,500,30000,1,0,mercari,fromjapan,small-packet-air,40062,40062,false,,,,,,buyee,40580
+CA,500,60000,1,0,mercari,buyee,small-packet-air,76031,76031,false,,,,,,zenmarket,76568
+CA,500,100000,1,0,mercari,buyee,small-packet-air,123299,123299,false,,,,,,zenmarket,123836
+CA,500,150000,1,0,mercari,buyee,small-packet-air,182383,182383,false,,,,,,zenmarket,182920
+CA,500,250000,1,0,mercari,fromjapan,courier-ups,301469,301469,false,,,,,,buyee,302095
+CA,1000,3000,1,0,mercari,fromjapan,small-packet-air,9276,9276,false,,,,,,buyee,9794
+CA,1000,10000,1,0,mercari,fromjapan,small-packet-air,17548,17548,false,,,,,,buyee,18066
+CA,1000,30000,1,0,mercari,fromjapan,small-packet-air,41181,41181,false,,,,,,buyee,41699
+CA,1000,60000,1,0,mercari,buyee,small-packet-air,77150,77150,false,,,,,,fromjapan,77554
+CA,1000,100000,1,0,mercari,buyee,small-packet-air,124418,124418,false,,,,,,fromjapan,124822
+CA,1000,150000,1,0,mercari,buyee,small-packet-air,183503,183503,false,,,,,,fromjapan,183906
+CA,1000,250000,1,0,mercari,fromjapan,courier-ups,302075,302075,false,,,,,,buyee,302095
+CA,2000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,11453
+CA,2000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,19725
+CA,2000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,43359
+CA,2000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,78810
+CA,2000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,126077
+CA,2000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,185162
+CA,2000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,303331
+CA,3000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,12081
+CA,3000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,20353
+CA,3000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,43987
+CA,3000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,79438
+CA,3000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,126705
+CA,3000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,185790
+CA,3000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,303959
+CA,5000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,14303
+CA,5000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,22575
+CA,5000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,46208
+CA,5000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,81659
+CA,5000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,128927
+CA,5000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,188012
+CA,5000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,306181
+CA,8000,3000,1,0,mercari,buyee,courier-buyee-air,10217,10217,false,,,,,,fromjapan,14303
+CA,8000,10000,1,0,mercari,buyee,courier-buyee-air,18489,18489,false,,,,,,fromjapan,22575
+CA,8000,30000,1,0,mercari,buyee,courier-buyee-air,42123,42123,false,,,,,,fromjapan,46208
+CA,8000,60000,1,0,mercari,buyee,courier-buyee-air,77574,77574,false,,,,,,fromjapan,81659
+CA,8000,100000,1,0,mercari,buyee,courier-buyee-air,124841,124841,false,,,,,,fromjapan,128927
+CA,8000,150000,1,0,mercari,buyee,courier-buyee-air,183926,183926,false,,,,,,fromjapan,188012
+CA,8000,250000,1,0,mercari,buyee,courier-buyee-air,302095,302095,false,,,,,,fromjapan,306181
+SG,200,3000,1,0,mercari,fromjapan,small-packet-air,5964,5964,false,,,,,,zenmarket,6465
+SG,200,10000,1,0,mercari,fromjapan,small-packet-air,13870,13870,false,,,,,,zenmarket,14372
+SG,200,30000,1,0,mercari,fromjapan,small-packet-air,36461,36461,false,,,,,,zenmarket,36963
+SG,200,60000,1,0,mercari,fromjapan,courier-ecms,70635,70916,false,,,,,,zenmarket,70813
+SG,200,100000,1,0,mercari,fromjapan,courier-ecms,115793,116074,false,,,,,,zenmarket,115972
+SG,200,150000,1,0,mercari,fromjapan,courier-ecms,172242,172523,false,,,,,,zenmarket,172421
+SG,200,250000,1,0,mercari,fromjapan,courier-ecms,285139,285420,false,,,,,,zenmarket,285318
+SG,500,3000,1,0,mercari,fromjapan,small-packet-air,6371,6371,false,,,,,,zenmarket,6657
+SG,500,10000,1,0,mercari,fromjapan,small-packet-air,14278,14278,false,,,,,,zenmarket,14564
+SG,500,30000,1,0,mercari,fromjapan,small-packet-air,36868,36868,false,,,,,,zenmarket,37154
+SG,500,60000,1,0,mercari,fromjapan,courier-ecms,70951,70951,false,,,,,,zenmarket,71006
+SG,500,100000,1,0,mercari,fromjapan,courier-ecms,116110,116110,false,,,,,,zenmarket,116164
+SG,500,150000,1,0,mercari,fromjapan,courier-ecms,172558,172558,false,,,,,,zenmarket,172613
+SG,500,250000,1,0,mercari,fromjapan,courier-ecms,285455,285455,false,,,,,,zenmarket,285510
+SG,1000,3000,1,0,mercari,zenmarket,courier-ecms-express,6811,6811,false,,,,,,fromjapan,6892
+SG,1000,10000,1,0,mercari,zenmarket,courier-ecms-express,14718,14718,false,,,,,,fromjapan,14799
+SG,1000,30000,1,0,mercari,zenmarket,courier-ecms-express,37309,37309,false,,,,,,fromjapan,37390
+SG,1000,60000,1,0,mercari,zenmarket,courier-ecms-express,71159,71159,false,,,,,,fromjapan,71194
+SG,1000,100000,1,0,mercari,zenmarket,courier-ecms-express,116318,116318,false,,,,,,fromjapan,116352
+SG,1000,150000,1,0,mercari,zenmarket,courier-ecms-express,172767,172767,false,,,,,,fromjapan,172801
+SG,1000,250000,1,0,mercari,zenmarket,courier-ecms-express,285664,285664,false,,,,,,fromjapan,285698
+SG,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,7195,7331,false,,,,,,fromjapan,7509
+SG,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,15102,15238,false,,,,,,fromjapan,15416
+SG,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,37692,37828,false,,,,,,fromjapan,38006
+SG,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,71543,71679,false,,,,,,fromjapan,71809
+SG,2000,100000,1,0,mercari,zenmarket,courier-ecms-express,116702,116838,false,,,,,,fromjapan,116968
+SG,2000,150000,1,0,mercari,zenmarket,courier-ecms-express,173150,173286,false,,,,,,fromjapan,173417
+SG,2000,250000,1,0,mercari,zenmarket,courier-ecms-express,286047,286183,false,,,,,,fromjapan,286314
+SG,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,7348,8096,false,,,,,,fromjapan,7827
+SG,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,15255,16003,false,,,,,,fromjapan,15734
+SG,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,37846,38594,false,,,,,,fromjapan,38324
+SG,3000,60000,1,0,mercari,zenmarket,courier-ecms-express,71696,72444,false,,,,,,fromjapan,72128
+SG,3000,100000,1,0,mercari,zenmarket,courier-ecms-express,116854,117602,false,,,,,,fromjapan,117286
+SG,3000,150000,1,0,mercari,zenmarket,courier-ecms-express,173303,174051,false,,,,,,fromjapan,173735
+SG,3000,250000,1,0,mercari,zenmarket,courier-ecms-express,286200,286948,false,,,,,,fromjapan,286632
+SG,5000,3000,1,0,mercari,zenmarket,courier-ecms-express,8194,10200,false,,,,,,fromjapan,8631
+SG,5000,10000,1,0,mercari,zenmarket,courier-ecms-express,16101,18107,false,,,,,,fromjapan,16538
+SG,5000,30000,1,0,mercari,zenmarket,courier-ecms-express,38691,40697,false,,,,,,fromjapan,39128
+SG,5000,60000,1,0,mercari,zenmarket,courier-ecms-express,72542,74548,false,,,,,,fromjapan,72931
+SG,5000,100000,1,0,mercari,zenmarket,courier-ecms-express,117701,119707,false,,,,,,fromjapan,118090
+SG,5000,150000,1,0,mercari,zenmarket,courier-ecms-express,174149,176155,false,,,,,,fromjapan,174539
+SG,5000,250000,1,0,mercari,zenmarket,courier-ecms-express,287046,289052,false,,,,,,fromjapan,287436
+SG,8000,3000,1,0,mercari,zenmarket,courier-ecms-express,8194,10200,false,,,,,,fromjapan,8631
+SG,8000,10000,1,0,mercari,zenmarket,courier-ecms-express,16101,18107,false,,,,,,fromjapan,16538
+SG,8000,30000,1,0,mercari,zenmarket,courier-ecms-express,38691,40697,false,,,,,,fromjapan,39128
+SG,8000,60000,1,0,mercari,zenmarket,courier-ecms-express,72542,74548,false,,,,,,fromjapan,72931
+SG,8000,100000,1,0,mercari,zenmarket,courier-ecms-express,117701,119707,false,,,,,,fromjapan,118090
+SG,8000,150000,1,0,mercari,zenmarket,courier-ecms-express,174149,176155,false,,,,,,fromjapan,174539
+SG,8000,250000,1,0,mercari,zenmarket,courier-ecms-express,287046,289052,false,,,,,,fromjapan,287436

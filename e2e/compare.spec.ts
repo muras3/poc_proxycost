@@ -404,16 +404,19 @@ const TIE = 'tie probe, no weight data';
  * （`outsourced-packing`。実費・非公表）を持ち、その `rankHigh` は常に `null`
  * ——`isIndeterminate()` の修正（1位グループの誰か1人でも `rankHigh` が
  * `null` なら判定不能）が入る前は、この事実が1位判定に効いていなかった。
- * このカートは ZenMarket と FROM JAPAN が下端で同額（tied, 両方 1位）になる
- * ため、FROM JAPAN が1位グループに入った時点で `rankIndeterminate` は
- * 正しく `true` になる——「ZenMarket and FROM JAPAN are tied cheapest」という
- * 言い切りの文は、比較不能である以上出るべきではない（実際に出なくなった。
- * `!result.rankIndeterminate` でしか描画されないブロックなので）。
- * タイトルの「both are CHEAPEST」は「両方に LEADS が付く」という意味に読み替える
- * ——`row.cheapest`（下端が最小という事実）自体は本 PR の影響を受けないので、
- * 両方に印は付き続ける。付く語が「CHEAPEST」から「LEADS」に変わっただけ。
+ *
+ * **2026-09-13、さらに書き戻した（別PR、外注梱包の条件付き化）。**PR #127 の
+ * 前提だった「FROM JAPAN は常に `outsourced-packing` を持つ」自体が**バグ**
+ * だった——`services.ts` が重量・商品価格・壊れ物という発生条件を一切見ずに
+ * 無条件で立てていた（`docs/audit/fromjapan-outsourced-packing-gate-2026-09-13.md`）。
+ * このカート（100g・¥1,000、条件を満たさない普通の商品）はもう
+ * `outsourced-packing` を持たないので、`rankHigh` は閉区間で確定する。
+ * ZenMarket と FROM JAPAN が下端で同額（tied, 両方1位）で、かつ両方とも
+ * `rankHigh` が確定しているので、このカートは正しく `rankIndeterminate: false`
+ * に戻る——「ZenMarket and FROM JAPAN are tied cheapest」という言い切りの文が
+ * 出るのが正しい（本当に同額で確定しているので、判定不能として隠す理由が無い）。
  */
-test('22. two rows with the same total share the rank, and both are marked LEADS (indeterminate)', async ({ page }) => {
+test('22. two rows with the same total share the rank, and both are marked CHEAPEST (a genuine tie)', async ({ page }) => {
   await gotoCompare(page);
   await page.getByLabel('Ship to').selectOption('CA');
   await emptyCart(page);
@@ -451,16 +454,9 @@ test('22. two rows with the same total share the rank, and both are marked LEADS
   // 同額でない行は名乗らない。全行に付いたら印として機能しない。
   for (const r of rest) expect(r.text, r.name).not.toContain('tied with');
 
-  // **判定不能では「is cheapest」「are tied cheapest」と言い切らない**
-  // （FROM JAPAN の `outsourced-packing` が1位グループに入っているので、
-  // このカートは`rankIndeterminate: true` — RankBoard の要約文ブロックは
-  // `!result.rankIndeterminate` でしか描画されない）。
-  await expect(page.getByText(/ZenMarket and FROM JAPAN are tied cheapest/)).toHaveCount(0);
-  await expect(page.getByText(/^FROM JAPAN is cheapest/)).toHaveCount(0);
-  await expect(page.getByText(/^ZenMarket is cheapest/)).toHaveCount(0);
-  // 代わりに判定不能の要約文が出て、1位（ZenMarket、宣言順で先）を名指しする。
-  await expect(page.getByText(/These 5 companies sit within the same uncertainty/)).toBeVisible();
-  await expect(page.getByText(/ZenMarket looks the most likely/)).toBeVisible();
+  // **このカートは本当に閉区間で同額——判定不能として隠す理由が無い。**
+  // （外注梱包の条件付き化で、普通の商品はもう社固有の未取得行を持たない）
+  await expect(page.getByText(/ZenMarket and FROM JAPAN are tied cheapest/)).toBeVisible();
 });
 
 test('23. a tie below the top shares its rank too, and does not move the winner', async ({ page }) => {
@@ -794,36 +790,24 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   // **2026-09-12、六か国拡張でさらに豪（AU）からカナダ（CA）に差し替えた**——
   // AU は FROM JAPAN が全重量帯で1位を独占するようになり割れ目が消えたため）。
   //
-  // **2026-09-13、PR #127 で「recommended range changes with the weight」の
-  // 期待を捨てた。**このカートの両端の1位——500g では FROM JAPAN、10kg では
-  // Buyee——のうち FROM JAPAN 側は社固有の未取得行のせいで `rankHigh` が
-  // 常に `null`（`outsourced-packing`、実費・非公表、`scope: 'shared'`
-  // ではない＝社固有）。**2026-09-13、`courier-destination-fees` 行は分離・撤去
-  // された**（旧: 宅配便に必ず付随し、Buyee 側の `rankHigh` も `null` にしていた）
-  // ——燃油サーチャージは行を作らず、遠隔地サーチャージは共通の画面注記に回した
-  // ので、Buyee 単独ではもう `rankHigh` を開かない。それでも FROM JAPAN 側が
-  // 開いたままなので `rankIndeterminate` の結論自体は変わらない
-  // （`Row.closedByAssumption` が Buyee のような宅配便の行に残るのは別の話——
-  // これは「確定ではなく仮定依存」を示すだけで `rankHigh`/`rankIndeterminate`
-  // には効かない）。基準重量（仮置き ~1.5 kg）でも FROM JAPAN が1位なので、
-  // `isIndeterminate()` の修正後は全域で `rankIndeterminate: true`
-  // ——「重量で1位が確定的に入れ替わる」という前提そのものがこのカートでは
-  // 成立しない。`rankStabilityNote` は「recommended range」文ではなく
-  // `indeterminateNote()`（「sit within the same uncertainty」）を出す。
-  // 一方、カート内の「This weight decides the cheapest」導線
-  // （`weightSensitivity`）は `rankIndeterminate` と無関係な別の仕組みなので
-  // 影響を受けず、そちらがこのテストの本題（導線が正しい重量欄にフォーカスを
-  // 移す）を実演できる——後半はそのまま残す。
+  // **2026-09-13、PR #127 で一度「recommended range changes with the weight」の
+  // 期待を捨てたが、別PR（外注梱包の条件付き化、
+  // `docs/audit/fromjapan-outsourced-packing-gate-2026-09-13.md`）で元に戻した。**
+  // PR #127 が前提にした「FROM JAPAN は常に `outsourced-packing` を持つ」自体が
+  // バグだった——`services.ts` が発生条件（重量・商品価格・壊れ物）を見ずに
+  // 無条件で立てていた。このカート（PLUSH、表に当たらない仮置き 500g〜10kg）は
+  // 条件を満たさないので、もう `outsourced-packing` を持たない——両端の1位
+  // （500gでFROM JAPAN、10kgでBuyee）とも `rankHigh` が閉区間で確定するので、
+  // 「重量で1位が確定的に入れ替わる」という元の前提が復活する。
   await page.getByLabel('Ship to').selectOption('CA');
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
-  await expect(page.getByText(/The recommended range changes with the weight/)).toHaveCount(0);
-  const note = page.getByText(/sit within the same uncertainty/);
+  const note = page.getByText(/The recommended range changes with the weight/);
   await expect(note).toBeVisible();
-  await expect(note).toContainText('FROM JAPAN looks the most likely');
-  // 「our weight estimate」/「you gave us」は `The recommended range changes
-  // with the weight` 文言だけが使う基準語りで、`indeterminateNote()` には
-  // 存在しない——この文が出ている以上、ここでは検証しない。
+  await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
+  // 表の中央値と仮置きを「あなたがくれた重量」とは呼ばない。
+  await expect(note).toContainText('our weight estimate');
+  await expect(note).not.toContainText('you gave us');
 
   // **この仮置きの1点が1位を決める**（500 g で FROM JAPAN、10 kg で Buyee。実測、
   // テスト5と同じ）。

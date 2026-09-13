@@ -201,6 +201,19 @@ export interface Item {
   freeShipping?: boolean;
   domesticShippingYen?: number | null;
   qty: number;
+  /**
+   * 壊れ物・繊細品など特別な取扱いを要する商品か。**既定は false。**
+   * このPRでは利用者が入力する経路（`src/components/`）を作らない——型と
+   * エンジン側（FROM JAPAN の外注梱包ゲート、`services.ts` の
+   * `requiresOutsourcedPacking`）の対応だけを入れる。UI は別PRの提案。
+   */
+  fragile?: boolean;
+  /**
+   * 壊れ物以外で特別な取扱いを要する商品か（美術品・特注品など）。**既定は false。**
+   * `fragile` と同じ扱い（FROM JAPAN help_logistics_1730「Items that cannot be
+   * packed by FROM JAPAN will require outsourced packing」の一般条項に対応）。
+   */
+  specialHandling?: boolean;
 }
 
 export interface Row {
