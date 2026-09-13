@@ -82,7 +82,8 @@
           "condition_quote": "IMM 712.11: Post Office facilities must collect a Postal Service fee from the addressee for each item on which customs duty or Internal Revenue tax is collected.",
           "exemption_quote": "IMM 712.2: Post Office facilities will not collect a Postal Service fee for customs clearance and delivery ... 3. On mail items examined and passed free of duty by U.S. Customs.",
           "zero_band_basis": "日本郵便は米国宛を『差出人が Zonos で関税を事前納付すること』を条件に引き受ける（$2,500 まで）。事前納付されていれば配達時に徴収するものが無く、712.11 の条件が立たない。Notice 123 自身も『USPS Delivered Duty Paid (DDP) / Per piece $0.00』を別立てしている。",
-          "checked_on": "2026-09-07"
+          "checked_on": "2026-09-07",
+          "invoice_check": "never_checked"
         },
         {
           "route": "courier_brokerage",
@@ -114,7 +115,8 @@
           "note": "**`docs/ROADMAP.md` の『US FedEx DDP の課税式は一次情報を取得済み』は、このマスタが直前まで保持していた `courier_brokerage: {rule: unknown, tier: C_unknown, source: \"—\"}` という記録と矛盾する ── マスタ側には一次情報を取得した形跡が無かった。今回 `whichever is higher` を明記する『greater of』構造の式自体は複数の独立した二次情報源（ShipScience 等）で一致しており reasoned_judgement を超える確度はあるが、FedEx自身のページ本文はこの環境のWAFに阻まれ逐語引用できていないため、`tier` は A_confirmed ではなく B_inferred、`amount_tier` は `search_snippet` に留める。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-us/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-us/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -162,7 +164,8 @@
             "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -186,7 +189,8 @@
           ],
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
-          "note": "宛先側（米国）で受取人に課される立替手数料。名称はUPS自身の用語 'Disbursement Fee'。米国は2025-08-29にde minimisが撤廃済みのため、無税で通過する小口自体がほぼ無い状態だが、無税ケースでの課否は未確認。"
+          "note": "宛先側（米国）で受取人に課される立替手数料。名称はUPS自身の用語 'Disbursement Fee'。米国は2025-08-29にde minimisが撤廃済みのため、無税で通過する小口自体がほぼ無い状態だが、無税ケースでの課否は未確認。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -201,7 +205,8 @@
           "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
           "per": "unknown",
           "zero_when_no_tax": "does_not_apply_if_no_duty_advanced（無税なら『advance』が発生しないため課さないと読めるが、明示のゼロ税条件文は無い）",
-          "note": "**ECMSは関税を『立て替えない』フォワーダーではなく、実際に立て替えて3%の手数料を課す。**タスクが想定していた『ECMSは通関手数料を課さない可能性』は今回の一次情報では否定される。ECMS US Terms & Conditions v1.2、PDF直接フェッチ（curl経由、pdftotextでテキスト抽出）で本文確認・逐語引用。"
+          "note": "**ECMSは関税を『立て替えない』フォワーダーではなく、実際に立て替えて3%の手数料を課す。**タスクが想定していた『ECMSは通関手数料を課さない可能性』は今回の一次情報では否定される。ECMS US Terms & Conditions v1.2、PDF直接フェッチ（curl経由、pdftotextでテキスト抽出）で本文確認・逐語引用。",
+          "invoice_check": "never_checked"
         }
       ],
       "carrier_availability": {
@@ -306,7 +311,8 @@
           },
           "tier": "B_inferred",
           "source": "https://www.royalmail.com/receiving-mail/pay-a-fee",
-          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認",
+          "invoice_check": "never_checked"
         },
         {
           "route": "parcelforce",
@@ -318,7 +324,8 @@
           },
           "tier": "B_inferred",
           "source": "https://www.parcelforce.com/receiving/customs-charge",
-          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認",
+          "invoice_check": "never_checked"
         },
         {
           "route": "high_value",
@@ -333,7 +340,8 @@
           },
           "tier": "B_inferred",
           "source": "https://www.parcelforce.com/receiving/customs-charge",
-          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -381,7 +389,8 @@
             "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "courier_brokerage",
@@ -435,7 +444,8 @@
           "note": "宛先国（英国）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意、DHL Duty Tax Paid/Processing と同型のリスク）。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-gb/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-gb/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -460,7 +470,8 @@
           "verbatim_quote_available": false,
           "per": "unknown",
           "zero_when_no_tax": "unknown",
-          "note": "宛先側（英国）で受取人に課される立替手数料と推定されるが、UPS自身の一次資料からは料率・最低額いずれも未確認。#81の既知の壁を再確認した。"
+          "note": "宛先側（英国）で受取人に課される立替手数料と推定されるが、UPS自身の一次資料からは料率・最低額いずれも未確認。#81の既知の壁を再確認した。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -475,7 +486,8 @@
           "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
           "per": "unknown",
           "zero_when_no_tax": "unknown",
-          "note": "ECMS UK T&C v1.34。US版と一言一句同じ条文で3%の duty advance payment fee を規定。"
+          "note": "ECMS UK T&C v1.34。US版と一言一句同じ条文で3%の duty advance payment fee を規定。",
+          "invoice_check": "never_checked"
         }
       ],
       "conditional": {
@@ -580,7 +592,8 @@
           "corrected_from": {
             "amount": 6,
             "why": "€6 は 2018-03-01 の導入時の額。2026-03-10 に €7.50 へ上がっていた"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -614,7 +627,8 @@
             "source": "DHL Express Service & Rate Guide 2026: Germany（同じ一次資料内、上記source2）",
             "note": "出発国/第三国のDHLアカウントに請求される費目。宛先国clearanceには該当しないため本行のruleには含めない。"
           },
-          "effective_from": "DHL Express Service & Rate Guide 2026 / Auftragsbedingungen（発効日の明記なし）"
+          "effective_from": "DHL Express Service & Rate Guide 2026 / Auftragsbedingungen（発効日の明記なし）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "fedex",
@@ -669,7 +683,8 @@
           "note": "**矛盾の記録**: 上記2つの二次情報は同じ『€15』という数字を含むが位置づけが違う——1つは『600ユーロまでの帯の定額15ユーロ』、もう1つは『欧州共通の最低額15ユーロ（2.5%との greater_of）』。帯構造そのものが二次情報でしか確認できていないため、どちらが正しいか、あるいは両方とも古い/新しい料率の混在かは一次情報なしに判定できない。GB の帯構造（30%/下限10.50・定額12.90・2.5%）と DE の帯構造（30%/下限5・定額15・2.5%）はしきい値と通貨単位こそ違うが形が同一で、FedExが『下限付き率→定額→率のみ』という共通テンプレートを国ごとに数値だけ変えて適用している可能性を示唆する——次にUPS/DHLの同型行を集める際にも同じテンプレートを想定して検索するとよい。宛先国（ドイツ）の受取人に課される費目として扱う。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/de-de/ancillary-clearance-service.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/de-de/ancillary-clearance-service.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -703,7 +718,8 @@
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "宛先側（ドイツ）で受取人に課される立替手数料（UPS自身の用語 'Disbursement Fee'）。**申告価格帯で構造が変わる**（bandによりflat/rate_with_minが切り替わる）ため、既存の banded_by_value 型では表現できず、新しい rule.type banded_by_value_mixed を導入した。ドキュメント本文に有効日の記載が無く、検索結果のタイトルが『2026 UPS Additional Services and Charges』と付いていることから2026年版と推定。有効日そのものはC_unknown。DE Deutsche Post/EMS/DHL標準の既存行（€7.50固定）や DHL Express 行（2%、最低€14.88）とは別建てで、これらはUPSの費目ではない。",
-          "effective_date": "unknown（文書名から2026年版と推定、本文に記載なし）"
+          "effective_date": "unknown（文書名から2026年版と推定、本文に記載なし）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -720,7 +736,8 @@
           "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
           "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
           "zero_when_no_tax_confidence": "counted_absence",
-          "zero_when_no_tax_note": "F34: ECMSの法人自体がDE向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がDE向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。",
+          "invoice_check": "never_checked"
         }
       ],
       "clearance_fee_vat": {
@@ -806,7 +823,8 @@
           "tier": "A_confirmed",
           "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
           "quote": "le tarif plein s'applique dans ces 2 cas … France Métropolitaine: 8€ TTC",
-          "note": "配達時・窓口の全額。**利用者が何もしなければこれ。**海外県は 7.5€ / 7€（TVA 率で違う）"
+          "note": "配達時・窓口の全額。**利用者が何もしなければこれ。**海外県は 7.5€ / 7€（TVA 率で違う）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "la_poste_online",
@@ -823,7 +841,8 @@
           "tier": "A_confirmed",
           "source": "https://www.laposte.fr/conseils-pratiques/comment-payer-frais-de-douane-colis-international",
           "quote": "En payant en ligne, vous bénéficiez de frais de gestion réduits (2 ou 5€ selon le type de colis)",
-          "note": "**利用者の操作で下がる。**小包の種別で €2 か €5"
+          "note": "**利用者の操作で下がる。**小包の種別で €2 か €5",
+          "invoice_check": "never_checked"
         },
         {
           "route": "chronopost",
@@ -835,7 +854,8 @@
           },
           "tier": "B_inferred",
           "source": "https://www.animint.com/blog/000708-acheter-par-internet-sur-des-sites-japonais.html",
-          "inference_basis": "二次情報。公式で裏づけていない"
+          "inference_basis": "二次情報。公式で裏づけていない",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -883,7 +903,8 @@
             "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "fedex",
@@ -910,7 +931,8 @@
           "note": "**矛盾の記録**: フォーラム投稿は最低額 €18（TTC）、別の二次情報（ShipScience、欧州共通の記述）は最低額 €15。どちらもFedEx一次ページの逐語引用ではなく、時期（改定前後）や対象（フランス個別 vs 欧州共通の代表値）の違いで説明できる可能性があるが、一次情報が無いため判定できない。区間の両端としてどちらも捨てずに記録する。宛先国（フランス）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意）。zero_duty_condition・per-parcel/per-shipmentの区別は情報源に記述なし（C_unknown）。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/fr-fr/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/fr-fr/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -944,7 +966,8 @@
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "宛先側（フランス）で受取人に課される立替手数料。DE同様、申告価格帯でflat/rate_with_minが切り替わるため banded_by_value_mixed を使用。有効日はC_unknown（本文に記載なし）。",
-          "effective_date": "unknown（本文に記載なし）"
+          "effective_date": "unknown（本文に記載なし）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -961,7 +984,8 @@
           "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
           "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
           "zero_when_no_tax_confidence": "counted_absence",
-          "zero_when_no_tax_note": "F34: ECMSの法人自体がFR向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がFR向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。",
+          "invoice_check": "never_checked"
         }
       ],
       "user_action": {
@@ -1044,7 +1068,8 @@
           },
           "tier": "A_confirmed",
           "source": "https://www.correosaduanas.es/ の支払明細（利用者が全文引用）",
-          "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 € / Total: 1.56 €"
+          "quote": "G Aduanera (Base 1.29 € / Cuota 21% IVA (Base 0.27 € / Total: 1.56 €",
+          "invoice_check": "confirmed_circular"
         },
         {
           "route": "correos_at_delivery",
@@ -1056,7 +1081,8 @@
           },
           "tier": "B_inferred",
           "source": "elotrolado.net（複数一致）",
-          "inference_basis": "公表値だが原文引用を取れていない。要一次確認"
+          "inference_basis": "公表値だが原文引用を取れていない。要一次確認",
+          "invoice_check": "never_checked"
         },
         {
           "route": "fedex",
@@ -1069,7 +1095,8 @@
           },
           "tier": "A_confirmed",
           "source": "elotrolado.net",
-          "quote": "cobraron de gestión 15€ por ser mas de 150€ de bienes (3% del valor 15€ minimo)"
+          "quote": "cobraron de gestión 15€ por ser mas de 150€ de bienes (3% del valor 15€ minimo)",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl",
@@ -1082,7 +1109,8 @@
           },
           "tier": "A_confirmed",
           "source": "elotrolado.net",
-          "quote": "DHL que son mínimo 21€ + IVA sin importar la cantidad"
+          "quote": "DHL que son mínimo 21€ + IVA sin importar la cantidad",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups",
@@ -1094,7 +1122,8 @@
           "tier": "A_confirmed",
           "source": "elotrolado.net",
           "quote": "15,90€ (the 28,3% de 56,15€)",
-          "note": "実請求では IVA €56.15 に対する €15.90。DHL Express（DE）の『2% der Einfuhrabgaben』と同じ基準"
+          "note": "実請求では IVA €56.15 に対する €15.90。DHL Express（DE）の『2% der Einfuhrabgaben』と同じ基準",
+          "invoice_check": "confirmed_circular"
         },
         {
           "route": "fedex",
@@ -1108,7 +1137,8 @@
           "quote": "Luego sacamos el 30% de 25,12€ a modo de gestión de FEdex --> 7,54€ y a eso le sumamos el 21% de IVA, quedando 9,12€",
           "note": "『価額の3%・最低€15』と矛盾する第2の報告。帯・時期・契約で使い分けられている可能性。両方を残し、区間の幅の根拠にする（UPS 28.3% と同水準なので courier は税額の28〜30%が実態の可能性）",
           "variant": "conflicting_report",
-          "resolution": "未解決。2つの形を区間の下端・上端として扱う"
+          "resolution": "未解決。2つの形を区間の下端・上端として扱う",
+          "invoice_check": "confirmed_circular"
         }
       ],
       "user_action": {
@@ -1205,7 +1235,8 @@
           "tier": "B_inferred",
           "source": "https://www.abf.gov.au/",
           "inference_basis": "実装（src/lib/pricing/countries.ts）が T24 で原文を取り、A$1,000 以下は A$0、以降 A$50 / A$152 の帯を持っている。マスタ側はその転記なので B",
-          "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）"
+          "note": "A$1,000 以下の 0 は**取得できた 0**（原文の表がその行を持っている）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -1253,7 +1284,8 @@
             "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "fedex",
@@ -1285,7 +1317,8 @@
           "note": "**ABF Import Processing Charge（税関当局が課す帯）とは別の費目**。この行はFedEx自身が請求人（宛先国=オーストラリアの受取人）に課す立替手数料で、ABFの帯に上乗せされる想定。二次情報は『FedExアカウントを持たない受取人に適用』という条件を伝えており、これは`zero_when_no_tax`とは別の軸（口座の有無）。**税ゼロ時に課すか、per-parcel/per-shipmentのどちらかは情報源に記述なし（C_unknown）**。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-au/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-au/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -1305,7 +1338,8 @@
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "宛先側（豪州）で受取人に課される立替手数料。ABF Import Processing Charge（既存のCO['AU']行、業者共通の税関手数料）とは別建てのUPS独自手数料。2025 UPS Rate and Service Guide Australia（Effective 2024-12-22）より。",
-          "effective_date": "2024-12-22（このガイド自体の発効日。Disbursement Fee率自体の改定日は別途あり得るが未確認）"
+          "effective_date": "2024-12-22（このガイド自体の発効日。Disbursement Fee率自体の改定日は別途あり得るが未確認）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -1322,7 +1356,8 @@
           "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
           "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
           "zero_when_no_tax_confidence": "counted_absence",
-          "zero_when_no_tax_note": "F34: ECMSの法人自体がAU向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がAU向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。",
+          "invoice_check": "never_checked"
         }
       ],
       "clearance_fee_vat": {
@@ -1412,7 +1447,8 @@
           },
           "tier": "A_confirmed",
           "source": "Canada Post 公式ほか複数",
-          "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST"
+          "quote": "flat CA$9.95 handling fee per dutiable package, plus 5% GST",
+          "invoice_check": "confirmed_independent"
         },
         {
           "route": "courier",
@@ -1425,7 +1461,8 @@
           },
           "tier": "B_inferred",
           "source": "複数の業界情報源",
-          "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得"
+          "inference_basis": "courier brokerage は CA$10〜50+ と複数で一致。個社の正確な表は未取得",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -1474,7 +1511,8 @@
             "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "fedex",
@@ -1505,7 +1543,8 @@
           "note": "上の `route: courier`（CA$10〜50、業者名なし・時期不明の帯）とこの行は別の一次系統の情報。この行は業者を FedEx に特定し、発効日 2026-08-03 まで持つ点で情報が濃いが、それでも FedEx 自身の一次ページ本文には未到達。CA$10〜50 の帯の下限（CA$10）は FedEx の CA$12.00 とほぼ一致し、上限（CA$50〜）は本行の 3.10% 側で高額貨物なら届き得る範囲。宛先国（カナダ）の受取人に課される費目として扱う。**per-parcel/per-shipment、税ゼロ時の扱いはいずれも情報源に記述なし（C_unknown）**。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-ca/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-ca/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -1532,7 +1571,8 @@
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "**既存のCA『courier: UPS/FedEx/DHL』範囲行（CAD 10〜50、B_inferred、社別未分解）のうちUPSの取り分を、この一次情報で分解できる。** UPS自身の式（3.7%、最低$7.40〜$11.65）は既存の範囲 CAD10〜50 の下端付近と整合する。2025 UPS Canada Rate & Service Guide（Effective 2024-12-22）より。低価格帯（$40未満）にもEntry Preparation Fee $7.00/entry と共にDisbursement Feeが適用され得ることが同ガイドのFAQ部（trade-policy-tariff-changes PDF）に記載されている。",
-          "effective_date": "2024-12-22（ガイド発効日）"
+          "effective_date": "2024-12-22（ガイド発効日）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -1549,7 +1589,8 @@
           "note": "『ECMSはこの国で通関手数料を課さない』という declared な否定ではなく、**当該国向けの一次資料（T&Cや料金表）自体が見つからない counted_absence**。ECMSがこの国で受取人向け通関手数料を持つかどうかは未確認のまま。",
           "zero_when_no_tax": "not_applicable_carrier_unconfirmed",
           "zero_when_no_tax_confidence": "counted_absence",
-          "zero_when_no_tax_note": "F34: ECMSの法人自体がCA向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。"
+          "zero_when_no_tax_note": "F34: ECMSの法人自体がCA向けに確認できていない（既存の evidence_class: counted_absence を参照）。立て替える関税がゼロかどうか以前に、この国向けのECMS T&C文書自体が存在しない可能性が高いため、税ゼロ時の扱いを論じる土台がない。",
+          "invoice_check": "never_checked"
         }
       ],
       "real_invoice": {
@@ -1691,7 +1732,8 @@
           "tier": "A_confirmed",
           "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
           "quote": "the postal parcel contains goods of a total CIF value exceeding S$400",
-          "note": "**取得できた 0。**S$400 以下は OVR で決済時に GST が済んでおり、SingPost が国境で徴収するものが無いので手数料も発生しない"
+          "note": "**取得できた 0。**S$400 以下は OVR で決済時に GST が済んでおり、SingPost が国境で徴収するものが無いので手数料も発生しない",
+          "invoice_check": "never_checked"
         },
         {
           "route": "singpost",
@@ -1707,7 +1749,8 @@
           "tier": "B_inferred",
           "source": "https://www.singpost.com/support/managing-deliveries/customs-clearance-gst-payments",
           "inference_basis": "公式ページの該当 FAQ が折り畳みで、本文に当たれたのは検索エンジン経由の描画のみ。**S$400 の閾値は公式本文で取れている**が、S$10.90 という額の文そのものは取れていない",
-          "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料"
+          "note": "税関自身は通関手数料を取らない（原文「Singapore Customs does not collect any clearance fee」）。取るのは SingPost で、名目は税関に代わって GST・関税を徴収する手数料",
+          "invoice_check": "never_checked"
         },
         {
           "route": "dhl_express",
@@ -1755,7 +1798,8 @@
             "quote_ca_account_holder": "Customs Clearance: Customers with DHL Brokerage Account — Account Holders can accelerate clearance. A service charge is applied and collected on all imports of a non-document shipment for which DHL Express (Canada) prepares a Customs entry. Importers with a DHL Brokerage account on file.",
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
-          }
+          },
+          "invoice_check": "never_checked"
         },
         {
           "route": "fedex",
@@ -1792,7 +1836,8 @@
           "note": "singpost の S$400 以下 $0 帯（免税帯そのもの）とは別経路。FedEx行は宅配便に限られ、免税帯での扱い（zero_when_no_tax）は情報源に記述なし（C_unknown）。宛先国（シンガポール）の受取人に課される費目として扱う。",
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
-          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-sg/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。"
+          "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-sg/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ups_disbursement",
@@ -1812,7 +1857,8 @@
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "宛先側（シンガポール）で受取人に課される立替手数料。既存のSingPost行（郵便）とは別建て。2024 UPS Rate and Service Guide Singapore（Effective 2023-12-24）より。上限が明記されている点が他国と異なる（rate_of_import_charges_with_min_and_max という新しいrule.typeを追加）。",
-          "effective_date": "2023-12-24（ガイド発効日）"
+          "effective_date": "2023-12-24（ガイド発効日）",
+          "invoice_check": "never_checked"
         },
         {
           "route": "ecms_duty_advance",
@@ -1827,7 +1873,8 @@
           "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
           "per": "unknown",
           "zero_when_no_tax": "unknown",
-          "note": "ECMS Express (S) Pte Ltd Terms and Conditions 2023。US/UK版と同一条文。"
+          "note": "ECMS Express (S) Pte Ltd Terms and Conditions 2023。US/UK版と同一条文。",
+          "invoice_check": "never_checked"
         }
       ],
       "clearance_fee_vat": {
@@ -1892,7 +1939,8 @@
           "tier": "B_inferred",
           "source": "台湾の解説サイト（複数）",
           "inference_basis": "『税金代収手数料 約30元』で複数一致",
-          "note": "中華郵政の報関費は未取得（C）"
+          "note": "中華郵政の報関費は未取得（C）",
+          "invoice_check": "never_checked"
         }
       ],
       "clearance_fee_vat": {
@@ -1926,7 +1974,15 @@
       "goods_plus_shipping_plus_duty",
       "varies_by_collector",
       null
-    ]
+    ],
+    "invoice_check_vocabulary": [
+      "never_checked",
+      "confirmed_calculator",
+      "confirmed_independent",
+      "confirmed_circular",
+      "contradicted"
+    ],
+    "invoice_check_note": "confidence/tier は数値をどう取得したか（一次ページを直接読んだ等）を表す軸。invoice_check はそれとは直交する第三の軸で、その数値を実際の請求と突き合わせたかどうかだけを表す。never_checked=一度も突き合わせていない（既定値、現状ほぼ全行）。confirmed_calculator=会社自身の見積り計算機が、しきい値をまたぐ複数条件・複数回の操作でその金額を再現した——一次ページの記述より強い（実際の計算に配線されていることを示す）が、実請求より弱い（計算機は会社自身のシステムであり会社から独立していない）。confirmed_independent=突き合わせた請求書がこの数値自身の出典と別文書（master/fixtures.json の source_same_as_master: false）——最も強い。confirmed_circular=突き合わせた請求書がこの数値自身の出典と同じ（source_same_as_master: true）ため、確認ではなく数値の由来を示しているだけ——confirmed_independent と混同してはならない。contradicted=請求書と食い違った（現状該当0件だが、将来最も重要になる値なので語彙として用意する）。tier が A_confirmed でも invoice_check は never_checked のままであり得る（一次ページを読んだことと実請求で確認したことは別）。master/fees.json の同名フィールド・invoice_check_vocabulary と語彙・意味を共有する。"
   },
   "cross_country_findings": [
     {

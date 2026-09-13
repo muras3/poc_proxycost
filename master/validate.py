@@ -108,6 +108,46 @@ print(f"  費目 {len(fees['rows'])} 行 / rule.type {len(VOCAB)} 種 / catalog 
 print("  display 内訳: " + " / ".join(f"{k} {display_counts.get(k, 0)}" for k in
       ("total", "engine_only", "optional", "warning_only", "hidden")))
 
+# --- invoice_check（confidence/tierとは直交する第三の軸）のカバレッジ ---
+# confidence/tier は「どう取得したか」、invoice_check は「実請求と突き合わせたか」。
+# 混同を防ぐため、両者は必ず別々に数える。ここで hard-fail はしない（ほぼ全行が
+# 弱い状態にあるのは事実であり、ビルドを落とすと『検証を黙らせる』動機を作る
+# ── PR #100 と同じ理由）。
+INVOICE_CHECK_VOCAB = set(fees["schema"]["invoice_check_vocabulary"])
+fee_ic_counts = {}
+for r in fees["rows"]:
+    tag = f'{r["company"]}/{r["id"]}({r["name"]})'
+    check("invoice_check" in r, f"{tag}: invoice_check が無い（省略は見落としと区別できない）")
+    ic = r.get("invoice_check")
+    if ic is not None:
+        check(ic in INVOICE_CHECK_VOCAB, f"{tag}: invoice_check '{ic}' が語彙集合に無い")
+        fee_ic_counts[ic] = fee_ic_counts.get(ic, 0) + 1
+
+clearance_ic_counts = {}
+for cc, c in CO.items():
+    for r in c["clearance"]:
+        tag = f"{cc}/{r.get('carrier')}({r.get('route')})"
+        check("invoice_check" in r, f"{tag}: invoice_check が無い（省略は見落としと区別できない）")
+        ic = r.get("invoice_check")
+        if ic is not None:
+            check(ic in INVOICE_CHECK_VOCAB, f"{tag}: invoice_check '{ic}' が語彙集合に無い")
+            clearance_ic_counts[ic] = clearance_ic_counts.get(ic, 0) + 1
+
+def fmt_ic(counts):
+    return " / ".join(f"{k} {counts.get(k, 0)}" for k in
+                       ("never_checked", "confirmed_calculator", "confirmed_independent",
+                        "confirmed_circular", "contradicted"))
+
+print(f"\n  invoice_check カバレッジ（fees.json, 費目 {len(fees['rows'])} 行）: " + fmt_ic(fee_ic_counts))
+print(f"  invoice_check カバレッジ（customs.json clearance, 通関経路 "
+      f"{sum(len(c['clearance']) for c in CO.values())} 件）: " + fmt_ic(clearance_ic_counts))
+n_page_read_only = fee_ic_counts.get("never_checked", 0) + clearance_ic_counts.get("never_checked", 0)
+n_invoice_confirmed_indep = (fee_ic_counts.get("confirmed_independent", 0)
+                              + clearance_ic_counts.get("confirmed_independent", 0))
+print(f"  合算: 実請求で独立に確認済み {n_invoice_confirmed_indep} 件 / "
+      f"一次ページを読んだのみ（未確認）{n_page_read_only} 件"
+      "  ※ A_confirmed の多さはこの数には現れない。confidence/tier と invoice_check は別の軸")
+
 # --- clearance[].rule.type のうち eval_clearance() が評価できるものはどれか ---
 # 「型は宣言されているが計算しない」は無言で許してはならない（Fable R1と同種の失敗パターン）。
 # ここで書く EVAL_HANDLED は下の eval_clearance() の if 分岐と手で同期させる。
