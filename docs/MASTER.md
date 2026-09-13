@@ -115,8 +115,8 @@
 | 国 | 関税 | VAT/GST | 通関手数料（経路ごと） |
 |---|---|---|---|
 | **US** | 12.5%† | — | USPS USD 〜2500:0.0・上限なし:9.35 ／ FedEx 2.5% ／ DHL Express None ／ UPS 2.5% / USD 17.5 ／ ECMS 3% |
-| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 ／ DHL Express None ／ ECMS 3% |
-| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 15.0 ／ UPS EUR None ／ ECMS None |
+| **GB** | 135 以下は免税‡ | 20% | Royal Mail GBP 8 ／ Parcelforce GBP 12 ／ Royal Mail / Parcelforce GBP 25 ／ DHL Express None ／ FedEx 2.5% / GBP 12.9 ／ UPS 3% / GBP 14.35 ／ ECMS 3% |
+| **DE** | EUR 3† | 19% | Deutsche Post / DHL 標準 / EMS EUR 7.5 ／ DHL Express 2% / EUR 15.0 ／ FedEx（Aufwendungspauschale/Disbursement Fee） 2.5% / EUR 15.0 ／ UPS EUR None ／ ECMS None |
 | **FR** | EUR 3† | 20% | La Poste EUR 8 ／ La Poste EUR 2・5 ／ Chronopost EUR 21 ／ DHL Express None ／ FedEx（frais d'avance / avance de douane） 2.5% ／ UPS EUR None ／ ECMS None |
 | **ES** | EUR 3† | 21% | Correos（事前に自分で払う） EUR 1.29 ／ Correos（配達時・現金） EUR 6 ／ FedEx 3% / EUR 15 ／ DHL EUR 21 ／ UPS 28.3% ／ FedEx 30% |
 | **AU** | 1000 以下は免税‡ | 10% | ABF（Import Processing Charge） AUD 〜1000:0・〜10000:50・上限なし:152 ／ DHL Express None ／ FedEx（Disbursement Fee/Advancement Fee） 2.9% ／ UPS 3.6% ／ ECMS None |
@@ -262,17 +262,14 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
   invoice_check カバレッジ（customs.json clearance, 通関経路 48 件）: never_checked 44 / confirmed_calculator 0 / confirmed_independent 1 / confirmed_circular 3 / contradicted 0
   合算: 実請求で独立に確認済み 1 件 / 一次ページを読んだのみ（未確認）122 件  ※ A_confirmed の多さはこの数には現れない。confidence/tier と invoice_check は別の軸
 
-  rule.type 評価カバレッジ: 通関経路 48 件中 41 件が eval_clearance() で評価可能、**7 件は宣言のみで未評価**
+  rule.type 評価カバレッジ: 通関経路 48 件中 44 件が eval_clearance() で評価可能、**4 件は宣言のみで未評価**
   未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:
-    - GB/FedEx(courier_brokerage): rule.type='unknown' ── eval_clearance() 未対応
-    - GB/UPS(ups_disbursement): rule.type='unknown' ── eval_clearance() 未対応
-    - DE/FedEx（Aufwendungspauschale/Disbursement Fee）(fedex): rule.type='unknown' ── eval_clearance() 未対応
     - DE/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
     - FR/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
     - AU/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
     - CA/ECMS(ecms_duty_advance): rule.type='not_found' ── eval_clearance() 未対応
 
-  fixture カバレッジ: 評価可能な 41 件中 4 件は実請求 fixture でクロスチェック済み、**36 件は評価可能だが突き合わせる fixture が無い**
+  fixture カバレッジ: 評価可能な 44 件中 4 件は実請求 fixture でクロスチェック済み、**39 件は評価可能だが突き合わせる fixture が無い**
   評価可能・未fixtureの内訳（計算はできるが、一度も実請求と突き合わせていない行）:
     - US/USPS(usps): rule.type='banded_by_value' ── 評価器はあるが fixture 無し
     - US/FedEx(courier_brokerage): rule.type='greater_of' ── 評価器はあるが fixture 無し
@@ -283,9 +280,12 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
     - GB/Parcelforce(parcelforce): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
     - GB/Royal Mail / Parcelforce(high_value): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
     - GB/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min_variants' ── 評価器はあるが fixture 無し
+    - GB/FedEx(courier_brokerage): rule.type='rate_of_import_charges_with_min' ── 評価器はあるが fixture 無し
+    - GB/UPS(ups_disbursement): rule.type='rate_of_import_charges_with_min' ── 評価器はあるが fixture 無し
     - GB/ECMS(ecms_duty_advance): rule.type='rate_of_import_charges' ── 評価器はあるが fixture 無し
     - DE/Deutsche Post / DHL 標準 / EMS(deutsche_post): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
     - DE/DHL Express(dhl_express): rule.type='rate_of_import_charges_with_min' ── 評価器はあるが fixture 無し
+    - DE/FedEx（Aufwendungspauschale/Disbursement Fee）(fedex): rule.type='rate_of_import_charges_with_min' ── 評価器はあるが fixture 無し
     - DE/UPS(ups_disbursement): rule.type='banded_by_value_mixed' ── 評価器はあるが fixture 無し
     - FR/La Poste(la_poste_default): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
     - FR/La Poste(la_poste_online): rule.type='fixed_per_parcel' ── 評価器はあるが fixture 無し
