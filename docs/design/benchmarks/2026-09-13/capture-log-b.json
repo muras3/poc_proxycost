@@ -1,0 +1,362 @@
+[
+  {
+    "name": "b01-cursor",
+    "url": "https://cursor.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://cursor.com/",
+    "title": "AI Coding Agent for Building Ambitious Software | Cursor",
+    "height": 8199
+  },
+  {
+    "name": "b04-supabase",
+    "url": "https://supabase.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://supabase.com/",
+    "title": "Supabase | The Postgres Development Platform",
+    "height": 7747
+  },
+  {
+    "name": "b03-clerk",
+    "url": "https://clerk.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://clerk.com/",
+    "title": "Clerk | Authentication and User Management",
+    "height": 7666
+  },
+  {
+    "name": "b02-resend",
+    "url": "https://resend.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://resend.com/",
+    "title": "Resend · Email for developers",
+    "height": 12320
+  },
+  {
+    "name": "b01-cursor",
+    "url": "https://cursor.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://cursor.com/",
+    "title": "AI Coding Agent for Building Ambitious Software | Cursor",
+    "height": 10101
+  },
+  {
+    "name": "b04-supabase",
+    "url": "https://supabase.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://supabase.com/",
+    "title": "Supabase | The Postgres Development Platform",
+    "height": 9900
+  },
+  {
+    "name": "b03-clerk",
+    "url": "https://clerk.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://clerk.com/",
+    "title": "Clerk | Authentication and User Management",
+    "height": 14386
+  },
+  {
+    "name": "b02-resend",
+    "url": "https://resend.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://resend.com/",
+    "title": "Resend · Email for developers",
+    "height": 14162
+  },
+  {
+    "name": "b05-posthog",
+    "url": "https://posthog.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://posthog.com/",
+    "title": "PostHog – We make your product self-driving",
+    "height": 900
+  },
+  {
+    "name": "b06-attio",
+    "url": "https://attio.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://attio.com/",
+    "title": "Attio: The CRM for agentic revenue",
+    "height": 17599
+  },
+  {
+    "name": "b07-granola",
+    "url": "https://www.granola.ai/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.granola.ai/",
+    "title": "Granola — The AI Notepad for back-to-back meetings",
+    "height": 14310
+  },
+  {
+    "name": "b08-mymind",
+    "url": "https://mymind.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://mymind.com/",
+    "title": "mymind is the extension for your mind.",
+    "height": 19843
+  },
+  {
+    "name": "b05-posthog",
+    "url": "https://posthog.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://posthog.com/",
+    "title": "PostHog – We make your product self-driving",
+    "height": 664
+  },
+  {
+    "name": "b06-attio",
+    "url": "https://attio.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://attio.com/",
+    "title": "Attio: The CRM for agentic revenue",
+    "height": 15899
+  },
+  {
+    "name": "b08-mymind",
+    "url": "https://mymind.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://mymind.com/",
+    "title": "mymind is the extension for your mind.",
+    "height": 17797
+  },
+  {
+    "name": "b07-granola",
+    "url": "https://www.granola.ai/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.granola.ai/",
+    "title": "Granola — The AI Notepad for back-to-back meetings",
+    "height": 11797
+  },
+  {
+    "name": "b09-things",
+    "url": "https://culturedcode.com/things/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://culturedcode.com/things/",
+    "title": "Things - To-Do List App for Mac & iOS",
+    "height": 8072
+  },
+  {
+    "name": "b10-cosmos",
+    "url": "https://www.cosmos.so/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.cosmos.so/",
+    "title": "Cosmos",
+    "height": 6196
+  },
+  {
+    "name": "b12-poolsuite",
+    "url": "https://poolsuite.net/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://poolsuite.net/",
+    "title": "Poolsuite ☼",
+    "height": 900
+  },
+  {
+    "name": "b11-arena",
+    "url": "https://www.are.na/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.are.na/",
+    "title": "Are.na",
+    "height": 5532
+  },
+  {
+    "name": "b09-things",
+    "url": "https://culturedcode.com/things/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://culturedcode.com/things/",
+    "title": "Things - To-Do List App for Mac & iOS",
+    "height": 11362
+  },
+  {
+    "name": "b10-cosmos",
+    "url": "https://www.cosmos.so/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.cosmos.so/",
+    "title": "Cosmos",
+    "height": 5760
+  },
+  {
+    "name": "b12-poolsuite",
+    "url": "https://poolsuite.net/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://poolsuite.net/",
+    "title": "Poolsuite ☼",
+    "height": 664
+  },
+  {
+    "name": "b11-arena",
+    "url": "https://www.are.na/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.are.na/",
+    "title": "Are.na",
+    "height": 5937
+  },
+  {
+    "name": "b13-tldraw",
+    "url": "https://tldraw.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.tldraw.com/",
+    "title": "tldraw • very good free whiteboard",
+    "height": 900
+  },
+  {
+    "name": "b14-rive",
+    "url": "https://rive.app/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://rive.app/",
+    "title": "Rive — the interactive experience engine",
+    "height": 5330
+  },
+  {
+    "name": "b15-spline",
+    "url": "https://spline.design/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://spline.design/",
+    "title": "Spline - 3D Design tool in the browser with real-time collaboration",
+    "height": 12628
+  },
+  {
+    "name": "b16-nothing",
+    "url": "https://nothing.tech/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://nothing.tech/",
+    "title": "Nothing | UK",
+    "height": 8166
+  },
+  {
+    "name": "b13-tldraw",
+    "url": "https://tldraw.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.tldraw.com/",
+    "title": "tldraw • very good free whiteboard",
+    "height": 664
+  },
+  {
+    "name": "b14-rive",
+    "url": "https://rive.app/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://rive.app/",
+    "title": "Rive — the interactive experience engine",
+    "height": 7846
+  },
+  {
+    "name": "b15-spline",
+    "url": "https://spline.design/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://spline.design/",
+    "title": "Spline - 3D Design tool in the browser with real-time collaboration",
+    "height": 15372
+  },
+  {
+    "name": "b16-nothing",
+    "url": "https://nothing.tech/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://nothing.tech/",
+    "title": "Nothing | UK",
+    "height": 664
+  },
+  {
+    "name": "b17-mercury",
+    "url": "https://mercury.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://mercury.com/",
+    "title": "Online Business Banking For Startups, Small Businesses & Scaling Companies",
+    "height": 11661
+  },
+  {
+    "name": "b18-ramp",
+    "url": "https://ramp.com/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://ramp.com/",
+    "title": "",
+    "height": 4406
+  },
+  {
+    "name": "b19-amie",
+    "url": "https://amie.so/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://amie.so/",
+    "title": "Amie - AI Note Taker",
+    "height": 14147
+  },
+  {
+    "name": "b20-craft",
+    "url": "https://www.craft.do/",
+    "suffix": "desktop",
+    "ok": true,
+    "finalUrl": "https://www.craft.do/",
+    "title": "Craft — Productivity App for Notes, Tasks, and Docs",
+    "height": 11057
+  },
+  {
+    "name": "b17-mercury",
+    "url": "https://mercury.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://mercury.com/",
+    "title": "Online Business Banking For Startups, Small Businesses & Scaling Companies",
+    "height": 14799
+  },
+  {
+    "name": "b18-ramp",
+    "url": "https://ramp.com/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://ramp.com/",
+    "title": "Spend Management, Corporate Cards & Accounts Payable Solutions | Ramp",
+    "height": 14274
+  },
+  {
+    "name": "b19-amie",
+    "url": "https://amie.so/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://amie.so/",
+    "title": "Amie - AI Note Taker",
+    "height": 15109
+  },
+  {
+    "name": "b20-craft",
+    "url": "https://www.craft.do/",
+    "suffix": "mobile",
+    "ok": true,
+    "finalUrl": "https://www.craft.do/",
+    "title": "Craft — Productivity App for Notes, Tasks, and Docs",
+    "height": 14479
+  }
+]
