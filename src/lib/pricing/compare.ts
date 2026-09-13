@@ -1517,17 +1517,47 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       let feeYen: number;
       let allZero: boolean;
       if (route.per === 'per_shipment') {
-        const totalDutyTax = parcelTaxBases.reduce((a, _, i) => a + dutyTaxYen(i), 0);
-        const totalDeclaredLocal = parcelTaxBases.reduce((a, b) => a + b.itemsYen, 0) / countryCcyRate;
+        // **#106是正: per_shipment は「カート全体で1回」ではなく「Air Waybill 1枚で1回」。**
+        // Air Waybill の枚数は観測できないので、箱の分割理由からの推定（開示された仮定、
+        // `courier-clearance.ts` の doc comment 参照）で代える:
+        //   - 店舗違いで分かれた箱（'identified-shop'/'per-listing'/'unresolved-shop'）
+        //     → 別々のShipment。箱ごと（=下地の店舗グループごと）に1回課金する。
+        //   - 重量上限で増えた箱（'weight-limit'）→ 同じ下地から出た箱は同じ
+        //     Multi-Piece Shipmentなので、そのグループ内でduty+taxを合算してから1回課金する
+        //     （今日時点では宅配便に到達しない分岐——上のコメント参照——だが、コードは
+        //     一般形で書いておく）。
+        // `groupOfItemIndex` は箱の先頭商品の添字から元の下地番号(gi)を引く既存のマップ
+        // （`ParcelBox[]` を組み立てる直前で計算済み）。
+        const shipmentGroups = new Map<number, number[]>(); // gi -> このgiに属する箱のparcel index[]
+        finalBoxes.forEach((b, i) => {
+          const gi = groupOfItemIndex.get(b.indices[0]!)!;
+          (shipmentGroups.get(gi) ?? shipmentGroups.set(gi, []).get(gi)!).push(i);
+        });
+        feeYen = 0;
+        let totalDutyTax = 0;
+        for (const parcelIdxs of shipmentGroups.values()) {
+          const shipmentDutyTax = parcelIdxs.reduce((a, i) => a + dutyTaxYen(i), 0);
+          const shipmentDeclaredLocal = parcelIdxs
+            .reduce((a, i) => a + parcelTaxBases[i]!.itemsYen, 0) / countryCcyRate;
+          totalDutyTax += shipmentDutyTax;
+          feeYen += evalClearanceRuleYen(route.rule, shipmentDutyTax, shipmentDeclaredLocal, ccyToJpy);
+        }
         allZero = totalDutyTax === 0;
-        feeYen = evalClearanceRuleYen(route.rule, totalDutyTax, totalDeclaredLocal, ccyToJpy);
       } else {
         allZero = parcelTaxBases.every((_, i) => dutyTaxYen(i) === 0);
         feeYen = parcelTaxBases.reduce(
           (a, _, i) => a + evalClearanceRuleYen(route.rule, dutyTaxYen(i), declaredLocal(i), ccyToJpy), 0);
       }
       const label = `${carrier} destination clearance fee`;
-      const perNote = route.per === 'per_shipment' ? 'charged once per shipment' : 'charged per parcel';
+      // #106是正: per_shipmentのnoteは「1回だけ課金される」で終わらせず、Air Waybillの
+      // 枚数がこちらの推定（開示された仮定）であることを毎回明記する——事実のように
+      // 見せない（タスク指示）。
+      const perNote = route.per === 'per_shipment'
+        ? 'charged once per shipment (our assumption: boxes split by different shop are'
+          + ' separate shipments/Air Waybills, one fee each; boxes split only by weight limit'
+          + ' from the same order are treated as one multi-piece shipment, one fee total —'
+          + ' we cannot observe how many Air Waybills the forwarder actually issues)'
+        : 'charged per parcel';
       if (allZero) {
         // **税ゼロ時に課すかは、この費目の一次資料7か国×4社どれにも書かれていない**
         // （3本の監査ノートが共通して報告）。0円と書けば「無料と確認済み」という嘘、
