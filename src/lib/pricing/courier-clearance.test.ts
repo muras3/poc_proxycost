@@ -434,3 +434,33 @@ describe('#112: totals do not move for shop-split carts, and why', () => {
     expect(splitFee.amount).toBe(oneFee.amount);
   });
 });
+
+// 監査（docs/audit/formula-vs-master-2026-09-13.md）が見つけたギャップの再発防止:
+// SG UPS (`ups_disbursement`) の `rate_min_max` は master/customs.json が
+// 「5.6%、下限S$22.50、上限S$100 per shipment」と明記しているが、上限
+// （`Math.min(..., maxLocal*ccyToJpy)`）を丸ごと削除しても既存の927件のテストは
+// 1件も落ちなかった（`master/validate.py` も同じ行を「評価器はあるが fixture 無し」
+// と独立に報告している）。ここで上限が実際に効く額を直接 `evalClearanceRuleYen`
+// に通し、下限・rate・上限の3領域すべてを1つのテストでピン留めする。
+describe('#formula-vs-master-2026-09-13: rate_min_max caps at maxLocal even when rate*base exceeds it', () => {
+  const CCY = 110; // 便宜上の SGD→JPY レート（このテストは比率のみを見る）
+  const rule = { kind: 'rate_min_max' as const, rate: 0.056, minLocal: 22.5, maxLocal: 100 };
+
+  test('下限未満の duty+tax では minLocal が効く', () => {
+    // rate*base = 0.056*100 = 5.6 < minLocal(22.5)
+    expect(evalClearanceRuleYen(rule, 100 * CCY, 0, CCY)).toBeCloseTo(22.5 * CCY, 6);
+  });
+
+  test('rate 帯では rate*base がそのまま出る', () => {
+    // rate*base = 0.056*1000 = 56 は 22.5 と 100 の間
+    expect(evalClearanceRuleYen(rule, 1000 * CCY, 0, CCY)).toBeCloseTo(0.056 * 1000 * CCY, 6);
+  });
+
+  test('上限を超える duty+tax では maxLocal(S$100) で頭打ちになる', () => {
+    // rate*base = 0.056*10000 = 560 は maxLocal(100) を大きく超える
+    const dutyPlusTaxYen = 10_000 * CCY;
+    const result = evalClearanceRuleYen(rule, dutyPlusTaxYen, 0, CCY);
+    expect(result).toBeCloseTo(100 * CCY, 6);
+    expect(result).toBeLessThan(0.056 * dutyPlusTaxYen); // 上限が無ければもっと高いはず
+  });
+});
