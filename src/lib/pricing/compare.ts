@@ -274,7 +274,13 @@ export interface ParcelTaxBasis {
 }
 
 // ── 受取国の税。未取得は null を返し、画面で「—」にする。0 と書かない。
-function taxLines(
+// **監査 (docs/audit/close-coverage-gaps-2026-09-13.md ③) のためだけに export する。**
+// `taxLines` は `compare()` からの間接検査しか持っておらず、「関税→VAT」という
+// 積み上げ順序そのものを主張するテストが無かった。`compare()` 経由だと個口ごとの
+// `domYen`/`emsYen`（配送方式・社ごとに解決される内部値）を呼び出し側から
+// 制御できず、順序が効く条件を狙って作れない——`taxLines` を直接呼べば
+// `ParcelTaxBasis` の全フィールドをテストが握れる。ロジックは一切変えていない。
+export function taxLines(
   cc: CompareInput['country'],
   province: ProvinceCode | null,
   /** カートそのもの。**品目カテゴリでしか言えないこと**（米国の関税・英国の酒税）に使う。 */
@@ -1181,17 +1187,62 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // EMS ¥7,900 より安いのでそれが起きていた）——ここを直すのが今回の変更点。
   const SURFACE_POSTAL_IDS: readonly PostalMethod[] = ['small-packet-surface', 'parcel-surface'];
   const nonSurfacePostalMethods = POSTAL_METHODS.filter((s) => !SURFACE_POSTAL_IDS.includes(s.id));
-  // その社が売っていて、全個口を運べる方式の中で最安。個口が複数なら合計で比べる。
-  // **郵便と宅配便を同じ土俵で比べる**——「宅配便は最終価格を正とする」という
-  // オーナー決定（2026-09-11）により、宅配便も総額としては郵便の各方式と対等。
-  // 比べるのは**下端**（宅配便は目的地側の未知の手数料で上端が開くことがあるが、
-  // それでも下端で比較する——オーナー決定 P2 3「順位は下端で決める」）。
-  const cheapestCandidate = [
-    ...nonSurfacePostalMethods.map((s) => ({ id: s.id as PostalMethod | CourierMethod, yen: priceAll(s.id) })),
-    ...COURIER_METHOD_IDS.map((id) => ({ id: id as PostalMethod | CourierMethod, yen: priceCourier(id)?.low ?? null })),
-  ]
-    .filter((x): x is { id: PostalMethod | CourierMethod; yen: number } => x.yen != null)
-    .sort((a, b) => a.yen - b.yen || a.id.localeCompare(b.id))[0];
+  // その社が売っていて、全個口を運べる方式の中で**総額（着地側の通関/立替手数料を
+  // 含む）が最小**の方式。個口が複数なら合計で比べる。
+  //
+  // **F-total是正（Fable 5.1、PR #137 監査文書）。**以前はここを国際送料
+  // （`priceAll`/`priceCourier().low`）**だけ**で選んでいた——着地側の通関立替
+  // 手数料（`courier-clearance-fee`）や日本郵便側の `clearance`/`duty-prepayment`
+  // は方式ごとに大きく違うのに、選択には一切入っていなかった。US・1,000g・
+  // ¥3,000・FROM JAPAN では、送料はUPSが¥126安いのに通関手数料の差（UPS ¥2,734
+  // vs ECMS ¥11）で総額はUPSの方が¥2,593高い——という「送料は安いが総額は高い」
+  // 方式が選ばれ続けていた（343条件中97条件・111行、最大¥2,640。詳細は
+  // `docs/audit/cheapest-by-total-2026-09-13.md`）。
+  //
+  // **どう直したか**: 候補ごとに `buildRow` を**そのまま再帰的に呼ぶ**
+  // （`ctx.method` に候補の ID を明示して渡すので、下の `wanted === 'cheapest'`
+  // 分岐には二度と入らない——再帰は深さ1で止まる）。関税・VAT/GST・通関手数料・
+  // 梱包・保管はどれも実際に選んだ方式の箱割り（`boxesForPostal`/`baseBoxes`）に
+  // 依存するので、送料だけ・通関手数料だけを別々に再計算するより、既存の
+  // `buildRow` の計算をそのまま使う方が「本当に選んだときに表示される総額」と
+  // 一致することを構造的に保証できる（計算式を2箇所に複製して食い違わせるリスクが
+  // 無い）。`buildRow` は重量が決まらないときだけ `null` を返す——ここでは重量は
+  // 既に確定済みなので、候補呼び出しは常に `Row` を返す。
+  //
+  // **順位は `total.low`（未取得の費目は0として畳む、既存の `sum()` と同じ規約）
+  // で比べる。**`total.high`（上限不明かどうか）はここでは見ない——以前の
+  // 送料だけの比較も「値段が付くか（`priceAll`/`priceCourier().low` が
+  // non-null か）」だけを見て上限の開閉は見ておらず、`rankHighFor` も
+  // `scope: 'shared'` 以外の未取得は総額比較から一律に除外していない。新しい
+  // 規約もそれを継承するだけで、新しいルールを持ち込まない。**注意点として
+  // 明記する**: 方式ごとの未取得費目（`courier-clearance-fee` の
+  // `C_unknown`/`schema_gap` など、`scope` 無しの null 行）がある候補は、
+  // その分だけ `total.low` が実際より安く出ている可能性がある——`low` 同士の
+  // 比較である以上、like-for-like が崩れていないかは常に保証できるわけではない。
+  // 今回実証した US/1,000g/¥3,000 の例では両候補（UPS・ECMS）の未取得費目の
+  // 構成は同一（Fable の確認）だが、一般にはそうとは限らないことを認める。
+  //
+  // **候補から外すもの**: `priceAll`/`priceCourier` が `null`（売っていない・
+  // その国へ出していない・商品価格の上限超・寸法超・重量超）を返す方式は、
+  // 従来どおり `shipLine.amount == null` として検出し除外する——総額比較の
+  // `low` は未取得を0として畳むため、この除外を怠ると「そもそも運べない方式」
+  // が送料0円のふりをして最安に見えてしまう。
+  const candidateIds: readonly (PostalMethod | CourierMethod)[] = [
+    ...nonSurfacePostalMethods.map((s) => s.id as PostalMethod),
+    ...COURIER_METHOD_IDS,
+  ];
+  const cheapestCandidate = wanted === 'cheapest'
+    ? candidateIds
+      .map((id) => {
+        const row = buildRow(svc, variant, { ...ctx, method: id });
+        const shipLine = row?.lines.find((l) => l.key === 'intl-shipping');
+        return row && shipLine && shipLine.amount != null
+          ? { id, totalLow: row.total.low }
+          : null;
+      })
+      .filter((x): x is { id: PostalMethod | CourierMethod; totalLow: number } => x != null)
+      .sort((a, b) => a.totalLow - b.totalLow || a.id.localeCompare(b.id))[0]
+    : undefined;
   // **F2: 「誰も値段が付かなかった」は、方式を選んでいるのではない。**以前は
   // ここで `?? 'ems'` に潰しており、他のすべての値段が付かなかったときも
   // 「EMS を選んだ」ことにしていた——下流の `notComparableReason` がそれを

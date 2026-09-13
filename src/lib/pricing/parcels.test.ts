@@ -137,3 +137,29 @@ describe('splitByWeightLimit (docs/DESIGN-BOX-SIZE.md §2④)', () => {
     expect(splitByWeightLimit([], 2000, packedWeightOf)).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 監査 (docs/audit/close-coverage-gaps-2026-09-13.md ②): `packHeaviestFirst` を
+// 「軽い順」に変えても、変えるまでどのテストも落ちなかった。
+//
+// 順序が箱の**中身**（`indices`）自体を変えるのは1点1箱に収まる自明ケースでは
+// 起きない——2点しか無ければ「重い順」でも「軽い順」でも各点が別の箱に入るだけ。
+// 3点以上・2箱のときに初めて、どの2点が同じ箱に同居するかが変わる
+// （下のテストは docs/DESIGN-BOX-SIZE.md §2⑤ が選んだ規則そのものを固定する）。
+// ─────────────────────────────────────────────────────────────────────────────
+describe('packing order changes which items share a box (docs/DESIGN-BOX-SIZE.md §2⑤)', () => {
+  test('heaviest-first pairs the two lighter items together, not the heaviest with a lighter one', () => {
+    // 900g・700g・500g を2箱に詰める。
+    // 重い順(LPT): 900→箱0(900)。700→箱1(0)が空so箱1(700)。500→箱1(700)<箱0(900)なので箱1(700+500=1200)。
+    //   結果: 箱0={900}, 箱1={700,500}。
+    // もし「軽い順」に変えていたら: 500→箱0(500)。700→箱1(700)。900→箱0(500)<箱1(700)なので箱0(500+900=1400)。
+    //   結果: 箱0={500,900}, 箱1={700}——中身の組み合わせが変わる。
+    const items = [it(0, 900, 27_000), it(1, 700, 30_000), it(2, 500, 1_000)];
+    const boxes = packHeaviestFirst(items, 2);
+    const byIndices = (idx: number[]) => boxes.find((b) => b.indices.sort().join() === idx.sort().join());
+    expect(byIndices([0])).toBeTruthy();       // 最重量(900g)が単独の箱
+    expect(byIndices([1, 2])).toBeTruthy();    // 残り2点(700g,500g)が同居
+    expect(byIndices([0])!.declaredYen).toBe(27_000);
+    expect(byIndices([1, 2])!.declaredYen).toBe(31_000);
+  });
+});
