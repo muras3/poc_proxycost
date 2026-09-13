@@ -796,10 +796,16 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   //
   // **2026-09-13、PR #127 で「recommended range changes with the weight」の
   // 期待を捨てた。**このカートの両端の1位——500g では FROM JAPAN、10kg では
-  // Buyee——は、どちらも社固有の未取得行のせいで `rankHigh` が常に `null`
-  // （FROM JAPAN: `outsourced-packing`、Buyee: 宅配便に必ず付随する
-  // `courier-destination-fees`。いずれも実費・非公表で、`scope: 'shared'`
-  // ではない＝社固有）。基準重量（仮置き ~1.5 kg）でも FROM JAPAN が1位なので、
+  // Buyee——のうち FROM JAPAN 側は社固有の未取得行のせいで `rankHigh` が
+  // 常に `null`（`outsourced-packing`、実費・非公表、`scope: 'shared'`
+  // ではない＝社固有）。**2026-09-13、`courier-destination-fees` 行は分離・撤去
+  // された**（旧: 宅配便に必ず付随し、Buyee 側の `rankHigh` も `null` にしていた）
+  // ——燃油サーチャージは行を作らず、遠隔地サーチャージは共通の画面注記に回した
+  // ので、Buyee 単独ではもう `rankHigh` を開かない。それでも FROM JAPAN 側が
+  // 開いたままなので `rankIndeterminate` の結論自体は変わらない
+  // （`Row.closedByAssumption` が Buyee のような宅配便の行に残るのは別の話——
+  // これは「確定ではなく仮定依存」を示すだけで `rankHigh`/`rankIndeterminate`
+  // には効かない）。基準重量（仮置き ~1.5 kg）でも FROM JAPAN が1位なので、
   // `isIndeterminate()` の修正後は全域で `rankIndeterminate: true`
   // ——「重量で1位が確定的に入れ替わる」という前提そのものがこのカートでは
   // 成立しない。`rankStabilityNote` は「recommended range」文ではなく

@@ -820,6 +820,13 @@
           "ref": "G5_from_japan_omission_cuts_our_way",
           "strength": "weak_positive_evidence",
           "text": "FROM JAPANはUPSについてのみ「Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge.」と明記している。この一文は住宅地サーチャージと遠隔地サーチャージという2つの費目を名指しで除外対象としているが、燃油サーチャージは名指ししていない。除外リストに載っていないことは、燃油が除外されていないことの弱い傍証にしかならない（このG5自体、G6が指摘する通り絶対の根拠ではない）。"
+        },
+        {
+          "ref": "G8_contractual_rate_argument_2026_09_13",
+          "strength": "reasoning_not_evidence",
+          "added_on": "2026-09-13",
+          "added_by": "オーナー（Tatsuya氏、reasoning_not_evidenceとして本人が明示）",
+          "text": "プロキシ各社はFedEx/DHL/UPS等と法人契約を結んでおり、一般公開されている運賃（および一般公開の燃油サーチャージ率）とは異なる、個別交渉された契約運賃・契約サーチャージ条件を持つ。したがって本マスタが確認できたFedEx 49.00%・UPS 49.75%・DHL 33〜36.75%（いずれも2026-09-12時点の一般公開値、C6参照）をそのままプロキシの契約条件に当てはめることはできない。利用者への表示送料は、その時点での契約原価（基本運賃＋契約サーチャージ）を反映した金額を一つの総額として提示していると考えるのが自然であり、後から燃油だけを画面上で別枠加算する設計は送料選択画面として実用性が低い（G1と同型の運用上の一般論）。\n\n**この論の帰結として、G1〜G4より強い主張が導かれる: ProxyCostが運送会社の一般公開燃油率を別途加算する方が、加算しないより危険である。**契約率が不明な以上、一般公開率を根拠なく加算する行為自体に妥当性が無く、二重計上（表示送料に既に契約サーチャージが含まれている場合）または過大評価（契約サーチャージ率が一般公開率より低い場合）のいずれかになる可能性が高い。これは『燃油は込みである』という主張そのものより強いところまでは踏み込まない——確立するのは「一般公開の燃油率を加算しない」ことまでである。「代行会社の表示送料が最終額であり、後から燃油が別途請求されることは無い」ことまでは確立しない——上記の運用上の一般論（G1と同型）であり、一次情報の裏付けを伴わない。また、この論は「代行会社が身銭を切って燃油分を吸収している」とも主張しない——主張しているのは、契約サーチャージ分が既に利用者への表示送料に転嫁されている可能性が高い、という点だけである。"
         }
       ],
       "grounds_against": [
@@ -844,6 +851,18 @@
         "boundary_crossed": "DHL輸出の燃油率が33.25%→34.00%へ切り替わる境界（FedEx・UPSも同時期に週次改定）をまたぐ。",
         "decision_rule": "この境界をまたいで価格が動かなければ、燃油は表示価格に含まれていない（または反映に遅延がある）。燃油率の変化分にほぼ見合う分だけ価格が動けば、含まれている。",
         "required_field": "methods_shown_total を両時点で必ず記録する（原則2により必須）。"
+      },
+      "arithmetic_note_correction_2026_09_13": {
+        "superseded_by": "この訂正自体。上のarithmetic_noteは削除せず残すが、「変わるのは記録であって、表示金額ではない」という結論を訂正する。",
+        "text": "コードへの影響評価が誤っていた。この判断自体（燃油サーチャージは表示送料に含まれているものとして扱い、追加計上しない）は変わっていない。誤っていたのは「compare.tsが実際に行う計算は変わらない」という評価の側である。実際にはcompare.ts の宅配便の行が無条件に `courier-destination-fees`（label: 'Destination-side courier fees (unpublished)', amount: null, tier: 'none'）という行を積んでおり、燃油サーチャージと遠隔地サーチャージの不明をこの1行にまとめて `amount: null` にしていた。`Row.total.high`（`totalRange()`）は `amount: null` かつ `unknownCapYen` が無い行が1件でも残れば必ず `null`（上限不明）を返す構造になっており、この行はまさにその条件に該当していた。結果として、宅配便を含む343条件のうち266条件で `total.high`が開き、`Row.rankIndeterminate` の原因になっていた（`docs/audit/fable-fix-readiness-round2-2026-09-13.md` §9、`docs/ledger/indeterminacy-summary-2026-09-13.md`）。2026-09-13のオーナー決定でこの行を燃油（計上せず・未知にもしない）と遠隔地（総額に加算せず、住所依存の比較対象外費用として画面注記のみで開示）に分離し、`Line` として持たない形にしたことでこの266条件の `rankIndeterminate` を解消した。",
+        "corrected_on": "2026-09-13",
+        "corrected_by": "サブエージェント（PR: claude/split-fuel-remote-surcharges、オーナー murasetatsuya1993@gmail.com の指示による監査）"
+      },
+      "treatment_refinement_2026_09_13": {
+        "refined_on": "2026-09-13",
+        "refined_by": "オーナー（Tatsuya氏）",
+        "supersedes_wording_only": "元の treatment フィールドは削除せず残す。意味は変えず、根拠（G8）を反映して言い回しを正確にした版。",
+        "text": "プロキシ各社の表示送料を、契約サーチャージ込みの最終送料として扱う。一般公開されている燃油率（FedEx/DHL/UPS等が公表する週次の燃油サーチャージ率）は、プロキシの法人契約とは異なる条件であるため、compare.ts 側で追加計上しない。"
       }
     },
     "remote_area_surcharge_working_treatment": {
@@ -892,6 +911,13 @@
         "postcode_selection": "C9で確認できたのはFedEx日本発ODA/OPAの金額のみで、郵便番号→レベルA/B/C該当のマッピング表（XLSX、米国宛て限定の可能性）はまだ開いていない。したがって本エントリの時点では『これが遠隔地である』と自信を持って名指しできる具体的な郵便番号は確立できていない。次の一歩として、(1) 上記FedEx XLSXを開いて米国の遠隔地郵便番号を1件抽出する、または (2) DHLの『遠隔地配達手数料』ページ（C6のjp-ja FAQで存在のみ確認）から各国の遠隔地郵便番号リストを探す、のいずれかを先に行う必要がある。",
         "decision_rule": "(a)と(b)で価格差が出れば、その差額が遠隔地サーチャージ相当額と整合するかを確認する。差が出なければ、遠隔地サーチャージが表示価格に反映されていない（または該当判定自体が機能していない）ことを疑う。",
         "required_field": "methods_shown_total を両条件で必ず記録する（原則2により必須）。"
+      },
+      "owner_decision_revision_2026_09_13": {
+        "decided_on": "2026-09-13",
+        "decided_by": "オーナー（Tatsuya氏）",
+        "supersedes": "元の decided_on/decided_by（2026-09-12、C12本体）とtreatmentは削除せず残す。以下は2026-09-13にオーナーが下した扱いの変更点の記録。",
+        "text": "遠隔地サーチャージの working treatment を『込みだと仮定して何もしない』から『表示送料に含めない・総額（Row.total.low/high）にも加算しない・住所によって追加される場合がある費用として、宅配便の行がある画面に共通の注記でのみ開示する』に変更した。旧working treatmentがこの費目を『込み』と仮定していたのに対し、新しい扱いは『含めるかどうかを判断しない・そもそも計算に含めず、比較対象外の費用として明示する』という点で異なる——郵便番号未入力の現状では、この費目が実際に発生するかどうかを本製品の入力からは判定できないため（C4参照）。",
+        "rank_neutrality_not_claimed": "**総額から除外してよい、というオーナーの決定は『総額に加算しない』ことだけを意味し、『順位に中立』を意味しない。**遠隔地サーチャージが実際に発生する住所宛ての注文では、社によって契約条件・運送会社の遠隔地判定が異なる可能性があり、この費目を除外して比較した結果の順位が、遠隔地サーチャージを含めた実際の総額でも同じ順位になる保証はない。したがって『順位に中立な費目である』とは書かない・主張しない——監査メモ・ドキュメントでもこの表現は使わないこと。"
       }
     },
     "zero_duty_clearance_fee_working_treatment": {
@@ -914,14 +940,46 @@
       "quantification": {
         "text": "docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md が試算した『この仮定が外れていた場合に見積りから消える額』（＝各社の最低額そのもの、declaredがdeminimis以下でduty+taxが文字通り0円になるカートの場合）:",
         "figures_jpy": [
-          { "route": "CA UPS Standard", "local": "CAD 7.40", "jpy_approx": 838 },
-          { "route": "CA UPS Express系", "local": "CAD 11.65", "jpy_approx": 1319 },
-          { "route": "CA DHL Express（non_account_holder）", "local": "CAD 18.00", "jpy_approx": 2038 },
-          { "route": "SG DHL Express", "local": "SGD 20.00", "jpy_approx": 2467 },
-          { "route": "US DHL/UPS/FedEx（参照値）", "local": "USD 17.50", "jpy_approx": 2734 },
-          { "route": "SG UPS", "local": "SGD 22.50", "jpy_approx": 2775 },
-          { "route": "AU DHL Express", "local": "AUD 23.00", "jpy_approx": 2589 },
-          { "route": "AU UPS（GST込み）", "local": "AUD 26.18", "jpy_approx": 2948 }
+          {
+            "route": "CA UPS Standard",
+            "local": "CAD 7.40",
+            "jpy_approx": 838
+          },
+          {
+            "route": "CA UPS Express系",
+            "local": "CAD 11.65",
+            "jpy_approx": 1319
+          },
+          {
+            "route": "CA DHL Express（non_account_holder）",
+            "local": "CAD 18.00",
+            "jpy_approx": 2038
+          },
+          {
+            "route": "SG DHL Express",
+            "local": "SGD 20.00",
+            "jpy_approx": 2467
+          },
+          {
+            "route": "US DHL/UPS/FedEx（参照値）",
+            "local": "USD 17.50",
+            "jpy_approx": 2734
+          },
+          {
+            "route": "SG UPS",
+            "local": "SGD 22.50",
+            "jpy_approx": 2775
+          },
+          {
+            "route": "AU DHL Express",
+            "local": "AUD 23.00",
+            "jpy_approx": 2589
+          },
+          {
+            "route": "AU UPS（GST込み）",
+            "local": "AUD 26.18",
+            "jpy_approx": 2948
+          }
         ],
         "note": "AU UPS・SG UPSの2ルートはUS基準（¥2,734）を上回る——『US基準とだいたい同じ桁』という監査の要約は正確だが、この2ルートだけは実際にはUS基準より高い。deminimis以下のカート1件あたり、この working treatment が仮に間違っていた場合に見積りから消える額は、ルートによって約¥838〜約¥2,948の幅を持つ。"
       },

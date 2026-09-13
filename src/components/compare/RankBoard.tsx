@@ -45,10 +45,27 @@ function diffCertainFor(row: Row, result: CompareResult): boolean {
   return leaderDiffCertain(result) && totalIsCertain(row.total);
 }
 
+/**
+ * **2026-09-13、オーナー修正。**燃油込み・遠隔地除外という未確認の仮定に依存して
+ * `total.high` が閉じた行を、一次情報で確定した行と同じ強さの「CHEAPEST」で
+ * 呼ばない——正しくは「燃油込み・遠隔地除外という共通条件での推定最安」でしかない。
+ *
+ * **仮定に依存しない行は `CHEAPEST` のまま残す。**「全部 ESTIMATED CHEAPEST に
+ * 寄せる」選択肢も検討したが、それだと一次情報で確定している46条件と、
+ * 仮定に依存する266条件の区別が画面から消え、今回わざわざ `Row.closedByAssumption`
+ * を足して区別できるようにした意味が無くなる。**迷ったときに弱い方へ寄せる**の
+ * 対象は「仮定に依存する行の言い方」（CHEAPEST → ESTIMATED CHEAPEST）であって、
+ * 「確定している行まで一律に弱める」ことではないと判断した。
+ */
+export function leadWordFor(row: Row, result: CompareResult): string {
+  if (result.rankIndeterminate) return 'LEADS';
+  return row.closedByAssumption.length > 0 ? 'ESTIMATED CHEAPEST' : 'CHEAPEST';
+}
+
 function diffText(row: Row, result: CompareResult): string {
   // 比較できない行に差額を出したら、比べられるかのように見える。
   if (!row.comparable) return 'NOT COMPARABLE';
-  const leadWord = result.rankIndeterminate ? 'LEADS' : 'CHEAPEST';
+  const leadWord = leadWordFor(row, result);
   if (result.rowDiffRange) {
     const r = result.rowDiffRange[row.id];
     if (r) return r[0] === 0 && r[1] === 0 ? leadWord : `+${yenRange(r)}`;

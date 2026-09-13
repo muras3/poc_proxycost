@@ -11,6 +11,7 @@ import { CostTable } from './CostTable';
 import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
 import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
+import { RemoteAreaSurchargeNote } from './RemoteAreaSurchargeNote';
 import { ItemList, type ItemListHandle } from './ItemList';
 import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
@@ -173,7 +174,12 @@ export function Calculator() {
               だけで、価格化が進むほど集合の中身が動くだけで文の数は増えない。
               今すでに一番埋まった形（1位に出る米国）を基準に詰めているので、
               残り6か国が同じ形に育っても再びここが壊れることはない。 */}
-          <div className="mt-6 space-y-1.5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <div className="mt-6 space-y-1 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+            {/* **2026-09-13、`RemoteAreaSurchargeNote` を足した分だけ、また余白を詰めた。**
+                `EmsOnlyNote` を足した2026-09-12のときと同じ理由・同じ対処
+                （`e2e/parcel.spec.ts` の「順位表が最初の画面から押し出されている」、
+                実測 904 > 900）。文言は削れない（オーナー指定・言い換え禁止）ので
+                ここの `space-y` を 1.5 → 1 に詰めて吸収する。 */}
             {/* 黙って外すと総額が安く見える。外したことを総額の隣で言う。 */}
             {unpriced.length > 0 && (
               <p className={`text-xs ${tierClass.none}`}>
@@ -197,6 +203,9 @@ export function Calculator() {
             {/* Buyee だけの話（他4社は材料が無い）。「送料無料」の出品が1点でも
                 あるときだけ、金額は動かさず出す（T-F10、docs/FEE-ITEMS.md §5 R1）。 */}
             <FreeShippingDomesticNote result={result} items={items} />
+            {/* 燃油は表示送料込みの前提、遠隔地は総額に入れない住所依存の未知——
+                2026-09-13 オーナー決定。宅配便の行が1つでもあれば共通で出す。 */}
+            <RemoteAreaSurchargeNote result={result} />
           </div>
 
           <div className="mt-3">
