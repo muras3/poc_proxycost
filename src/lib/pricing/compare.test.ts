@@ -1402,12 +1402,31 @@ describe('Buyee splits parcels by order', () => {
     // 宅配便であって日本郵便経由の郵便物ではないので、そもそも成立しない
     // ——以前はここで「$2,500 の事前納付帯なので 0 円」というアサーションを
     // 置いていたが、それは「調べた上でゼロだった」という誤りで、正しくは
-    // 行そのものが無い（`filterJapanPostOnlyLines()`）。目的地側の未知の費用は
-    // 別行 `courier-destination-fees`（null、`total.high` を開く）が持つ。
+    // 行そのものが無い（`filterJapanPostOnlyLines()`）。
+    //
+    // **2026-09-13、オーナー決定でこのテストの期待値を更新した**（`row_lines_without`
+    // に条件を足した）。目的地側の未知の費用をまとめて持っていた旧行
+    // `courier-destination-fees`（null、`total.high` を開いていた）は分離された:
+    // 燃油サーチャージは表示送料に含まれている前提で行自体を作らず、遠隔地
+    // サーチャージは表示送料に含めない・総額にも加算しない前提で共通の画面注記
+    // （`RemoteAreaSurchargeNote`）に回した。**このシナリオの `total.high` は
+    // それでも `null` のまま**——米国宛の未確定の売上税/VAT行（`vat`、輸入側の
+    // 共通未知、`scope: 'shared'`）が別に残っており、これは今回の変更の対象外。
+    // `scope: 'shared'` は順位専用の `rankHigh` を畳むだけで、`Row.total.high`
+    // （画面表示）は畳まない（このファイル冒頭の `totalRange()`/`rankHighFor()`
+    // のコメント参照）ので、この行は total.high を開いたまま——今回の変更は
+    // `courier-destination-fees` だけを対象にしたので、これは正しい残余。
+    //
+    // ただし、この行は「確定」したわけではない。燃油込み・遠隔地除外は一次情報で
+    // 検証済みの決定ではなく未確認の仮定なので、`closedByAssumption` に依存の
+    // 印が残る（`RankBoard` の緑ラベルが `ESTIMATED CHEAPEST` になる）。
     expect(row_lines_without(consolidated, 'clearance')).toBe(true);
     expect(row_lines_without(dflt, 'clearance')).toBe(true);
-    expect(line(dflt, 'courier-destination-fees').amount).toBeNull();
+    expect(row_lines_without(dflt, 'courier-destination-fees')).toBe(true);
     expect(dflt.total.high).toBeNull();
+    expect(dflt.closedByAssumption).toEqual(
+      expect.arrayContaining(['courier-fuel-surcharge-included', 'courier-remote-area-surcharge-excluded']),
+    );
     expect(dflt.total.low).toBeGreaterThan(consolidated.total.low);
   });
 

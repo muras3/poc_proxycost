@@ -243,6 +243,22 @@ export interface Row {
    * 補助値。
    */
   rankHigh: number | null;
+  /**
+   * **2026-09-13、オーナー修正。**`total.high` が閉じていても、それが一次情報で
+   * 確定した閉じ方なのか、未確認の仮定に依存した閉じ方なのかを区別するための
+   * 依存先の仮定キー一覧。空配列 = 仮定に依存していない（閉じていればそれは
+   * 本当の確定、閉じていなければ元々未知が残っている）。
+   *
+   * 現状は宅配便の燃油サーチャージ込み・遠隔地サーチャージ除外という2つの
+   * 未確認の仮定だけが対象（`'courier-fuel-surcharge-included'`,
+   * `'courier-remote-area-surcharge-excluded'`）。この行の `intl-shipping` が
+   * 宅配便の実価格を持つときに必ず両方入る——2つの仮定は片方だけを取り除ける
+   * 独立したものではなく、同じ「宅配便の最終価格が正」という前提から来ている。
+   *
+   * 画面側は非空なら「ESTIMATED CHEAPEST」、空なら「CHEAPEST」（`rankIndeterminate`
+   * なら従来どおり「LEADS」）として `RankBoard` の `diffText()` が使う。
+   */
+  closedByAssumption: string[];
   /** 総額から漏れている費目（未取得）の英語ラベル。総額が低く見える方向の誤りを明示する。 */
   excluded: string[];
   parcels: number;

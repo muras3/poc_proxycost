@@ -1504,20 +1504,38 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       : {}),
   };
   lines.push(intlShippingLine);
-  // **P2 3（オーナー確定）: 宅配便の上限は目的地側の未知の手数料で開いたままにする。**
-  // 燃油サーチャージ・遠隔地サーチャージは今も未公表のまま——この行はそれ専用に残す。
-  // **通関/立替手数料（F34）はもう「未公表」ではない**——`master/customs.json#clearance`
-  // を配線した別行 `courier-clearance-fee`（このすぐ下、`taxResult` 計算後）に分離した。
-  // 2つの行を1つに混ぜない理由: counted_absence（例: DE の ECMS）はF34の行そのものを
-  // 出さないが、燃油/遠隔地サーチャージの不明はどの業者にも変わらず残るので、この行は
-  // 引き続き無条件に出す。**日本郵便はこの行を持たない**ので、Japan Post の総額は
-  // この費目では開かない——この対比が P2 3 の主旨のまま変わっていない。
-  if (isCourier && shipYen != null) {
-    lines.push(L('courier-destination-fees', 'Destination-side courier fees (unpublished)', null,
-      'fuel/remote-area surcharges are not published for this route'
-      + ` — ${svc.name} may pass through charges the carrier bills after the fact`,
-      'none'));
-  }
+  // **2026-09-13、オーナー決定でこの行を分離した（旧 `courier-destination-fees`、
+  // P2 3 時点では燃油・遠隔地サーチャージをまとめて未公表の1行にしていた）。**
+  //
+  // - **燃油サーチャージ**: 表示送料に含まれている前提で扱う。行を立てず、
+  //   計上も未知化もしない（C11 の決定どおり。`master/carrier-surcharges.json`
+  //   の `arithmetic_note` はこの決定が「記録は変えるが表示額は変えない」と
+  //   書いていたが、それは誤りだった——`amount: null` の行が実際には
+  //   `total.high` を開けて 343 条件中 266 条件を `rankIndeterminate` にしていた。
+  //   `master/carrier-surcharges.json` に訂正フィールドで記録済み）。
+  // - **遠隔地サーチャージ**: 表示送料に含めない・総額にも加算しない。
+  //   「住所によって追加料金あり」という注記を宅配便の行がある画面に共通で出す
+  //   （`RemoteAreaSurchargeNote` コンポーネント、`Calculator.tsx`）。
+  //   **`Line` にはしない。** `amount: null` の行は `scope: 'shared'` を付けても
+  //   `total.high`（画面表示、`totalRange()`）を閉じない——`scope` が畳むのは
+  //   `rankHighFor()`（順位専用の内部値）だけで、`totalRange()` はこの値を
+  //   一切見ない（このファイル冒頭のコメント参照）。総額の上限を実際に開けない
+  //   唯一の表現は「そもそも行を作らない」ことなので、比較には何も足さず、
+  //   画面の注記だけで伝える。
+  // - **後出し請求（旧行の note にあった「carrier bills after the fact」）**:
+  //   オーナーの2026-09-13決定は燃油と遠隔地の2項目だけを扱っており、この
+  //   包括的な文言をどちらに寄せるかは決定に明記されていない。今回は
+  //   「宅配便の最終価格が正（オーナー確定 2026-09-11）」という既存方針と
+  //   同じ理由で、**燃油込みの前提の範囲内に吸収する**——燃油・遠隔地以外の
+  //   「請求後に判明する上乗せ」を裏付ける一次情報を持っていないため、
+  //   別カテゴリの未知として残すと F34（通関/立替、`courier-clearance-fee`）
+  //   と重複するか、根拠のない上限のない未知を作ることになる。**これは
+  //   一次情報の無い判断であり、確認できたら訂正する**（本ファイル §9 の
+  //   原則どおり、状況の記述であって証明ではない）。もし今後この文言が
+  //   指していた具体的な費目（燃油・遠隔地・通関以外）が判明したら、
+  //   その時点で `total.high` を開けるかどうかをオーナーに判断してもらう
+  //   必要がある——開ければ今回の「上限を開ける必要はない」という決定と
+  //   衝突するので、勝手に倒さずここに衝突の可能性として明記しておく。
 
   // F26。日本郵便の全便が対象（EMS・小形包装物・国際小包の別を問わない）。
   // **宅配便の行では立たない**——`filterJapanPostOnlyLines()` 参照。
@@ -1771,6 +1789,17 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   const total = totalRange(lines);
   const rankHigh = rankHighFor(lines);
   const excluded = lines.filter((l) => l.amount == null).map((l) => l.label);
+  // **2026-09-13、オーナー修正（コーディネーター経由）: 上限が閉じていても
+  // 「確定」ではなく「仮定に依存した推定」の場合がある。**燃油込み・遠隔地除外は
+  // 一次情報で検証済みの決定ではなく未確認の仮定なので、それに依存して閉じた
+  // `total.high` を、元々未知が無くて閉じていた行と同じ「確定」として見せてはいけない
+  // ——見せると「実際の最安」という主張になるが、正しくは「燃油込み・遠隔地除外という
+  // 共通条件での推定最安」でしかない。宅配便の行（`intl-shipping` が実際に価格を
+  // 持つ行）は必ずこの2つの仮定に依存するので、`total.high` が閉じているかに関わらず
+  // 該当する（閉じていない行では画面上意味を持たないが、値は一貫して持たせる）。
+  const closedByAssumption: string[] = isCourier && shipYen != null
+    ? ['courier-fuel-surcharge-included', 'courier-remote-area-surcharge-excluded']
+    : [];
   // **重量は費目ではないので、行の tier には現れない。** EMS 行が「公表料金」になった今、
   // 重量が推定であることをここで別に数えないと、推定の重量で引いた総額が確定値の顔をする。
   // 重量表のライン・仮置き・利用者の入力はすべて tier 'estimate'（weights.ts）なので、
@@ -1844,6 +1873,7 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     lines,
     total,
     rankHigh,
+    closedByAssumption,
     excluded,
     parcels,
     boxes,

@@ -44,8 +44,11 @@ describe('F34: counted_absence produces no clearance line at all', () => {
     expect(ship.amount).not.toBeNull(); // 便自体は実測済み
     // counted_absence: 「無いと確認した」わけではないので null 行も出さず、行自体が無い。
     expect(row.lines.some((l) => l.key === 'courier-clearance-fee')).toBe(false);
-    // ただし燃油/遠隔地サーチャージの一般的な未知は引き続き残る。
-    expect(row.lines.some((l) => l.key === 'courier-destination-fees')).toBe(true);
+    // **2026-09-13、オーナー決定で `courier-destination-fees` 行は分離・撤去された。**
+    // 燃油サーチャージは表示送料に含まれている前提で行を作らず、遠隔地サーチャージは
+    // 総額に加算しない共通の画面注記に回した（`RemoteAreaSurchargeNote`）ので、
+    // この行はもう立たない——どの宅配便の行にも存在しない。
+    expect(row.lines.some((l) => l.key === 'courier-destination-fees')).toBe(false);
   });
 });
 

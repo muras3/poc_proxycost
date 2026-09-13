@@ -33,10 +33,8 @@ async function shipTo(page: Page, code: string): Promise<void> {
   }).not.toEqual(before);
 }
 
-const DEST_UNKNOWN = 'Destination-side courier fees (unpublished)';
-
-test('the US board admits the Zonos prepayment fee on postal rows, and the courier '
-  + "equivalent's absence of a published rate on courier rows — never both, never neither", async ({ page }) => {
+test('the US board admits the Zonos prepayment fee on postal rows; courier rows carry '
+  + 'no destination-fee line at all, only the shared fuel/remote-area disclosure', async ({ page }) => {
   // **F3是正（2026-09-12）で書き直した。**以前はこのテストが「どの行にも Zonos が
   // 出る」と決め打ちしていたが、それ自体が F3 のバグ（Zonos は日本郵便が米国宛の
   // 引受条件として課すもので、宅配便の行には成立しない）を固定するテストになっていた
@@ -44,31 +42,27 @@ test('the US board admits the Zonos prepayment fee on postal rows, and the couri
   // 籠が実際に何を見せているかを検査する。#90 の言う「デフォルト行が利用者に何を
   // 見せるか」の主張なので、ピン留めではなく新しい正しい姿へ書き換える）。
   //
-  // 既定の籠（#92 以降）は US 宛で6行中5行が宅配便に解決する（`docs/audit/
-  // fable-review-2026-09-12.md` F5 の観測どおり）。宅配便の行は Zonos ではなく
-  // 「目的地側の未公表費用」を、郵便の行（Jauce の EMS）は Zonos を出す——
-  // **どちらの行も、必ずどちらか一方の「額を出せない」開示は持つ**（無言にはしない）。
+  // **2026-09-13、オーナー決定で `courier-destination-fees` 行は分離・撤去された。**
+  // 燃油サーチャージは表示送料に含まれている前提で行を作らず、遠隔地サーチャージは
+  // 総額に加算しない共通の画面注記（`RemoteAreaSurchargeNote`）に回した——つまり
+  // 宅配便の行はもう「目的地側の未公表費用」という個別の行を持たない。以前の
+  // 「郵便は Zonos、宅配便は目的地未知、どちらの行も必ずどちらか一方を持つ」という
+  // 主張は、宅配便側の前提が消えたので**もう成り立たない**。宅配便の行は Zonos も
+  // 持たず、行としての目的地未知費用も持たない——共通注記だけが画面のどこかに
+  // 一度出る形に変わった。
   await gotoCompare(page);
 
   const rows = await readRanking(page);
   let sawPostalZonos = 0;
-  let sawCourierUnknown = 0;
+  let sawCourierRow = 0;
   for (const row of rows) {
     const lower = row.text.toLowerCase();
     const hasZonos = lower.includes(PREPAY.toLowerCase());
-    const hasCourierUnknown = lower.includes(DEST_UNKNOWN.toLowerCase());
-    // 同じ行が両方を名乗ることはない——Zonos は郵便の行だけ、宅配便側の未知は
-    // 宅配便の行だけ。**どちらも無い行があってはいけない**（無言の欠落は F3 と同じ形）。
-    expect(hasZonos && hasCourierUnknown, `${row.name}: both Zonos and courier-unknown`).toBe(false);
-    expect(hasZonos || hasCourierUnknown, `${row.name}: neither Zonos nor courier-unknown`).toBe(true);
     if (hasZonos) sawPostalZonos++;
-    if (hasCourierUnknown) sawCourierUnknown++;
+    if (row.name !== 'Jauce') sawCourierRow++;
   }
-  // 既定の籠は両方の種類の行を持つ（郵便1行・宅配便5行、F5の観測）。
-  // 将来カートの中身や配送料表が変わっても構わないように、**両方が最低1行ずつ
-  // 存在すること**だけを固定する——構成比の数字までは決め打ちしない。
   expect(sawPostalZonos, 'no postal (Zonos) row in the default cart').toBeGreaterThan(0);
-  expect(sawCourierUnknown, 'no courier (destination-unknown) row in the default cart').toBeGreaterThan(0);
+  expect(sawCourierRow, 'no courier row in the default cart').toBeGreaterThan(0);
 
   // Jauce（既定の籠で唯一の郵便行）を開くと、Zonos が費目として並び、金額は「—」。
   // **¥0 ではない。**
@@ -81,16 +75,17 @@ test('the US board admits the Zonos prepayment fee on postal rows, and the couri
   expect(cells[1]).toBe('—');
   expect(cells.slice(1)).not.toContain('¥0');
 
-  // 宅配便の行（Jauce 以外）を開くと、Zonos は出ず、代わりに目的地側の未知の
-  // 費用が「—」で立つ。
+  // 宅配便の行（Jauce 以外）を開くと、Zonos は出ず、目的地側の未知の費用の
+  // 個別行も出ない——共通注記（`RemoteAreaSurchargeNote`）に置き換わったので、
+  // 費目の表としてはこの費目の行自体が無い。
   const courierIndex = rows.findIndex((r) => r.name !== 'Jauce');
   expect(courierIndex, 'no courier row in the default ranking').toBeGreaterThanOrEqual(0);
   const courierLi = await openRankRow(page, courierIndex);
   await expect(costRow(courierLi, PREPAY)).toHaveCount(0);
-  const destFee = costRow(courierLi, DEST_UNKNOWN);
-  await expect(destFee).toHaveCount(1);
-  const destCells = await rowCells(destFee);
-  expect(destCells[1]).toBe('—');
+
+  // 共通注記は画面に常時1つ出る（2026-09-13、訂正3でオーナーが「宅配便の行が
+  // あるときだけ」から「常時」に変えた）。
+  await expect(page.getByTestId('remote-area-surcharge-note')).toBeVisible();
 });
 
 test('Australia shows the checkout GST every service publishes', async ({ page }) => {

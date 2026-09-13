@@ -47,21 +47,32 @@ describe('unmeasured country stays unmeasured (P2 2)', () => {
 
 describe('a courier row stays open on top while an equivalent Japan Post row closes (P2 3)', () => {
   test('ZenMarket courier to the US carries the destination-fee unknown line; the Japan Post row for the same cart does not', () => {
-    // **`total.high` そのものでは対比できない。**米国宛は Zonos 前払い利用料が
-    // 全社・全方式で未取得（`scope: 'shared'`）なので、**このPR以前から**日本郵便
-    // だけを選んでも US 宛の `total.high` は既に `null`——courier 固有の未知が
-    // 無くても米国は開いたままになる（`taxes.test.ts` の既存の主張）。
-    // だから対比は行の**中身**（`courier-destination-fees` 行の有無）で確かめる
-    // ——これが宅配便固有に足された未知で、日本郵便の行には無い。
+    // **2026-09-13、オーナー決定で `courier-destination-fees` 行は分離・撤去された。**
+    // 燃油サーチャージは表示送料に含まれている前提で行を作らず、遠隔地サーチャージは
+    // 総額に加算しない共通の画面注記に回した（`RemoteAreaSurchargeNote`）ので、
+    // この行はどの宅配便の行にも立たない——旧来の「courier だけが持つ未知の行」という
+    // 対比自体が無くなった。**その代わり `Row.closedByAssumption` が同じ役割
+    // （courier 固有の、燃油込み・遠隔地除外という仮定への依存）を示す**——
+    // `total.high` を開けない代わりに「確定ではなく仮定依存」であることを型で残す。
+    //
+    // `total.high` そのものでは開閉を対比できない点は変わらない。米国宛は Zonos
+    // 前払い利用料が全社・全方式で未取得（`scope: 'shared'`）なので、このPR以前から
+    // 日本郵便だけを選んでも US 宛の `total.high` は既に `null`
+    // ——courier 固有の未知が無くても米国は開いたままになる（`taxes.test.ts` の
+    // 既存の主張）。
     const rows = compare({ items: items(1, 600), country: 'US', method: 'courier-ups' }).rows;
     const courierRow = byId(rows, 'zenmarket');
     expect(courierRow.total.low).toBeGreaterThan(0);
     expect(courierRow.total.high).toBeNull();
-    expect(courierRow.lines.some((l) => l.key === 'courier-destination-fees')).toBe(true);
+    expect(courierRow.lines.some((l) => l.key === 'courier-destination-fees')).toBe(false);
+    expect(courierRow.closedByAssumption).toEqual(
+      expect.arrayContaining(['courier-fuel-surcharge-included', 'courier-remote-area-surcharge-excluded']),
+    );
 
     const postalRows = compare({ items: items(1, 600), country: 'US', method: 'ems' }).rows;
     const postalRow = byId(postalRows, 'zenmarket');
     expect(postalRow.lines.some((l) => l.key === 'courier-destination-fees')).toBe(false);
+    expect(postalRow.closedByAssumption).toEqual([]);
 
     // **国を変えれば実際に閉じることを見せる。**ZenMarket に燃油・遠隔地・通関
     // 前払いの未取得費目は無いので、Zonos 未知の無い国（DE）では EMS の総額が
