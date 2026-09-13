@@ -405,10 +405,13 @@
           "route": "courier_brokerage",
           "carrier": "FedEx",
           "rule": {
-            "type": "unknown"
+            "type": "rate_of_import_charges_with_min",
+            "rate": 0.025,
+            "min": 12.9,
+            "currency": "GBP"
           },
-          "tier": "C_unknown",
-          "schema_gap": true,
+          "tier": "B_inferred",
+          "schema_gap": false,
           "schema_gap_note": "FedEx UK の Disbursement Fee は現行 clearance スキーマ（fixed_per_parcel / banded_by_value / greater_of 等）で表現できない3段の帯構造で、各帯の計算式自体が帯ごとに異なる（帯1: 税額の30%・下限あり／帯2: 定額／帯3: 税額の一定率のみ）。既存の banded_by_value は『帯の境界値→出力額』の単純対応しか持てず、帯ごとに異なる計算式（rate_with_min / flat / rate_only）を差し込めない。無理に既存の型に押し込めず、必要な形を raw_findings に記録して停止する。",
           "raw_findings": {
             "structure": "税額(duty+tax)の帯で計算式が変わる3段構造",
@@ -443,45 +446,107 @@
             "shop_based_split_cross_reference": "この単位定義（Air Waybill＝Shipment）が、店舗単位で分割発送された場合（shop-based splitting、Buyeeで発生し得る）は別々のAir Waybill＝別々のShipmentになり、重量上限での箱分割（weight-limit split）は同一Air Waybill上のmulti-piece shipment＝Shipment 1件のままになる、という運用上の帰結はまだcompare.tsに配線されていない。この帰結の記述自体は従来 master/carrier-surcharges.json の conclusions.zero_duty_clearance_fee_working_treatment（C13）の cross_reference に埋め込みで置かれていた（サーチャージの working treatment を記録するエントリで、Air Waybill数それ自体はサーチャージではなく、ここ＝通関手数料の課金単位に付随する事実なので本来の置き場所ではなかった）。2026-09-13、この customs.json 側の unit_note を本来の置き場所として明記し、C13側はここへの相互参照として残す形に整理した（docs/ROADMAP.md の暫定的な運用判断の一覧索引・assumption 5 も参照）。",
             "zero_duty_condition": "情報源に記述なし。C_unknown"
           },
-          "amount_tier": "search_snippet_no_verbatim_quote",
-          "source": "https://www.fedex.com/en-gb/customer-support/faq/duties-taxes-imported-goods/paying-duties-taxes/disbursement-fee-shipping.html",
-          "source_checked_on": "2026-09-12",
+          "amount_tier": "owner_provided_url_unverified",
+          "source": "https://www.fedex.com/content/dam/fedex/apac-asia-pacific/downloads/fedex-customs-clearance-surcharge-20july2026.pdf",
+          "source_checked_on": "2026-09-13",
           "source_fetch_result": "curl -L と WebFetch のいずれでも終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（『FedEx | System Down』インシデントページ、1771バイト）。archive.org の availability API はこのURLのスナップショット（2026-05-15）の存在は返したが、web.archive.org 自体への到達がこの環境のegressポリシーで `Blocked by egress policy` として塞がれており本文を取得できなかった。",
           "corroborating_search_snippets": [
             "WebSearch要約: 'FedEx UK's Disbursement Fee structure effective 12 January 2026 is tiered based on duty/tax amounts: if duty/tax is £0.01–£43.00, the fee is 30% of the duty/tax with a minimum of £10.50; if £43.00–£524.00, the fee is £12.90; if £524.00 or more, the fee is 2.5% of the duty/tax.'（検索結果の要約文であり、FedEx一次ページの逐語引用ではない）"
           ],
           "verbatim_quote_available": false,
-          "note": "宛先国（英国）の受取人に課される費目として扱う（出発国側の同名費目との取り違えに注意、DHL Duty Tax Paid/Processing と同型のリスク）。",
-          "zero_when_no_tax": "unknown",
-          "zero_when_no_tax_confidence": "input_rejected",
+          "note": "オーナーが2026-09-13に一次情報として提示した数値。本環境のWebFetchは本文に到達できていない（HTTPステータス・結果は下記 source_fetch_result_2026_09_13 参照）ため confidence は direct_fetch にせず owner_provided_url_unverified とする。立替対象額（duty+tax）が0の単位は working treatment により手数料も0（zero_when_no_tax=true、isZeroDutyAssumptionCarrier 参照。DDU/IOSSでFedEx/UPSが実際に立て替えなかったケースは duty+tax の実額が0になるため、このマスタの式だけで自動的に0円になる——DDU/DDPを区別する別ロジックは持たない）。",
+          "zero_when_no_tax": true,
+          "zero_when_no_tax_confidence": "owner_provided_url_unverified",
           "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-gb/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
-          "invoice_check": "never_checked"
+          "invoice_check": "never_checked",
+          "legacy_rule_before_2026_07_20": {
+            "rule": {
+              "type": "unknown"
+            },
+            "tier": "C_unknown",
+            "note": "2026-09-13以前の記録（帯構造の推定・未取得等）。削除せず保持（#122の先例）。"
+          },
+          "legacy_raw_findings": {
+            "structure": "税額(duty+tax)の帯で計算式が変わる3段構造",
+            "bands": [
+              {
+                "duty_tax_gbp_max": 43,
+                "formula": "rate_with_min",
+                "rate": 0.3,
+                "min_gbp": 10.5
+              },
+              {
+                "duty_tax_gbp_max": 524,
+                "formula": "flat",
+                "amount_gbp": 12.9
+              },
+              {
+                "duty_tax_gbp_max": null,
+                "formula": "rate_only",
+                "rate": 0.025
+              }
+            ],
+            "effective_from": "2026-01-12",
+            "unit": "per_shipment",
+            "unit_tier": "direct_fetch",
+            "unit_fetch_route": "owner（本環境の curl/WebFetch はこのページで WAF 代替失敗ページしか返さなかったため、オーナー自身が fedex.com から直接フェッチして確認した）",
+            "unit_source": "https://www.fedex.com/en-gb/conditions-of-carriage/july-2025.html",
+            "unit_quote": "'Shipment' means one or more Packages or Freight, moving on a single Air Waybill.",
+            "unit_fee_definition_source": "https://www.fedex.com/en-gb/billing/duty-tax.html",
+            "unit_fee_definition_quote": "If duty and tax charges are due when importing a shipment then FedEx may pay the duty and tax charges…",
+            "multi_piece_quote": "Multi-Piece Shipments. There is no limit on the aggregate weight of a multiple piece Shipment…",
+            "unit_note": "Air Waybill 1枚＝Shipment 1件。複数個口でも同一Air Waybillに載っていればShipmentは1件のまま（Multi-Piece Shipments条項）——したがって課金は個口数ではなくAir Waybill数に従う。金額（帯の率・下限）自体は引き続きsearch_snippet_no_verbatim_quoteのまま未確認。",
+            "shop_based_split_cross_reference": "この単位定義（Air Waybill＝Shipment）が、店舗単位で分割発送された場合（shop-based splitting、Buyeeで発生し得る）は別々のAir Waybill＝別々のShipmentになり、重量上限での箱分割（weight-limit split）は同一Air Waybill上のmulti-piece shipment＝Shipment 1件のままになる、という運用上の帰結はまだcompare.tsに配線されていない。この帰結の記述自体は従来 master/carrier-surcharges.json の conclusions.zero_duty_clearance_fee_working_treatment（C13）の cross_reference に埋め込みで置かれていた（サーチャージの working treatment を記録するエントリで、Air Waybill数それ自体はサーチャージではなく、ここ＝通関手数料の課金単位に付随する事実なので本来の置き場所ではなかった）。2026-09-13、この customs.json 側の unit_note を本来の置き場所として明記し、C13側はここへの相互参照として残す形に整理した（docs/ROADMAP.md の暫定的な運用判断の一覧索引・assumption 5 も参照）。",
+            "zero_duty_condition": "情報源に記述なし。C_unknown"
+          },
+          "per": "per_shipment",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
+          "effective_from": "2026-07-20",
+          "source_fetch_result_2026_09_13": "WebFetch: HTTP 200だが本文はFedEx自社WAFの代替失敗ページ（'we can't process your request right now'）。本文未読。",
+          "inference_basis": "オーナーが2026-09-13に一次情報のURL（2026-07-20改定のFedEx PDF）を提示。本環境のWebFetchはHTTP 200のWAF代替失敗ページしか返さず本文を直接確認できていない。数値（2.5%、最低額、per shipment、2026-07-20発効）はオーナー提供のものを採用し、direct_fetchではなくowner_provided_url_unverifiedとして記録する。"
         },
         {
           "route": "ups_disbursement",
           "carrier": "UPS",
           "rule": {
-            "type": "unknown",
-            "reasoned_range": {
-              "rate": 0.025,
-              "min_gbp": [
-                12,
-                17
-              ]
-            },
+            "type": "rate_of_import_charges_with_min",
+            "rate": 0.03,
+            "min": 14.35,
             "currency": "GBP"
           },
-          "amount_tier": "C_unknown",
-          "tier": "C_unknown",
-          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:c5fb0001-0bc2-4281-8fd0-c4d1c548e30b/original/as/additional-service-charge-si-gb-en.pdf",
-          "source_checked_on": "2026-09-12",
+          "amount_tier": "owner_provided_url_unverified",
+          "tier": "B_inferred",
+          "source": "https://assets.ups.com/adobe/assets/urn:aaid:aem:879d1ff1-c879-445f-9151-4f46ce1959f4/original/as/service-guide-base-gb-en.pdf",
+          "source_checked_on": "2026-09-13",
           "source_fetch_result": "curl --http1.1 で2回試行しいずれも `curl: (52) Empty reply from server`（HTTP 000）。WebFetch は同URLで HTTP 503。同ドメインの en_GB 配下の関連PDF（trade-policy-tariff-changes-en-gb.pdf、HTTP 200・27ページ取得成功）にはDisbursement Feeの数式に言及したQ&Aはあるが具体的な料率・最低額の記載が無い。",
           "inference_basis": "フォーラム（MoneySavingExpert 等の二次情報）が『2.5%、最低£12〜£17』を伝えているが、いずれもUPS自身の一次資料ではなく、金額の逐語引用も取れていない。#81 が同じくGBのUPS公表値を取得できなかったという記録と整合する。",
           "verbatim_quote_available": false,
-          "per": "unknown",
-          "zero_when_no_tax": "unknown",
-          "note": "宛先側（英国）で受取人に課される立替手数料と推定されるが、UPS自身の一次資料からは料率・最低額いずれも未確認。#81の既知の壁を再確認した。",
-          "invoice_check": "never_checked"
+          "per": "per_shipment",
+          "zero_when_no_tax": true,
+          "note": "オーナーが2026-09-13に一次情報として提示した数値。本環境のWebFetchは本文に到達できていない（HTTPステータス・結果は下記 source_fetch_result_2026_09_13 参照）ため confidence は direct_fetch にせず owner_provided_url_unverified とする。立替対象額（duty+tax）が0の単位は working treatment により手数料も0（zero_when_no_tax=true、isZeroDutyAssumptionCarrier 参照。DDU/IOSSでFedEx/UPSが実際に立て替えなかったケースは duty+tax の実額が0になるため、このマスタの式だけで自動的に0円になる——DDU/DDPを区別する別ロジックは持たない）。",
+          "invoice_check": "never_checked",
+          "legacy_rule_before_2026_06_07": {
+            "rule": {
+              "type": "unknown",
+              "reasoned_range": {
+                "rate": 0.025,
+                "min_gbp": [
+                  12,
+                  17
+                ]
+              },
+              "currency": "GBP"
+            },
+            "tier": "C_unknown",
+            "note": "2026-09-13以前の記録（帯構造の推定・未取得等）。削除せず保持（#122の先例）。"
+          },
+          "schema_gap": false,
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
+          "effective_from": "2026-06-07",
+          "source_fetch_result_2026_09_13": "WebFetch: HTTP 503 Service Unavailable。本文未読。",
+          "zero_when_no_tax_confidence": "owner_provided_url_unverified"
         },
         {
           "route": "ecms_duty_advance",
@@ -646,10 +711,13 @@
           "route": "fedex",
           "carrier": "FedEx（Aufwendungspauschale/Disbursement Fee）",
           "rule": {
-            "type": "unknown"
+            "type": "rate_of_import_charges_with_min",
+            "rate": 0.025,
+            "min": 15.0,
+            "currency": "EUR"
           },
-          "tier": "C_unknown",
-          "schema_gap": true,
+          "tier": "B_inferred",
+          "schema_gap": false,
           "schema_gap_note": "GB FedEx 行と同型の3段帯構造（DE も帯ごとに計算式が異なる: 帯1=下限付き率、帯2=定額、帯3=率のみ）。GBの schema_gap_note と同じ理由で既存の clearance スキーマに押し込めない。GB/DEで同じ3段構造が確認できたのは、FedExが国別ではなく地域横断で同じ計算方式を使っている可能性を示す発見（下記 note 参照）。",
           "raw_findings": {
             "structure": "輸入税(Einfuhrabgaben)の帯で計算式が変わる3段構造",
@@ -684,20 +752,66 @@
             "shop_based_split_cross_reference": "GB行の shop_based_split_cross_reference と同内容。詳細はそちらを参照。",
             "zero_duty_condition": "情報源に記述なし。C_unknown"
           },
-          "amount_tier": "search_snippet_no_verbatim_quote",
-          "source": "https://www.fedex.com/de-de/ancillary-clearance-service.html",
-          "source_checked_on": "2026-09-12",
+          "amount_tier": "owner_provided_url_unverified",
+          "source": "https://www.fedex.com/content/dam/fedex/apac-asia-pacific/downloads/fedex-customs-clearance-surcharge-20july2026.pdf",
+          "source_checked_on": "2026-09-13",
           "source_fetch_result": "curl -L で終始 HTTP 200 だが本文は FedEx 自社 WAF の代替失敗ページ（GB と同一の『FedEx | System Down』1771バイト）。archive.org availability API はこのURLのスナップショットを返さなかった（`archived_snapshots: {}`）。",
           "corroborating_search_snippets": [
             "WebSearch要約（fedex.comの検索結果を要約したもので逐語引用ではない）: 'Import duties up to 50 euros: 30% of import duties as fees, minimum 5 euros net (5.95 euros gross); Import duties 50 to 600 euros: 15 euros fees; Import duties over 600 euros: 2.5% of import duties as fees.'",
             "別のWebSearch要約（ShipScience、汎欧州の別説と食い違う）: 'Europe: Flat €15.00 minimum, 2.5% of duty & tax for all countries'（適用開始日・国範囲は特定できず）"
           ],
           "verbatim_quote_available": false,
-          "note": "**矛盾の記録**: 上記2つの二次情報は同じ『€15』という数字を含むが位置づけが違う——1つは『600ユーロまでの帯の定額15ユーロ』、もう1つは『欧州共通の最低額15ユーロ（2.5%との greater_of）』。帯構造そのものが二次情報でしか確認できていないため、どちらが正しいか、あるいは両方とも古い/新しい料率の混在かは一次情報なしに判定できない。GB の帯構造（30%/下限10.50・定額12.90・2.5%）と DE の帯構造（30%/下限5・定額15・2.5%）はしきい値と通貨単位こそ違うが形が同一で、FedExが『下限付き率→定額→率のみ』という共通テンプレートを国ごとに数値だけ変えて適用している可能性を示唆する——次にUPS/DHLの同型行を集める際にも同じテンプレートを想定して検索するとよい。宛先国（ドイツ）の受取人に課される費目として扱う。",
-          "zero_when_no_tax": "unknown",
-          "zero_when_no_tax_confidence": "input_rejected",
+          "note": "オーナーが2026-09-13に一次情報として提示した数値。本環境のWebFetchは本文に到達できていない（HTTPステータス・結果は下記 source_fetch_result_2026_09_13 参照）ため confidence は direct_fetch にせず owner_provided_url_unverified とする。立替対象額（duty+tax）が0の単位は working treatment により手数料も0（zero_when_no_tax=true、isZeroDutyAssumptionCarrier 参照。DDU/IOSSでFedEx/UPSが実際に立て替えなかったケースは duty+tax の実額が0になるため、このマスタの式だけで自動的に0円になる——DDU/DDPを区別する別ロジックは持たない）。",
+          "zero_when_no_tax": true,
+          "zero_when_no_tax_confidence": "owner_provided_url_unverified",
           "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/de-de/ancillary-clearance-service.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
-          "invoice_check": "never_checked"
+          "invoice_check": "never_checked",
+          "legacy_rule_before_2026_07_20": {
+            "rule": {
+              "type": "unknown"
+            },
+            "tier": "C_unknown",
+            "note": "2026-09-13以前の記録（帯構造の推定・未取得等）。削除せず保持（#122の先例）。"
+          },
+          "legacy_raw_findings": {
+            "structure": "輸入税(Einfuhrabgaben)の帯で計算式が変わる3段構造",
+            "bands": [
+              {
+                "duty_eur_max": 50,
+                "formula": "rate_with_min",
+                "rate": 0.3,
+                "min_eur_net": 5,
+                "min_eur_gross": 5.95
+              },
+              {
+                "duty_eur_max": 600,
+                "formula": "flat",
+                "amount_eur": 15
+              },
+              {
+                "duty_eur_max": null,
+                "formula": "rate_only",
+                "rate": 0.025
+              }
+            ],
+            "unit": "per_shipment",
+            "unit_tier": "direct_fetch",
+            "unit_fetch_route": "owner（本環境の curl はこのページで WAF 代替失敗ページしか返さなかったため、オーナー自身が fedex.com から直接フェッチして確認した）",
+            "unit_source": "https://www.fedex.com/en-de/conditions-of-carriage/jan-2026.html",
+            "unit_quote": "'Shipment' means one or more Packages or Freight, moving on a single Air Waybill.",
+            "unit_fee_definition_source": "https://www.fedex.com/en-de/billing/duty-tax.html",
+            "unit_fee_definition_quote": "This incurs a Disbursement Fee, dependent on the duty and tax amount…",
+            "multi_piece_quote": "Multi-Piece Shipments. There is no limit on the aggregate weight of a multiple piece Shipment…",
+            "unit_note": "GBと同一の定義（Air Waybill 1枚＝Shipment 1件、2026年1月版 Conditions of Carriage）。金額（帯の率・下限）自体は引き続きsearch_snippet_no_verbatim_quoteのまま未確認。",
+            "shop_based_split_cross_reference": "GB行の shop_based_split_cross_reference と同内容。詳細はそちらを参照。",
+            "zero_duty_condition": "情報源に記述なし。C_unknown"
+          },
+          "per": "per_shipment",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
+          "effective_from": "2026-07-20",
+          "source_fetch_result_2026_09_13": "WebFetch: HTTP 200だが本文はFedEx自社WAFの代替失敗ページ（'we can't process your request right now'）。本文未読。",
+          "inference_basis": "オーナーが2026-09-13に一次情報のURL（2026-07-20改定のFedEx PDF）を提示。本環境のWebFetchはHTTP 200のWAF代替失敗ページしか返さず本文を直接確認できていない。数値（2.5%、最低額、per shipment、2026-07-20発効）はオーナー提供のものを採用し、direct_fetchではなくowner_provided_url_unverifiedとして記録する。"
         },
         {
           "route": "ups_disbursement",

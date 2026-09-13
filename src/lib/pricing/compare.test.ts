@@ -3030,18 +3030,34 @@ describe("'cheapest' selects by landed total, not by international shipping pric
     expect(cheapest.total.low).toBeLessThan(ups.total.low);
   });
 
-  test('GB, 300 g, ¥500 item, Neokyo: a courier with worse shipping but a cheaper clearance fee wins on total', () => {
+  // **2026-09-13是正**: この例は元々、GB FedEx（当時 schema_gap で `courier-clearance-fee`
+  // が null＝合計に一切乗らなかった）が実際より安く見えることで「FedEx Connect Plus が
+  // 送料は高いのに総額でEMSに勝つ」ように見えていた——しかしそれは「総額で選んでいる」
+  // 実例ではなく、**未価格化の費目が合計から抜け落ちていたバグをそのまま固定していた**
+  // ケースだった。オーナーが一次情報を提示しGB FedExのDisbursement Feeが価格化された今、
+  // FedEx Connect Plusの総額はEMSより高くなり、`cheapest` は正しくEMSを選ぶ。
+  // 「総額で選ぶ」という主張自体はUS/FRの2件で引き続き固定されているので、ここは
+  // 「価格化されていない費目のせいで安く見えていたルートを、cheapestが正しく除外するように
+  // なった」ことを新しく固定する（このPRの副次効果の記録）。
+  test('GB, 300 g, ¥500 item, Neokyo: once GB FedEx\'s clearance fee is priced (2026-09-13), cheapest'
+    + ' correctly stops favouring it over EMS just because the fee used to be missing from the total', () => {
     const cheapest = byId(
       compare({ items: cart(300, 500), country: 'GB', method: 'cheapest' }).rows, 'neokyo',
     );
     const ems = byId(
       compare({ items: cart(300, 500), country: 'GB', method: 'ems' }).rows, 'neokyo',
     );
-    const emsShip = line(ems, 'intl-shipping').amount!;
-    const chosenShip = line(cheapest, 'intl-shipping').amount!;
-    expect(emsShip).toBeLessThan(chosenShip);
-    expect(cheapest.method).not.toBe('ems');
-    expect(cheapest.total.low).toBeLessThan(ems.total.low);
+    const fedexConnectPlus = byId(
+      compare({ items: cart(300, 500), country: 'GB', method: 'courier-fedex-connect-plus' }).rows, 'neokyo',
+    );
+    // FedEx Connect Plus の送料自体は今も EMS より高い（前提は変わっていない）。
+    expect(line(fedexConnectPlus, 'intl-shipping').amount!).toBeGreaterThan(line(ems, 'intl-shipping').amount!);
+    // しかし通関手数料が価格化された今、FedEx Connect Plus の総額は EMS より高くなり、
+    // `cheapest` は EMS を選ぶ——GB FedEx の通関手数料が null で合計に乗らなかった頃は
+    // ここが逆転していた（このPRが直したこと自体の固定）。
+    expect(fedexConnectPlus.total.low).toBeGreaterThan(ems.total.low);
+    expect(cheapest.method).toBe('ems');
+    expect(cheapest.total.low).toBe(ems.total.low);
   });
 
   test('FR, 3,000 g, ¥500 item, ZenMarket: ECMS Express ships dearer than FedEx but still wins on total', () => {
