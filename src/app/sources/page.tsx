@@ -197,6 +197,48 @@ export default function SourcesPage() {
         </div>
       </section>
 
+      <section className="mt-12">
+        <H2 id="courier-surcharges">Courier fuel and remote-area surcharges</H2>
+        <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Where a courier (FedEx, DHL, UPS) shipping price is measured rather than published, that
+          price can come bundled with two variable add-ons the carrier itself charges: a fuel
+          surcharge, which moves week to week, and a remote-area surcharge, which only applies to
+          some destination postcodes. Here is how we handle each:
+        </p>
+        <ul className="mt-4 max-w-3xl space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+          <li>
+            <span className="font-semibold">Fuel surcharge</span>
+            {' — '}we treat the courier price as already including it, and{' '}
+            <span className={tierClass.unverified}>we do not add anything on top</span>. This is
+            our own working assumption, not a confirmed fact: proxy services negotiate their own
+            contract rates with carriers, so a carrier&rsquo;s published fuel-surcharge percentage
+            (which changes weekly) is not something we have grounds to apply to a rate we did not
+            negotiate. Adding it anyway risked double-counting or overstating the price more than
+            leaving it out did.
+          </li>
+          <li>
+            <span className="font-semibold">Remote-area surcharge</span>
+            {' — '}we do not include it in any total. It only applies to some destination
+            postcodes, and this calculator does not ask for one, so where it would apply is outside
+            what we can price. We show a permanent note instead of a number:{' '}
+            <span className="italic">
+              &ldquo;Displayed shipping rates are estimated as fuel-surcharge inclusive. Remote-area
+              surcharges are not included.&rdquo;
+            </span>
+          </li>
+        </ul>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Two things this does not mean: it does not mean the courier price you see is guaranteed
+          to be the final one — we have not confirmed that either surcharge is never billed
+          separately afterward. And leaving the remote-area surcharge out of the total is not the
+          same as saying it cannot change which company comes first — a company that happens to
+          absorb it into a lower base rate could rank differently once a real, surcharge-eligible
+          address is priced. Settling either question needs a real invoice for a shipment that
+          actually carried these surcharges, and we have not found a practical way to get one for
+          these two items specifically.
+        </p>
+      </section>
+
       {/* **送れるかを我々は見ていない。**順位表の常時開示（RestrictedGoodsNote）が
           ここへ送るので、原文が言っていることをそのまま並べる。英語版に無い記述は
           日本語版の URL を出典にし、そう名乗る（原文が無い言語の URL を出典と書かない）。 */}
