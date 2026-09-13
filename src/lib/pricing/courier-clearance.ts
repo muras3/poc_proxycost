@@ -71,6 +71,20 @@ export function courierCarrierOf(method: CourierMethod): CourierClearanceCarrier
   return null; // courier-sf-express / courier-buyee-air / courier-surface — master にデータなし
 }
 
+/** FedEx GB/DE 型の帯（`master/validate.py#eval_clearance()` の
+ * `banded_by_import_tax_mixed` と対をなす）。帯選びの軸は申告価格ではなく
+ * duty+tax（`dutyPlusTaxYen`）── `banded_value_mixed` との違いはそこだけ。
+ * 各帯の式自体は3種類（下限付き率／定額／率のみ）で、master 側が
+ * `rate_of_import_charges_with_min` / `fixed_per_parcel` / `rate_of_import_charges`
+ * を再帰的に評価するのと同じ形をここでも保つ。
+ * **現時点で `COURIER_CLEARANCE` のどのエントリもこの kind を使わない**
+ * ──GB/DEのFedEx行はまだ `master/customs.json` 上で `rule.type: "unknown"`
+ * のままで、このPRは「表現できる形を用意する」だけ（PR本文参照）。 */
+type DutyTaxBand =
+  | { maxLocal: number | null; formula: 'rate_with_min'; rate: number; minLocal: number }
+  | { maxLocal: number | null; formula: 'flat'; amountLocal: number }
+  | { maxLocal: number | null; formula: 'rate_only'; rate: number };
+
 type Rule =
   | { kind: 'rate_min'; rate: number; minLocal: number }
   | { kind: 'rate_min_max'; rate: number; minLocal: number; maxLocal: number }
@@ -78,7 +92,8 @@ type Rule =
     kind: 'banded_value_mixed';
     valueLteLocal: number; flatLocal: number;
     aboveRate: number; aboveMinLocal: number;
-  };
+  }
+  | { kind: 'banded_duty_tax_mixed'; bands: DutyTaxBand[] };
 
 export interface CourierClearanceRoute {
   tier: 'fixed' | 'estimate';
@@ -300,5 +315,21 @@ export function evalClearanceRuleYen(
       return declaredLocal <= rule.valueLteLocal
         ? rule.flatLocal * ccyToJpy
         : Math.max(rule.aboveMinLocal * ccyToJpy, rule.aboveRate * dutyPlusTaxYen);
+    case 'banded_duty_tax_mixed': {
+      // 帯選びは duty+tax（申告価格ではない）。境界は「以下」に含む（<=）、
+      // maxLocal===null は上限なし——master/validate.py の banded_by_import_tax_mixed
+      // と同じ規約（banded_by_value 由来）。
+      const dutyTaxLocal = dutyPlusTaxYen / ccyToJpy;
+      for (const band of rule.bands) {
+        if (band.maxLocal === null || dutyTaxLocal <= band.maxLocal) {
+          if (band.formula === 'rate_with_min') {
+            return Math.max(band.rate * dutyPlusTaxYen, band.minLocal * ccyToJpy);
+          }
+          if (band.formula === 'flat') return band.amountLocal * ccyToJpy;
+          return band.rate * dutyPlusTaxYen; // 'rate_only'
+        }
+      }
+      throw new Error(`banded_duty_tax_mixed: duty+tax ${dutyTaxLocal} を含む帯が無い`);
+    }
   }
 }

@@ -39,7 +39,7 @@ import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVI
 import type { Service } from './services';
 import { compare } from './compare';
 import type { Item } from './types';
-import { COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN } from './courier-clearance';
+import { COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, evalClearanceRuleYen } from './courier-clearance';
 import type { CountryCode } from './types';
 
 // ── マスタ読み込み ──────────────────────────────────────────────
@@ -1162,9 +1162,43 @@ function expectedRuleFrom(row: {
         aboveRate: high.rule.rate, aboveMinLocal: high.rule.min,
       };
     }
+    case 'banded_by_import_tax_mixed':
+      // FedEx GB/DE 型（このPR、f34-clearance-tiered-band-schema）。帯ごとに
+      // 式そのものが変わるため、単一の rate/minLocal には潰せない——帯配列同士の
+      // 突き合わせは専用の `expectedDutyTaxBandsFrom()` + 下の describe が行う。
+      // **master/customs.json のどの行もまだこの rule.type を使わない**
+      // （GB/DE FedExはこのPR時点でも "unknown" のまま）ので、ここは
+      // 「kindだけ一致すればよい」形にして、実データが来た日に対応漏れで
+      // 落ちないようにしておく。
+      return { kind: 'banded_duty_tax_mixed', currency: rule.currency as string };
     default:
       throw new Error(`未対応の rule.type: ${type}（master-sync.test.ts の expectedRuleFrom に追加すること）`);
   }
+}
+
+/** `banded_by_import_tax_mixed` 専用: master の帯配列を `Rule.kind:
+ * 'banded_duty_tax_mixed'` の帯配列へ変換する（rate/minLocal 等への1点集約が
+ * できないので `expectedRuleFrom` の汎用パスとは別に持つ）。 */
+function expectedDutyTaxBandsFrom(rule: {
+  bands: Array<{ duty_tax_max: number | null; rule: { type: string; rate?: number; min?: number; amount?: number } }>;
+}): Array<
+  | { maxLocal: number | null; formula: 'rate_with_min'; rate: number; minLocal: number }
+  | { maxLocal: number | null; formula: 'flat'; amountLocal: number }
+  | { maxLocal: number | null; formula: 'rate_only'; rate: number }
+  > {
+  return rule.bands.map((band) => {
+    const sub = band.rule;
+    if (sub.type === 'rate_of_import_charges_with_min') {
+      return { maxLocal: band.duty_tax_max, formula: 'rate_with_min', rate: sub.rate!, minLocal: sub.min! };
+    }
+    if (sub.type === 'fixed_per_parcel') {
+      return { maxLocal: band.duty_tax_max, formula: 'flat', amountLocal: sub.amount! };
+    }
+    if (sub.type === 'rate_of_import_charges') {
+      return { maxLocal: band.duty_tax_max, formula: 'rate_only', rate: sub.rate! };
+    }
+    throw new Error(`banded_by_import_tax_mixed: 未対応の帯内 rule.type: ${sub.type}`);
+  });
 }
 
 /** master row → 期待する per-parcel/per-shipment。「per_shipment」と明記されている
@@ -1265,6 +1299,62 @@ describe('F34 DELIBERATELY_UNPRICED ── C_unknown/schema_gap は点推定を�
       expect(COURIER_CLEARANCE_UNKNOWN[cc]?.[carrier]).toBeTruthy();
     });
   }
+});
+
+describe('F34 tiered band schema (banded_by_import_tax_mixed ↔ banded_duty_tax_mixed) ── 能力の突き合わせ', () => {
+  // GB/DE FedExの実行（`findClearanceRow`）は依然 `rule.type: "unknown"` のままで
+  // customs.json を書き換えていない（このPRのスコープ外——PR本文参照）。したがって
+  // ここは実データではなく、raw_findings（docs/audit/f34-fedex-seven-countries-
+  // 2026-09-12.md）が記録した値をそのまま合成した master 形の row で
+  // `expectedRuleFrom`/`expectedDutyTaxBandsFrom` を駆動し、それが
+  // `courier-clearance.ts` 側の `Rule.kind: 'banded_duty_tax_mixed'` と
+  // 一致することだけを確認する。実データが移行されたときにこの変換ロジック自体は
+  // 対応済みであることの保証で、GB/DEの2セルを勝手に価格化するものではない
+  // （それは下の DELIBERATELY_UNPRICED 及び courier-clearance.test.ts の
+  // 別テストが固定している）。
+  const syntheticGbFedexRow = {
+    carrier: 'FedEx',
+    rule: {
+      type: 'banded_by_import_tax_mixed',
+      currency: 'GBP',
+      bands: [
+        { duty_tax_max: 43, rule: { type: 'rate_of_import_charges_with_min', rate: 0.30, min: 10.50 } },
+        { duty_tax_max: 524, rule: { type: 'fixed_per_parcel', amount: 12.90 } },
+        { duty_tax_max: null, rule: { type: 'rate_of_import_charges', rate: 0.025 } },
+      ],
+    },
+  };
+
+  it('expectedRuleFrom() recognises banded_by_import_tax_mixed and reports the matching code-side kind', () => {
+    const expected = expectedRuleFrom(syntheticGbFedexRow);
+    expect(expected.kind).toBe('banded_duty_tax_mixed');
+    expect(expected.currency).toBe('GBP');
+  });
+
+  it('expectedDutyTaxBandsFrom() converts the master bands into courier-clearance.ts\'s DutyTaxBand shape', () => {
+    const bands = expectedDutyTaxBandsFrom(syntheticGbFedexRow.rule);
+    expect(bands).toEqual([
+      { maxLocal: 43, formula: 'rate_with_min', rate: 0.30, minLocal: 10.50 },
+      { maxLocal: 524, formula: 'flat', amountLocal: 12.90 },
+      { maxLocal: null, formula: 'rate_only', rate: 0.025 },
+    ]);
+  });
+
+  it('a Rule built from those converted bands prices identically to master/test_tiered_band_schema.py\'s Python fixture', () => {
+    // ここでの数値（20→10.50, 43→max(0.3*43,10.50), 43.01→12.90, 524→12.90,
+    // 524.01→0.025*524.01, 10000→250.0）は master/test_tiered_band_schema.py の
+    // GB_FEDEX_RULE アサーションと1件ずつ対応する——2言語の実装がずれていないことの
+    // 確認がこのテストの目的なので、値は勝手に変えないこと。
+    const bands = expectedDutyTaxBandsFrom(syntheticGbFedexRow.rule);
+    const rule = { kind: 'banded_duty_tax_mixed' as const, bands };
+    const CCY = 1; // local と yen を同一視（Pythonの生の import_tax 値と直接比較するため）
+    expect(evalClearanceRuleYen(rule, 20, 0, CCY)).toBeCloseTo(10.50, 10);
+    expect(evalClearanceRuleYen(rule, 43, 0, CCY)).toBeCloseTo(Math.max(0.30 * 43, 10.50), 10);
+    expect(evalClearanceRuleYen(rule, 43.01, 0, CCY)).toBeCloseTo(12.90, 10);
+    expect(evalClearanceRuleYen(rule, 524, 0, CCY)).toBeCloseTo(12.90, 10);
+    expect(evalClearanceRuleYen(rule, 524.01, 0, CCY)).toBeCloseTo(0.025 * 524.01, 10);
+    expect(evalClearanceRuleYen(rule, 10_000, 0, CCY)).toBeCloseTo(250.0, 10);
+  });
 });
 
 describe('F34 NO_LINE (counted_absence) ── 法人が確認できない業者は行そのものを出さない', () => {
