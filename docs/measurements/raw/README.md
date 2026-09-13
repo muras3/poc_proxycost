@@ -111,6 +111,12 @@
 | `misc/2026-09-12-multi-proxy-addendum.json` | `fede91d0-proxy_shipping_measurement_addendum_2026-09-12.json` | 2026-09-12 | FROM JAPAN/Jauce/Buyee/ZenMarket/Neokyo横断の追加観測。`master/courier-rates.json`の`jauce_de_2026_09_12`の出典として`capture_file`一致確認済み | PR #79 | ✓ | 🟡 Jauce部分は上記Jauce v2ラウンドと同じ日・同じ手法上の懸念を共有する。Buyee部分は`buyee/2026-09-12-de-verified.json`との間に自己申告の矛盾がある(上記参照)。 |
 | `misc/2026-09-09-development-handoff-factchecked.md` | `0ff58140-ProxyCost_Development_Handoff_FACTCHECKED_20260909.md` | 2026-09-09 | **測定データではない。** プロジェクトの設計意図・Fact/Decision/Open区分をまとめたハンドオフ文書(2回のファクトチェック済み) | (直接の「取り込みPR」は無し。プロジェクト初期の設計方針の土台として参照された) | ✓(対象外) | ⚪ 測定ではないため信頼性ラベルの対象外。プロジェクトの初期意図を知るための一次資料として保存。 |
 
+### ドイツ・1kg「合計」オラクル(単一プロキシに属さない・5社横断)
+
+| 保存先 | 元のアップロードファイル名 | 日付 | 内容 | 取り込みPR | §10前 | 信頼性 |
+|---|---|---|---|---|:---:|---|
+| `de-1kg-total-oracle-2026-09-13.md` | `47a32879-proxy_shipping_total_measurement.md` | 2026-09-13 | FROM JAPAN/Buyee/ZenMarket/Jauce/Neokyo横断、DE・1,000g・20x15x10cm固定、¥1,000/¥10,000/¥50,000/¥250,000の4価格帯で「合計」の出方そのものを比較。各条件3回試行・表示一致を確認(§10の規律下の測定)。5社中3社(Buyee/Jauce/Neokyo)は商品価格欄が構造的に無く「合計」が出ない、ZenMarketは¥50,000/¥250,000で表示方式構成が試行間で変動、という所見を含む | `claude/de-1kg-total-measurement`(本PR) | (§10確立日の測定) | 🟡 未評価・今回のPRで初めて取り込まれた生データ。所見の抽出は`docs/measurements/de-1kg-total-oracle-findings-2026-09-13.md`側。エンジンとの突き合わせは未実施。 |
+
 ### チャットに直接貼り付けられた捕獲(アップロードファイルではない)
 
 以下の2件は、上記29件とは**出所の系統が異なる**。ファイルとしてアップロードされたのではなく、
