@@ -258,9 +258,9 @@ ZenMarket の見積（同一荷物・スペイン向け、利用者が投稿）�
   費目 80 行 / rule.type 33 種 / catalog 41 / 国 9 / 通関経路 48
   display 内訳: total 21 / engine_only 7 / optional 0 / warning_only 1 / hidden 12
 
-  invoice_check カバレッジ（fees.json, 費目 80 行）: never_checked 79 / confirmed_calculator 1 / confirmed_independent 0 / confirmed_circular 0 / contradicted 0
+  invoice_check カバレッジ（fees.json, 費目 80 行）: never_checked 78 / confirmed_calculator 2 / confirmed_independent 0 / confirmed_circular 0 / contradicted 0
   invoice_check カバレッジ（customs.json clearance, 通関経路 48 件）: never_checked 44 / confirmed_calculator 0 / confirmed_independent 1 / confirmed_circular 3 / contradicted 0
-  合算: 実請求で独立に確認済み 1 件 / 一次ページを読んだのみ（未確認）123 件  ※ A_confirmed の多さはこの数には現れない。confidence/tier と invoice_check は別の軸
+  合算: 実請求で独立に確認済み 1 件 / 一次ページを読んだのみ（未確認）122 件  ※ A_confirmed の多さはこの数には現れない。confidence/tier と invoice_check は別の軸
 
   rule.type 評価カバレッジ: 通関経路 48 件中 41 件が eval_clearance() で評価可能、**7 件は宣言のみで未評価**
   未評価の内訳（型が存在する ＝ 計算されている、と読んではいけない行）:

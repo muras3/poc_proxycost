@@ -807,7 +807,17 @@
       "checked_on": "2026-09-07",
       "quote": "500 yen per item",
       "note": "この¥500はProduct Protection Plan（必須）と同一の費目。F12は内包（T-F5、2026-09-11）。",
-      "invoice_check": "never_checked"
+      "invoice_check": "confirmed_calculator",
+      "invoice_check_detail": {
+        "measured_on": "2026-09-13",
+        "method": "オーナー自身がFROM JAPANの自社見積り計算機を7カ国×重量カーブで実測した際（docs/audit/fromjapan-own-calculator-seven-countries-2026-09-13.md）、測定した全条件で結果画面に共通表示される Handling fee を記録した",
+        "observation": "Handling fee: 500 yen/Item という表示が、測定した全条件（複数国・複数重量）で一貫していた",
+        "not_threshold_tested": "F26と異なりF02は金額が申告額等に依存しない定額（fixed_per_item）のため、しきい値をまたぐ検証は成立しない。今回確認できたのは『複数条件・複数回の観測で金額が揺れなかった』という再現性のみ",
+        "calculator_disclaimer_quote": "Your final payment will be determined by actual cost and may vary from the estimate provided in this tool.",
+        "not_an_invoice_because": "計算機はFROM JAPAN自身のシステムであり、他社の実請求と違って会社から独立していない",
+        "scope": "この測定はFROM JAPAN 1社のみ。同じF02行を持つ他社（Buyee等）には一般化していない（原則3）",
+        "source_ref": "master/courier-rates.json の conclusions.fromjapan_handling_fee_cross_check_2026_09_13"
+      }
     },
     {
       "id": "F04",
