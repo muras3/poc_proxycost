@@ -1,0 +1,344 @@
+﻿country,weightG,priceYen,itemCount,storageDays,site,leaderCompany,leaderMethod,leaderLow,leaderHigh,rankIndeterminate,blockingKeys,blockingLabels,blockingTiers,blockingUnknownReasons,blockingSourceUrls,runnerUpCompany,runnerUpLow
+US,200,3000,1,0,mercari,buyee,courier-ecms,7731,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,7738
+US,200,10000,1,0,mercari,buyee,courier-ecms,15887,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,15894
+US,200,30000,1,0,mercari,buyee,courier-ecms,39187,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,39195
+US,200,60000,1,0,mercari,zenmarket,small-packet-air,74123,,false,,,,,,buyee,74137
+US,200,100000,1,0,mercari,zenmarket,small-packet-air,120574,,false,,,,,,buyee,120738
+US,200,150000,1,0,mercari,zenmarket,small-packet-air,178637,,false,,,,,,buyee,178990
+US,200,250000,1,0,mercari,buyee,courier-ecms,295492,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,295499
+US,500,3000,1,0,mercari,buyee,courier-ecms,7731,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,8475
+US,500,10000,1,0,mercari,buyee,courier-ecms,15887,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,16631
+US,500,30000,1,0,mercari,buyee,courier-ecms,39187,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,39931
+US,500,60000,1,0,mercari,buyee,courier-ecms,74137,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,74874
+US,500,100000,1,0,mercari,buyee,courier-ecms,120738,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,121325
+US,500,150000,1,0,mercari,buyee,courier-ecms,178990,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,179388
+US,500,250000,1,0,mercari,buyee,courier-ecms,295492,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,296236
+US,1000,3000,1,0,mercari,buyee,courier-ecms,7731,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,9246
+US,1000,10000,1,0,mercari,buyee,courier-ecms,15887,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,17402
+US,1000,30000,1,0,mercari,buyee,courier-ecms,39187,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,40702
+US,1000,60000,1,0,mercari,buyee,courier-ecms,74137,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,75652
+US,1000,100000,1,0,mercari,buyee,courier-ecms,120738,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,122253
+US,1000,150000,1,0,mercari,buyee,courier-ecms,178990,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,180505
+US,1000,250000,1,0,mercari,buyee,courier-ecms,295492,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,297007
+US,2000,3000,1,0,mercari,buyee,courier-ecms,9030,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,10015
+US,2000,10000,1,0,mercari,buyee,courier-ecms,17185,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,18171
+US,2000,30000,1,0,mercari,buyee,courier-ecms,40486,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,41471
+US,2000,60000,1,0,mercari,buyee,courier-ecms,75436,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,76421
+US,2000,100000,1,0,mercari,buyee,courier-ecms,122037,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,123022
+US,2000,150000,1,0,mercari,buyee,courier-ecms,180288,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,181274
+US,2000,250000,1,0,mercari,buyee,courier-ecms,296790,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,297776
+US,3000,3000,1,0,mercari,buyee,courier-ecms,9214,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,10579
+US,3000,10000,1,0,mercari,buyee,courier-ecms,17370,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,18735
+US,3000,30000,1,0,mercari,buyee,courier-ecms,40670,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,42035
+US,3000,60000,1,0,mercari,buyee,courier-ecms,75620,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,76985
+US,3000,100000,1,0,mercari,buyee,courier-ecms,122221,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,123586
+US,3000,150000,1,0,mercari,buyee,courier-ecms,180473,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,181837
+US,3000,250000,1,0,mercari,buyee,courier-ecms,296975,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,298339
+US,5000,3000,1,0,mercari,buyee,courier-ecms,11364,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,13010
+US,5000,10000,1,0,mercari,buyee,courier-ecms,19520,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,21166
+US,5000,30000,1,0,mercari,buyee,courier-ecms,42821,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,44466
+US,5000,60000,1,0,mercari,buyee,courier-ecms,77771,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,79416
+US,5000,100000,1,0,mercari,buyee,courier-ecms,124371,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,126017
+US,5000,150000,1,0,mercari,buyee,courier-ecms,182623,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,184268
+US,5000,250000,1,0,mercari,buyee,courier-ecms,299125,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,300770
+US,8000,3000,1,0,mercari,buyee,courier-ecms,11364,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,13010
+US,8000,10000,1,0,mercari,buyee,courier-ecms,19520,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,21166
+US,8000,30000,1,0,mercari,buyee,courier-ecms,42821,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,44466
+US,8000,60000,1,0,mercari,buyee,courier-ecms,77771,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,79416
+US,8000,100000,1,0,mercari,buyee,courier-ecms,124371,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,126017
+US,8000,150000,1,0,mercari,buyee,courier-ecms,182623,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,184268
+US,8000,250000,1,0,mercari,buyee,courier-ecms,299125,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,300770
+GB,200,3000,1,0,mercari,zenmarket,small-packet-air,8265,8265,false,,,,,,fromjapan,8650
+GB,200,10000,1,0,mercari,zenmarket,small-packet-air,16970,16970,false,,,,,,fromjapan,17304
+GB,200,30000,1,0,mercari,zenmarket,courier-ecms-express,42969,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,43150
+GB,200,60000,1,0,mercari,zenmarket,courier-ecms-express,81313,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,81801
+GB,200,100000,1,0,mercari,zenmarket,courier-ecms-express,132437,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,132643
+GB,200,150000,1,0,mercari,buyee,small-packet-air,196197,196197,false,,,,,,zenmarket,196343
+GB,200,250000,1,0,mercari,zenmarket,courier-ecms-express,324154,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,324933
+GB,500,3000,1,0,mercari,zenmarket,courier-ecms-express,8918,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,9318
+GB,500,10000,1,0,mercari,zenmarket,courier-ecms-express,17623,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,17972
+GB,500,30000,1,0,mercari,zenmarket,courier-ecms-express,43482,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,43837
+GB,500,60000,1,0,mercari,zenmarket,courier-ecms-express,81825,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,82487
+GB,500,100000,1,0,mercari,zenmarket,courier-ecms-express,132950,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,133330
+GB,500,150000,1,0,mercari,zenmarket,courier-ecms-express,196856,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,196883
+GB,500,250000,1,0,mercari,zenmarket,courier-ecms-express,324668,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,324933
+GB,1000,3000,1,0,mercari,zenmarket,courier-ecms-express,9751,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,10653
+GB,1000,10000,1,0,mercari,zenmarket,courier-ecms-express,18456,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,19307
+GB,1000,30000,1,0,mercari,zenmarket,courier-ecms-express,44339,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,45209
+GB,1000,60000,1,0,mercari,zenmarket,courier-ecms-express,82682,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,83859
+GB,1000,100000,1,0,mercari,zenmarket,courier-ecms-express,133807,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,134702
+GB,1000,150000,1,0,mercari,zenmarket,courier-ecms-express,197712,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,198256
+GB,1000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,324937,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,325683
+GB,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,11713,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,13392
+GB,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,20418,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,22046
+GB,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,46354,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,48058
+GB,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,84697,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,86190
+GB,2000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,135597,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,137033
+GB,2000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,199150,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,200586
+GB,2000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,326257,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,327693
+GB,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,12578,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,13392
+GB,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,21283,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,22046
+GB,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,47244,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,48058
+GB,3000,60000,1,0,mercari,zenmarket,courier-fedex-lowcost,85418,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,86190
+GB,3000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,136260,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,137033
+GB,3000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,199814,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,200586
+GB,3000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,326921,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,327693
+GB,5000,3000,1,0,mercari,zenmarket,courier-fedex-lowcost,14987,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,16952
+GB,5000,10000,1,0,mercari,zenmarket,courier-fedex-lowcost,23691,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,25606
+GB,5000,30000,1,0,mercari,zenmarket,courier-fedex-lowcost,49449,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,51718
+GB,5000,60000,1,0,mercari,zenmarket,courier-fedex-lowcost,87581,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,89851
+GB,5000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,138424,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,140693
+GB,5000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,201978,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,204247
+GB,5000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,329085,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,331354
+GB,8000,3000,1,0,mercari,zenmarket,courier-fedex-lowcost,14987,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,16952
+GB,8000,10000,1,0,mercari,zenmarket,courier-fedex-lowcost,23691,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,25606
+GB,8000,30000,1,0,mercari,zenmarket,courier-fedex-lowcost,49449,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,51718
+GB,8000,60000,1,0,mercari,zenmarket,courier-fedex-lowcost,87581,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,89851
+GB,8000,100000,1,0,mercari,zenmarket,courier-fedex-lowcost,138424,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,140693
+GB,8000,150000,1,0,mercari,zenmarket,courier-fedex-lowcost,201978,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,204247
+GB,8000,250000,1,0,mercari,zenmarket,courier-fedex-lowcost,329085,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,buyee,331354
+DE,200,3000,1,0,mercari,zenmarket,small-packet-air,8742,8742,false,,,,,,fromjapan,8917
+DE,200,10000,1,0,mercari,zenmarket,small-packet-air,17374,17374,false,,,,,,fromjapan,17501
+DE,200,30000,1,0,mercari,fromjapan,small-packet-air,42950,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,43469
+DE,200,60000,1,0,mercari,buyee,small-packet-air,81721,81721,false,,,,,,zenmarket,82146
+DE,200,100000,1,0,mercari,buyee,small-packet-air,132722,132722,false,,,,,,zenmarket,133149
+DE,200,150000,1,0,mercari,buyee,small-packet-air,196476,196476,false,,,,,,zenmarket,196901
+DE,200,250000,1,0,mercari,zenmarket,courier-ecms-express,324407,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,326883
+DE,500,3000,1,0,mercari,zenmarket,small-packet-air,9508,9508,false,,,,,,fromjapan,9580
+DE,500,10000,1,0,mercari,zenmarket,small-packet-air,18140,18140,false,,,,,,fromjapan,18164
+DE,500,30000,1,0,mercari,fromjapan,small-packet-air,43639,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,44157
+DE,500,60000,1,0,mercari,buyee,small-packet-air,82408,82408,false,,,,,,zenmarket,82732
+DE,500,100000,1,0,mercari,buyee,small-packet-air,133411,133411,false,,,,,,zenmarket,133734
+DE,500,150000,1,0,mercari,buyee,small-packet-air,197163,197163,false,,,,,,zenmarket,197487
+DE,500,250000,1,0,mercari,zenmarket,courier-ecms-express,324993,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,327072
+DE,1000,3000,1,0,mercari,fromjapan,small-packet-air,10904,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,11039
+DE,1000,10000,1,0,mercari,fromjapan,small-packet-air,19488,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,19671
+DE,1000,30000,1,0,mercari,fromjapan,small-packet-air,45015,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,45533
+DE,1000,60000,1,0,mercari,buyee,small-packet-air,83785,83785,false,,,,,,zenmarket,84700
+DE,1000,100000,1,0,mercari,buyee,small-packet-air,134788,134788,false,,,,,,zenmarket,135703
+DE,1000,150000,1,0,mercari,buyee,small-packet-air,198541,198541,false,,,,,,zenmarket,199455
+DE,1000,250000,1,0,mercari,fromjapan,courier-fedex-economy,327234,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,327398
+DE,2000,3000,1,0,mercari,fromjapan,courier-fedex-economy,14270,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,14748
+DE,2000,10000,1,0,mercari,fromjapan,courier-fedex-economy,22854,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,23380
+DE,2000,30000,1,0,mercari,fromjapan,courier-fedex-economy,48569,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,48921
+DE,2000,60000,1,0,mercari,fromjapan,courier-fedex-economy,86820,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,87173
+DE,2000,100000,1,0,mercari,fromjapan,courier-fedex-economy,137823,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,138176
+DE,2000,150000,1,0,mercari,fromjapan,courier-fedex-economy,201576,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,201928
+DE,2000,250000,1,0,mercari,fromjapan,courier-fedex-economy,329082,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,329434
+DE,3000,3000,1,0,mercari,fromjapan,courier-fedex-economy,15203,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,15818
+DE,3000,10000,1,0,mercari,fromjapan,courier-fedex-economy,23787,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,24450
+DE,3000,30000,1,0,mercari,fromjapan,courier-fedex-economy,49540,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,50027
+DE,3000,60000,1,0,mercari,fromjapan,courier-fedex-economy,87792,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,88279
+DE,3000,100000,1,0,mercari,fromjapan,courier-fedex-economy,138794,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,139281
+DE,3000,150000,1,0,mercari,fromjapan,courier-fedex-economy,202547,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,203035
+DE,3000,250000,1,0,mercari,fromjapan,courier-fedex-economy,330053,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,330541
+DE,5000,3000,1,0,mercari,zenmarket,courier-fedex,18711,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,18753
+DE,5000,10000,1,0,mercari,fromjapan,courier-fedex-economy,27337,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,27343
+DE,5000,30000,1,0,mercari,zenmarket,courier-fedex,53019,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,53232
+DE,5000,60000,1,0,mercari,zenmarket,courier-fedex,91270,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,91484
+DE,5000,100000,1,0,mercari,zenmarket,courier-fedex,142272,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,142485
+DE,5000,150000,1,0,mercari,zenmarket,courier-fedex,206026,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,206239
+DE,5000,250000,1,0,mercari,zenmarket,courier-fedex,333532,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,333745
+DE,8000,3000,1,0,mercari,zenmarket,courier-fedex,18711,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,18753
+DE,8000,10000,1,0,mercari,fromjapan,courier-fedex-economy,27337,,true,outsourced-packing;courier-destination-fees;courier-clearance-fee,Outsourced packing;Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none;none,;;,https://www.fromjapan.co.jp/translate/en_help.txt;;,zenmarket,27343
+DE,8000,30000,1,0,mercari,zenmarket,courier-fedex,53019,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,53232
+DE,8000,60000,1,0,mercari,zenmarket,courier-fedex,91270,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,91484
+DE,8000,100000,1,0,mercari,zenmarket,courier-fedex,142272,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,142485
+DE,8000,150000,1,0,mercari,zenmarket,courier-fedex,206026,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,206239
+DE,8000,250000,1,0,mercari,zenmarket,courier-fedex,333532,,true,courier-destination-fees;courier-clearance-fee,Destination-side courier fees (unpublished);FedEx destination clearance fee (unknown),none;none,;,;,fromjapan,333745
+FR,200,3000,1,0,mercari,zenmarket,small-packet-air,8810,8810,false,,,,,,fromjapan,9066
+FR,200,10000,1,0,mercari,zenmarket,small-packet-air,17515,17515,false,,,,,,fromjapan,17720
+FR,200,30000,1,0,mercari,fromjapan,small-packet-air,43376,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,43895
+FR,200,60000,1,0,mercari,buyee,small-packet-air,82459,82459,false,,,,,,zenmarket,82984
+FR,200,100000,1,0,mercari,buyee,small-packet-air,133877,133877,false,,,,,,zenmarket,134403
+FR,200,150000,1,0,mercari,buyee,small-packet-air,198151,198151,false,,,,,,zenmarket,198676
+FR,200,250000,1,0,mercari,zenmarket,courier-ecms-express,327223,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,329361
+FR,500,3000,1,0,mercari,zenmarket,small-packet-air,9583,9583,false,,,,,,fromjapan,9734
+FR,500,10000,1,0,mercari,zenmarket,small-packet-air,18288,18288,false,,,,,,fromjapan,18388
+FR,500,30000,1,0,mercari,fromjapan,small-packet-air,44071,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,44589
+FR,500,60000,1,0,mercari,buyee,small-packet-air,83153,83153,false,,,,,,zenmarket,83837
+FR,500,100000,1,0,mercari,buyee,small-packet-air,134572,134572,false,,,,,,zenmarket,135256
+FR,500,150000,1,0,mercari,buyee,small-packet-air,198845,198845,false,,,,,,zenmarket,199529
+FR,500,250000,1,0,mercari,zenmarket,courier-ecms-express,328076,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,buyee,329361
+FR,1000,3000,1,0,mercari,fromjapan,small-packet-air,11069,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,11127
+FR,1000,10000,1,0,mercari,fromjapan,small-packet-air,19723,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,19832
+FR,1000,30000,1,0,mercari,fromjapan,small-packet-air,45458,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,45976
+FR,1000,60000,1,0,mercari,buyee,small-packet-air,84540,84540,false,,,,,,zenmarket,85465
+FR,1000,100000,1,0,mercari,buyee,small-packet-air,135959,135959,false,,,,,,zenmarket,136884
+FR,1000,150000,1,0,mercari,buyee,small-packet-air,200233,200233,false,,,,,,zenmarket,201157
+FR,1000,250000,1,0,mercari,buyee,courier-buyee-air,329947,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,330611
+FR,2000,3000,1,0,mercari,buyee,courier-buyee-air,14046,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,16400
+FR,2000,10000,1,0,mercari,buyee,courier-buyee-air,22700,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,25105
+FR,2000,30000,1,0,mercari,buyee,courier-buyee-air,48591,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,51347
+FR,2000,60000,1,0,mercari,buyee,courier-buyee-air,87155,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,89911
+FR,2000,100000,1,0,mercari,buyee,courier-buyee-air,138574,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,141330
+FR,2000,150000,1,0,mercari,buyee,courier-buyee-air,202847,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,205604
+FR,2000,250000,1,0,mercari,buyee,courier-buyee-air,331394,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,334151
+FR,3000,3000,1,0,mercari,buyee,courier-buyee-air,15005,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,17694
+FR,3000,10000,1,0,mercari,buyee,courier-buyee-air,23659,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,26851
+FR,3000,30000,1,0,mercari,buyee,courier-buyee-air,49589,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,52704
+FR,3000,60000,1,0,mercari,buyee,courier-buyee-air,88153,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,91268
+FR,3000,100000,1,0,mercari,buyee,courier-buyee-air,139572,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,142686
+FR,3000,150000,1,0,mercari,buyee,courier-buyee-air,203845,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,206960
+FR,3000,250000,1,0,mercari,buyee,courier-buyee-air,332392,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,335507
+FR,5000,3000,1,0,mercari,buyee,courier-buyee-air,17606,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,21197
+FR,5000,10000,1,0,mercari,buyee,courier-buyee-air,26260,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,29902
+FR,5000,30000,1,0,mercari,buyee,courier-buyee-air,52293,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,55746
+FR,5000,60000,1,0,mercari,buyee,courier-buyee-air,90858,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,94310
+FR,5000,100000,1,0,mercari,buyee,courier-buyee-air,142276,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,145729
+FR,5000,150000,1,0,mercari,buyee,courier-buyee-air,206550,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,210003
+FR,5000,250000,1,0,mercari,buyee,courier-buyee-air,335097,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,338550
+FR,8000,3000,1,0,mercari,buyee,courier-buyee-air,17606,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,21197
+FR,8000,10000,1,0,mercari,buyee,courier-buyee-air,26260,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,29902
+FR,8000,30000,1,0,mercari,buyee,courier-buyee-air,52293,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,55746
+FR,8000,60000,1,0,mercari,buyee,courier-buyee-air,90858,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,94310
+FR,8000,100000,1,0,mercari,buyee,courier-buyee-air,142276,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,145729
+FR,8000,150000,1,0,mercari,buyee,courier-buyee-air,206550,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,210003
+FR,8000,250000,1,0,mercari,buyee,courier-buyee-air,335097,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,zenmarket,338550
+AU,200,3000,1,0,mercari,fromjapan,small-packet-air,6509,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,6850
+AU,200,10000,1,0,mercari,fromjapan,small-packet-air,14488,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,14829
+AU,200,30000,1,0,mercari,fromjapan,small-packet-air,37286,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,37627
+AU,200,60000,1,0,mercari,buyee,small-packet-air,71824,71824,false,,,,,,zenmarket,71990
+AU,200,100000,1,0,mercari,buyee,small-packet-air,117420,117420,false,,,,,,zenmarket,117585
+AU,200,150000,1,0,mercari,buyee,small-packet-air,188388,188388,false,,,,,,fromjapan,188635
+AU,200,250000,1,0,mercari,fromjapan,courier-ecms,304562,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,304630
+AU,500,3000,1,0,mercari,fromjapan,small-packet-air,7124,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,7409
+AU,500,10000,1,0,mercari,fromjapan,small-packet-air,15104,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,15389
+AU,500,30000,1,0,mercari,fromjapan,small-packet-air,37902,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,38187
+AU,500,60000,1,0,mercari,buyee,small-packet-air,72383,72383,false,,,,,,zenmarket,72501
+AU,500,100000,1,0,mercari,buyee,small-packet-air,117979,117979,false,,,,,,zenmarket,118096
+AU,500,150000,1,0,mercari,fromjapan,courier-ecms,188973,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,buyee,189001
+AU,500,250000,1,0,mercari,fromjapan,courier-ecms,304900,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,305229
+AU,1000,3000,1,0,mercari,fromjapan,courier-ecms,7898,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,7932
+AU,1000,10000,1,0,mercari,fromjapan,courier-ecms,15878,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,15911
+AU,1000,30000,1,0,mercari,fromjapan,courier-ecms,38676,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,38709
+AU,1000,60000,1,0,mercari,fromjapan,courier-ecms,72873,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,72906
+AU,1000,100000,1,0,mercari,fromjapan,courier-ecms,118468,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,118502
+AU,1000,150000,1,0,mercari,fromjapan,courier-ecms,189255,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,189707
+AU,1000,250000,1,0,mercari,fromjapan,courier-ecms,305182,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,305634
+AU,2000,3000,1,0,mercari,fromjapan,courier-ecms,8295,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,8495
+AU,2000,10000,1,0,mercari,fromjapan,courier-ecms,16275,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,16475
+AU,2000,30000,1,0,mercari,fromjapan,courier-ecms,39073,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,39273
+AU,2000,60000,1,0,mercari,fromjapan,courier-ecms,73269,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,73469
+AU,2000,100000,1,0,mercari,fromjapan,courier-ecms,118865,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,119065
+AU,2000,150000,1,0,mercari,fromjapan,courier-ecms,189651,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,190326
+AU,2000,250000,1,0,mercari,fromjapan,courier-ecms,305577,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,306253
+AU,3000,3000,1,0,mercari,fromjapan,courier-ecms,8578,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,9006
+AU,3000,10000,1,0,mercari,fromjapan,courier-ecms,16558,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,16985
+AU,3000,30000,1,0,mercari,fromjapan,courier-ecms,39355,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,39783
+AU,3000,60000,1,0,mercari,fromjapan,courier-ecms,73552,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,73980
+AU,3000,100000,1,0,mercari,fromjapan,courier-ecms,119148,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,119576
+AU,3000,150000,1,0,mercari,fromjapan,courier-ecms,189933,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,190886
+AU,3000,250000,1,0,mercari,fromjapan,courier-ecms,305859,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,306813
+AU,5000,3000,1,0,mercari,fromjapan,courier-ecms,10180,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,10768
+AU,5000,10000,1,0,mercari,fromjapan,courier-ecms,18160,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,18747
+AU,5000,30000,1,0,mercari,fromjapan,courier-ecms,40958,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,41545
+AU,5000,60000,1,0,mercari,fromjapan,courier-ecms,75154,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,75742
+AU,5000,100000,1,0,mercari,fromjapan,courier-ecms,120750,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,121338
+AU,5000,150000,1,0,mercari,fromjapan,courier-ecms,191530,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,192818
+AU,5000,250000,1,0,mercari,fromjapan,courier-ecms,307456,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,308745
+AU,8000,3000,1,0,mercari,fromjapan,courier-ecms,10180,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,10768
+AU,8000,10000,1,0,mercari,fromjapan,courier-ecms,18160,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,18747
+AU,8000,30000,1,0,mercari,fromjapan,courier-ecms,40958,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,41545
+AU,8000,60000,1,0,mercari,fromjapan,courier-ecms,75154,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,75742
+AU,8000,100000,1,0,mercari,fromjapan,courier-ecms,120750,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,121338
+AU,8000,150000,1,0,mercari,fromjapan,courier-ecms,191530,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,192818
+AU,8000,250000,1,0,mercari,fromjapan,courier-ecms,307456,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,308745
+CA,200,3000,1,0,mercari,fromjapan,small-packet-air,7597,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,8115
+CA,200,10000,1,0,mercari,fromjapan,small-packet-air,15869,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,16387
+CA,200,30000,1,0,mercari,fromjapan,small-packet-air,39502,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,40021
+CA,200,60000,1,0,mercari,buyee,small-packet-air,75472,75472,false,,,,,,zenmarket,75924
+CA,200,100000,1,0,mercari,buyee,small-packet-air,122739,122739,false,,,,,,zenmarket,123192
+CA,200,150000,1,0,mercari,buyee,small-packet-air,181824,181824,false,,,,,,zenmarket,182277
+CA,200,250000,1,0,mercari,fromjapan,courier-ups,301469,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,buyee,302095
+CA,500,3000,1,0,mercari,fromjapan,small-packet-air,8157,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,8675
+CA,500,10000,1,0,mercari,fromjapan,small-packet-air,16429,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,16947
+CA,500,30000,1,0,mercari,fromjapan,small-packet-air,40062,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,40580
+CA,500,60000,1,0,mercari,buyee,small-packet-air,76031,76031,false,,,,,,zenmarket,76568
+CA,500,100000,1,0,mercari,buyee,small-packet-air,123299,123299,false,,,,,,zenmarket,123836
+CA,500,150000,1,0,mercari,buyee,small-packet-air,182383,182383,false,,,,,,zenmarket,182920
+CA,500,250000,1,0,mercari,fromjapan,courier-ups,301469,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,buyee,302095
+CA,1000,3000,1,0,mercari,fromjapan,small-packet-air,9276,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,9794
+CA,1000,10000,1,0,mercari,fromjapan,small-packet-air,17548,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,18066
+CA,1000,30000,1,0,mercari,fromjapan,small-packet-air,41181,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,buyee,41699
+CA,1000,60000,1,0,mercari,buyee,small-packet-air,77150,77150,false,,,,,,fromjapan,77554
+CA,1000,100000,1,0,mercari,buyee,small-packet-air,124418,124418,false,,,,,,fromjapan,124822
+CA,1000,150000,1,0,mercari,buyee,small-packet-air,183503,183503,false,,,,,,fromjapan,183906
+CA,1000,250000,1,0,mercari,fromjapan,courier-ups,302075,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,buyee,302095
+CA,2000,3000,1,0,mercari,buyee,courier-buyee-air,10217,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,11453
+CA,2000,10000,1,0,mercari,buyee,courier-buyee-air,18489,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,19725
+CA,2000,30000,1,0,mercari,buyee,courier-buyee-air,42123,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,43359
+CA,2000,60000,1,0,mercari,buyee,courier-buyee-air,77574,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,78810
+CA,2000,100000,1,0,mercari,buyee,courier-buyee-air,124841,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,126077
+CA,2000,150000,1,0,mercari,buyee,courier-buyee-air,183926,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,185162
+CA,2000,250000,1,0,mercari,buyee,courier-buyee-air,302095,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,303331
+CA,3000,3000,1,0,mercari,buyee,courier-buyee-air,10217,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,12081
+CA,3000,10000,1,0,mercari,buyee,courier-buyee-air,18489,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,20353
+CA,3000,30000,1,0,mercari,buyee,courier-buyee-air,42123,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,43987
+CA,3000,60000,1,0,mercari,buyee,courier-buyee-air,77574,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,79438
+CA,3000,100000,1,0,mercari,buyee,courier-buyee-air,124841,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,126705
+CA,3000,150000,1,0,mercari,buyee,courier-buyee-air,183926,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,185790
+CA,3000,250000,1,0,mercari,buyee,courier-buyee-air,302095,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,303959
+CA,5000,3000,1,0,mercari,buyee,courier-buyee-air,10217,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,14303
+CA,5000,10000,1,0,mercari,buyee,courier-buyee-air,18489,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,22575
+CA,5000,30000,1,0,mercari,buyee,courier-buyee-air,42123,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,46208
+CA,5000,60000,1,0,mercari,buyee,courier-buyee-air,77574,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,81659
+CA,5000,100000,1,0,mercari,buyee,courier-buyee-air,124841,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,128927
+CA,5000,150000,1,0,mercari,buyee,courier-buyee-air,183926,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,188012
+CA,5000,250000,1,0,mercari,buyee,courier-buyee-air,302095,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,306181
+CA,8000,3000,1,0,mercari,buyee,courier-buyee-air,10217,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,14303
+CA,8000,10000,1,0,mercari,buyee,courier-buyee-air,18489,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,22575
+CA,8000,30000,1,0,mercari,buyee,courier-buyee-air,42123,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,46208
+CA,8000,60000,1,0,mercari,buyee,courier-buyee-air,77574,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,81659
+CA,8000,100000,1,0,mercari,buyee,courier-buyee-air,124841,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,128927
+CA,8000,150000,1,0,mercari,buyee,courier-buyee-air,183926,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,188012
+CA,8000,250000,1,0,mercari,buyee,courier-buyee-air,302095,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,306181
+SG,200,3000,1,0,mercari,fromjapan,small-packet-air,5964,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,6465
+SG,200,10000,1,0,mercari,fromjapan,small-packet-air,13870,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,14372
+SG,200,30000,1,0,mercari,fromjapan,small-packet-air,36461,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,36963
+SG,200,60000,1,0,mercari,fromjapan,courier-ecms,70635,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,70813
+SG,200,100000,1,0,mercari,fromjapan,courier-ecms,115793,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,115972
+SG,200,150000,1,0,mercari,fromjapan,courier-ecms,172242,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,172421
+SG,200,250000,1,0,mercari,fromjapan,courier-ecms,285139,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,285318
+SG,500,3000,1,0,mercari,fromjapan,small-packet-air,6371,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,6657
+SG,500,10000,1,0,mercari,fromjapan,small-packet-air,14278,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,14564
+SG,500,30000,1,0,mercari,fromjapan,small-packet-air,36868,,true,outsourced-packing,Outsourced packing,none,,https://www.fromjapan.co.jp/translate/en_help.txt,zenmarket,37154
+SG,500,60000,1,0,mercari,fromjapan,courier-ecms,70951,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,71006
+SG,500,100000,1,0,mercari,fromjapan,courier-ecms,116110,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,116164
+SG,500,150000,1,0,mercari,fromjapan,courier-ecms,172558,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,172613
+SG,500,250000,1,0,mercari,fromjapan,courier-ecms,285455,,true,outsourced-packing;courier-destination-fees,Outsourced packing;Destination-side courier fees (unpublished),none;none,;,https://www.fromjapan.co.jp/translate/en_help.txt;,zenmarket,285510
+SG,1000,3000,1,0,mercari,zenmarket,courier-ecms-express,6811,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,6892
+SG,1000,10000,1,0,mercari,zenmarket,courier-ecms-express,14718,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,14799
+SG,1000,30000,1,0,mercari,zenmarket,courier-ecms-express,37309,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,37390
+SG,1000,60000,1,0,mercari,zenmarket,courier-ecms-express,71159,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,71194
+SG,1000,100000,1,0,mercari,zenmarket,courier-ecms-express,116318,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,116352
+SG,1000,150000,1,0,mercari,zenmarket,courier-ecms-express,172767,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,172801
+SG,1000,250000,1,0,mercari,zenmarket,courier-ecms-express,285664,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,285698
+SG,2000,3000,1,0,mercari,zenmarket,courier-ecms-express,7195,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,7509
+SG,2000,10000,1,0,mercari,zenmarket,courier-ecms-express,15102,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,15416
+SG,2000,30000,1,0,mercari,zenmarket,courier-ecms-express,37692,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,38006
+SG,2000,60000,1,0,mercari,zenmarket,courier-ecms-express,71543,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,71809
+SG,2000,100000,1,0,mercari,zenmarket,courier-ecms-express,116702,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,116968
+SG,2000,150000,1,0,mercari,zenmarket,courier-ecms-express,173150,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,173417
+SG,2000,250000,1,0,mercari,zenmarket,courier-ecms-express,286047,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,286314
+SG,3000,3000,1,0,mercari,zenmarket,courier-ecms-express,7348,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,7827
+SG,3000,10000,1,0,mercari,zenmarket,courier-ecms-express,15255,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,15734
+SG,3000,30000,1,0,mercari,zenmarket,courier-ecms-express,37846,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,38324
+SG,3000,60000,1,0,mercari,zenmarket,courier-ecms-express,71696,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,72128
+SG,3000,100000,1,0,mercari,zenmarket,courier-ecms-express,116854,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,117286
+SG,3000,150000,1,0,mercari,zenmarket,courier-ecms-express,173303,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,173735
+SG,3000,250000,1,0,mercari,zenmarket,courier-ecms-express,286200,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,286632
+SG,5000,3000,1,0,mercari,zenmarket,courier-ecms-express,8194,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,8631
+SG,5000,10000,1,0,mercari,zenmarket,courier-ecms-express,16101,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,16538
+SG,5000,30000,1,0,mercari,zenmarket,courier-ecms-express,38691,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,39128
+SG,5000,60000,1,0,mercari,zenmarket,courier-ecms-express,72542,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,72931
+SG,5000,100000,1,0,mercari,zenmarket,courier-ecms-express,117701,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,118090
+SG,5000,150000,1,0,mercari,zenmarket,courier-ecms-express,174149,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,174539
+SG,5000,250000,1,0,mercari,zenmarket,courier-ecms-express,287046,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,287436
+SG,8000,3000,1,0,mercari,zenmarket,courier-ecms-express,8194,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,8631
+SG,8000,10000,1,0,mercari,zenmarket,courier-ecms-express,16101,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,16538
+SG,8000,30000,1,0,mercari,zenmarket,courier-ecms-express,38691,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,39128
+SG,8000,60000,1,0,mercari,zenmarket,courier-ecms-express,72542,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,72931
+SG,8000,100000,1,0,mercari,zenmarket,courier-ecms-express,117701,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,118090
+SG,8000,150000,1,0,mercari,zenmarket,courier-ecms-express,174149,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,174539
+SG,8000,250000,1,0,mercari,zenmarket,courier-ecms-express,287046,,true,courier-destination-fees,Destination-side courier fees (unpublished),none,,,fromjapan,287436
