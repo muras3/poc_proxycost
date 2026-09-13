@@ -108,17 +108,60 @@ import type { CountryCode, CourierMethod } from './types';
  * 誤っていた。以後は明示的に non_account_holder を選んでいるので、この一致は
  * 意図した一致になった（`master-sync.test.ts` に CA 専用の固定テストがある）。
  *
- * ## 税ゼロ時に課すか
- * **7か国×4社のどの一次資料にも明示の免除規定が無い**（3本の監査ノートが共通して
- * 報告）。ここでは「立て替える対象（duty+tax）が0なら、そもそも advance が発生
- * しないので手数料も立たない」と「フラットの最低額は無条件に課される」のどちらが
- * 正しいか判定できないので、**duty+tax が0のときはこの行を `amount: null` にする**
- * ——0円と書けば「調べた上でゼロだった」という嘘になり、最低額を書けば「調べた上で
- * 満額だった」という別の嘘になる。null 行は `total.high` を自動的に開く
- * （`compare.ts` の `totalRange()`）。
+ * ## 税ゼロ時に課すか（2026-09-13、オーナー確定の working treatment）
+ * **7か国×4社のどの一次資料にも明示の免除規定が無い**（3本の監査ノートが共通して報告し、
+ * `docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md` がこの軸を「一次資料からは
+ * 決着しない」行き止まりとして確定した）。**オーナーはこの行き止まりを受けて、
+ * 「立て替える対象（duty+tax）が0なら、そもそも advance が発生しないので手数料も
+ * 立たない」を working treatment として採用した**——F28（燃油）・F40（遠隔地）と
+ * 同じ形の、未検証・明示の運用判断（`master/carrier-surcharges.json` の
+ * `conclusions.zero_duty_clearance_fee_working_treatment`、id
+ * `C13_zero_duty_working_treatment_2026_09_13`。F28=`C11`・F40=`C12` と対で読むこと）。
+ * 詳細は `docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md`。
+ *
+ * **F28/F40 との向きの違い**: F28/F40 は「込みだと仮定する」ことで見積りが**低く出続ける**
+ * リスク（過小計上）を負う。この working treatment は逆——「手数料は課されない」と仮定する
+ * ことで、DHL/UPS/FedEx の税ゼロ小包で見積りが**高く出続けない**代わりに、仮定が外れて
+ * いた場合は本来の最低額（US基準で約¥2,734、CA/AU/SGでは約¥838〜¥2,948、
+ * `docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md` の試算）だけ**低く出る**
+ * （過小計上）。F28/F40 とは逆方向のリスクを、このプロジェクトで初めて `total.high` に
+ * 明示的に乗せる working treatment になる。
+ *
+ * **ECMS はこの仮定の対象ではない。** ECMS の T&C は "If ECMS EXPRESS advances any
+ * Customs Duties ... entitled to charge ... a duty advance payment fee of 3%" と
+ * 条件文で書いており、advance する対象（duty+tax）が0なら3%の基準額自体が0になる——
+ * これは**未検証の仮定ではなく、ECMS自身の一次資料の式がそのまま導く結果**（ECMSの
+ * `rateMin(0.03, 0)` は最低額そのものが0円なので、式を評価するだけで正しい答えが出る）。
+ * したがって ECMS は `isZeroDutyAssumptionCarrier()` の対象から外し、他の3社と同じ
+ * `amount: null` の扱いを一切しない——sourced な値と assumed な値を同じ見た目にしない
+ * （タスク指示）。
+ *
+ * **表現の形**: 1つの行の中で複数の小包（`per_parcel`）が duty+tax の有無で分かれる
+ * ケース（PR #93 が「カート単位で丸めて本来の費目を消した」のと同じ失敗を、通関手数料
+ * 側で再現しないため）があるので、**小包単位で仮定を適用する**——duty+tax > 0 の
+ * 小包は実額を、duty+tax = 0 の小包（DHL/UPS/FedEx）は仮定によりこの working
+ * treatment 分だけ0を、それぞれ積み上げる。**仮定を適用した小包が1つでもあれば、
+ * 行を `amountKind: 'range'` にする**——`amount`（low）は「仮定通りなら」の実額合計、
+ * `amountHighYen`（high）はそこに「仮定が外れて最低額が満額課された場合」の上乗せ分を
+ * 足した額。0円と書けば「調べた上でゼロだった」という嘘になり、最低額を書けば「調べた
+ * 上で満額だった」という別の嘘になるところを、区間で両方の可能性を残したまま表現する。
+ * `compare.ts` の `totalRange()` は `amountKind: 'range'` の `amountHighYen` をそのまま
+ * `total.high` に足すので、この行がある限り `total.high` は `total.low` より必ず高く
+ * 開いたままになる。
  */
 
 export type CourierClearanceCarrier = 'FedEx' | 'UPS' | 'DHL' | 'ECMS';
+
+/**
+ * この working treatment（税ゼロなら手数料も0と仮定する）の対象になる業者か。
+ * **ECMSだけ false。** ECMSの税ゼロ時の挙動は上のコメントの通りECMS自身の一次資料の式
+ * （最低額が0円）がそのまま導く結果であり、仮定ではない。DHL/UPS/FedExの3社は
+ * 一次資料に免除規定が無いため、この working treatment（オーナー確定、2026-09-13）を
+ * 適用する。
+ */
+export function isZeroDutyAssumptionCarrier(carrier: CourierClearanceCarrier): boolean {
+  return carrier !== 'ECMS';
+}
 
 /** `CourierMethod` の便名プレフィクスから業者を引く。データの無い便（Buyee-Air 自社便、
  * SF Express、Surface 系）は `null`——`compare.ts` 側で従来どおりの「未公表」null 行にする。 */
@@ -425,4 +468,52 @@ export function evalClearanceRuleYen(
       throw new Error(`banded_duty_tax_mixed: duty+tax ${dutyTaxLocal} を含む帯が無い`);
     }
   }
+}
+
+/** `evalClearanceRuleYen` に渡す1単位（`per: 'per_parcel'` なら小包1つ、
+ * `per: 'per_shipment'` なら荷物全体をまとめた1つ）。 */
+export interface ClearanceUnit {
+  dutyPlusTaxYen: number;
+  declaredLocal: number;
+}
+
+export interface ClearanceAggregate {
+  /** 実額として積み上げた分（税>0の単位、およびECMSなど仮定の対象外の全単位）の合計（JPY）。 */
+  knownFeeYen: number;
+  /** 仮定（税ゼロなら手数料も0）が外れていた場合に上乗せされ得る分の合計（JPY）。
+   * duty+tax=0 の単位で rule を評価しても rate 側は必ず0なので、この値は実質
+   * その carrier のフラット最低額そのもの（`docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md`）。 */
+  assumedZeroCapYen: number;
+  /** 仮定を適用した単位（duty+tax=0 かつ `isZeroDutyAssumptionCarrier(carrier)`）の数。 */
+  assumedZeroCount: number;
+  /** 単位の総数（=行に含まれる小包数、または`per_shipment`なら1）。 */
+  totalCount: number;
+}
+
+/**
+ * 複数単位（小包、または`per_shipment`ならまとめた1単位）に、税ゼロ working
+ * treatment を**単位ごとに**適用して集計する。
+ *
+ * **カート単位で丸めない。**カート全体の「税がある/ない」だけを見て行を出す/出さない・
+ * 満額/ゼロを決めると、`prepaid-import-tax`（PR #93）と同じ失敗——ある小包の実額が
+ * 他の小包の状態に引きずられて消える／膨らむ——をこの費目でも再現することになる。
+ * `compare.ts` はこの関数を通して、1小包ずつ判定してから合算する。
+ */
+export function aggregateClearanceFee(
+  rule: Rule, carrier: CourierClearanceCarrier, units: readonly ClearanceUnit[], ccyToJpy: number,
+): ClearanceAggregate {
+  const assumeZero = isZeroDutyAssumptionCarrier(carrier);
+  let knownFeeYen = 0;
+  let assumedZeroCapYen = 0;
+  let assumedZeroCount = 0;
+  for (const u of units) {
+    const unitFeeYen = evalClearanceRuleYen(rule, u.dutyPlusTaxYen, u.declaredLocal, ccyToJpy);
+    if (u.dutyPlusTaxYen === 0 && assumeZero) {
+      assumedZeroCount += 1;
+      assumedZeroCapYen += unitFeeYen;
+    } else {
+      knownFeeYen += unitFeeYen;
+    }
+  }
+  return { knownFeeYen, assumedZeroCapYen, assumedZeroCount, totalCount: units.length };
 }
