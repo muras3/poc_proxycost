@@ -399,7 +399,21 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
  */
 const TIE = 'tie probe, no weight data';
 
-test('22. two rows with the same total share the rank, and both are CHEAPEST', async ({ page }) => {
+/**
+ * **2026-09-13、PR #127 で書き換えた。**FROM JAPAN は常に社固有の未取得行
+ * （`outsourced-packing`。実費・非公表）を持ち、その `rankHigh` は常に `null`
+ * ——`isIndeterminate()` の修正（1位グループの誰か1人でも `rankHigh` が
+ * `null` なら判定不能）が入る前は、この事実が1位判定に効いていなかった。
+ * このカートは ZenMarket と FROM JAPAN が下端で同額（tied, 両方 1位）になる
+ * ため、FROM JAPAN が1位グループに入った時点で `rankIndeterminate` は
+ * 正しく `true` になる——「ZenMarket and FROM JAPAN are tied cheapest」という
+ * 言い切りの文は、比較不能である以上出るべきではない（実際に出なくなった。
+ * `!result.rankIndeterminate` でしか描画されないブロックなので）。
+ * タイトルの「both are CHEAPEST」は「両方に LEADS が付く」という意味に読み替える
+ * ——`row.cheapest`（下端が最小という事実）自体は本 PR の影響を受けないので、
+ * 両方に印は付き続ける。付く語が「CHEAPEST」から「LEADS」に変わっただけ。
+ */
+test('22. two rows with the same total share the rank, and both are marked LEADS (indeterminate)', async ({ page }) => {
   await gotoCompare(page);
   await page.getByLabel('Ship to').selectOption('CA');
   await emptyCart(page);
@@ -437,10 +451,16 @@ test('22. two rows with the same total share the rank, and both are CHEAPEST', a
   // 同額でない行は名乗らない。全行に付いたら印として機能しない。
   for (const r of rest) expect(r.text, r.name).not.toContain('tied with');
 
-  // 一番大きい文が1社を名指ししていないこと。同額なら両方を挙げる。
-  await expect(page.getByText(/ZenMarket and FROM JAPAN are tied cheapest/)).toBeVisible();
+  // **判定不能では「is cheapest」「are tied cheapest」と言い切らない**
+  // （FROM JAPAN の `outsourced-packing` が1位グループに入っているので、
+  // このカートは`rankIndeterminate: true` — RankBoard の要約文ブロックは
+  // `!result.rankIndeterminate` でしか描画されない）。
+  await expect(page.getByText(/ZenMarket and FROM JAPAN are tied cheapest/)).toHaveCount(0);
   await expect(page.getByText(/^FROM JAPAN is cheapest/)).toHaveCount(0);
   await expect(page.getByText(/^ZenMarket is cheapest/)).toHaveCount(0);
+  // 代わりに判定不能の要約文が出て、1位（ZenMarket、宣言順で先）を名指しする。
+  await expect(page.getByText(/These 5 companies sit within the same uncertainty/)).toBeVisible();
+  await expect(page.getByText(/ZenMarket looks the most likely/)).toBeVisible();
 });
 
 test('23. a tie below the top shares its rank too, and does not move the winner', async ({ page }) => {
@@ -772,15 +792,31 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   // 絞ると、枠の顔ぶれごと入れ替わる帯がまだ残っている——詳細はテスト5のコメント。
   // **2026-09-12、六か国拡張でさらに豪（AU）からカナダ（CA）に差し替えた**——
   // AU は FROM JAPAN が全重量帯で1位を独占するようになり割れ目が消えたため）。
+  //
+  // **2026-09-13、PR #127 で「recommended range changes with the weight」の
+  // 期待を捨てた。**このカートの両端の1位——500g では FROM JAPAN、10kg では
+  // Buyee——は、どちらも社固有の未取得行のせいで `rankHigh` が常に `null`
+  // （FROM JAPAN: `outsourced-packing`、Buyee: 宅配便に必ず付随する
+  // `courier-destination-fees`。いずれも実費・非公表で、`scope: 'shared'`
+  // ではない＝社固有）。基準重量（仮置き ~1.5 kg）でも FROM JAPAN が1位なので、
+  // `isIndeterminate()` の修正後は全域で `rankIndeterminate: true`
+  // ——「重量で1位が確定的に入れ替わる」という前提そのものがこのカートでは
+  // 成立しない。`rankStabilityNote` は「recommended range」文ではなく
+  // `indeterminateNote()`（「sit within the same uncertainty」）を出す。
+  // 一方、カート内の「This weight decides the cheapest」導線
+  // （`weightSensitivity`）は `rankIndeterminate` と無関係な別の仕組みなので
+  // 影響を受けず、そちらがこのテストの本題（導線が正しい重量欄にフォーカスを
+  // 移す）を実演できる——後半はそのまま残す。
   await page.getByLabel('Ship to').selectOption('CA');
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
-  const note = page.getByText(/The recommended range changes with the weight/);
+  await expect(page.getByText(/The recommended range changes with the weight/)).toHaveCount(0);
+  const note = page.getByText(/sit within the same uncertainty/);
   await expect(note).toBeVisible();
-  await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
-  // 表の中央値と仮置きを「あなたがくれた重量」とは呼ばない。
-  await expect(note).toContainText('our weight estimate');
-  await expect(note).not.toContainText('you gave us');
+  await expect(note).toContainText('FROM JAPAN looks the most likely');
+  // 「our weight estimate」/「you gave us」は `The recommended range changes
+  // with the weight` 文言だけが使う基準語りで、`indeterminateNote()` には
+  // 存在しない——この文が出ている以上、ここでは検証しない。
 
   // **この仮置きの1点が1位を決める**（500 g で FROM JAPAN、10 kg で Buyee。実測、
   // テスト5と同じ）。

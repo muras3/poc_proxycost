@@ -2068,13 +2068,55 @@ function bracketIds(rows: Row[]): string[] {
  * 「他社より高いかもしれない」という不確かさを持ち続ける（`comparable` から
  * 除外しない・`recommended`／`equivalent` の対象から外さない、という P1 の原則は
  * そのまま）。この関数が変えたのは「判定不能」という**要約の文言を出す条件**だけ。
+ *
+ * **2026-09-13 修正（監査 `docs/audit/rank-indeterminate-2026-09-13.md` が発見）:**
+ * 上の「全員の `rankHigh` が置けない」という条件は、**1位（下端最小、同着含む）
+ * 自身の `rankHigh` が `null`** という、もっとありふれたケースを見逃していた。
+ * 米国・600g・¥3,000（既定の呼び出し方でよく起きる）で FROM JAPAN が下端最小に
+ * なり、その `rankHigh` は社固有の未取得行（外注梱包費）で `null` なのに、他社の
+ * `rankHigh` が非 `null` というだけで `isIndeterminate` は `false` のままだった
+ * ——画面は修飾なしの緑太字「CHEAPEST」を出していた。1位自身の総額がどこまで
+ * 伸びるか分からない以上、「これが確実に安い」とは言えない。1万件超の重量／価格／
+ * 国の掃引で、これは構成されたコーナーケースではなく構造的に頻発するパターンだと
+ * 確認されている。
+ *
+ * **判定不能の範囲は「1位」1点に絞る（全員を判定不能にしない）。**理由は2つ:
+ * 1. **1位でない社の `rankHigh` が `null` でも、1位を脅かさない**（上のケース2の
+ *    分析どおり——`total.low` はどの社にとっても確実な下限なので、2位以下の
+ *    unbounded な上限は「もっと高くなりうる」方向にしか効かず、1位を追い越しうる
+ *    という意味にはならない）。この社たちの間の順序は、閉区間同士で確定した差が
+ *    ある限りそのまま正しい——課題文が言う「狭い方の真実」。
+ * 2. **全員を判定不能にする（旧: 全員 `rankHigh == null` の判定はそのまま真になる
+ *    という意味で本条件に含まれる）のは、実際には分かっている情報を捨てる。**
+ *    「誰が1位か」だけが言えないのであって、「2位と3位のどちらが安いか」まで
+ *    言えなくなるわけではない——後者を判定不能にまとめるのは、確度をもって言える
+ *    ことまで隠す過剰な保守化になる。
+ *
+ * この絞り方は `overlapsLeader`／`computeBracket` には影響しない——両者は
+ * 引き続き「候補行自身の `high` は見ない」「上限不明の1位は Infinity として扱い
+ * 枠を広く通す」という既存の挙動のままで、ここで直したのは最終的な一語の断定
+ * （`isIndeterminate` の結果）を合成する最後の一段だけ。**この定義は旧定義の
+ * 上位互換**——「全員の `rankHigh` が `null`」ならず1位自身の `rankHigh` も
+ * 必然的に `null` なので、旧定義が真だったケースは新定義でも変わらず真になる
+ * （既存のテストが検査するとおり）。
  */
-function isIndeterminate(rows: Row[]): boolean {
+// `export` はテストからの直接検査のためだけ（2026-09-13、`rank-indeterminate-leader
+// .test.ts`）。外部（`src/components/` 等）はこの関数を使わず、必ず `compare()` の
+// `rankIndeterminate` を経由すること——ランキング・判定不能の一次ロジックはここに
+// しかなく、値を再計算・迂回しない。
+export function isIndeterminate(rows: Row[]): boolean {
   const comparable = rows.filter((r) => r.comparable);
   // **1社しか比較可能な社が無いときは「判別できない」ではない。**選べる社が1つしか
   // 無いだけで、区別すべき相手がいない——「唯一値段が付く社」（`outOfTable` と同じ
   // 状況）であって、複数社が不確かさの中で見分けられない状態とは違う。
-  return comparable.length > 1 && comparable.every((r) => r.rankHigh == null);
+  if (comparable.length <= 1) return false;
+  // 1位＝下端最小の社（同着があれば全員）。**候補行自身の `high` は見ない**
+  // （`overlapsLeader` と同じ理由——ここで見るのは `rankHigh` の有無だけ）。
+  const leadLow = Math.min(...comparable.map((r) => r.total.low));
+  const leaders = comparable.filter((r) => r.total.low === leadLow);
+  // 1位グループのうち1社でも `rankHigh` が置けなければ、「これが確実に安い」とは
+  // 言えない——1位自身の総額がどこまで伸びるか分からないから。
+  return leaders.some((r) => r.rankHigh == null);
 }
 
 /**
