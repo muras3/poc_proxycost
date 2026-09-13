@@ -116,6 +116,9 @@
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
           "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-us/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "unit": "per_shipment",
+          "unit_tier": "reasoned_judgement_unconfirmed",
+          "unit_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "invoice_check": "never_checked"
         },
         {
@@ -140,8 +143,8 @@
             },
             "basis": "import_charges（duty+tax等、advanced分）"
           },
-          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
-          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "zero_duty_charged": "C_unknown",
           "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
           "tier": "A_confirmed",
@@ -165,6 +168,7 @@
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
           },
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
           "invoice_check": "never_checked"
         },
         {
@@ -190,6 +194,8 @@
           "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "宛先側（米国）で受取人に課される立替手数料。名称はUPS自身の用語 'Disbursement Fee'。米国は2025-08-29にde minimisが撤廃済みのため、無税で通過する小口自体がほぼ無い状態だが、無税ケースでの課否は未確認。",
+          "per_tier": "reasoned_judgement_unconfirmed",
+          "per_basis": "UPS US自身の一次資料本文は取得できていない（このファイルのinference_basis参照）。'per_shipment'は#101当時、DE/FR/AU/CA/SGでUPS自身が明記した'per shipment'という構造を米国にも一般化した推測であり、米国向けUPS一次資料がその語を使っていることを直接確認したものではない（原則3: 1社=1国で確認したことを他国に一般化しない、と同じ注意が要る）。2026-09-13、per-shipment統一の一環としてtierを明記する。",
           "invoice_check": "never_checked"
         },
         {
@@ -203,9 +209,11 @@
           "source": "https://www.ecmsglobal.com/resources/en-us/ECMS%20Express%20US%20Terms%20%20Conditions%20v1.2.pdf",
           "source_checked_on": "2026-09-12",
           "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
-          "per": "unknown",
+          "per": "per_shipment",
           "zero_when_no_tax": "does_not_apply_if_no_duty_advanced（無税なら『advance』が発生しないため課さないと読めるが、明示のゼロ税条件文は無い）",
           "note": "**ECMSは関税を『立て替えない』フォワーダーではなく、実際に立て替えて3%の手数料を課す。**タスクが想定していた『ECMSは通関手数料を課さない可能性』は今回の一次情報では否定される。ECMS US Terms & Conditions v1.2、PDF直接フェッチ（curl経由、pdftotextでテキスト抽出）で本文確認・逐語引用。",
+          "per_tier": "reasoned_judgement_unconfirmed",
+          "per_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。 ECMS自身の条文（\"If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.\"）は手数料が『いつ』発生するか（advanceした場合）を述べているだけで、『何につき』課金するか（parcel/shipment）には触れていない。したがってECMSは単位について沈黙している行として扱い、この推論の対象に含める。",
           "invoice_check": "never_checked"
         }
       ],
@@ -365,8 +373,8 @@
             },
             "basis": "import_charges（duty+tax等、advanced分）"
           },
-          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
-          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "zero_duty_charged": "C_unknown",
           "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
           "tier": "A_confirmed",
@@ -390,6 +398,7 @@
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
           },
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
           "invoice_check": "never_checked"
         },
         {
@@ -484,9 +493,11 @@
           "source": "https://www.ecmsglobal.com/resources/en-uk/ECMS%20Express%20UK%20Terms%20Conditions%20v1.34.pdf",
           "source_checked_on": "2026-09-12",
           "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
-          "per": "unknown",
+          "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "ECMS UK T&C v1.34。US版と一言一句同じ条文で3%の duty advance payment fee を規定。",
+          "per_tier": "reasoned_judgement_unconfirmed",
+          "per_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。 ECMS自身の条文（\"If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.\"）は手数料が『いつ』発生するか（advanceした場合）を述べているだけで、『何につき』課金するか（parcel/shipment）には触れていない。したがってECMSは単位について沈黙している行として扱い、この推論の対象に含める。",
           "invoice_check": "never_checked"
         }
       ],
@@ -879,8 +890,8 @@
             },
             "basis": "import_charges（duty+tax等、advanced分）"
           },
-          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
-          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "zero_duty_charged": "C_unknown",
           "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
           "tier": "A_confirmed",
@@ -904,6 +915,7 @@
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
           },
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
           "invoice_check": "never_checked"
         },
         {
@@ -932,6 +944,9 @@
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
           "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/fr-fr/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "unit": "per_shipment",
+          "unit_tier": "reasoned_judgement_unconfirmed",
+          "unit_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "invoice_check": "never_checked"
         },
         {
@@ -1260,8 +1275,8 @@
             },
             "basis": "import_charges（duty+tax等、advanced分）"
           },
-          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
-          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "zero_duty_charged": "C_unknown",
           "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
           "tier": "A_confirmed",
@@ -1285,6 +1300,7 @@
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
           },
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
           "invoice_check": "never_checked"
         },
         {
@@ -1318,6 +1334,9 @@
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
           "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-au/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "unit": "per_shipment",
+          "unit_tier": "reasoned_judgement_unconfirmed",
+          "unit_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "invoice_check": "never_checked"
         },
         {
@@ -1486,8 +1505,8 @@
             },
             "basis": "import_charges（duty+tax等、advanced分）"
           },
-          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
-          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "zero_duty_charged": "C_unknown",
           "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
           "tier": "A_confirmed",
@@ -1512,6 +1531,7 @@
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
           },
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
           "invoice_check": "never_checked"
         },
         {
@@ -1544,6 +1564,9 @@
           "zero_when_no_tax": "unknown",
           "zero_when_no_tax_confidence": "input_rejected",
           "zero_when_no_tax_note": "F34: 税ゼロ時にこの手数料が課されるかどうかは、FedEx自身の一次資料（fedex.com/en-ca/.../disbursement-fee-shipping.html）がこの環境から終始 WAF の代替失敗ページを返すため確認できていない（HTTPステータスは200だが本文未取得、2026-09-12に再試行し同じ結果を再現）。二次情報（料率改定まとめ・消費者フォーラム等）にもこの軸に触れる記述は見つからなかった。したがって counted_absence ではなく input_rejected（一次資料そのものに到達できていない）として扱う。",
+          "unit": "per_shipment",
+          "unit_tier": "reasoned_judgement_unconfirmed",
+          "unit_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "invoice_check": "never_checked"
         },
         {
@@ -1774,8 +1797,8 @@
             },
             "basis": "import_charges（duty+tax等、advanced分）"
           },
-          "per_parcel_or_shipment": "unknown_but_likely_per_shipment",
-          "per_parcel_or_shipment_basis": "DEの同種費目（本ファイル同カントリー行）は独語一次資料が「pro abgefertigter Sendung」(per cleared shipment)と明記。他6か国のRate Guideは「% of fiscal charges」とだけ書き per-parcel/per-shipment の語を使っていないため、DE以外はDEと同型と推定した推論(B_inferred)であり確認済(A_confirmed)ではない。",
+          "per_parcel_or_shipment": "per_shipment",
+          "per_parcel_or_shipment_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。",
           "zero_duty_charged": "C_unknown",
           "zero_duty_note": "税ゼロ時に課すかは一次資料に明記なし（C_unknown）。CAの定義文は「DHL が Customs entry を作成する非文書インポート全件に対して課金」と読め、税ゼロでも課される可能性を示唆するが、これは推論であり断定はできない（郵便側５か国のような明示の免除規定が見当たらない）。",
           "tier": "A_confirmed",
@@ -1799,6 +1822,7 @@
             "quote_ca_non_account_holder": "Customs Clearance: Customers without DHL Brokerage Account — Applies when DHL processes import duties, taxes, or other regulatory charges on behalf of customers who do not hold a DHL account number.",
             "note": "docs/audit/f34-eval-clearance-coverage-2026-09-12.md 参照。src/lib/pricing/courier-clearance.ts（#101）は『rate・minとも高い方を機械的に採用する』方針を取っており、この結論と食い違う国がある（GB: minはaccount_holder側の12.0を採用しているが本結論ではnon_account_holderの11.0が正しい／FR: rateはaccount_holder側の0.02を採用しているが本結論ではnon_account_holderの0.018が正しい／CA: 結果的にnon_account_holderの値と一致しており問題無い）。この行自体の金額（account_holder/non_account_holderのrate/min）は変更していない——変更したのはこの解釈フィールドのみ。"
           },
+          "per_parcel_or_shipment_tier": "reasoned_judgement_unconfirmed",
           "invoice_check": "never_checked"
         },
         {
@@ -1871,9 +1895,11 @@
           "source": "https://www.ecmsglobal.com/resources/en-sg/ECMS%20Express%20Singapore%20Pte%20Ltd_%20Terms%20and%20Conditions_2023.pdf",
           "source_checked_on": "2026-09-12",
           "quote": "When ECMS EXPRESS acts on Receiver's behalf, Receiver shall pay or reimburse ECMS EXPRESS for all Shipment or other charges due, or Customs Duties owed for services provided by ECMS EXPRESS or incurred by ECMS EXPRESS on Shipper's or Receiver's behalf. The payment of Customs Duties will be requested prior to delivery. If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.",
-          "per": "unknown",
+          "per": "per_shipment",
           "zero_when_no_tax": "unknown",
           "note": "ECMS Express (S) Pte Ltd Terms and Conditions 2023。US/UK版と同一条文。",
+          "per_tier": "reasoned_judgement_unconfirmed",
+          "per_basis": "オーナー確定（2026-09-13、per-shipment統一）: この行は一次資料自体が課金単位を明記していない。48行を読み直した結果、単位を明記する行は全てshipmentと述べており、parcelと述べる行は1件も無い（DHL DE 'pro abgefertigter Sendung'、UPS DE/FR/AU/CA/SG、FedEx GB/DEのConditions of Carriage）。したがって『単位不明な行にper_parcelを残す』ことは、どの業者にも観測されていない課金単位をモデル化し続けることになる。この行はper_shipmentへ統一するが、これは根拠に基づく推論であって一次資料の直接確認ではない（reasoned_judgement_unconfirmed）。第2の『過小評価より過大評価を選ぶ』扱い（1件目はゼロ関税時のclearance fee免除仮定、docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md）とは逆方向で、こちらは推論が誤っていた場合に合計額を過小に見せる。 ECMS自身の条文（\"If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge a duty advance payment fee of 3%.\"）は手数料が『いつ』発生するか（advanceした場合）を述べているだけで、『何につき』課金するか（parcel/shipment）には触れていない。したがってECMSは単位について沈黙している行として扱い、この推論の対象に含める。",
           "invoice_check": "never_checked"
         }
       ],

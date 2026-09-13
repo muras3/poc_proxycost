@@ -128883,6 +128883,288 @@
         "master_value": "master/fees.json F02(取扱手数料, fromjapan, purchase, fixed_per_item, 500 JPY)",
         "result": "一致。差異なし。"
       }
+    },
+    "jauce_v3_remeasurement_2026_09_13": {
+      "capture_file": "/root/.claude/uploads/2018e7f9-275f-533a-b47f-7ac384387db0/a32724fb-jauce_______20260913_2.md",
+      "measured_date": "2026-09-13",
+      "confidence": "direct_fetch",
+      "methodology_note": "前回(jauce_v2_2026_09_12)の18条件を4体のサブエージェントで並列実行した際、同一Chromeプロファイル・同一タブグループを共有したことによるタブ間の状態汚染が複数回観測されたため(例: フランス20000gの結果に無関係な『+ GST for Australia』注記とオーストラリア特有の上限値(20000g/105cm)が混入、UK 3000g/20000gが初回クリックで収束しない、SG寸法比較の2条件目で3種類の異なる値が出る)、汚染が疑われた項目は並列を止めて単一操作者・単一ブラウザセッションで順番に取り直した。本observationはその再測定値。同一の主要料金(500g/3000g/20000g)は複数回の独立した再測定で毎回同一の値が再現しており、汚染があっても値そのものは頑健と判断した。",
+      "positive_control_us_20x15x10": [
+        {
+          "weight_g": 500,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 3900,
+          "smart_packing": 420,
+          "SAL": "not_available",
+          "Surface": "not_available",
+          "submit_clicks_to_stabilize": 1,
+          "confidence": "direct_fetch"
+        },
+        {
+          "weight_g": 3000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 10300,
+          "smart_packing": 660,
+          "SAL": "not_available",
+          "Surface": "not_available",
+          "submit_clicks_to_stabilize": 1,
+          "confidence": "direct_fetch"
+        },
+        {
+          "weight_g": 20000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 51100,
+          "smart_packing": 2700,
+          "SAL": "not_available",
+          "Surface": "not_available",
+          "submit_clicks_to_stabilize": "1(click2/3はタブ汚染により再測定不可)",
+          "confidence": "direct_fetch"
+        }
+      ],
+      "grid_b_au_ca_fr_gb_weight_curve_2026_09_13": [
+        {
+          "country": "AU",
+          "weight_g": 500,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 3150,
+          "Surface": 2750,
+          "smart_packing": 420,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1,
+          "contamination_note": "AU 20000gではclick1に前条件(500g)の値が残留表示され、click2で正しい値に切り替わり以降安定。500gではGST for Australia注記あり(金額非表示)。"
+        },
+        {
+          "country": "AU",
+          "weight_g": 3000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 8800,
+          "Surface": 4450,
+          "smart_packing": 660,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1
+        },
+        {
+          "country": "AU",
+          "weight_g": 20000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 44500,
+          "Surface": 16900,
+          "smart_packing": 2700,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 2
+        },
+        {
+          "country": "CA",
+          "weight_g": 500,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 2150,
+          "Surface": 2350,
+          "smart_packing": 420,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 2,
+          "contamination_note": "click1ではAUの残留値(¥3,150 + GST for Australia)が誤表示され、click2で正しいCAの値に切り替わり以降安定。"
+        },
+        {
+          "country": "CA",
+          "weight_g": 3000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 8800,
+          "Surface": 4450,
+          "smart_packing": 660,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1
+        },
+        {
+          "country": "CA",
+          "weight_g": 20000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 44500,
+          "Surface": 16900,
+          "smart_packing": 2700,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1
+        },
+        {
+          "country": "FR",
+          "weight_g": 500,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 3150,
+          "Surface": 2750,
+          "smart_packing": 420,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1
+        },
+        {
+          "country": "FR",
+          "weight_g": 3000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 8800,
+          "Surface": 4450,
+          "smart_packing": 660,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1
+        },
+        {
+          "country": "FR",
+          "weight_g": 20000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 44500,
+          "Surface": 16900,
+          "smart_packing": 2700,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1,
+          "contamination_note": "タブ間汚染により、この読み取り時に無関係な『+ GST for Australia』注記とAU特有の上限値(20000g/105cm)が混入していた。料金の数値(¥44,500/¥16,900)自体はCA・GB・AUの独立した20000g測定と完全一致するため信頼できるが、注記・上限値の表示はこの特定の読み取りに限り汚染されており参考にしないこと。"
+        },
+        {
+          "country": "GB",
+          "weight_g": 500,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 2150,
+          "Surface": 2350,
+          "smart_packing": 420,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 1
+        },
+        {
+          "country": "GB",
+          "weight_g": 3000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 8800,
+          "Surface": 4450,
+          "smart_packing": 660,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 2,
+          "contamination_note": "click1では結果テーブル自体が描画されず、click2で初めて表示され以降安定。"
+        },
+        {
+          "country": "GB",
+          "weight_g": 20000,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 44500,
+          "Surface": 16900,
+          "smart_packing": 2700,
+          "SAL": "not_available",
+          "confidence": "direct_fetch",
+          "submit_clicks_to_stabilize": 2,
+          "contamination_note": "click1では結果テーブル自体が描画されず、click2で初めて表示され以降安定。"
+        }
+      ],
+      "grid_c_sg_dimension_comparison_2026_09_13": [
+        {
+          "country": "SG",
+          "weight_g": 600,
+          "dims_cm": [
+            20,
+            15,
+            10
+          ],
+          "EMS": 2150,
+          "Surface": 2350,
+          "smart_packing": 420,
+          "submit_clicks_to_stabilize": 3,
+          "stability_note": "click1では結果テーブル自体が描画されず、click2で表示、click3も同一値。",
+          "confidence": "direct_fetch"
+        },
+        {
+          "country": "SG",
+          "weight_g": 600,
+          "dims_cm": [
+            21,
+            15,
+            10
+          ],
+          "EMS": 2150,
+          "Surface": 2350,
+          "smart_packing": 420,
+          "submit_clicks_to_stabilize": 3,
+          "stability_note": "click1では結果テーブル自体が描画されず、click2で表示、click3も同一値。",
+          "confidence": "direct_fetch"
+        }
+      ],
+      "note_d_au_gst_amount_2026_09_13": {
+        "country": "AU",
+        "weight_g": 500,
+        "dims_cm": [
+          20,
+          15,
+          10
+        ],
+        "finding": "『+ GST for Australia』の注記はEMS・Surface両方に verbatim で再現する(`<div class=\"small\">+ GST for Australia</div>`)。リンク・title属性・data属性・イベントハンドラは存在せず、ページ全体に<a>要素が0個、FAQ・注釈・内訳セクションも存在しない。",
+        "evidence_class": "counted_absence",
+        "confidence": "direct_fetch",
+        "judgement": "このページの範囲内ではGST金額を確認する手段が存在しないという結論は、読み取りの失敗ではなく確定した事実として扱ってよい。"
+      }
     }
   },
   "separately_displayed_fees": {
@@ -130505,13 +130787,15 @@
       "finding": "固定寸法20x15x10cmで重量のみ変えたGrid A(500g〜20000g、11点)において、AU/CA/FRのEMS基本料金は11点すべてで¥3,150のまま完全に不変。GBは500gの¥3,150から600gで¥3,400に一段階上昇した後、700g〜20000gの残り9点で¥3,400のまま不変。SGのみ¥1,900→¥23,350と単調増加。USは¥4,180のプラトー後、5000/10000/20000gでそれぞれ明確な価格上昇(¥4,180→¥15,100→¥27,100→¥51,100)。",
       "confidence": "direct_fetch",
       "uncertainty_first_class": "日本郵便のEMSは重量帯で単価が決まる公表料金体系であり、20kgの荷物が500gの荷物と同額になることは日本郵便の公式料金表そのものとしては成立しない。したがって、このflat挙動の原因は次の3つのいずれかであり、本ラウンドの実測だけでは切り分けられない: (a) Jauceが独自に導入した重量帯フラットレート方式(業者側の政策)、(b) Jauce側の価格計算ロジックのバグ、(c) 上記jauce_v2_2026_09_12_submit_button_bug に記録したSUBMIT再計算バグによるstale値の混入(高重量帯の値ほどこのリスクが高い)。この3つのうちどれが正しいかを選ばず、観測された事実と不確実性の両方を記録するに留める。",
-      "risk_if_wired_naively": "【警告】この横ばい値をそのまま信頼できる料率としてsrc/に配線した場合、重量が重いカートではJauceが最安に見えるようになる。もしflat挙動が(b)バグまたは(c)stale値のartefactだった場合、これは偽のランキングになる。これはPR #93で修正された欠陥(集計されていなかった費目のせいである会社が実際より安く見えていた)と同じ形のリスクであり、誰かがこの数字を『信頼できる料率』として配線する前に、この不確実性について明示的な決定を下す必要がある。本PRではこの決定を行わない(src/には一切触れない)。"
+      "risk_if_wired_naively": "【警告】この横ばい値をそのまま信頼できる料率としてsrc/に配線した場合、重量が重いカートではJauceが最安に見えるようになる。もしflat挙動が(b)バグまたは(c)stale値のartefactだった場合、これは偽のランキングになる。これはPR #93で修正された欠陥(集計されていなかった費目のせいである会社が実際より安く見えていた)と同じ形のリスクであり、誰かがこの数字を『信頼できる料率』として配線する前に、この不確実性について明示的な決定を下す必要がある。本PRではこの決定を行わない(src/には一切触れない)。",
+      "superseded_by": "conclusions.jauce_v3_2026_09_13_flat_rate_denied. **この observation/finding 自体は削除・書き換えしない**(実際の観測記録として残す。AU/CA/FR/GBが平坦であるという結論のみ2026-09-13の再測定でDENIEDとする。SGについては本findingの対象外)。"
     },
     "jauce_v2_2026_09_12_sg_reference_box_discount": {
       "finding": "SGは実重量600g固定・寸法のみを変えたGrid Bで、基準ボックス20x15x10cmのときのみEMS ¥1,900となり、それ以外の全寸法条件(10x10x10/20x20x20/30x20x10/40x30x20/25x25x25/30x30x30/35x35x35/40x40x40/45x45x45/50x50x50cm)および寸法欄空欄ではすべて¥2,150(500-600g帯の¥1,900にも700-1000g帯の¥2,400にも一致しない中間値)になる。Surfaceは全寸法条件を通じて¥2,350で一定であり、EMSのみがこの寸法依存を示す。",
       "confidence": "direct_fetch",
       "consequence": "リポジトリの DEFAULT_PARCEL_DIMENSIONS_CM は20x15x10cmであり、これはSGでEMSが割安になる唯一の寸法と一致する。したがって、我々の既定箱を使ったSG向けJauce EMS見積りは、基準ボックスと厳密に一致しない実際の荷物に対して約¥250(¥2,150-¥1,900)低く出る系統的なバイアスを持つ。",
-      "contradicts": "US/GB/FR/AU/CAの5か国で確認された『Jauceは(測定範囲内で)寸法を見ず実重量のみで価格を決める』という所見と矛盾する。『Jauceは寸法を無視する』は5か国については真だが、SGについては偽であり、一般化してはならない(docs/PRINCIPLES.md 原則3参照)。"
+      "contradicts": "US/GB/FR/AU/CAの5か国で確認された『Jauceは(測定範囲内で)寸法を見ず実重量のみで価格を決める』という所見と矛盾する。『Jauceは寸法を無視する』は5か国については真だが、SGについては偽であり、一般化してはならない(docs/PRINCIPLES.md 原則3参照)。",
+      "superseded_by": "conclusions.jauce_v3_2026_09_13_sg_dimension_dependency_denied. **この observation/finding 自体は削除・書き換えしない**(実際の観測記録として残す。基準ボックスで¥1,900になるという寸法依存の結論は2026-09-13の再測定(20x15x10cm vs 21x15x10cm)でDENIEDとする)。"
     },
     "jauce_v2_2026_09_12_method_availability_by_destination": {
       "finding": "Surfaceの提供有無は宛先で異なる: USは全計測点でNot available(declared)。GB/FR/AU/CAは全22条件(Grid A/B/C)で一貫して¥2,750 + smart packing ¥420で提供され価格は不変。SALは6か国すべて・全条件でNot available(declared)。ARはAU向けにEMS・Surfaceいずれの料金欄にも「+ GST for Australia」という注記が明示的に表示されるが、GST自体の金額は画面上に数値としては表示されない ── これは未定量の追加費用として記録し、0円として扱わない。また『smart packing』はUSでは重量に応じて¥420→¥900→¥1,500→¥2,700と段階的に上昇するが、GB/FR/AU/CAでは常に¥420のまま横ばい(flat base rateと整合)。寸法欄空欄はフォームラベルの(optional)通り受理され、input_rejectedには当たらない。",
@@ -130520,7 +130804,8 @@
     "jauce_v2_2026_09_12_master_contradiction_found": {
       "finding": "【重要】このラウンドの取り込みで、マスタに既にあった単点測定conclusions観測 observations.jauce_country_600g_20x15x10 と、本ラウンドの600g/20x15x10cmでの実測が一致しない箇所が4つ見つかった: FR(旧: EMS ¥3,400 / 新: EMS ¥3,150)、CA(旧: EMS ¥3,400 / 新: EMS ¥3,150)、AU(旧: EMS ¥3,400 / 新: 20x15x10cm入力時はEMS ¥3,150。旧の¥3,400は新ラウンドでは『寸法欄を空欄にした場合』にのみ現れる値と一致する)、SG(旧: EMS ¥2,150 / 新: 20x15x10cm入力時はEMS ¥1,900。旧の¥2,150は新ラウンドでは『基準ボックス以外の寸法』のときの価格と一致する)。GB(旧: EMS ¥3,400 / 新: EMS ¥3,400)とUS(旧: EMS ¥4,180 / 新: EMS ¥4,180)は一致した。",
       "hypothesis_not_resolved": "一致しない4件について、原因を断定しない。ただし、旧AU値(¥3,400)が新ラウンドの『寸法空欄』条件の値と、旧SG値(¥2,150)が新ラウンドの『基準ボックス以外』の値とそれぞれ一致していることは、旧600g単点測定が本ラウンドで文書化されたSUBMIT再計算バグ(jauce_v2_2026_09_12_submit_button_bug)により直前の別条件の値を引き継いでしまっていた可能性、または当時の測定で寸法欄の入力状態が意図と異なっていた可能性を示唆する状況証拠ではあるが、いずれも旧測定を再実行して確認したわけではないのでjudgementとして扱い、旧観測を書き換えたり削除したりはしない。",
-      "action": "旧 observations.jauce_country_600g_20x15x10 の該当4か国分の値はそのまま残す(削除・上書きしない)。この矛盾自体を一次情報として記録し、次回の再測定でどちらが正しいかを確定させる対象として残す。"
+      "action": "旧 observations.jauce_country_600g_20x15x10 の該当4か国分の値はそのまま残す(削除・上書きしない)。この矛盾自体を一次情報として記録し、次回の再測定でどちらが正しいかを確定させる対象として残す。",
+      "reexamined_by": "conclusions.jauce_v3_2026_09_13_master_contradiction_reexamined"
     },
     "fromjapan_overstatement_correction_2026_09_13": {
       "status": "correction_of_2026_09_12_entry",
@@ -130580,6 +130865,56 @@
       "displayed": "Handling fee: 500 yen/Item(結果画面の共通表示、全条件で一貫)",
       "master_value": "master/fees.json F02(fromjapan, 取扱手数料, purchase, fixed_per_item, 500 JPY)",
       "result": "一致。差異なし——照合のみで、F02自体は変更していない。"
+    },
+    "jauce_v3_2026_09_13_positive_control_passed": {
+      "finding": "US(20x15x10cm固定)でEMSが¥3,900→¥10,300→¥51,100と500g/3000g/20000gで明確に増加した。手順は重量差を検出できている。",
+      "confidence": "direct_fetch",
+      "comparison_with_previous_round": "前回(jauce_country_600g_20x15x10 / jauce_v2_2026_09_12_grid)のUS値は¥3,900(500g) / ¥4,180(3000g付近) / ¥51,100(20000g)。500gと20000gは今回と一致したが、3000gは¥4,180(旧)対¥10,300(新)で大きく異なった。",
+      "judgement": "500g/20000gの一致は前回データの一部が信頼できることを示す一方、3000gの不一致は前回round全体の3000g付近の測定が既にSUBMIT再計算バグの影響を受けていた可能性を示す。前回roundのデータは、今回reproduceしなかった値については広く疑わしいと扱うべき。"
+    },
+    "jauce_v3_2026_09_13_flat_rate_denied": {
+      "status": "DENIED — supersedes conclusions.jauce_v2_2026_09_12_flat_ems_across_weight for AU/CA/FR/GB",
+      "finding": "AU/CA/FR/GBはいずれも『平坦』ではない。20x15x10cm固定で500g→3000g→20000gと測るとEMSは¥3,150→¥8,800→¥44,500(GB/CAは500gのみ¥2,150)へ明確に増加した(Surfaceも¥2,750→¥4,450→¥16,900、GB/CAは500gのみ¥2,350)。",
+      "evidence": "observations.jauce_v3_remeasurement_2026_09_13.grid_b_au_ca_fr_gb_weight_curve_2026_09_13。単一操作者・単一ブラウザセッションで1条件ずつ順番に測定し、2〜3回のSUBMITで値が固定されたことを確認したうえでの読み取り。",
+      "confidence": "direct_fetch",
+      "what_was_wrong": "前回(jauce_v2_2026_09_12)の平坦な結果は、①SUBMITの表示更新バグ(前条件の値が残留表示される/初回は描画されない)と、②4体のサブエージェントを並列実行し同一Chromeプロファイル・同一タブグループを共有させたことによるタブ間の状態汚染、の複合が原因だった可能性が高い、という判断(reasoned_judgement_unconfirmed)。技術的な汚染経路そのものは特定できていない。",
+      "uncertainty_still_first_class": "3000gと20000gでAU/CA/FR/GBの4カ国が同一料金に収斂している事実は、日本郵便の共通の距離帯・重量帯テーブルを使っていることと整合する一つの読みであり、それ自体を確定した仕組みとして断定するものではない(reasoned_judgement_unconfirmed)。500gでは国ごとに異なる料金(AU/FR=¥3,150、CA/GB=¥2,150)が出ており、これも整合的。"
+    },
+    "jauce_v3_2026_09_13_sg_dimension_dependency_denied": {
+      "status": "DENIED — supersedes conclusions.jauce_v2_2026_09_12_sg_reference_box_discount",
+      "finding": "SG・600g固定で長辺のみ20cm→21cmに変えても、EMS・Surfaceともに完全に同額(EMS ¥2,150、Surface ¥2,350)だった。前回報告の『基準ボックス20x15x10cmのときだけEMS ¥1,900、それ以外は¥2,150』という寸法依存は再現しなかった。",
+      "evidence": "observations.jauce_v3_remeasurement_2026_09_13.grid_c_sg_dimension_comparison_2026_09_13。2条件ともclick1では結果テーブルが描画されず、click2で表示、click3も同一値で安定を確認。",
+      "confidence": "direct_fetch",
+      "what_was_wrong": "前回の¥1,900という基準ボックス価格は、stale display(前条件の値の残留表示)を拾った結果だった可能性が高い、という判断(reasoned_judgement_unconfirmed)。",
+      "scope_limit": "確認したのは20x15x10cmと21x15x10cmの2寸法(長辺1cm差)のみであり、10x10x10〜50x50x50cmの全寸法グリッドを再実行したわけではない。既定箱がSGについて系統的に安く出るという当初の懸念は、この2寸法の比較の範囲では裏付けられなかった、という限定付きの否定であり、寸法依存性そのものを全寸法域にわたって完全に排除したとは言えない。"
+    },
+    "jauce_v3_2026_09_13_previous_round_reliability": {
+      "finding": "陽性対照(US)の3000g値が前回¥4,180・今回¥10,300と大きく食い違ったことから、前回round(jauce_v2_2026_09_12)のデータは、平坦4カ国とSGの基準ボックス割引だけでなく、広く信頼性が疑わしいと判断する。",
+      "reproduced": [
+        "US 500g (¥3,900、EMS)",
+        "US 20000g (¥51,100、EMS)"
+      ],
+      "not_reproduced": [
+        "US 3000g (旧¥4,180 → 新¥10,300、EMS)",
+        "AU/CA/FR/GBの『平坦』所見(4カ国とも重量に応じて増加することが確認された)",
+        "SGの基準ボックス割引(20x15x10cmと21x15x10cmで同額¥2,150だった)"
+      ],
+      "rule": "前回roundのJauce実測値は、今回roundで再現が確認されたもの(US 500g/20000g)を除き、原則として信頼できないものとして扱う。conclusions.jauce_v2_2026_09_12_flat_ems_across_weight と jauce_v2_2026_09_12_sg_reference_box_discount は削除せず残すが、上記2件のDENIED結論で上書きする。",
+      "confidence": "direct_fetch (再現/非再現の事実) + reasoned_judgement_unconfirmed (前回round全体を疑わしいとする判断)"
+    },
+    "jauce_v3_2026_09_13_master_contradiction_reexamined": {
+      "references": "conclusions.jauce_v2_2026_09_12_master_contradiction_found",
+      "sg_numbers_line_up": "旧 observations.jauce_country_600g_20x15x10 のSG値(EMS ¥2,150、Surface ¥2,350)は、今回の再測定(600g/20x15x10cm、observations.jauce_v3_remeasurement_2026_09_13.grid_c_sg_dimension_comparison_2026_09_13、EMS ¥2,150、Surface ¥2,350)と完全に一致した。したがってSGについては、旧単点測定の値そのものが正しく、前回round(jauce_v2_2026_09_12)が報告した『基準ボックスのときだけ¥1,900』のほうがstale displayによる誤読だったと結論できる ── これはPR#107が示唆した方向(旧測定が汚染されていた)とは逆で、旧測定を裏付ける結果である。",
+      "au_ca_fr_numbers_do_not_line_up": "AU/CA/FRについては、今回の再測定は500g/3000g/20000gの3点のみを取っており、旧単点測定と同じ600g/20x15x10cmの条件そのものを再測定していない。そのため『旧AU値(¥3,400)が前回roundの寸法空欄条件と一致する』という所見が本当にstale displayで説明できるかどうかは、今回のデータでは直接検証できていない。参考情報として、observations.jauce_germany_weight_curve_20x15x10(DE)では500g=¥3,150→600g=¥3,400という単調な刻みがあり、AU/FRの今回の500g値(¥3,150)と一致する初期値から600gで¥3,400へ上がるパターンと整合的ではあるが、これはDEの系列からの類推(reasoned_judgement_unconfirmed)であり、AU/CA/FR自身の600g再測定ではない。",
+      "verdict": "『解消された』とは断定しない。SGについてのみ、数値が実際に一致することをもって説明がついたと言える。AU/CA/FRについては、旧600g値が正しいのかstale displayなのかは今回のデータでは未確定のまま残る ── 次回の再測定でAU/CA/FR/GBの600g/20x15x10cmを直接取ることが必要。",
+      "confidence": "direct_fetch (SGの数値一致) + reasoned_judgement_unconfirmed (AU/CA/FRの類推部分)"
+    },
+    "jauce_v3_2026_09_13_parallel_tab_contamination": {
+      "finding": "同一Chromeブラウザ・同一プロファイルを共有する複数の自動化タスクを並列実行すると、あるタブの入力・結果が別のタブに漏れ込む汚染が複数回観測された(フランス20000gの結果に無関係な『+ GST for Australia』注記とAU特有の上限値(20000g/105cm)が混入、UK 3000g/20000gの初回クリック未描画、SG寸法比較の2条件目で3種類の異なる値)。",
+      "distinct_from_submit_bug": "これは既に記録済みのクライアント側SUBMIT再計算バグ(前条件の値が残留する/初回は描画されない)とは別の失敗機構であり、両方が同時に観測された。",
+      "root_cause": "同一プロファイル内のタブ間で何らかの状態が共有されている可能性を示唆するが、技術的な原因(localStorage共有か、別の機構か)はここでは特定できていない。原因を推測でこれ以上絞り込まない(docs/PRINCIPLES.md / CLAUDE.md §9)。",
+      "mitigation_applied": "汚染が疑われた項目は並列を止め、単一操作者・単一ブラウザセッションで1条件ずつ順番に取り直した。",
+      "confidence": "direct_fetch (汚染事例そのもの) + reasoned_judgement_unconfirmed (root_causeの解釈)"
     }
   }
 }
