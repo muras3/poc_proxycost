@@ -6,11 +6,20 @@ import {
 import { SERVICES, type MeasuredPostageRate } from './services';
 import type { BoxDimensionsCm } from './types';
 
-// P2: 器そのものの単体テスト。**このPR時点でどの社にも宅配便の実データを入れていない**
-// （コーディネーターの指示——データ取り込みは別PR）ので、`courierPriceFor` 系は
-// 引き続きフィクスチャ。寸法上限（`dimensionLimit`）は方式ごとの実データが入ったので、
-// ここでは `SERVICES` 本体を使い、2026-09-12 の実測（社ごとに一辺を5cm刻みで走査した
-// ドイツ・600g）を再現する。
+// P2: 器そのものの単体テスト。このコメントを書いた当時（このPR時点）はどの社にも
+// 宅配便の実データを入れておらず（コーディネーターの指示——データ取り込みは別PR）、
+// `courierPriceFor` 系は引き続きフィクスチャだった。寸法上限（`dimensionLimit`）は
+// 方式ごとの実データが先に入ったので、ここでは `SERVICES` 本体を使い、2026-09-12
+// の実測（社ごとに一辺を5cm刻みで走査したドイツ・600g）を再現する。
+//
+// **2026-09-13 時点ではもう違う。** PR #87（コミット `91b9532`）で `courierPriceFor`
+// が使う `weightPointsByCountry` にも実データが7カ国分（国ごとに厚みは違う）
+// 入っている。下の `courierPriceFor` テストが依然 `fedexEconomyUs` 等の手作り
+// フィクスチャを使っているのは「実データが無いから」ではなく、補間・境界・
+// 単調性チェックという境界条件を、実データの偶然の並びに依存せず固定するため
+// （意図的な選択であって、埋め忘れではない）。
+// （旧コメントが古いままになっていた原因: `services.ts` にデータを流し込んだ際
+// ここを直し忘れた。）
 
 const cube = (sideCm: number): BoxDimensionsCm =>
   ({ lengthCm: sideCm, widthCm: sideCm, heightCm: sideCm });
