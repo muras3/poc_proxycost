@@ -1,0 +1,166 @@
+{
+  "carrier": "ups",
+  "sources": [
+    {
+      "url": "https://www.ups.com/robots.txt",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "User-agent: *\nDisallow: /media/en/Marketplace_Integration.pdf\nDisallow: /tracking?loc=*\n\nUser-agent: ia_archiver\nDisallow: /\n\nSitemap: https://www.ups.com/sitemap-index.xml\n(このタスクで実際にアクセスした料金・サーチャージ関連ページ／PDFはいずれもDisallow対象に含まれない。Crawl-delay の指定なし)",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "「UPS Webサイト使用条件」全文を読了。検索キーワード「ロボット」「自動」「クロール」「収集ツール」に該当する記述が第9条にあり: 「出荷関連システムと関連してなされる、自動照合デバイス、ロボット、または繰返し式データ収集ないし抽出ツール、ルーチン、スクリプト、またはその他の類似機能を持ったメカニズムのいかなる使用も明示的に禁止されています。」ただしこの禁止規定は文脈上『出荷関連システム』（貨物追跡、所要時間、荷物のお持込み場所、あて先確認等のUPSシステムズの機能）に限定されており、燃油サーチャージ表・追加料金ページ・関税ページ等の静的な公開情報ページを対象とした一般的な自動アクセス禁止規定は本文中に見当たらなかった。第10条『インバウンドリンク』にも自動化ツールへの直接の言及はなし。",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本発の表（ups.com/jp/ja 配下のページ）"
+    },
+    {
+      "url": "https://www.ups.com/jp/ja/support/shipping-support/shipping-costs-rates/fuel-surcharges",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト内の該当ページ（jp/ja配下、UPSサイト内検索『燃油サーチャージ』の最上位結果からリンクを辿って到達）"
+    },
+    {
+      "url": "https://www.ups.com/jp/ja/supplychain/tools/surcharges",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト内の該当ページ（jp/ja配下、燃油サーチャージページ内リンク『エアフレート・フューエル・サーチャージはこちら』から到達）"
+    },
+    {
+      "url": "https://www.ups.com/jp/ja/support/shipping-support/shipping-costs-rates",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト内の該当ページ（jp/ja配下、サイト内検索結果から到達）"
+    },
+    {
+      "url": "https://www.ups.com/jp/ja/shipping/international-shipping/tariffs",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "同上（Disallow対象外）",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "同上",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本サイト内の該当ページ（jp/ja配下）。ページ内FAQ『知っておくべき最も一般的なUPS仲介手数料は何ですか?』の回答は明示的に『米国宛ての出荷の場合の料金』と限定されているため、内容自体は米国向け（宛先＝米国）の料金体系"
+    },
+    {
+      "url": "https://www.ups.com/de/de/shipping/international-shipping/tariffs",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "同上（同一ホストwww.ups.comのためJP確認時と同じrobots.txtが適用され、Disallow対象外）",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "ドイツ語版の対応ページ（Nutzungsbedingungen der Webseite）は個別に全文確認していないが、同一ホスト・同一プラットフォームのため日本語版と同内容と推定",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "ドイツサイト（de/de）。UPSサイト上部の国・地域切替リンク（https://www.ups.com/global の国別リンク一覧）から確認したURLパターンに基づき遷移"
+    },
+    {
+      "url": "https://www.ups.com/gb/en/shipping/international-shipping/tariffs",
+      "robots_txt_checked": "https://www.ups.com/robots.txt",
+      "robots_txt_result": "同上（同一ホスト）",
+      "terms_checked": "https://www.ups.com/jp/ja/support/shipping-support/legal-terms-conditions/website-terms-of-use",
+      "terms_result": "英国版の対応ページは個別に全文確認していないが、同一ホスト・同一プラットフォームのため日本語版と同内容と推定",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "英国サイト（gb/en）。国・地域切替リンクから確認したURLパターンに基づき遷移"
+    }
+  ],
+  "fuel_surcharge": {
+    "percentage": 49.75,
+    "effective_period": "2026年9月14日（月曜日）から次回更新（原則毎週月曜日）まで。UPSは毎週月曜日にサーチャージ率を更新すると明記されている。ページに掲載された『90日間のフュエル・サーチャージ履歴』の最新行は次の通り: 2026/09/14=49.75%, 2026/09/07=46.75%, 2026/08/31=48.25%, 2026/08/24=47.00%, 2026/08/17=44.25%, 2026/08/10=46.75%, 2026/08/03=46.25%, 2026/07/27=44.75%, 2026/07/20=40.50%, 2026/07/13=39.25%, 2026/07/06=39.00%, 2026/06/29=39.25%, 2026/06/22=42.25%",
+    "differs_by_service": true,
+    "per_service": [
+      {
+        "service": "UPS Worldwide Express Freight / Worldwide Express Freight Midday / Worldwide Express Plus / Worldwide Express / Worldwide Express Saver / Worldwide Expedited（国際輸送料金）",
+        "percentage": 49.75
+      },
+      {
+        "service": "UPS Next Day Air Early / Worldwide Express Plus料金、遠隔地・最遠隔地集荷配達、個人宅配達、土曜配達集荷、追加取扱・ラージパッケージ・制限超過、オーバーサイズパレット取扱、デマンドサーチャージ、サージ料金、サージ緊急料金（付帯料金）",
+        "percentage": 49.75
+      },
+      {
+        "service": "国際航空貨物輸送（Air Freight: UPS Air Freight Direct / UPS Air Freight Consolidated / UPS Express料金）",
+        "percentage": null
+      }
+    ],
+    "included_in_displayed_rate": true,
+    "included_in_displayed_rate_quote": "UPSアカウントナンバーをお持ちの場合は、フューエル・サーチャージが請求書に含まれます。UPSを不定期にご利用になる場合は、燃油サーチャージが料金に含まれます。",
+    "source": "https://www.ups.com/jp/ja/support/shipping-support/shipping-costs-rates/fuel-surcharges",
+    "quote": "UPSは週ごとに調整されるサーチャージ率を使用します。サーチャージ率の変更は、毎週月曜日に有効となります。サーチャージは、米国エネルギー情報局（EIA）が報告した米国ガルフコースト（USGC）による調整2週間前の1週間の灯油タイプのジェット燃料価格に基づいて、最も近いセントに四捨五入されます。／フューエル・サーチャージは、UPSがサービスをご提供している世界の全地域において適用されます。このサーチャージは、UPS Worldwide Express Freight、UPS Worldwide Express Freight Midday、UPS Worldwide Express Plus、、UPS Worldwide Express、Worldwide Express Saver、UPS Worldwide Expedited サービスの国際輸送料金に適用されます。燃料サーチャージは、以下の付帯料金（該当する場合）にも適用されます。UPS Next Day Air Early®/UPS Worldwide Express Plus料金、遠隔地と最遠隔地の集荷および配達、個人宅配達、土曜配達および集荷、追加取扱い、ラージパッケージ、制限超過、オーバーサイズパレット取扱い、デマンドサーチャージ、サージ料金、サージ緊急料金／下記エアフレートサービスをご提供するすべての国や地域において、該当サービスに対し、エアフレート・フューエル・サーチャージが適用されます：UPS Express料金、UPS Air Freight Direct、UPS Air Freight Consolidated（別表『エアフレート・フューエル・サーチャージ』参照。国際航空貨物輸送のフューエル・サーチャージは通知なしに変更される場合があり、発送国・仕向国のレーンの組み合わせにより決定されるため、Worldwide Express等と同一の単一パーセンテージ表は用いていない）",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch"
+  },
+  "remote_area_surcharge": {
+    "amount": null,
+    "currency": null,
+    "unit": null,
+    "postcode_list_url": "https://assets.ups.com/adobe/assets/urn:aaid:aem:4a27d6a9-70f0-408c-9e40-150294c02931/original/as/ea-surcharge-jp-ja.xlsx",
+    "postcode_list_format": "XLSX",
+    "source": "https://www.ups.com/jp/ja/support/shipping-support/shipping-costs-rates",
+    "quote": "遠隔地手数料　人口の少ない地域、またはアクセスしにくい地域間のサービスは、運用コストが高くなります。これらの地域にサービスを行うためのコストをより正確に反映するために、遠隔地および最遠隔地手数料が適用されます。[Excelファイルのダウンロード]",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch",
+    "not_found_detail": "ページ本文には遠隔地/最遠隔地手数料の具体的な金額・通貨・単位は記載されていなかった。金額の詳細は上記Excelファイル（郵便番号別の一覧とみられる）内にのみ記載されている可能性が高いが、タスク指示（『対象郵便番号リストが公開されているか。あればURL・ファイル形式・日付を記録（中身を全部写す必要はない）』）に従いファイル自体は開いていないため、amount/currency/unitはnullとした。ファイルの更新日時もページ上に表示なし。"
+  },
+  "clearance_fee_by_country": [
+    {
+      "country": "US",
+      "percentage_of_duty_and_tax": 2.0,
+      "minimum_amount": 14.00,
+      "currency": "USD",
+      "formula_note": "支払手数料（Payment/Disbursement fee）：UPSが顧客に代わって支払った関税・税金の2%、ただし最低14.00米ドル。米国宛ての出荷にのみ適用される料金として明記。ページには『いずれか高い方』という文言そのものは無いが、『2%の関税/税金（最低14.00ドル）』という表現から、2%と14ドルのいずれか高い方が適用される一般的なUPS仲介手数料の構造と解釈できる（この解釈部分は推測であり、原文に『いずれか高い方』の明記はない点に留意）。このほか、倉庫保管料（2日間無料、以降最低25米ドル+1ポンドあたり0.05米ドル/日、7日以降は1ポンド1日あたり0.10米ドル）、追加関税品目割増金（3エントリライン以上で1行あたり3米ドル）、関税/税金転送追加料金（『関税/消費税転送手数料』選択時に発送者へ2,700円）も同ページに記載。",
+      "source": "https://www.ups.com/jp/ja/shipping/international-shipping/tariffs",
+      "quote": "最も一般的に請求される仲介手数料は、支払手数料、倉庫保管料、追加関税ライン追加料金です。これらの料金については、配送先の国で適用される料金が課されます。関税および/または税金が配達先の国以外で請求される場合、関税/税金転送追加料金が課金されます。下記の追加料金の説明をご覧ください。下記の料金は米国向けの発送の場合の料金です。支払手数料：UPSが顧客に代わって支払った金額または処理した金額の手数料が請求されます。米国宛ての出荷には、2%の関税/税金 (最低 14.00 ドル) がかかります。倉庫保管料：これは、通関業者に関係なく、2日間の無料期間が過ぎても出荷品が米国の UPS 倉庫に残っている場合に評価されます。2日後以降は、最低25米ドル + 1ポンドあたり0.05米ドル/日が適用されます。7日後からは1ポンドあたり1日あたり0.10ドルの料金が適用されます。追加関税品目割増金：米国宛ての出荷で3つ以上のエントリラインを入力する場合、1行あたり3ドルの手数料が適用されます。関税/税金転送追加料金：「関税/消費税転送手数料」の請求オプションを選択した場合、2,700円の手数料が発送者に請求されます。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    }
+  ],
+  "not_found": [
+    {
+      "item": "remote_area_surcharge.amount / currency / unit",
+      "reason": "ページ本文（https://www.ups.com/jp/ja/support/shipping-support/shipping-costs-rates）には金額の記載がなく、詳細は別添のExcelファイル（郵便番号別リスト）にのみ含まれる可能性が高い。タスク指示により当該ファイルの中身は開いていないため、金額・通貨・単位は不明。"
+    },
+    {
+      "item": "fuel_surcharge.per_service（国際航空貨物輸送 Air Freight の具体的なパーセンテージ）",
+      "reason": "UPS Supply Chain Solutions（https://www.ups.com/jp/ja/supplychain/tools/surcharges）ページ上のリンク『日本の輸出における国際航空貨物輸送のフューエル・サーチャージ（燃油特別付加運賃）』はPDF（https://assets.ups.com/adobe/assets/urn:aaid:aem:b3f48a38-bdfa-44d6-bb64-cf7b9b329f88/original/as/japan-air-freight-surcharge.pdf）にリンクしているが、ブラウザのPDFビューアでページ内容が正しく描画されず（複数回試行したが表示領域が黒/白紙のまま）、文字情報を読み取れなかった。ページ本文には『国際航空貨物輸送サービスのフューエル・サーチャージは、通知なしに変更される場合があります』とあるのみで、単一のパーセンテージ表ではなくレーン別に決定される旨が明記されている。",
+      "note_dup": null
+    },
+    {
+      "item": "clearance_fee_by_country: DE（ドイツ）",
+      "reason": "https://www.ups.com/de/de/shipping/international-shipping/tariffs および https://www.ups.com/de/de/support/international-tools-resources/understanding-customs を確認したが、米国向けページ（JP/GB版）にあったような『最も一般的な仲介手数料』の具体的な内訳（％・最低額）を示すFAQ項目自体が存在しなかった（このFAQセクションは米国のde minimis政策に関する項目のみで構成されており、ドイツ向け宛先の仲介手数料に関する項目は見当たらなかった）。法的文書ページ（Geschäftsbedingungen）内の『Allgemeine Geschäftsbedingungen für Dienstleistungen – PDF』は運送約款PDFであり、料金表ではないと判断し内容確認を断念した（他国分含め全PDFの精読は時間の都合で行っていない）。"
+    },
+    {
+      "item": "clearance_fee_by_country: GB（英国）",
+      "reason": "https://www.ups.com/gb/en/shipping/international-shipping/tariffs を確認したが、DEと同様に『most common brokerage fees』に相当するFAQ項目が存在しなかった（サイト内検索『brokerage fee』でもUnderstanding Customs等の一般説明ページのみがヒットし、具体的な％・最低額を記載したページは見つからなかった）。"
+    },
+    {
+      "item": "clearance_fee_by_country: FR（フランス）, AU（オーストラリア）, CA（カナダ）, SG（シンガポール）",
+      "reason": "DE/GBで同型のtariffsページ・customsページを確認した結果、いずれも米国向け仲介手数料の説明に限定されたFAQ構成であることが分かったため、時間の制約上、FR/AU/CA/SGについては個別ページへの遷移・確認を行っていない（未到達）。ページに書かれていない数字を推測で埋めることを避けるため、これら4カ国はすべてnullとした。"
+    },
+    {
+      "item": "遠隔地サーチャージ関連ページの英語表記URL直接ヒット",
+      "reason": "UPSサイト内検索で英語『remote area surcharge』は0件（結果は日本語ページのみでヒット）。日本語検索語『遠隔地サーチャージ』『配達地域追加料金』で関連ページ（出荷費用と料金ページ内の『遠隔地手数料』セクション）に到達した。"
+    }
+  ]
+}

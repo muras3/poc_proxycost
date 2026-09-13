@@ -1,0 +1,246 @@
+{
+  "carrier": "fedex",
+  "manual_completion_note": "自動化（クリック・矢印キー・タイプアヘッド）ではUS/DE/GB/FR/AU/CA/SG（日本語表記の選択肢）を一件も選択できなかったため、Tatsuya氏本人がプルダウンを手動で操作し、表示されたページ本文を提供。clearance_fee_by_countryの9エントリ（US標準/US速達/DE/GB/FR/AU/CA標準/CA Express/SG）はすべてこの経路で確定し、confidenceはdirect_fetch（公式ページ原文のため）とした。前回の自動取得値（規約抵触の懸念があり破棄）とはすべて完全一致し、GBの通貨表記不整合（『$12.90 GBP』）も再現確認された。",
+  "method_note": "JavaScriptの実行・DOM操作（document.querySelector(...).value=...等）・イベントのdispatchは一切使用していない。プルダウン（国/地域の選択、native <select>要素）の操作は、次の方法のみで試みた：(1) マウスの左クリックでプルダウンを開く、(2) キーボードの矢印キー（Down/Up/Left/Right、および明示的に'ArrowDown'表記でも試行）、Home、Enter、Escape、Tabキーでの操作、(3) アルファベット１文字のキー入力によるタイプアヘッド（ブラウザ標準のselect要素の先頭一致検索機能）、(4) 開いたリスト内の項目（<option>要素）への直接クリック（座標指定およびaccessibility参照IDの両方）。これらすべてを試したが、対象7カ国（US/DE/GB/FR/AU/CA/SG、いずれも選択肢名が日本語表記）については選択を確定できなかった。詳細は下記の通り：矢印キー（Down/Up/Left/Right、ArrowDown表記含む）は、プルダウンを開いた状態・閉じた状態のいずれでも選択値に一切変化を与えなかった（read_pageのaccessibility treeで確認、繰り返し10回以上試行し同じ結果）。開いたリスト内の<option>要素への直接クリック（accessibility参照ID経由）も選択値を変化させなかった。一方、ASCIIアルファベット１文字（例:'e'）のキー入力は、ブラウザ標準のタイプアヘッド機能により選択肢『El Salvador』への切り替えに成功し、change イベントも正しく発火して表示内容が更新されることを確認した（この一件のみ、メカニズム自体が機能することの確認用であり、対象国ではないためデータとしては採用していない）。しかし対象7カ国の選択肢名はすべて日本語（カタカナ/漢字）表記であり、日本語1文字（例:'ド'）をkeyアクションで送信しても選択に変化はなかった（同じページ上の通常のテキスト検索ボックスには日本語文字列が正しく入力できることを別途確認済みであり、日本語入力自体が本ツールで不可能なのではなく、この<select>要素のタイプアヘッド処理に対してのみ日本語のキー入力が認識されないという状況だった）。以上の理由により、矢印キーとJapanese文字タイプアヘッドの両方が機能しないという制約下では、対象7カ国のいずれについても本ページのプルダウンから選択を確定することができなかった。指示に従い、スクリプト等の代替手段は一切使用せず、正直に『選択できなかった』事実を記録する。また、ページ内リンクをクリックして国別個別URLの存在を探したが、利用規約ページ（terms-of-use.html 第27条）内に『通関サービスとその他の料金については、ancillary-clearance-service.html をご覧ください』という記載があり、これはまさに今回操作を試みたページ自身への案内であった。サーチャージ詳細ページ（other-surcharges.html）内の『通関サービスとその他の料金については こちらをご覧ください』というリンクも同じページを指しているとみられ、本ページ以外に国別の個別URLは見つからなかった（このページはプルダウン一つで全113カ国/地域のデータをクライアント側で切り替える単一ページ形式で設計されているとみられる）。",
+  "sources": [
+    {
+      "url": "https://www.fedex.com/robots.txt",
+      "robots_txt_checked": "前回セッションで確認済み（本タスクの前提条件として提示された内容）。今回アクセスしたページ（/ja-jp/ancillary-clearance-service.html, /ja-jp/terms-of-use.html, /ja-jp/shipping/surcharges.html, /ja-jp/shipping/surcharges/other-surcharges.html、PDF2件）はいずれもDisallow対象外、Crawl-delay指定なしであることを前提として、各アクセス間にBashツールでsleep 10を挟んで実行した。",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_or_quote_executed": false,
+      "access_method": "Claude in Chrome（ローカルChrome拡張、マウスクリックとキーボード操作のみ。javascript_toolは一度も呼び出していない）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本発の表（fedex.com/ja-jp）"
+    }
+  ],
+  "clearance_fee_by_country": [
+    {
+      "country": "US",
+      "variant": "米国 | FedEx標準サービス",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 17.50,
+      "maximum_amount": null,
+      "currency": "USD",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または$17.50」。『いずれか高い方』等の明示的な比較文言はなし（原文ママ）。別項目『関税その他税金転送手数料』（第三国支払者用、支払手数料の代わりに適用）には『関税価額が800ドル以下の場合、手数料は15.00ドル、または関税およびその他の税金の合計額の2％のいずれか大きい方』『関税価額が$800を超える場合、手数料は$29または関税額の2％』という別建ての料金体系があり、こちらには『いずれか大きい方』の明示あり（$800以下の場合のみ）。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: 米国 | FedEx標準サービス）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または$17.50 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "US",
+      "variant": "米国 | FedEx速達サービス",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 17.50,
+      "maximum_amount": null,
+      "currency": "USD",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または$17.50」。標準サービス版と同一の料率・文言。『いずれか高い方』の明示なし（原文ママ）。速達サービス版のみに存在する項目として、政府機関契約貨物の申告($53)、保管料(1kgあたり$0.08/日+基本料金$20)、ATFE通関手続き($74)、食品医薬品の事前通知($14)、通関業者への書類転送($55)、保税輸送($90)、一時輸入($150)がある。関税その他税金転送手数料は標準サービス版と同一（$800以下は$15または2%のいずれか大きい方、$800超は$29または2%）。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: 米国 | FedEx速達サービス）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または$17.50 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "DE",
+      "variant": "ドイツ",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 15.00,
+      "maximum_amount": null,
+      "currency": "EUR",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または15.00 EUR」。『いずれか高い方』の明示なし（原文ママ）。別項目『前払い(直接支払処理)』が同一料率（2.5%または15.00 EUR）で存在。『関税その他税金転送手数料』（第三国支払者用、支払手数料の代わりに適用）は『€18.00以上または関税およびその他税金の2.5%』と、US/CAの『いずれか大きい方』とは異なる『以上』という表現。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: ドイツ）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または15.00 EUR 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "GB",
+      "variant": "イギリス",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 12.90,
+      "maximum_amount": null,
+      "currency": "GBP",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または$12.90 GBP」。前回の自動取得時と同一の表記不整合（通貨記号『$』とラベル『GBP』の混在）を、ユーザーが手動で開いたページでも再現確認——スクレイピングの不具合ではなく、サイト側の実際の表記ミスであることが確定した。同ページ内の他の金額（保管料￡10.00、フレイト貨物通関￡35.00、関税その他税金転送手数料の『最低£15.00』等）はすべて正しく£記号を使用しており、支払手数料の行のみ$表記になっている。『いずれか高い方』の明示なし（原文ママ）。『前払い(直接支払処理)』は別建てで、関税額に応じた3段階の料率（0.01-£43.00: 30%・最低£10.50／£43.01-£524.00: 固定£12.90／£524.01以上: 2.5%）という支払手数料とは異なる複雑な構造。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: イギリス）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または$12.90 GBP 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "FR",
+      "variant": "フランス",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 15.00,
+      "maximum_amount": null,
+      "currency": "EUR",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または15.00 EUR」。ドイツと完全に同一の料率・文言（『前払い(直接支払処理)』2.5%/15.00 EUR、『関税その他税金転送手数料』€18.00以上または2.5%、も含めドイツと同一構成）。『いずれか高い方』の明示なし（原文ママ）。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: フランス）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または15.00 EUR 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "AU",
+      "variant": "オーストラリア",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 2.90,
+      "minimum_amount": 24.00,
+      "maximum_amount": null,
+      "currency": "AUD",
+      "formula_note": "「支払手数料：2.90%または最低24.00 AUD」（フェデックス・アカウントで規制料金を決済する顧客向け）。この行自体には『いずれか高い方』の明示なし（原文ママ）。ただし別項目『ROD FEE（関税、その他の税金手数料）』（FedExアカウントを持たない顧客向け）は『関税その他税金の2.9％または貨物あたりAUD24のいずれか高い額』と明示的に『いずれか高い額』の文言あり——前回の自動取得時と完全に同じ構造を確認。『関税その他税金転送手数料』は『最低AUD30または関税およびその他税金の2.9%』。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: オーストラリア）",
+      "quote": "支払手数料 2.90%または最低24.00 AUD 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。前払いした合計金額に加えて、料金に記載されている手数料を支払者に請求させていただきます。各地域でのサービス詳細：この手数料は、規制料金をフェデックス・アカウントで決済するお客様に適用されます。 ROD FEE（関税、その他の税金手数料） 関税その他税金の2.9％または貨物あたりAUD24のいずれか高い額。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "CA",
+      "variant": "カナダ | FedEx標準サービス",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": true,
+      "has_whichever_is_higher_wording_quote": "関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方",
+      "percentage_of_duty_and_tax": 3.10,
+      "minimum_amount": 12.00,
+      "maximum_amount": null,
+      "currency": "CAD",
+      "formula_note": "「支払手数料：関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方」。前回の自動取得時と完全に一致（『いずれか大きい方』の明示あり）。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: カナダ | FedEx標準サービス）",
+      "quote": "支払手数料 関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "CA",
+      "variant": "カナダ FedEx Express",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": true,
+      "has_whichever_is_higher_wording_quote": "関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方",
+      "percentage_of_duty_and_tax": 3.10,
+      "minimum_amount": 12.00,
+      "maximum_amount": null,
+      "currency": "CAD",
+      "formula_note": "標準サービス版と完全に同一の料率・文言。別項目『ROD料金』（アカウント非保有者向け）も同率で『関税およびその他税金の3.10％、またはCAD $12.00のいずれか高い方の金額』。『申告後の調整』は別建てで『$75 CADまたは請求額の8％のいずれか大きい方』。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: カナダ FedEx Express）",
+      "quote": "支払手数料 関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    },
+    {
+      "country": "SG",
+      "variant": "シンガポール",
+      "selection_status": "confirmed_manually_by_user",
+      "has_whichever_is_higher_wording": false,
+      "percentage_of_duty_and_tax": 5.0,
+      "minimum_amount": 24.00,
+      "maximum_amount": 120.00,
+      "currency": "SGD",
+      "formula_note": "項目名は他国と異なり『支払手数料』ではなく『特別取扱手数料』。「最低SGD24、または輸入関税その他の税金の5％、最大SGD120」——前回の自動取得時と完全に一致。『いずれか高い方』という比較文言はなく『最低』『最大』という表現（原文ママ）。他国にはない上限（最大SGD120）が存在する点が唯一の例外。『関税その他税金転送手数料』は『最低SGD35または関税およびその他税金の5%』。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: シンガポール）",
+      "quote": "特別取扱手数料 最低SGD24、または輸入関税その他の税金の5％、最大SGD120 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch",
+      "note": "ユーザー本人がプルダウンを手動操作し、表示されたページ本文をそのまま提供。自動化ツールでの取得ではないが、公式ページの原文であるためdirect_fetch扱い。"
+    }
+  ],
+  "pulldown_mechanism_verification": {
+    "note": "対象国とは無関係だが、プルダウン操作メカニズム自体が機能していることを確認するための記録。選択肢の中で唯一ローマ字（英語）表記だった『El Salvador』については、キーボードの単一アルファベットキー『e』によるタイプアヘッドで選択が確定し、change イベントが発火して該当ページ内容（簡易通関、輸入許可とライセンス等の手数料）が正しく表示されることを確認した。これにより、プルダウン自体は正常に機能しており、問題は（1）矢印キーがこの要素に対して一切効かないこと、（2）本ツールの日本語文字入力（keyアクション）がこの<select>要素のタイプアヘウド検索に認識されないこと、の２点に起因すると判断した。",
+    "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html",
+    "checked_on": "2026-09-12"
+  },
+  "terms_of_use_article_2": {
+    "source": "https://www.fedex.com/ja-jp/terms-of-use.html",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch",
+    "clause_1_present": true,
+    "clause_1_quote": "fedex.comから情報を取得すること、またはfedex.comを通じて情報を提供することを目的として、許可されていないスクリプティング技術を利用することは固く禁止されています。",
+    "clause_2_present": true,
+    "clause_2_quote": "fedex.comは、FedExの現在および将来のお客様が、FedExとやり取りをするために利用することのみを目的として提供されます。",
+    "note": "第2条：fedex.comの利用、に両条項とも原文のまま今も存在することを確認した（版：2026年1月、と明記されたページ内バージョン表記あり）。"
+  },
+  "fuel_surcharge": {
+    "percentage": 49.0,
+    "effective_period": "2026年9月14日 - 2026年9月20日",
+    "source": "https://www.fedex.com/ja-jp/shipping/surcharges.html",
+    "quote": "14 9月, 2026 - 20 9月, 2026 / $4.082 / 49.00%",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch",
+    "included_in_displayed_rate": null,
+    "included_in_displayed_rate_quote": null,
+    "included_in_displayed_rate_not_found_reason": "https://www.fedex.com/ja-jp/shipping/surcharges.html および https://www.fedex.com/ja-jp/shipping/surcharges/other-surcharges.html を確認したが、UPSの『不定期にご利用になる場合は、燃油サーチャージが料金に含まれます』に相当する『表示運賃に燃料割増金が含まれる/含まれない』という趣旨の文言は見当たらなかった。推測で補っていない。"
+  },
+  "remote_area_surcharge": {
+    "currency": "JPY",
+    "unit": "per_shipment / per_kg / greater_of（レベルによる）",
+    "oda_by_level": [
+      {"level": "A", "amount_per_shipment": 370, "amount_per_kg": null, "greater_of": false, "note": "航空貨物運送状1件につき370円のみ。1kgあたりの選択肢なし。"},
+      {"level": "B", "amount_per_shipment": 2990, "amount_per_kg": 58, "greater_of": true, "note": "1件につき2,990円または1kgあたり58円のいずれか高い方"},
+      {"level": "C", "amount_per_shipment": 3890, "amount_per_kg": 80, "greater_of": true, "note": "1件につき3,890円または1kgあたり80円のいずれか高い方"}
+    ],
+    "opa_by_level": [
+      {"level": "A", "amount_per_shipment": null, "amount_per_kg": null, "greater_of": null, "note": "レベルA: 適用外"},
+      {"level": "B", "amount_per_shipment": 2990, "amount_per_kg": 58, "greater_of": true, "note": "1件につき2,990円または1kgあたり58円のいずれか高い方（ODAレベルBと同額）"},
+      {"level": "C", "amount_per_shipment": 3890, "amount_per_kg": 80, "greater_of": true, "note": "1件につき3,890円または1kgあたり80円のいずれか高い方（ODAレベルCと同額）"}
+    ],
+    "postcode_list_url": "https://www.fedex.com/content/dam/fedex/us-united-states/services/ODA_OPA_tiers_codes.xlsx",
+    "postcode_list_format": "XLSX",
+    "postcode_list_found_via": "https://www.fedex.com/ja-jp/customer-support/faq/invoices-and-payments/fuel-and-other-surcharges/out-of-delivery-pick-up-area-surcharge.html （日本語FAQページ内『区分別郵便番号一覧をご確認ください』のリンク先として明記）",
+    "postcode_list_caveat": "URLパス（us-united-states）から、このファイルは米国内の郵便番号のみを対象にしている可能性が高い。日本発でも仕向地が米国以外の場合、レベルA/B/Cの判定に別の国別リストが必要になる可能性があるが、他国分のリストの有無は確認できていない。ファイル自体はXLSXバイナリのため中身は開いておらず（タスク方針通り、存在とURLの確認のみ）、行数・列構成は未確認。",
+    "source": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-sur-ja-jp-2026.pdf",
+    "quote": "地域外集荷料(OPA) レベルA: 適用外 レベルB: 航空貨物運送状1件につき 2,990円 または１ｋｇあたり58円 のどちらか高い方 レベルC: 航空貨物運送状1件につき 3,890円 または１ｋｇあたり80円 のどちらか高い方 / 地域外配達料(ODA) レベルA: 航空貨物運送状1件につき 370円 レベルB: 航空貨物運送状1件につき 2,990円 または１ｋｇあたり58円 のどちらか高い方 レベルC: 航空貨物運送状1件につき 3,890円 または１ｋｇあたり80円 のどちらか高い方 / フェデックスは、自社のクーリエが貨物を集配する地域（集荷地域外および配達地域外）以外への貨物に特別取扱料金をご請求させていただきます。ただし、フェデックス10kg・25kgボックスの貨物には集荷地域外および配達地域外料金は、適用されません。これらのサーチャージが適用される郵便番号は、こちらからご確認いただけます。",
+    "origin_scope": "日本発の表（fedex-rates-sur-ja-jp-2026.pdf、ファイル名の『ja-jp』表記および金額が円建てであることから日本発の表と判断）",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch",
+    "access_method": "WebFetch（PDFをブラウザではなく直接フェッチしてテキスト化。ユーザーからの明示的な指示により、前回セッションのブラウザ内PDF読み取り不能という制約を別手段で解消した）",
+    "note": "レベルA/B/Cの区分基準（どの郵便番号がどのレベルに該当するか）はこのPDF自体には記載がなく、別途『郵便番号リスト』の参照が必要（上記postcode_list_not_found_reason参照）。",
+    "pdf_check_detail": {
+    "oda_opa_pdf_1": {
+      "url": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-sur-ja-jp-2026.pdf",
+      "page_count": 5,
+      "page_text_extraction_result": "get_page_textツールで『No text content found. Page may contain only images, videos, or canvas-based content.』というエラーが返り、テキストは取得できなかった。",
+      "screenshot_result": "PDFビューアのサムネイル一覧（左側パネル）には各ページの縮小画像が表示され、文字らしきものが写っているのは確認できたが、非常に小さく判読不能であった。メインの表示ペイン（右側の大きな領域）は、ページ内リンクから開いた直後・サムネイルをクリックした後のいずれもスクリーンショット上で常に無地の暗いグレーの背景のままで、ページ内容が描画されなかった（前回セッションと同様の技術的制約が今回も再現した）。",
+      "download_attempted": true,
+      "download_action_detail": "PDFビューア右上のダウンロードアイコンをマウスでクリックし、ダウンロードを実行した（JS不使用、通常のクリック操作）。",
+      "download_local_path_confirmed": false,
+      "download_local_path_not_found_reason": "指示に従いchrome://downloadsタブを開いて保存先を確認しようとしたが、本セッションで利用可能なブラウザ自動化ツール（navigate/computer等）はいずれも『chrome://downloads』のようなブラウザ内部URLへのアクセスを明示的に拒否する仕様であり（エラー：'Can't interact with browser-internal or unparseable URLs'）、保存先パスやファイル名を画面上で確認することができなかった。ダウンロード自体が実行されたかどうかも、本ツールからは確認できていない。",
+      "checked_on": "2026-09-12"
+    },
+    "oda_opa_pdf_2": {
+      "url": "https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-exp-ja-jp-2026.pdf",
+      "page_text_extraction_result": "get_page_textツールで同様に『No text content found』が返り、テキストは取得できなかった。",
+      "screenshot_result": "同上の理由でメイン表示ペインは描画されず判読不能だった（詳細確認は1つ目のPDFで十分と判断し、簡略化して確認）。",
+      "download_attempted": true,
+      "download_action_detail": "同様にダウンロードアイコンをクリックした。",
+      "download_local_path_confirmed": false,
+      "download_local_path_not_found_reason": "1つ目のPDFと同じ理由（chrome://downloadsにアクセスできないツール制約）で確認できなかった。",
+      "checked_on": "2026-09-12",
+      "superseded_note": "この時点ではブラウザ内PDF読み取りが不能だったが、後にWebFetchツールでPDFを直接フェッチしテキスト化することに成功した（上位のremote_area_surcharge.quote参照）。"
+    }
+    }
+  },
+  "not_found": [
+    {
+      "item": "fuel_surcharge.included_in_displayed_rate（表示運賃に燃油サーチャージが含まれるか否か）",
+      "reason": "fuel_surcharge項目内に記載の通り、該当する趣旨の文言はページ上に見当たらなかった。"
+    }
+  ]
+}

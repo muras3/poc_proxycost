@@ -1,0 +1,35 @@
+{
+  "sources": [
+    {
+      "proxy": "fromjapan",
+      "url": "https://www.fromjapan.co.jp/en/estimate/",
+      "robots_txt_checked": "https://www.fromjapan.co.jp/robots.txt",
+      "robots_txt_result": "Disallow対象: /japan/tools/, /japan/s/, /japan/urlOrder/, 各種/api/yahoo_recommend*, /usa/配下のebay検索・入力系パス。計算機の実URL(/en/estimate/, /en/estimate/calc)はいずれのDisallowにも該当しない。Crawl-delay: 30が指定されており、本測定でも30秒以上の間隔を空けた。",
+      "terms_checked": "https://www.fromjapan.co.jp/en/title/serviceRule/ (Terms of Service, Last updated April 30, 2026)",
+      "terms_result": "全文をキーワード検索(scrap/automat/bot/crawl/script/robot)した結果、自動操作・スクレイピング・計算機アクセスを明示的に禁止する条項は確認されなかった。",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "access_method": "Claude in Chrome（ユーザーのローカルChromeを人間同様のUI操作で使用。HTTPクライアント・クラウドブラウザは不使用）",
+      "checked_at": "2026-09-12"
+    }
+  ],
+  "observations": [
+    {"proxy":"fromjapan","method_name":"ECMS","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"price_jpy":3506,"total_jpy":14706,"handling_fee_jpy":500,"domestic_delivery_fee_jpy":700,"export_clearance_fee_jpy":0,"methods_shown_total":5,"screen_note":"画面注記:\"Only available shipping methods are displayed.\" — 利用不可の方式はメッセージ付きで表示されず、選択肢自体に出現しない。"},
+    {"proxy":"fromjapan","method_name":"UPS","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"price_jpy":3539,"total_jpy":14739,"handling_fee_jpy":500,"domestic_delivery_fee_jpy":700,"export_clearance_fee_jpy":0,"methods_shown_total":5,"screen_note":""},
+    {"proxy":"fromjapan","method_name":"DHL","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"price_jpy":4771,"total_jpy":15971,"handling_fee_jpy":500,"domestic_delivery_fee_jpy":700,"export_clearance_fee_jpy":0,"methods_shown_total":5,"screen_note":""},
+    {"proxy":"fromjapan","method_name":"FedEx - Economy","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"price_jpy":5109,"total_jpy":16309,"handling_fee_jpy":500,"domestic_delivery_fee_jpy":700,"export_clearance_fee_jpy":0,"methods_shown_total":5,"screen_note":""},
+    {"proxy":"fromjapan","method_name":"FedEx - Priority","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"price_jpy":5437,"total_jpy":16637,"handling_fee_jpy":500,"domestic_delivery_fee_jpy":700,"export_clearance_fee_jpy":0,"methods_shown_total":5,"screen_note":""}
+  ],
+  "not_available": [
+    {"proxy":"fromjapan","method_name":"Japan Post EMS","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"reason":"画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない。ページ注記:\"Only available shipping methods are displayed.\"）。methods_shown_total=5（ECMS/UPS/DHL/FedEx-Economy/FedEx-Priorityのみ）"},
+    {"proxy":"fromjapan","method_name":"Japan Post International Parcel (Airmail/Surface)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"reason":"画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"},
+    {"proxy":"fromjapan","method_name":"Japan Post Small Packet (Airmail/Surface)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"reason":"画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"},
+    {"proxy":"fromjapan","method_name":"Japan Post International ePacket Light","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"reason":"画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"},
+    {"proxy":"fromjapan","method_name":"SF Express Economy Express","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"reason":"画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない）。methods_shown_total=5"},
+    {"proxy":"fromjapan","method_name":"ECMS Standard Express","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":10000,"reason":"画面の選択肢自体に一切表示されなかった（\"Not available\"等のメッセージ表示は伴わない。ECMS(Economy Expressと思われる)のみ表示され、Standard Expressは表示されず）。methods_shown_total=5"}
+  ],
+  "default_box": [20, 15, 10],
+  "coverage": "US・600g・20×15×10cm・商品価格¥10,000の1条件のみ実測。利用者の依頼により「Terms of Serviceで定義された全配送方法のうちUS宛てで実際に画面表示される方式を全て数える」ことを目的とした確認測定。",
+  "notes": "Terms of Service Article 9に記載の全配送方法リスト: [Japan発] FedEx(Priority/Economy), DHL(Express), UPS(Worldwide Express Saver), Japan Post(EMS/International Parcel[Airmail,Surface]/Small Packet[Airmail,Surface]/International ePacket Light), SF Express(Economy Express), ECMS(Standard Express) — 合計9種類（EMS単体を1種、International Parcelを1種などとして数える場合の目安）。US宛て600g・20×15×10cm・¥10,000の条件で実際に画面表示されたのは5方式のみ（ECMS, UPS, DHL, FedEx-Economy, FedEx-Priority）。日本郵便系（EMS/International Parcel/Small Packet/ePacket Light）はいずれも一切表示されず、画面に\"Not available\"等の明示メッセージも一切出なかった——選択肢のリストからJapan Post関連が完全に消える形。SF Express Economy ExpressおよびECMS Standard Express（ECMSという名前だけ見ると一致するがStandardの方は非表示）も表示されなかった。ページ自体に\"*Only available shipping methods are displayed.\"という注記があり、これはNeokyoで観測した「メッセージなしで一覧から消える」パターンと同じ挙動。取りこぼしを避けるため、結果セクション全体をスクロールしてフッターに到達するまで確認し、表示された行が5行で全てであることを確認済み（methods_shown_total=5として記録）。"
+}

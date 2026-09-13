@@ -1,0 +1,36 @@
+{
+  "sources": [
+    {
+      "proxy": "buyee",
+      "url": "https://buyee.jp/helpcenter/guide/shipping-fees",
+      "robots_txt_checked": "https://buyee.jp/robots.txt",
+      "robots_txt_result": "User-agent:*でDisallow対象: /errors/, /internalapi/, /api/v1/, /mycoupon/, /myorders/, /myshopping/, /mypage/, /mybaggages/, /mydelivery/, /myurlpurchase/, /ya/, /btob/, /payments/, /signup/regist/address/, /signup/regist/paymentmethod/, /signup/creditcard/, /refunds/, /mercari/item/description/。計算機の実URL(/helpcenter/guide/shipping-fees)はいずれのDisallowにも該当しない。Crawl-delay指定なし(User-agent:*向け)のため、他社での運用実績に準じ10秒以上の間隔を空けて操作した。",
+      "terms_checked": "https://buyee.jp/help/common/terms (Terms of Service)",
+      "terms_result": "全文をキーワード検索(scrap/automat/bot/crawl/script tool/robot)した結果、自動操作・スクレイピング・計算機アクセスを明示的に禁止する条項は確認されなかった。",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "access_method": "Claude in Chrome（ユーザーのローカルChromeを人間同様のUI操作で使用。HTTPクライアント・クラウドブラウザは不使用）",
+      "checked_at": "2026-09-12",
+      "item_price_field_present": false,
+      "item_price_field_note": "計算機フォームに商品価格の入力欄は存在しない。したがって商品価格による影響は測定不能。"
+    }
+  ],
+  "observations": [
+    {"proxy":"buyee","method_name":"ECMS","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"price_jpy":2288,"customs_clearance_fee_jpy":800,"delivery_estimate":"7-14 days","methods_shown_total":10,"screen_note":"Customs Clearance Feeが別途800円発生する旨の注記あり"},
+    {"proxy":"buyee","method_name":"Buyee Air Delivery","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"price_jpy":4526,"customs_clearance_fee_jpy":1200,"delivery_estimate":"2-7 days","methods_shown_total":10,"screen_note":"Customs Clearance Feeが別途1200円発生する旨の注記あり"}
+  ],
+  "not_available": [
+    {"proxy":"buyee","method_name":"EMS (Express Mail Service)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。\"Recommended\"バッジが付いたまま利用不可表示になっている点に留意。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"FedEx Economy","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"International Parcel Post (AIR) / Airmail","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"International Parcel Post (SAL) / Economy Airmail","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"International Parcel Post (Surface Mail)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"AIR Packet (Airmail, Shipping Preparation Fee included)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"Small Packet (AIR) / Airmail (without tracking)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"},
+    {"proxy":"buyee","method_name":"Small Packet (SAL) / Economy Airmail (without tracking)","country":"US","weight_g":600,"dims_cm":[20,15,10],"item_price_jpy":null,"reason":"画面上に方式名は表示されるが\"Shipping not available\"の明示メッセージ付きでグレーアウトされ、価格は表示されなかった。methods_shown_total=10"}
+  ],
+  "default_box": [20, 15, 10],
+  "coverage": "US・600g・20×15×10cmの1条件のみ実測。商品価格の入力欄がフォームに存在しないため、その観点は測定不能（sources[0].item_price_field_present=false）。",
+  "notes": "画面全体をフッターまでスクロールし、表示された行が10行（価格表示2件＋Shipping not available表示8件）で全てであることを確認済み（methods_shown_total=10として記録）。FROM JAPANが日本郵便系を選択肢から完全に消す(メッセージなし)のに対し、Buyeeは日本郵便系（EMS/International Parcel Post 3種/AIR Packet/Small Packet 2種）とFedEx Economyの計7方式を『方式名は表示するが\"Shipping not available\"と明示して不可にする』という異なる提示方法を採る。EMSには\"Recommended\"バッジが付与されたままだが実際には利用不可であり、UI上の矛盾（推奨表示と利用不可表示の併存）が見られた。価格が表示され実際に利用可能なのはECMS(2,288円、customs clearance fee別途800円)とBuyee Air Delivery(4,526円、customs clearance fee別途1200円)の2方式のみ。"
+}

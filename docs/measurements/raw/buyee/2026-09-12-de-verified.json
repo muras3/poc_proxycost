@@ -1,0 +1,48 @@
+{
+  "source": "https://buyee.jp/helpcenter/guide/shipping-fees?lang=en",
+  "fetched_at": "2026-09-12",
+  "input_fields": ["country", "weight", "dimensions"],
+  "item_price_supported": false,
+  "measurement_note": "Each changed input was confirmed by moving focus with Tab. Only currently displayed result cards were recorded.",
+  "country_600g_20x15x10": [
+    {"country":"US","prices":{"ECMS":2288,"FedEx":4526},"extra_fees":{"ECMS_customs_clearance":800,"FedEx_customs_clearance":1200}},
+    {"country":"DE","prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4612}},
+    {"country":"GB","prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4612}},
+    {"country":"FR","prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4612}},
+    {"country":"AU","prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"ECMS":2544,"EMS":3400,"FedEx":3824,"Air Parcel":3850,"DHL":3869}},
+    {"country":"CA","prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4526}},
+    {"country":"SG","prices":{"Small Packet (AIR)":980,"ECMS":1778,"AIR Packet":1800,"Surface":2100,"EMS":2150,"Air Parcel":2500,"FedEx":3443,"DHL":3660}}
+  ],
+  "germany_weight_curve_20x15x10": [
+    {"weight_g":500,"prices":{"Small Packet (AIR)":1230,"AIR Packet":2133,"Surface":2500,"EMS":3150,"Air Parcel":3850,"FedEx":4612}},
+    {"weight_g":600,"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4612}},
+    {"weight_g":700,"prices":{"Small Packet (AIR)":1590,"Surface":2500,"AIR Packet":2613,"EMS":3650,"Air Parcel":3850,"FedEx":4612}},
+    {"weight_g":1000,"prices":{"Small Packet (AIR)":2130,"Surface":2500,"AIR Packet":3333,"Air Parcel":3850,"EMS":4400,"FedEx":4612}},
+    {"weight_g":1500,"prices":{"Small Packet (AIR)":3030,"Surface":3100,"AIR Packet":4533,"FedEx":5068,"EMS":5550,"Air Parcel":6000}},
+    {"weight_g":2000,"prices":{"Surface":3100,"Small Packet (AIR)":3930,"FedEx":5436,"AIR Packet":5733,"Air Parcel":6000,"EMS":6700}},
+    {"weight_g":2500,"prices":{"Surface":3700,"FedEx":6194,"EMS":7750,"Air Parcel":8150}},
+    {"weight_g":3000,"prices":{"Surface":3700,"FedEx":6970,"Air Parcel":8150,"EMS":8800}},
+    {"weight_g":5000,"prices":{"Surface":4900,"FedEx":9074,"Air Parcel":12450,"EMS":13000}},
+    {"weight_g":10000,"prices":{"Surface":7900,"FedEx":15082,"Air Parcel":23200,"EMS":23500}},
+    {"weight_g":20000,"prices":{"Surface":11900,"FedEx":24847,"Air Parcel":39200,"EMS":44500}}
+  ],
+  "germany_dimension_curve_600g": [
+    {"dims_cm":[10,10,10],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4612}},
+    {"dims_cm":[20,20,20],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":4612}},
+    {"dims_cm":[30,20,10],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":6194}},
+    {"dims_cm":[40,30,20],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":6194}},
+    {"dims_cm":[60,40,30],"prices":{"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":15082}},
+    {"dims_cm":[25,25,25],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":7678}},
+    {"dims_cm":[30,30,30],"prices":{"Small Packet (AIR)":1410,"AIR Packet":2373,"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":8375}},
+    {"dims_cm":[35,35,35],"prices":{"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":11884}},
+    {"dims_cm":[40,40,40],"prices":{"Surface":2500,"EMS":3400,"Air Parcel":3850,"FedEx":16148}},
+    {"dims_cm":[45,45,45],"prices":{"FedEx":23653}},
+    {"dims_cm":[50,50,50],"prices":{"FedEx":28614}}
+  ],
+  "not_available_summary": [
+    "US: all Japan Post methods were unavailable at 600g/20x15x10cm",
+    "DE: Small Packet and AIR Packet disappeared above 2kg",
+    "DE: at 45cm and 50cm cubes only FedEx remained"
+  ],
+  "default_dimensions": {"status":"not_determined","reason":"Clearing dimensions retained the immediately preceding result; a fresh-page measurement is required."}
+}
