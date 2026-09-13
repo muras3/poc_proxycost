@@ -44,13 +44,21 @@ const row = (over: { id: string; totalLow: number; rankHigh: number | null }): R
 };
 
 describe('isIndeterminate — leader unbounded (2026-09-13 fix)', () => {
-  test('reported case: US, 600 g, ¥3,000 — FROM JAPAN leads with rankHigh null, no unqualified cheapest', () => {
+  test('reported case: US, 600 g, ¥3,000, fragile — FROM JAPAN leads with rankHigh null, no unqualified cheapest', () => {
     // 監査の再現手順そのもの。既定の呼び出し方（method: 'cheapest'）で普通に起きる。
+    //
+    // **2026-09-13 追記（外注梱包の条件付き化、オーナー決定）**: この監査が発見した
+    // 元のケースは「600g・¥3,000という*普通の*商品でも FROM JAPAN の外注梱包が
+    // 無条件に unbounded になっていた」という**別のバグ**（`services.ts` の
+    // `requiresOutsourcedPacking` が無かった）に依存していた。そのバグを塞いだ今、
+    // 普通の商品はもう unbounded にならない——`isIndeterminate`（本テストの対象）は
+    // 生きたままなので、条件3（壊れ物）を明示的に立てて同じ形（1位自身が
+    // unbounded）を再現する。
     const r = compare({
       method: 'cheapest',
       items: [{
         title: 'i0', priceYen: 3000, priceTier: 'fixed', site: 'yahoo-auctions',
-        weightG: 600, weightTier: 'estimate', qty: 1, id: 'i0',
+        weightG: 600, weightTier: 'estimate', qty: 1, id: 'i0', fragile: true,
       }],
       country: 'US',
     });

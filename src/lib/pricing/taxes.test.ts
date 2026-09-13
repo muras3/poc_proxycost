@@ -549,12 +549,19 @@ describe('every destination has a duty rate above its threshold', () => {
   });
 
   test('the dash that remains is always a dash on purpose', () => {
-    // **総額から漏れている費目は米国の3つ＋7カ国 × 2つ（0e/A-3）だけ**で、全部
+    // **総額から漏れている費目は米国の3つ＋7カ国 × 1つ（A-3）だけ**で、全部
     // 「取れていない」ではなく「そこには無い／額が公表されていない／その社が
-    // 売っていない」。0e（`display: total` の1件——FROM JAPAN の外注梱包）に加え、
-    // 外部レビュー2回目 A-3 で Buyee の consolidated 行（まとめ梱包・F14、額未取得）にも
-    // 同じ扱いの null 行を足したので、7カ国すべてに常時この2件が加わる。
-    // ここがそれ以上増えたら、新しい穴が開いたということ。
+    // 売っていない」。外部レビュー2回目 A-3 で Buyee の consolidated 行
+    // （まとめ梱包・F14、額未取得）に null 行を足したので、7カ国すべてに常時
+    // この1件が加わる。ここがそれ以上増えたら、新しい穴が開いたということ。
+    //
+    // **2026-09-13 更新（オーナー決定）**: FROM JAPAN の外注梱包（0e、以前は
+    // `display: total` の無条件費目としてここに毎回出ていた）は、重量・商品価格・
+    // 壊れ物の条件を満たしたときだけ出るようになった（`requiresOutsourcedPacking`、
+    // `services.ts`）。この籠（5点・600g/点＝合計3,000g、価格は最大でも
+    // 5×¥200,000）はどの条件も満たさない（重量が閾値の30,000/50,000gに遠く
+    // 届かない）ので、もう `excluded` に出ない——旧仕様の無条件計上が過剰
+    // だったことの直接の証拠。
     //
     // **Jauce の Premium insurance は既定では乗らない**（P1-4、オーナー確定
     // 2026-09-11）。任意（利用者が選ぶ）費目なので、選んでいない既定カートの
@@ -569,7 +576,6 @@ describe('every destination has a duty rate above its threshold', () => {
       }
     }
     const expected = COUNTRY_CODES.flatMap((cc) => [
-      `${cc}: Outsourced packing`,
       `${cc}: Package consolidation`,
     ]).concat([
       'US: EMS to United States',                       // Neokyo は米国宛に日本郵便を売っていない

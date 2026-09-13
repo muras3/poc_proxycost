@@ -15,7 +15,7 @@ import {
 } from './courier-clearance';
 import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
-  EXPORT_DECLARATION_FEE_YEN, SERVICES, type Service,
+  EXPORT_DECLARATION_FEE_YEN, requiresOutsourcedPacking, SERVICES, type Service,
 } from './services';
 import { groupByShop, isPerListingSite, oneOrderPerItem, shopIdFor, type ShopGrouping } from './shops';
 import { splitByWeightLimit, type PackableItem, type ParcelPack } from './parcels';
@@ -1443,6 +1443,18 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // `amount: null`（画面「—」）で毎行に足し、`excluded` に名前を載せる。
   for (const u of svc.unpricedFees ?? []) {
     lines.push(L(u.key, u.label, null, u.note, 'none', u.sourceUrl ?? svc.sourceUrl));
+  }
+  // **条件（重量・商品価格・壊れ物）を満たしたときだけ発生する未取得費目。**
+  // いま該当するのは FROM JAPAN の外注梱包1件のみ（オーナー決定 2026-09-13、
+  // `requiresOutsourcedPacking` の doc comment に原文引用）。普通の商品ではどの
+  // 条件も成立しないので行を立てない（0円・未知にしない）。
+  if (svc.outsourcedPackingFee) {
+    const totalGrossG = parcelGross.reduce((a, g) => a + g, 0);
+    const fragile = items.some((i) => i.fragile || i.specialHandling);
+    if (requiresOutsourcedPacking(totalGrossG, itemsYen, fragile)) {
+      const u = svc.outsourcedPackingFee;
+      lines.push(L(u.key, u.label, null, u.note, 'none', u.sourceUrl ?? svc.sourceUrl));
+    }
   }
   // F14（consolidation）。同梱を実際に申請した行（consolidated）にだけ足す
   // ——default 変種は同梱を申請していないので、この未確定の費目を負わせない
