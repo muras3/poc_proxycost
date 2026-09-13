@@ -28,6 +28,45 @@ import type { CountryCode, CourierMethod } from './types';
  * "unknown_but_likely_per_shipment"（推論、未確認）と書いているが、未確認である
  * 以上ここでは per_parcel を採る——マスタの推論に反する選択なので明記しておく。
  *
+ * **「per_parcel」はデフォルトであって『一次資料が per parcel と言っている』ことでは
+ * ない。** 今回オーナーがFedEx GB/DEを一次資料（Conditions of Carriage）で
+ * per_shipment（Air Waybill 1枚＝1 Shipment）だと確認し、DHL DEも既に
+ * "pro abgefertigter Sendung" で per_shipment と確認済みなので、48行のうち
+ * 「一次資料が明示的に per parcel と述べている」行は**1件も無い**——per_parcel
+ * を採っている行は全て「一次資料が沈黙している（unit記述が無い）」ケースへの
+ * こちらの安全側デフォルトであり、確認された事実ではない。この事実と方針の
+ * 区別を消さないよう、`per` の値をUIに出すときは常に「当社の推定」であることを
+ * 明示する（`compare.ts` の `perNote` 参照）。
+ *
+ * ## Air Waybill 数の推定（#106、オーナー確定）
+ * per_shipment の行は「1 Air Waybill = 1 Shipment = 1回分の手数料」で計算する
+ * 必要があるが、**代行が実際に何通のAir Waybillを発行するかは観測できない**。
+ * オーナーは次の対応付けを「事実ではなく開示された仮定」として決定した:
+ *   - 箱が分かれた理由が店舗違い（`ParcelSplitReason` の `'identified-shop'` /
+ *     `'per-listing'` / `'unresolved-shop'`）→ 別々の注文が別々に発送される
+ *     ので、**別々のShipment（Air Waybill）とみなし、箱ごとに1回課金する。**
+ *   - 箱が分かれた理由が重量上限超過（`'weight-limit'`）→ 同じ注文の複数個口は
+ *     1つの Multi-Piece Shipment とみなし、**その注文全体で1回だけ課金する。**
+ *     FedEx自身の "Multi-Piece Shipments" 条項（複数個口でも重量に上限が無い＝
+ *     1 Shipmentのまま）がこの読みを支持する。
+ * 実装は `compare.ts` 側で、箱を元の下地（`baseGroups`、店舗単位）でグループ化し、
+ * グループごとに duty+tax を合算して1回分の手数料を計算し、グループ間で合算する
+ * （`groupOfItemIndex` 参照）。**この対応付けはコード内のコメントに留めず、
+ * 画面のnoteにも出す**——「これは事実ではなく当社の推定である」とユーザーが
+ * 見て分かるようにする（タスク指示）。
+ *
+ * ### `'weight-limit'` 分岐は宅配便では現状 到達不能（#106で確認）
+ * `compare.ts` の `methodBoxes` は `isCourier ? baseBoxes : boxesForPostal(...)`
+ * ——**宅配便は常に `baseBoxes`（店舗単位の下地、未分割）を使い、`splitByWeightLimit`
+ * を一切通らない。** そのため宅配便の箱の `ParcelSplitReason` が `'weight-limit'`
+ * になることは今のコードでは起こり得ない（店舗違いの分割 or 単一のいずれかにしか
+ * ならない）。したがって上の「重量上限分割は1 Shipmentにまとめる」というルールは
+ * **今日時点では宅配便に対して到達不能な分岐**——実装はしたが、宅配便の重量超過が
+ * 別の形（箱を増やす代わりにサーチャージを課す、PR #109が調べている）で扱われて
+ * いる限り、このルールが実際に発火することは無い。到達不能であること自体を
+ * `courier-clearance.test.ts` にピン留めしてある。将来 #109 やその先で宅配便にも
+ * 重量超過による箱分割が入れば、このルールはそのときから意味を持つ。
+ *
  * ## account holder / non-account holder の2系統がある行
  * DHL の DTX 行は口座の有無で率・最低額が変わる（GB/FR/CA）。**#101 はここを
  * 「率・最低額とも高い方を機械的に採用する」ヘッジで埋めていたが、これは誤りだった
@@ -332,14 +371,22 @@ export const COURIER_CLEARANCE_UNKNOWN: Partial<Record<CountryCode, Partial<Reco
   GB: {
     FedEx: 'FedEx UK の Disbursement Fee は税額の帯で計算式自体が変わる3段構造'
       + '（下限付き率→定額→率のみ）で、既存のclearanceスキーマでは表現できない'
-      + '（schema_gap、docs/audit/f34-fedex-seven-countries-2026-09-12.md）。額は出さない。',
+      + '（schema_gap、docs/audit/f34-fedex-seven-countries-2026-09-12.md）。額は出さない。'
+      + ' 課金単位（per parcel/shipment）はオーナーがFedEx Conditions of Carriage'
+      + '（July 2025, en-gb）から直接フェッチし確認済み（direct_fetch）: "\'Shipment\' means'
+      + ' one or more Packages or Freight, moving on a single Air Waybill." ── per_shipment。'
+      + ' 帯の率・下限そのものは依然search_snippet_no_verbatim_quoteのまま未確認なので、'
+      + ' 額はまだ出さない（master/customs.json GB FedEx raw_findings 参照）。',
     UPS: 'UPS UK の Disbursement Fee は一次資料が取得できていない（#81から継続、'
       + 'assets.ups.comがこの環境からEmpty reply/503）。二次情報（フォーラム）はあるが'
       + 'UPS自身の逐語引用ではないため C_unknown のまま。額は出さない。',
   },
   DE: {
     FedEx: 'FedEx DE の Aufwendungspauschale/Disbursement Fee はGBと同型の3段帯構造'
-      + '（schema_gap、docs/audit/f34-fedex-seven-countries-2026-09-12.md）。額は出さない。',
+      + '（schema_gap、docs/audit/f34-fedex-seven-countries-2026-09-12.md）。額は出さない。'
+      + ' 課金単位はGBと同じくオーナーがFedEx Conditions of Carriage（Jan 2026, en-de）から'
+      + ' 直接フェッチし確認済み（direct_fetch、per_shipment、master/customs.json DE FedEx'
+      + ' raw_findings 参照）。帯の率・下限は未確認のまま。',
   },
 };
 

@@ -1,5 +1,5 @@
 {
-  "$schema_note": "宅配便の最終価格。分解しない（社の契約が外から見えないため）。2026-09-12: 外部作業者が FROM JAPAN / Jauce / Buyee を実測し、その結果をこのファイルに取り込んだ（引き継ぎ元: fromjapan/jauce/buyee の実測3ファイル。うち2ファイルは同内容）。ZenMarket は Cloudflare の Just a moment チャレンジで、Neokyo は robots.txt の Disallow: /*?* で、依然として自動測定できていない（下記 sources / not_available）。price_jpy は画面表示の額をそのまま記録し、計算値を混ぜていない。**配送方法の顔ぶれ（`postage.ts` の `postage` 構成・`unavailableIn`・`Service.courier`）はこの取り込みでは変更していない**（外部作業者が各社の顔ぶれ・可否を追加調査中で、結果は後日届く）。顔ぶれの差分は conclusions.courier_lineup_diffs に記録し、コードには反映していない。 2026-09-12追記: Claude in Chromeでの実ブラウザUI操作によりZenMarket（Cloudflareチャレンジ回避）・Neokyo（robots.txt Disallow: /*?* に抵触しないUI操作）を新規実測し取り込んだ（observations.neokyo_2026_09_12 / observations.zenmarket_2026_09_12）。sources内の該当エントリは新しい実測プロヴェナンスに置き換え、以前のブロック状況は previous_attempt_2026_09_11_12 として保存した。 2026-09-12（v2）: fromjapan / buyee / zenmarket / neokyo の4社について、US向けに20x15x10cm重量カーブ(11点)・600g寸法カーブ(11点)・空欄寸法条件の計22条件（計画138条件のうち）を追加取り込みした（取り込み元: fromjapan_shipping_measurements_v2.json / buyee_shipping_measurements_v2.json / zenmarket_shipping_measurements_v2.json / neokyo_shipping_measurements_v2.json、各 observations.fromjapan_us_grid_v2_2026_09_12, observations.buyee_us_grid_v2_2026_09_12, observations.zenmarket_us_grid_v2_2026_09_12, observations.neokyo_us_grid_v2_2026_09_12 に格納）。これによりUSは4社とも密な計測になったが、GB/FR/AU/CA/SGは依然未計測であり、Jauceはこの取り込みの対象外（データなし）のまま。詳細は docs/audit/volumetric-rules-2026-09-12.md を参照。 2026-09-12(六カ国拡張): ZenMarket/FROM JAPAN/Neokyo/Buyee/Jauceの5社について、US/GB/FR/AU/CA/SGの6カ国×重量カーブ(11点)×寸法カーブ(11点)を追加取り込みした(取り込み元: 9f872bc5/5e631118/c8db9ac5/59b65abf/05bea962の各_v2.json、格納先observations.<proxy>_six_countries_v2_2026_09_12)。あわせてDE(ドイツ)についても、以前の別バッチで測定済みだったZenMarket(2b760823)・Neokyo(5feb2d19)・Buyee(548b615f)・Jauce(fede91d0内jauce)の実測を取り込み、FROM JAPANの既存DE実測(single_points/weight_curve_de_20x15x10)とあわせて7カ国全社を実測でカバーした。Jauceは今回はじめてToS/robots.txtの再確認で自動化禁止条項が見つからず実測対象にできた(観測: observations.jauce_six_countries_v2_2026_09_12, jauce_de_2026_09_12)。BuyeeのDE/600g/20x15x10cmについて、548b615fとfede91d0のverified_single_observationでDHL価格の有無が食い違う(観測: observations.buyee_de_2026_09_12.contradiction_with_addendum_2026_09_12)。詳細はconclusions.de_coverage_resolution_2026_09_12を参照。",
+  "$schema_note": "宅配便の最終価格。分解しない（社の契約が外から見えないため）。2026-09-12: 外部作業者が FROM JAPAN / Jauce / Buyee を実測し、その結果をこのファイルに取り込んだ（引き継ぎ元: fromjapan/jauce/buyee の実測3ファイル。うち2ファイルは同内容）。ZenMarket は Cloudflare の Just a moment チャレンジで、Neokyo は robots.txt の Disallow: /*?* で、依然として自動測定できていない（下記 sources / not_available）。price_jpy は画面表示の額をそのまま記録し、計算値を混ぜていない。**配送方法の顔ぶれ（`postage.ts` の `postage` 構成・`unavailableIn`・`Service.courier`）はこの取り込みでは変更していない**（外部作業者が各社の顔ぶれ・可否を追加調査中で、結果は後日届く）。顔ぶれの差分は conclusions.courier_lineup_diffs に記録し、コードには反映していない。 2026-09-12追記: Claude in Chromeでの実ブラウザUI操作によりZenMarket（Cloudflareチャレンジ回避）・Neokyo（robots.txt Disallow: /*?* に抵触しないUI操作）を新規実測し取り込んだ（observations.neokyo_2026_09_12 / observations.zenmarket_2026_09_12）。sources内の該当エントリは新しい実測プロヴェナンスに置き換え、以前のブロック状況は previous_attempt_2026_09_11_12 として保存した。 2026-09-12（v2）: fromjapan / buyee / zenmarket / neokyo の4社について、US向けに20x15x10cm重量カーブ(11点)・600g寸法カーブ(11点)・空欄寸法条件の計22条件（計画138条件のうち）を追加取り込みした（取り込み元: fromjapan_shipping_measurements_v2.json / buyee_shipping_measurements_v2.json / zenmarket_shipping_measurements_v2.json / neokyo_shipping_measurements_v2.json、各 observations.fromjapan_us_grid_v2_2026_09_12, observations.buyee_us_grid_v2_2026_09_12, observations.zenmarket_us_grid_v2_2026_09_12, observations.neokyo_us_grid_v2_2026_09_12 に格納）。これによりUSは4社とも密な計測になったが、GB/FR/AU/CA/SGは依然未計測であり、Jauceはこの取り込みの対象外（データなし）のまま。詳細は docs/audit/volumetric-rules-2026-09-12.md を参照。 2026-09-12(六カ国拡張): ZenMarket/FROM JAPAN/Neokyo/Buyee/Jauceの5社について、US/GB/FR/AU/CA/SGの6カ国×重量カーブ(11点)×寸法カーブ(11点)を追加取り込みした(取り込み元: 9f872bc5/5e631118/c8db9ac5/59b65abf/05bea962の各_v2.json、格納先observations.<proxy>_six_countries_v2_2026_09_12)。あわせてDE(ドイツ)についても、以前の別バッチで測定済みだったZenMarket(2b760823)・Neokyo(5feb2d19)・Buyee(548b615f)・Jauce(fede91d0内jauce)の実測を取り込み、FROM JAPANの既存DE実測(single_points/weight_curve_de_20x15x10)とあわせて7カ国全社を実測でカバーした。Jauceは今回はじめてToS/robots.txtの再確認で自動化禁止条項が見つからず実測対象にできた(観測: observations.jauce_six_countries_v2_2026_09_12, jauce_de_2026_09_12)。BuyeeのDE/600g/20x15x10cmについて、548b615fとfede91d0のverified_single_observationでDHL価格の有無が食い違う(観測: observations.buyee_de_2026_09_12.contradiction_with_addendum_2026_09_12)。詳細はconclusions.de_coverage_resolution_2026_09_12を参照。 2026-09-13: FROM JAPANの独自計算機(20x15x10cm/0.5-5kg/7カ国)をオーナー自身が実測し、observations.fromjapan_seven_countries_2026_09_13に取り込んだ。最重要の発見は、我々が2026-09-12に記録していたFROM JAPANの過大計上額(¥720)が実態の半分以下だったこと(正しくは約¥1,700。conclusions.fromjapan_overstatement_correction_2026_09_13)と、F26の輸出通関手数料¥2,800に対しFROM JAPAN自身の画面が一貫して¥0を表示している件(conclusions.export_clearance_fee_contradiction_2026_09_13、オーナー判断待ちのため未解決のまま記録)。ほかにSGの500g条件でUPSの有無が2回の測定間で変わった再現性の問題(conclusions.fromjapan_sg_ups_appearance_discrepancy_2026_09_13)と、GB/DE/FRの価格表がバイト単位で同一だった観測(conclusions.fromjapan_gb_de_fr_price_table_identity_2026_09_13、単一ゾーンかキャッシュ/バグかは断定しない)を記録した。本追記でsrc/には一切触れていない。",
   "sources": [
     {
       "proxy": "fromjapan",
@@ -127609,6 +127609,1280 @@
       "planned_conditions": 138,
       "completed_conditions": 132,
       "skipped": []
+    },
+    "fromjapan_seven_countries_2026_09_13": {
+      "confidence": "direct_fetch",
+      "evidence_class": "declared",
+      "basis": "オーナー自身によるFROM JAPAN計算機のスクリーン実測(2026-09-13 JST)。入力: Country of Purchase=Japan, Retail price or final winning bid=¥1,000, Weight=0.5/1/2/5kg, L/W/H=20/15/10cm, Domestic delivery fee=0円, Payment Fees=Free。対象7カ国(US/GB/DE/FR/AU/CA/SG)。価格は画面の『International Shipping』欄。方法名は画面表示のまま記録(下記method_name_mappingで別途マッピング)。",
+      "page_disclaimer": "結果欄に \"Only available shipping methods are displayed.\" と明記。したがって表に無い方式は『取りこぼし』ではなく『非表示』——原則2のdeclaredに該当。ただしJapan Post系がUS向けに一切出ない件は、原則2の基準に沿い、9方式中何が出たかを数えた上でのdeclaredとして扱う(courier_lineup_diffs.us_japan_post_unavailable_tallyの既存fromjapanエントリと同種の証拠クラス)。",
+      "other_screen_notes": {
+        "handling_fee_jpy_per_item": 500,
+        "payment_fees": "Free",
+        "domestic_delivery_fee_jpy": 0,
+        "export_clearance_fee_jpy": 0,
+        "dimensional_weight_note": "\"Large packages with a light weight will be measured using dimensional weight. For more accurate results, it is recommended to input both size and weight into the calculator.\"",
+        "estimate_disclaimer": "\"Your final payment will be determined by actual cost and may vary from the estimate provided in this tool.\"",
+        "customs_disclaimer": "\"Estimated cost does not include possible customs duties.\"",
+        "non_standard_area_disclaimer": "\"Depending on the shipping method used, fees for non-standard delivery areas may be incurred.\"",
+        "eta_not_shown": "到着目安は結果画面に表示されなかった。"
+      },
+      "method_name_mapping": {
+        "note": "画面表示名→我々の語彙(src/lib/pricing/services.tsのpostageキー)への対応。マッピングは別工程であり、価格そのものの記録とは独立させた。src/は変更していない(参照のみ)。",
+        "confident": {
+          "EMS": "ems",
+          "AirMail": "parcel-air (日本郵便『国際小包(航空便)』相当)",
+          "Surface": "parcel-surface (日本郵便『国際小包(船便)』相当)",
+          "AirMail (Small Packet)": "small-packet-air",
+          "Surface (Small Packet)": "small-packet-surface"
+        },
+        "uncertain_flagged": {
+          "International ePacket Light": "我々の語彙に対応キーが無い(services.tsのpostageに'epacket-light'相当のキーは存在しない)。新規に追加が必要な方式——価格化するかはオーナー判断。マッピング不確実フラグを立てる。",
+          "ECMS": "『courier』(宅配便)側の一方式と推測されるが、既存observations.courier_lineup_diffs.they_offer_but_we_dont_haveで扱われている通り我々のcourier一般化にECMS固有のレートは無い。マッピング不確実フラグを立てる。",
+          "SF Express": "同様にcourier側の一方式と推測されるが固有レートは無い。マッピング不確実フラグを立てる。",
+          "UPS / DHL / FedEx - Economy / FedEx - Priority": "我々の`courier`(宅配便)markupモデルに対応すると推測されるが、便名ごとの個別レートを持っていないため1対1対応ではない。マッピング不確実フラグを立てる。"
+        }
+      },
+      "raw_by_country": {
+        "US": {
+          "500g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 2795
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 3487
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 4771
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5109
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5437
+              }
+            ],
+            "methods_shown_total": 5
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 3487
+              },
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 3506
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 4771
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5109
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5437
+              }
+            ],
+            "methods_shown_total": 5
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4700
+              },
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 4895
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5247
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5819
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5984
+              }
+            ],
+            "methods_shown_total": 5
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 7960
+              },
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 8418
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 9330
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 10639
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 10832
+              }
+            ],
+            "methods_shown_total": 5
+          },
+          "repeat_measurement_note": "500gと2,000gは2回測定し、同一結果。"
+        },
+        "GB": {
+          "500g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1600
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 3150
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4358
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5309
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5671
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5895
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4358
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 4400
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5309
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5671
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5895
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 1300
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 2130
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 4300
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 6000
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 6156
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 6276
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 6329
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 6700
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 6900
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 2200
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 3100
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 3930
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 10542
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 10736
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 11322
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 11793
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 12450
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 13000
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 4900
+              }
+            ],
+            "methods_shown_total": 7
+          },
+          "repeat_measurement_note": "500gと2,000gは2回測定し、同一結果。"
+        },
+        "DE": {
+          "500g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1600
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 3150
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4358
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5309
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5671
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5895
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4358
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 4400
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5309
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5671
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5895
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 1300
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 2130
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 4300
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 6000
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 6156
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 6276
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 6329
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 6700
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 6900
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 2200
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 3100
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 3930
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 10542
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 10736
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 11322
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 11793
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 12450
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 13000
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 4900
+              }
+            ],
+            "methods_shown_total": 7
+          },
+          "repeat_measurement_note": "500gと2,000gは2回測定し、同一結果。"
+        },
+        "FR": {
+          "500g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1600
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 3150
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4358
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5309
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5671
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5895
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4358
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 4400
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5309
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5671
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5895
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 1300
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 2130
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 4300
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 6000
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 6156
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 6276
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 6329
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 6700
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 6900
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 2200
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 3100
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 3930
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 10542
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 10736
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 11322
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 11793
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 12450
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 13000
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 4900
+              }
+            ],
+            "methods_shown_total": 7
+          },
+          "repeat_measurement_note": "500gと2,000gは2回測定し、同一結果。"
+        },
+        "AU": {
+          "500g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1600
+              },
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 2084
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 3150
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 3743
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5146
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 9000
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 11296
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 11
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 2381
+              },
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 3743
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 4400
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5146
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 9000
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 11296
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 1300
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 2130
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 11
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 2629
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 4004
+              },
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 4300
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5725
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 6000
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 6700
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 11952
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 15395
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 2200
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 3100
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 3930
+              }
+            ],
+            "methods_shown_total": 11
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 4631
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 7015
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 8841
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 12450
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 13000
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 20223
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 28869
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 4900
+              }
+            ],
+            "methods_shown_total": 8
+          },
+          "repeat_measurement_note": "500gと2,000gは2回測定し、同一結果。"
+        },
+        "CA": {
+          "500g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1600
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 3097
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 3150
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 4771
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5109
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5437
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 3097
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3850
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 4400
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 4771
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5109
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5437
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 1300
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 2130
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2500
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 4300
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 4310
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5247
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5819
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 5984
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 6000
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 6700
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 2200
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 3100
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 3930
+              }
+            ],
+            "methods_shown_total": 10
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 7570
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 9330
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 10639
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 10832
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 12450
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 13000
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 4900
+              }
+            ],
+            "methods_shown_total": 7
+          },
+          "repeat_measurement_note": "500gと2,000gは2回測定し、同一結果。"
+        },
+        "SG": {
+          "500g_run1": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 1306
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 1900
+              },
+              {
+                "method_name_as_displayed": "SF Express",
+                "price_jpy": 2243
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 3421
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 3448
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 3494
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 860
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2100
+              }
+            ],
+            "methods_shown_total": 11
+          },
+          "500g_run2": {
+            "methods": [
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1230
+              },
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 1306
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 1900
+              },
+              {
+                "method_name_as_displayed": "SF Express",
+                "price_jpy": 2243
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 2891
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 3421
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 3448
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 3494
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 800
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 860
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2100
+              }
+            ],
+            "methods_shown_total": 12
+          },
+          "1000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 1587
+              },
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 1830
+              },
+              {
+                "method_name_as_displayed": "SF Express",
+                "price_jpy": 2243
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 2500
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 2891
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 3150
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 3421
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 3448
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 3494
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 1300
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 1460
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2100
+              }
+            ],
+            "methods_shown_total": 12
+          },
+          "2000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 2067
+              },
+              {
+                "method_name_as_displayed": "SF Express",
+                "price_jpy": 2707
+              },
+              {
+                "method_name_as_displayed": "International ePacket Light",
+                "price_jpy": 3030
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 3448
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 3670
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 3700
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 3857
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 4357
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 4550
+              },
+              {
+                "method_name_as_displayed": "Surface (Small Packet)",
+                "price_jpy": 2200
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 2600
+              },
+              {
+                "method_name_as_displayed": "AirMail (Small Packet)",
+                "price_jpy": 2660
+              }
+            ],
+            "methods_shown_total": 12
+          },
+          "5000g": {
+            "methods": [
+              {
+                "method_name_as_displayed": "ECMS",
+                "price_jpy": 3341
+              },
+              {
+                "method_name_as_displayed": "SF Express",
+                "price_jpy": 4139
+              },
+              {
+                "method_name_as_displayed": "DHL",
+                "price_jpy": 5401
+              },
+              {
+                "method_name_as_displayed": "FedEx - Economy",
+                "price_jpy": 5637
+              },
+              {
+                "method_name_as_displayed": "UPS",
+                "price_jpy": 6197
+              },
+              {
+                "method_name_as_displayed": "AirMail",
+                "price_jpy": 7300
+              },
+              {
+                "method_name_as_displayed": "FedEx - Priority",
+                "price_jpy": 7356
+              },
+              {
+                "method_name_as_displayed": "EMS",
+                "price_jpy": 8150
+              },
+              {
+                "method_name_as_displayed": "Surface",
+                "price_jpy": 4100
+              }
+            ],
+            "methods_shown_total": 9
+          },
+          "repeat_measurement_note": "2,000gは2回測定し、同一結果。500gのみ1回目と2回目で差分あり(UPSの有無)——下記conclusions.fromjapan_sg_ups_appearance_discrepancy_2026_09_13参照。"
+        }
+      },
+      "weight_ceiling_observation": {
+        "judgement_label": "reasoned_judgement_unconfirmed",
+        "text": "International ePacket LightとSurface (Small Packet)/AirMail (Small Packet)は、それが表示されていた全ての国(GB/DE/FR/AU/CA/SG)で2,000gまでは表示され、5,000gでは表示されなくなった。したがって上限は2kg超5kg以下のどこかにあると推測されるが、これは実測から導いた推測であり、公表された重量上限を確認したものではない(docs/PRINCIPLES.mdおよびCLAUDE.md §9: 状況証拠は理由にならず、推測した上限を公表された上限として扱わない)。US(元々International ePacket Light等が全重量で非表示)は対象外。"
+      },
+      "sf_express_scope": {
+        "evidence_class": "declared",
+        "text": "SF Expressが表示されたのは7カ国中Singaporeのみ。他6カ国(US/GB/DE/FR/AU/CA)では非表示——declared-elsewhere-absent(ページの『表示されるのは利用可能な方式のみ』という明示に基づくdeclared判定)。"
+      },
+      "handling_fee_cross_check": {
+        "displayed_jpy_per_item": 500,
+        "master_value": "master/fees.json F02(取扱手数料, fromjapan, purchase, fixed_per_item, 500 JPY)",
+        "result": "一致。差異なし。"
+      }
     }
   },
   "separately_displayed_fees": {
@@ -128971,7 +130245,8 @@
           "proxy": "fromjapan",
           "method": "International ePacket Light",
           "de_600g_price_jpy": 1780,
-          "significance": "重要。我々が現在最安としている日本郵便方式（Surface ¥2,500 / DE 600g）より安い。この方式が実在し我々のモデルに無いなら、FROM JAPANの総額を過大に見積もっている可能性がある。規模: DE 600gで最大¥720（2,500-1,780）総額が下振れしうる。"
+          "significance": "2026-09-12時点のこの記述は過小評価だった。2026-09-13の7カ国実測(observations.fromjapan_seven_countries_2026_09_13)により、DE(および同一表のGB/FR/AU/CA)500gでは International ePacket Light ¥1,600 だけでなく Surface (Small Packet) ¥800 と AirMail (Small Packet) ¥1,230 も存在することが判明した。我々が持つ最安の日本郵便方式(500g条件でのSurface ¥2,500相当)に対し、実際にFROM JAPANが持つ最安方式は¥800(Surface (Small Packet))であり、差は720円ではなく最大およそ1,700円。詳細はconclusions.fromjapan_overstatement_correction_2026_09_13を参照。",
+          "superseded_by": "conclusions.fromjapan_overstatement_correction_2026_09_13"
         },
         {
           "proxy": "fromjapan",
@@ -129246,6 +130521,65 @@
       "finding": "【重要】このラウンドの取り込みで、マスタに既にあった単点測定conclusions観測 observations.jauce_country_600g_20x15x10 と、本ラウンドの600g/20x15x10cmでの実測が一致しない箇所が4つ見つかった: FR(旧: EMS ¥3,400 / 新: EMS ¥3,150)、CA(旧: EMS ¥3,400 / 新: EMS ¥3,150)、AU(旧: EMS ¥3,400 / 新: 20x15x10cm入力時はEMS ¥3,150。旧の¥3,400は新ラウンドでは『寸法欄を空欄にした場合』にのみ現れる値と一致する)、SG(旧: EMS ¥2,150 / 新: 20x15x10cm入力時はEMS ¥1,900。旧の¥2,150は新ラウンドでは『基準ボックス以外の寸法』のときの価格と一致する)。GB(旧: EMS ¥3,400 / 新: EMS ¥3,400)とUS(旧: EMS ¥4,180 / 新: EMS ¥4,180)は一致した。",
       "hypothesis_not_resolved": "一致しない4件について、原因を断定しない。ただし、旧AU値(¥3,400)が新ラウンドの『寸法空欄』条件の値と、旧SG値(¥2,150)が新ラウンドの『基準ボックス以外』の値とそれぞれ一致していることは、旧600g単点測定が本ラウンドで文書化されたSUBMIT再計算バグ(jauce_v2_2026_09_12_submit_button_bug)により直前の別条件の値を引き継いでしまっていた可能性、または当時の測定で寸法欄の入力状態が意図と異なっていた可能性を示唆する状況証拠ではあるが、いずれも旧測定を再実行して確認したわけではないのでjudgementとして扱い、旧観測を書き換えたり削除したりはしない。",
       "action": "旧 observations.jauce_country_600g_20x15x10 の該当4か国分の値はそのまま残す(削除・上書きしない)。この矛盾自体を一次情報として記録し、次回の再測定でどちらが正しいかを確定させる対象として残す。"
+    },
+    "fromjapan_overstatement_correction_2026_09_13": {
+      "status": "correction_of_2026_09_12_entry",
+      "old_record": "courier_lineup_diffs.they_offer_but_we_dont_have (fromjapan / International ePacket Light) は2026-09-12時点でDE 600g ¥1,780 に対し『我々の最安¥2,500との差は最大¥720』と記録していた。",
+      "new_evidence": "2026-09-13実測(observations.fromjapan_seven_countries_2026_09_13)で、500g条件のGB/DE/FR/AU/CAすべてで International ePacket Light ¥1,600 に加え、Surface (Small Packet) ¥800 と AirMail (Small Packet) ¥1,230 が同時に表示されることを確認した。この3方式のうち我々のモデルにあるのは(Small Packet系の対応キーが仮に存在するとしても)いずれも価格化されておらず、最安は ¥800(Surface (Small Packet)) である。",
+      "arithmetic": "旧記録: 我々の最安¥2,500 − FROM JAPANの最安(旧記録の認識)¥1,780 = ¥720。新記録: 我々の最安¥2,500(同条件のSurface) − FROM JAPANの真の最安¥800(Surface (Small Packet)) = ¥1,700。つまり過大計上額は¥720ではなく約¥1,700で、旧記録は実態の半分以下だった。",
+      "caveat": "この¥2,500は500g条件でのdisplayed Surface価格であり、我々のモデル上の『最安』の正確な対応値の再確認はこのPRのスコープ外(src/を変更しない)。ここでの主張は『既知の過大計上額そのものが過小記録されていた』という事実であり、モデルの是正は別工程。",
+      "confidence": "direct_fetch(価格そのもの)。『過大計上』という評価はこれらの価格と既存master記録の差分から導いた判断であり、judgement。"
+    },
+    "export_clearance_fee_contradiction_2026_09_13": {
+      "severity": "STOP_AND_REPORT",
+      "contradiction": "master/fees.json F26(fromjapan, 輸出通関手数料)は『日本郵便便(carrier_in: JapanPost_all)かつ申告額¥200,000超で¥2,800』と定義している(quote: \"Packages with a total value exceeding 200,000 yen sent through Japan Post ... will incur a 2,800 yen Export Clearance Fee.\")。一方、2026-09-13のFROM JAPAN計算機の実測(observations.fromjapan_seven_countries_2026_09_13)では、商品価格¥1,000という条件下とはいえ、結果画面の共通表示に一貫して \"Export Clearance Fee: 0 yen\" が出ており、これは日本郵便便(EMS/AirMail/Surface等)の行でも同じ¥0表示だった。",
+      "why_not_a_simple_confirmation": "F26は¥200,000超という閾値条件つきであり、今回の入力(¥1,000)は閾値未満なので¥0表示自体はF26と矛盾しない、という読み方もできる。しかし今回の測定は¥200,000超の条件で行っていないため、『FROM JAPANが¥200,000超でも実際に¥2,800を請求するか』はこの実測では確認も反証もできていない——export_clearance_thresholdの既存確認(conclusions.export_clearance_threshold: 価格走査で¥200,000→¥0、¥200,001→¥2,800とFROM JAPAN自身の画面で確認済み)と合わせて読むと、¥200,000超条件でのFROM JAPAN自身の表示は既に確認されているため、今回の¥1,000条件での¥0表示は矛盾ではなく整合(閾値未満だから¥0)という解釈が最有力。",
+      "what_remains_unresolved": "この整合的な読み方を採っても、なお未解決の論点が残る: 今回の7カ国実測はF26のcarrier_in条件(EMS/AirMail/Surface=Japan Post系)の行でも¥0が一貫していたことを追加確認した点に価値がある。したがって解決はせず、次の対立候補読み(オーナーの判断待ち)を残す:",
+      "alternative_readings": [
+        "(a) 閾値未満(¥1,000)なので¥0は正しく、F26と矛盾しない——最有力。",
+        "(b) FROM JAPANは輸出通関手数料を別建てで請求せず、送料等に吸収している——その場合F26のfromjapan行はFROM JAPANの実際の請求方法と一致しない可能性がある。",
+        "(c) FROM JAPANは推定ツールの外(確定請求時)でこの手数料を別途課す——画面の\"Your final payment will be determined by actual cost and may vary from the estimate provided in this tool.\"という注記はこの可能性と整合する。",
+        "(d) F26の¥2,800はFROM JAPANの別のサービス区分(EMS/International Parcel以外)に適用される額で、今回計測した方式には適用されない可能性。"
+      ],
+      "decision_needed": "オーナー判断待ち。このPRではF26・courier-rates.jsonのどちらの数値も変更しない——指示通り、矛盾として記録するに留める。次に¥200,000超・日本郵便便という条件で再実測し、実際に¥2,800が表示されるか確認するのが最も直接的な解消経路。",
+      "related": "conclusions.export_clearance_threshold(2026-09-12、既存)",
+      "confidence": "direct_fetch(画面表示¥0そのもの)。矛盾の有無・解釈はjudgement。"
+    },
+    "fromjapan_sg_ups_appearance_discrepancy_2026_09_13": {
+      "what_happened": "SG・500g条件を2回測定した。1回目はUPSが選択肢に出ず、2回目はUPS ¥2,891が出た。他の条件(500gと2,000gを2回測定した6カ国全部、およびSGの2,000g)はすべて1回目・2回目で完全に同一結果だった。",
+      "classification": "これはJauceのsubmit-buttonバグ(価格が古いまま残る)とは別種の再現性の問題——ここでは『価格』ではなく『方式そのものの有無』が実行間で変わった。",
+      "status": "open_reliability_question",
+      "no_conclusion_drawn": "原因(キャッシュ、A/Bロールアウト、在庫的な可用性変動など)は特定していない。FROM JAPANの計算機を『安定した参照点』として扱ってきた既存の前提に注意が必要——このSG差分は計算機自体の再現性が万能ではないことを示す一次観測であり、次項(GB/DE/FR一致)の解釈にも影響する。",
+      "confidence": "direct_fetch"
+    },
+    "fromjapan_gb_de_fr_price_table_identity_2026_09_13": {
+      "observation": "GB・DE・FRの3カ国は、0.5/1/2/5kgの全4重量条件で、表示された方式の集合・価格ともにバイト単位で同一だった(observations.fromjapan_seven_countries_2026_09_13のraw_by_country参照)。",
+      "plausible_reading": "3カ国が単一の料金ゾーンに属している可能性が高い——地理的に近く、日本郵便・宅配便各社ともEU/西欧を一括りにした料金表を持つことは一般的。",
+      "caution": "ただし断定はしない。同一セッション内の3カ国が同じ結果を返すこと自体は、キャッシュ由来やゾーン一括表示のUIバグでも起こりうる見え方であり、今回の実測だけでは『単一ゾーンだから』と『キャッシュ/状態バグだから』を区別できない。conclusions.fromjapan_sg_ups_appearance_discrepancy_2026_09_13で同じ計算機が同一条件下で1回のUPS出現ブレを起こしたことが確認されており、この計算機の再現性そのものが完全に確立していない以上、GB/DE/FRの一致を無条件にゾーン仕様の証拠として扱うことはできない。",
+      "confidence": "direct_fetch(一致の事実そのもの)。単一ゾーンかキャッシュ/バグかの判断はreasoned_judgement_unconfirmedであり、いずれとも断定しない。"
+    },
+    "fromjapan_us_japanpost_absence_confirmed_2026_09_13": {
+      "confirms": "conclusions.courier_lineup_diffs.us_japan_post_unavailable_tally (2026-09-12、fromjapan行)",
+      "new_evidence": "2026-09-13の独立した7カ国実測でも、US・全4重量条件でInternational ePacket Light/SF Express/Small Packet各方式/Surfaceが一貫して非表示だった(表示されたのはECMS/UPS/DHL/FedEx-Economy/FedEx-Priorityの5方式のみ、500gと2,000gは2回測定し同一結果)。",
+      "significance": "別の日・別の測定セッションによる独立確認であり、2026-09-12の結論(USに日本郵便を出していない)の裏付けが増した。単なる再掲ではなく、独立測定による確認は記録する価値がある。",
+      "confidence": "direct_fetch"
+    },
+    "fromjapan_weight_ceiling_epacket_smallpacket_2026_09_13": {
+      "observation": "それが表示されていた全ての国(GB/DE/FR/AU/CA/SG)で、International ePacket LightとSurface (Small Packet)/AirMail (Small Packet)は2,000gまで表示され、5,000gで消えた。",
+      "judgement_label": "reasoned_judgement_unconfirmed",
+      "text": "したがって上限は『2kg超・5kg以下のどこか』にあると推測されるが、これは実測から導いた推測に過ぎず、公表された重量上限ではない。CLAUDE.md §9(状況証拠は理由にならない)およびdocs/PRINCIPLES.mdの立場に従い、この推測を公表された上限として記録しない。次の一手は2kgと5kgの間(例: 2,001g/3,000g/4,000g)を追加実測して範囲を狭めること。",
+      "confidence": "direct_fetch(表示/非表示の事実)。上限の推測はreasoned_judgement_unconfirmed。"
+    },
+    "fromjapan_sf_express_scope_2026_09_13": {
+      "observation": "SF Expressが表示されたのは7カ国中Singaporeのみ。他6カ国(US/GB/DE/FR/AU/CA)では表示されなかった。",
+      "evidence_class": "declared",
+      "basis": "ページ自身の『表示されるのは利用可能な方式のみ』という明示注記により、非表示は宣言された不可として扱う(declared-elsewhere-absent)。",
+      "confidence": "direct_fetch"
+    },
+    "fromjapan_handling_fee_cross_check_2026_09_13": {
+      "displayed": "Handling fee: 500 yen/Item(結果画面の共通表示、全条件で一貫)",
+      "master_value": "master/fees.json F02(fromjapan, 取扱手数料, purchase, fixed_per_item, 500 JPY)",
+      "result": "一致。差異なし——照合のみで、F02自体は変更していない。"
     }
   }
 }

@@ -151,6 +151,19 @@ describe('F34: a zero-duty courier row does not present as bounded (owner-decide
   });
 });
 
+test('a per_shipment assumption-carrier route (SG FedEx) composes with the whole-shipment' +
+  ' grouping: a single-shop cart with zero duty/tax gets exactly one assumed-zero unit,' +
+  ' amountKind: \'range\', and stays tier: \'estimate\'', () => {
+  const rows = compare({ items: items(1, 600, 3000), country: 'SG', method: 'courier-fedex' }).rows;
+  const row = byId(rows, 'zenmarket');
+  const fee = row.lines.find((l) => l.key === 'courier-clearance-fee')!;
+  expect(fee.amountKind).toBe('range');
+  expect(fee.amount).toBe(0);
+  expect(fee.amountHighYen).toBeGreaterThan(0);
+  expect(fee.label).toContain('assumed zero on 1 of 1 shipment');
+  expect(fee.tier).toBe('estimate');
+});
+
 // F34（能力の追加、値の移行はしない）── FedEx GB/DE の3段帯構造は現行の
 // clearance スキーマ（fixed_per_parcel / banded_by_value / greater_of 等）で
 // 表現できないと#98が確認した（docs/audit/f34-fedex-seven-countries-2026-09-12.md、
@@ -246,5 +259,81 @@ describe('F34 tiered band schema (banded_duty_tax_mixed) — capability only, no
       expect(row.total.high, `${cc} FedEx: total.high が閉じている——C_unknownの費目がある間は開いたままのはず`)
         .toBeNull();
     }
+  });
+});
+
+// #106（通関手数料の課金単位: per shipment = Air Waybill 1枚）。
+// FedEx自身のConditions of Carriage（オーナーが直接フェッチ）は GB/DE で
+// 「'Shipment' means one or more Packages or Freight, moving on a single Air Waybill.」
+// と定義し、DE DHLは既に "pro abgefertigter Sendung" で同じ単位を一次資料で確認済み。
+// per_shipmentの行は「カート全体で1回」ではなく「Air Waybill（＝ここでは箱の分割理由から
+// 推定した『注文』単位）ごとに1回」課金しなければならない——箱分割の理由が店舗違いなら
+// 別Shipment（別Air Waybill、1回ずつ）、重量上限による継続なら同一Shipment（1回のみ）、
+// というのがオーナーが決めた開示された仮定（`courier-clearance.ts` の doc comment 参照）。
+describe('F34/#106: per_shipment fee is charged once per shipment (Air Waybill), not once per cart', () => {
+  test('a single-shop cart (no split) still gets exactly one per-shipment fee — behaviour'
+    + ' unchanged from before #106 when there is nothing to split', () => {
+    // DE DHL は per_shipment を一次資料で確認済み（"pro abgefertigter Sendung"）。
+    const oneItem = compare({ items: items(1, 600, 300_000), country: 'DE', method: 'courier-dhl' }).rows;
+    const twoItemsSameOrder = compare(
+      { items: items(2, 600, 150_000), country: 'DE', method: 'courier-dhl' }).rows;
+    const feeOne = byId(oneItem, 'fromjapan').lines.find((l) => l.key === 'courier-clearance-fee')!;
+    const feeTwo = byId(twoItemsSameOrder, 'fromjapan').lines.find((l) => l.key === 'courier-clearance-fee')!;
+    // 同じ申告総額・同じ税額になるようにしてあるので、1回課金なら金額は同じはず
+    // （2箱に分かれていても、店舗違いでの分割ではないので同じShipmentのまま）。
+    expect(feeOne.amount).not.toBeNull();
+    expect(feeTwo.amount).toBeCloseTo(feeOne.amount!, -1);
+  });
+
+  test('the disclosed-assumption note is present whenever a per_shipment fee is charged —'
+    + ' the Air Waybill count must never read as a fact', () => {
+    const rows = compare({ items: items(1, 600, 300_000), country: 'DE', method: 'courier-dhl' }).rows;
+    const fee = byId(rows, 'fromjapan').lines.find((l) => l.key === 'courier-clearance-fee')!;
+    expect(fee.note).toContain('our assumption');
+    expect(fee.note).toContain('cannot observe how many Air Waybills');
+  });
+});
+
+// #106: 「重量上限で増えた箱は同じMulti-Piece Shipmentとして1回だけ課金する」という
+// ルールは、宅配便のコードパスでは今日時点で到達不能——`compare.ts` の
+// `methodBoxes = isCourier ? baseBoxes : boxesForPostal(...)` が、宅配便には
+// `splitByWeightLimit` を一切通させないため。到達不能であること自体をピン留めする
+// （タスク指示: 「到達可能かを確認し、そうでないなら曖昧にせずテストで固定する」）。
+describe('F34/#106: the weight-limit multi-piece-shipment rule is unreachable for couriers today', () => {
+  test('a huge single-shop courier cart that would exceed any postal weight limit is never'
+    + ' split into multiple boxes by weight — couriers always keep one box per shop group', () => {
+    // 20点×2kg=40kgの巨大カート。郵便なら確実に複数箱に分割される重さだが、
+    // 宅配便はbaseBoxes（下地=店舗単位、未分割）をそのまま使うので1箱のまま。
+    const rows = compare({ items: items(20, 2000, 4200), country: 'DE', method: 'courier-dhl' }).rows;
+    const row = byId(rows, 'fromjapan');
+    expect(row.boxes).toHaveLength(1); // 割れていない——'weight-limit'は発生しようがない
+    expect(row.boxes[0]!.reason).not.toBe('weight-limit');
+  });
+
+  test('a multi-shop courier cart (Buyee, shop split) never reports a weight-limit box either'
+    + ' — courier boxes are only ever a shop-split reason or \'single\', confirming the'
+    + ' branch this PR added for weight-limit shipments has no live caller yet', () => {
+    const cart: Item[] = [
+      {
+        id: 's1', title: 's1', priceYen: 3000, priceTier: 'fixed',
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-a/s1/',
+        weightG: 300, weightTier: 'estimate', qty: 1,
+      },
+      {
+        id: 's2', title: 's2', priceYen: 3000, priceTier: 'fixed',
+        site: 'rakuten', url: 'https://item.rakuten.co.jp/shop-b/s2/',
+        weightG: 300, weightTier: 'estimate', qty: 1,
+      },
+    ];
+    // Buyeeはショップごとに別送がデフォルト（'default'変種）で、`split`が効く唯一の社。
+    // ただしBuyeeが持つ宅配便は courier-buyee-air（自社便、carrierOfがnull）と
+    // courier-ecms（per_parcelなので本テストの対象外）のみ——per_shipmentの宅配便を
+    // 持たないため、店舗分割とper_shipment計算が実際に組み合わさる例は今のデータには
+    // 存在しない。ここでは「箱の理由に'weight-limit'は出ない」ことだけを確認する。
+    const rows = compare({ items: cart, country: 'DE', method: 'courier-ecms' }).rows;
+    const row = byId(rows, 'buyee:default');
+    expect(row.boxes.length).toBeGreaterThan(1); // 店舗違いで2箱に分かれている
+    expect(row.boxes.every((b) => b.reason !== 'weight-limit')).toBe(true);
+    expect(row.boxes.map((b) => b.reason).sort()).toEqual(['identified-shop', 'identified-shop']);
   });
 });

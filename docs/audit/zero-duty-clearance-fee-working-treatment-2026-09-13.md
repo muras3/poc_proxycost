@@ -127,6 +127,37 @@ DHL/UPS/FedExの仮定を経由せず、ECMS自身の式が0を導いている�
   `master/carrier-surcharges.json`（working treatmentの新規記録）と `src/lib/pricing/`
   （`courier-clearance.ts`・`compare.ts`・テスト）のみ。
 
+## #111とのマージ（2026-09-13追記）── per_shipment が「注文（Air Waybill）単位」になった後の再確認
+
+`main` に #111（FedEx GB/DEを`unit: per_shipment`にdirect_fetchで確定し、`compare.ts`に
+「箱の分割理由から推定したAir Waybill単位でper_shipmentを評価する」`shipmentGroups`グループ化を
+導入したPR）がマージされたため、本PRをリベースし、`aggregateClearanceFee`が受け取る`units`の
+組み立て方を**小包単位**から**#111が定義した単位（`per_parcel`なら小包、`per_shipment`なら
+`shipmentGroups`が組んだ「注文」グループ）**に差し替えた。`aggregateClearanceFee`自体は
+単位の中身（小包か、まとめた注文か）を関知しない純粋な集計関数なので、`compare.ts`側で
+正しい`units`配列を渡すだけで済んだ——関数のシグネチャ・実装は変更していない。
+
+**ヘッドラインの mixed-cart 数字を再導出した結果、変わらなかった。** 理由: 本working treatment
+の対象3社（DHL/UPS/FedEx）のうち、`per_shipment`かつ「店舗分割が実際に起きる」組み合わせは、
+今のmasterデータに存在しない——#111自身のテスト
+（`courier-clearance.test.ts`「a multi-shop courier cart (Buyee, shop split) never reports a
+weight-limit box either」のコメント）が既に同じ理由を記録している: 店舗分割（`split`）が効くのは
+`parcelDefault: 'per-order'`のBuyeeだけで、Buyeeが扱う宅配便は自社便（`courier-buyee-air`、
+carrierOfがnull）とECMS（`per_parcel`、working treatmentの対象外）のみ。したがって
+「店舗分割 × per_shipment × 仮定の対象3社」という組み合わせは到達不能——本PRのheadline
+mixed-cart（DHL SG、`per_parcel`）は、この`per_shipment`グループ化ロジックの変更を一切
+経由しないコードパス（`per_parcel`は常に小包1つ=1単位のまま）なので、**#111のマージによって
+挙動もテスト結果の数字も変わらない**。
+
+念のため、`per_shipment`側でも本working treatmentが正しく合成されることを直接確認した
+（新規テスト「a per_shipment assumption-carrier route (SG FedEx) composes with the
+whole-shipment grouping」）: SG FedEx（`per_shipment`、working treatment対象、実データ）で
+duty+taxが0円のカートを1注文（店舗分割なし、`shipmentGroups`が1グループにまとめる）で流すと、
+`fee.amountKind === 'range'`・`fee.amount === 0`・`fee.amountHighYen > 0`・
+`fee.label`に"assumed zero on 1 of 1 shipment"が出ることを確認した——単位が「小包」から
+「Air Waybill 1枚（＝#111のグループ化が組んだ注文単位）」に変わっても、仮定は単位ごとに
+正しく適用される。
+
 ## `duty+tax` から計算したこと（閾値からではないこと）の効果
 
 `taxResult.perParcel[i].duty.yen` / `.vat.yen` という、既に確定した実際の課税額を単位ごとに

@@ -1514,27 +1514,55 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       const dutyTaxYen = (i: number) =>
         (taxResult.perParcel[i]!.duty.yen ?? 0) + (taxResult.perParcel[i]!.vat.yen ?? 0);
       const declaredLocal = (i: number) => parcelTaxBases[i]!.itemsYen / countryCcyRate;
-      // **税ゼロ時のこの費目は、単位（`per_shipment` なら荷物全体、`per_parcel` なら
-      // 小包1つ1つ）ごとに判定する——カート全体で「1件でも税があれば全部課す」と
-      // 丸めると、税ゼロの小包がまるごと最低額を払わされる（PR #93 が
-      // `prepaid-import-tax` 側でやった、カート単位に丸めて本来の費目を消す/膨らませる
-      // 失敗をここで再現することになる）。集計は `aggregateClearanceFee`
-      // （`courier-clearance.ts`）に一元化してある——DHL/UPS/FedExは working
-      // treatment（`docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md`）
+      // **税ゼロ時のこの費目は、単位ごとに判定する**——`per_parcel` なら小包1つ1つ、
+      // `per_shipment` なら「Shipment（Air Waybill 1枚）」1つ1つ。カート全体で
+      // 「1件でも税があれば全部課す」と丸めると、税ゼロの単位がまるごと最低額を
+      // 払わされる（PR #93 が `prepaid-import-tax` 側でやった、カート単位に丸めて
+      // 本来の費目を消す/膨らませる失敗をここで再現することになる）。集計は
+      // `aggregateClearanceFee`（`courier-clearance.ts`）に一元化してある——
+      // DHL/UPS/FedExは working treatment
+      // （`docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md`）
       // により税ゼロの単位を0円と仮定し、ECMSは仮定の対象外（ECMS自身の式が
       // duty+tax=0で自然に0を返すので、常に実額として扱う）。
+      //
+      // **#106是正: per_shipment の「1単位」は「カート全体」ではなく「Air Waybill 1枚」。**
+      // Air Waybill の枚数は観測できないので、箱の分割理由からの推定（開示された仮定、
+      // `courier-clearance.ts` の doc comment 参照）で代える:
+      //   - 店舗違いで分かれた箱（'identified-shop'/'per-listing'/'unresolved-shop'）
+      //     → 別々のShipment。箱ごと（=下地の店舗グループごと）に1単位。
+      //   - 重量上限で増えた箱（'weight-limit'）→ 同じ下地から出た箱は同じ
+      //     Multi-Piece Shipmentなので、そのグループ内でduty+taxを合算して1単位にする
+      //     （今日時点では宅配便に到達しない分岐——上のコメント参照——だが、コードは
+      //     一般形で書いておく）。
+      // `groupOfItemIndex` は箱の先頭商品の添字から元の下地番号(gi)を引く既存のマップ
+      // （`ParcelBox[]` を組み立てる直前で計算済み）。
       const units = route.per === 'per_shipment'
-        ? [{
-          dutyPlusTaxYen: parcelTaxBases.reduce((a, _, i) => a + dutyTaxYen(i), 0),
-          declaredLocal: parcelTaxBases.reduce((a, b) => a + b.itemsYen, 0) / countryCcyRate,
-        }]
+        ? (() => {
+          const shipmentGroups = new Map<number, number[]>(); // gi -> このgiに属する箱のparcel index[]
+          finalBoxes.forEach((b, i) => {
+            const gi = groupOfItemIndex.get(b.indices[0]!)!;
+            (shipmentGroups.get(gi) ?? shipmentGroups.set(gi, []).get(gi)!).push(i);
+          });
+          return Array.from(shipmentGroups.values()).map((parcelIdxs) => ({
+            dutyPlusTaxYen: parcelIdxs.reduce((a, i) => a + dutyTaxYen(i), 0),
+            declaredLocal: parcelIdxs.reduce((a, i) => a + parcelTaxBases[i]!.itemsYen, 0) / countryCcyRate,
+          }));
+        })()
         : parcelTaxBases.map((_, i) => ({ dutyPlusTaxYen: dutyTaxYen(i), declaredLocal: declaredLocal(i) }));
       const agg = aggregateClearanceFee(route.rule, carrier!, units, ccyToJpy);
       const { knownFeeYen, assumedZeroCapYen } = agg;
       const anyAssumedZero = agg.assumedZeroCount > 0;
 
       const label = `${carrier} destination clearance fee`;
-      const perNote = route.per === 'per_shipment' ? 'charged once per shipment' : 'charged per parcel';
+      // #106是正: per_shipmentのnoteは「1回だけ課金される」で終わらせず、Air Waybillの
+      // 枚数がこちらの推定（開示された仮定）であることを毎回明記する——事実のように
+      // 見せない（タスク指示）。
+      const perNote = route.per === 'per_shipment'
+        ? 'charged once per shipment (our assumption: boxes split by different shop are'
+          + ' separate shipments/Air Waybills, one fee each; boxes split only by weight limit'
+          + ' from the same order are treated as one multi-piece shipment, one fee total —'
+          + ' we cannot observe how many Air Waybills the forwarder actually issues)'
+        : 'charged per parcel';
       if (anyAssumedZero) {
         // **税ゼロ時に課すかは、この費目の一次資料7か国×4社どれにも書かれていない**
         // （3本の監査ノート、`docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md` が
