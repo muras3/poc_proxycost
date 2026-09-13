@@ -440,6 +440,7 @@
             "unit_fee_definition_quote": "If duty and tax charges are due when importing a shipment then FedEx may pay the duty and tax charges…",
             "multi_piece_quote": "Multi-Piece Shipments. There is no limit on the aggregate weight of a multiple piece Shipment…",
             "unit_note": "Air Waybill 1枚＝Shipment 1件。複数個口でも同一Air Waybillに載っていればShipmentは1件のまま（Multi-Piece Shipments条項）——したがって課金は個口数ではなくAir Waybill数に従う。金額（帯の率・下限）自体は引き続きsearch_snippet_no_verbatim_quoteのまま未確認。",
+            "shop_based_split_cross_reference": "この単位定義（Air Waybill＝Shipment）が、店舗単位で分割発送された場合（shop-based splitting、Buyeeで発生し得る）は別々のAir Waybill＝別々のShipmentになり、重量上限での箱分割（weight-limit split）は同一Air Waybill上のmulti-piece shipment＝Shipment 1件のままになる、という運用上の帰結はまだcompare.tsに配線されていない。この帰結の記述自体は従来 master/carrier-surcharges.json の conclusions.zero_duty_clearance_fee_working_treatment（C13）の cross_reference に埋め込みで置かれていた（サーチャージの working treatment を記録するエントリで、Air Waybill数それ自体はサーチャージではなく、ここ＝通関手数料の課金単位に付随する事実なので本来の置き場所ではなかった）。2026-09-13、この customs.json 側の unit_note を本来の置き場所として明記し、C13側はここへの相互参照として残す形に整理した（docs/ROADMAP.md の暫定的な運用判断の一覧索引・assumption 5 も参照）。",
             "zero_duty_condition": "情報源に記述なし。C_unknown"
           },
           "amount_tier": "search_snippet_no_verbatim_quote",
@@ -680,6 +681,7 @@
             "unit_fee_definition_quote": "This incurs a Disbursement Fee, dependent on the duty and tax amount…",
             "multi_piece_quote": "Multi-Piece Shipments. There is no limit on the aggregate weight of a multiple piece Shipment…",
             "unit_note": "GBと同一の定義（Air Waybill 1枚＝Shipment 1件、2026年1月版 Conditions of Carriage）。金額（帯の率・下限）自体は引き続きsearch_snippet_no_verbatim_quoteのまま未確認。",
+            "shop_based_split_cross_reference": "GB行の shop_based_split_cross_reference と同内容。詳細はそちらを参照。",
             "zero_duty_condition": "情報源に記述なし。C_unknown"
           },
           "amount_tier": "search_snippet_no_verbatim_quote",

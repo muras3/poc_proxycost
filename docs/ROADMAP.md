@@ -1231,3 +1231,62 @@ gross-up は原文が「not of the amount you wish to deposit（振込希望額�
 | P0「courier 料金は非公開の訂正」 | **済み。**P2 で先へ進む |
 | P3 税エンジン | **ほぼ済み。**7カ国実装済み。残るのは P2 の業者軸と 3a の申告額 |
 | 精度 70〜80% → 90%+ | **P4 まで一切主張しない** |
+
+## 暫定的な運用判断（working treatment）── 7件の一覧索引（2026-09-13）
+
+このプロジェクトは、一次資料だけでは決着しない7つの論点について、オーナーが暫定の
+「運用判断（working treatment）」を下した状態で本番稼働している。7件は個別には
+`master/` のどこかに記録されているが、これまで一箇所に揃っていなかった。ここに一覧を
+作る。**先に結論: 7件中4件（燃油・遠隔地・ゼロ関税・per-shipment統一）は、判断が
+外れていた場合に見積りを実際より低く見せる方向（過小計上）に倒れる。** PR #93 は
+この codebase で「過小計上が偽の1位を作る」ことを既に実例で示している（Buyeeが
+¥395,742で見かけ上1位だったが、正しくは¥414,977で5位）。したがって、このプロジェクトの
+暫定判断の主要な塊は、既に一度ランキングを誤らせたのと同じ方向に偏っている。
+
+| # | 仮定 | コードの実際の動作 | 誤っていた場合の方向 | 規模（分かる範囲） | `master/` 記録場所 | 決着させる方法 |
+|---|---|---|---|---|---|---|
+| 1 | 燃油サーチャージは代行の表示価格に既に込みと仮定 | `compare.ts` は燃油サーチャージを別枠で加算しない（何もしない） | **過小計上**（実際は込みでなければ、表示額は実際より安く出続ける） | 燃油は郵送料の20〜30%程度（既存記録） | `carrier-surcharges.json` `conclusions.fuel_surcharge_working_treatment`（C11）／`fees.json`／本ファイル（既存の言及） | 週次改定の境界（例: DHL輸出33%→34%）をまたいで同一条件を2回測定し、価格が改定分だけ動くかを見る（`pending_test` 記録済み・未納品） |
+| 2 | 遠隔地サーチャージも同様に込みと仮定 | 同上（加算しない） | **過小計上**（実際の遠隔地宛て出荷であれば、サーチャージ分だけ低く出続ける。C12のG3参照） | 未知（金額の一次値は把握しているが、この判断が外れた場合の総額への影響は未算出） | `carrier-surcharges.json` `conclusions.remote_area_surcharge_working_treatment`（C12）／`fees.json`／本ファイル（既存の言及） | 遠隔地リストに該当する郵便番号／該当しない郵便番号の同条件見積りを比較（`pending_test` 記録済み・未納品） |
+| 3 | 関税・税がゼロのとき、宅配便（DHL/UPS/FedEx）側の通関立替手数料は課されないと仮定 | `compare.ts` はこの単位の実額に手数料を積まず、`amountKind: 'range'` の `amountHighYen` にのみ上乗せ分を残す | **過小計上**（このプロジェクトの慣習──過大評価より過小評価をより警戒する──と逆方向を取る、初めてのworking treatment。C13の`direction_of_error_note`が自ら明記） | 該当パーセルあたり**約¥838（CA UPS Standard）〜約¥2,948（AU UPS、GST込み）**。AUとSGの床はUS基準の$17.50≈¥2,734を**上回る** | `carrier-surcharges.json` `conclusions.zero_duty_clearance_fee_working_treatment`（C13）／`docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md`／`docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md`／本ファイル「F34」節1項（既存） | deminimis以下（CA<CAD20／AU<A$1,000／SG<S$400）の実請求で、Duty Tax Processing相当の行の有無を確認する（`pending_test` 記録済み・未納品） |
+| 4 | 通関/立替手数料の課金単位は shipment 単位（parcel単位ではない）に統一する | `customs.json` の該当行はすべて `per_shipment`／`unit: per_shipment` に統一済み（2026-09-13、オーナー確定） | **過小計上**（店舗分割の無いカートでは課金単位＝Air Waybill数が減るため。#111の是正ノートが明記） | 未知（数量に依存するため一般的な円換算はできない） | `master/customs.json`（各carrierのrows、`per_parcel_or_shipment_basis`／`unit_basis`）／`docs/PRINCIPLES.md` | 単位を明記する一次資料が今後見つかった場合に個別に上書き（現状48行中、単位を明記する行は全てshipmentで、parcelと明記する行は0件） |
+| 5 | Air Waybill数の数え方: shop単位の分割発送は別々のAir Waybill（＝別々のshipment）になり、重量上限での箱分割は同一Air Waybillの multi-piece shipment（＝shipmentは1件のまま）になる | `customs.json` のFedEx GB/DEの `unit_note` が "Air Waybill 1枚＝Shipment 1件、複数個口でも同一Air Waybillなら課金は個口数ではなくAir Waybill数に従う" と記録するのみで、shop-based splitとの対応関係はコード上まだ配線されていない | **過小計上寄り**（#4と同じ方向のリスクを共有。C13の`cross_reference`が明記） | 未算出 | 従来: `carrier-surcharges.json` の C13 `cross_reference` にのみ埋め込みで言及（サーチャージのファイルであり本来の置き場所ではなかった）。**本PRで `master/customs.json` のFedEx GB/DEの `unit_note` に移設・相互参照を追加**（下記「assumption 5の置き場所」参照） | shop-based splitと weight-limit split が両方発生するカートの実測（現状、Buyeeのshop-based splitと per_shipment ルールが組み合わさる経路は1件も実行できない――`docs/PRINCIPLES.md`原則2追記部分が既に記録） |
+| 6 | カード決済手数料は5社共通で3.5%（台湾の実請求からの逆算値） | `compare.ts` は5社全員に一律3.5%を適用 | 方向不明（個社別の実際の率が未取得なため、高低いずれの方向に誤っているかも不明） | 個社別未取得。Jauceの公表値（¥40+3.9%）は3.5%より常に高いことが判明済み | `master/fees.json` `conclusions.F07_payment_fee_working_treatment`／本ファイル（P3・T-F9として既存） | 5社分の個社別一次情報を取得（T-F9、未着手） |
+| 7 | 既定の箱は20×15×10cm、重量上限は実測レンジの天井である20kgで扱う | `DEFAULT_PARCEL_DIMENSIONS_CM` を既定箱として使用。20kgは宅配便の重量上限としては配線されていない（§2④は日本郵便のみに適用） | 測定の限界であって仮定の誤り方向を云々できる性質のものではない――CLAUDE.md §9が明記する通り「20kgで測定が止まっている」ことは、それより重い荷物が発生しない・運送会社が拒否することの証拠にならない | 該当なし（測定の縁であり、金額の見積り誤差ではない） | `master/courier-rates.json`／本ファイル「20kgの重量前提と、隠れている寸法上限」節（既存） | 運送会社の重量上限（DHL・UPSは収集済み、FedEx・ECMSは未収集）と、拒否 vs 追加料金の扱い（DHL＝追加料金、UPS＝国により分岐、FedEx/ECMS＝未確認）を個別に埋める |
+
+**証拠の強さは7件で同じではない。1段階の確信度に均してはならない。**
+
+- **#4（per-shipment統一）が最も根拠が強い。**単位を明記する行が48行中1件も`per_parcel`と言っておらず、全てshipmentと述べている。
+- **#3（ゼロ関税）は部分的な根拠しかない。**ECMSの条件文（*"**If** ECMS EXPRESS advances any Customs Duties…"*）が唯一の直接的な手がかりで、しかも「もし」で始まる条件文であり、これをDHL/UPS/FedExの3社に一般化している。DHLは7か国分の料金ガイドPDFを全文検索して免除の文言が無いことを確認済み（チェックした上での不在）。
+- **#1・#2（燃油・遠隔地）が最も根拠が弱い。**一次情報の裏付けが一切無く、業界慣行からの推論のみ。#2はさらに、宛先住所依存で存在自体がゼロになり得るという非対称性を#81が記録済み。
+- **#7（箱・重量の前提）は測定の限界であって、運送会社の数値ではない。**CLAUDE.md §9はこの区別が過去に3回誤って語られたことを記録している。
+- **#5・#6はオーナーによる運用上の決定であり、外部の一次資料は存在しない。**
+
+### assumption 5 の置き場所について
+
+これまで Air Waybill 数の数え方（shop-based split ⇒ 別々のAir Waybill、重量上限での分割 ⇒
+同一Air Waybillのmulti-piece）は、`master/carrier-surcharges.json` の C13
+（`zero_duty_clearance_fee_working_treatment`）の `cross_reference` フィールドに埋め込みで
+しか言及されていなかった。C13はサーチャージの working treatment を記録するエントリで、
+Air Waybill数それ自体はサーチャージではなく通関手数料の課金単位（#4）に付随する事実であり、
+本来の置き場所は `master/customs.json` 側だった。
+
+本PRで、Air Waybill＝Shipmentの単位定義が既に記録されている `master/customs.json` の
+FedEx GB/DE の `unit_note`（`clearance[].fee_structure` 配下）に、shop-based splitとの
+対応関係を明記する注記を追加し、`master/carrier-surcharges.json` のC13からはこの注記への
+相互参照を残した。**C11/C12/C13の相互参照網（`cross_reference`フィールド）自体は変更していない**
+――追加のみで、既存の参照は保っている。
+
+### 7件のリストにない、コード中の暫定的な扱い
+
+このタスクの依頼時点の想定は「暫定的な仮定は7件」だったが、検証の過程で追加候補が
+1件見つかった: `master/fees.json` の `F39c`（複数個口への申告額の按分方法）は、
+5社いずれも按分方法自体を公式には明言していないと記録されている一方、
+`src/lib/pricing/parcels.ts` は具体的な按分ロジック（`packHeaviestFirst()` 等）を実装して
+動いている。つまり「実装済みの按分規則」と「その規則が代行5社の実際の運用と一致するという
+一次資料での確認」は別軸であり、後者は未確認のまま本番で使われている。これは今回の7件の
+定義（一次資料が決着しないままオーナーが下した運用判断）に厳密には当てはまらない
+（オーナー判断というより「決めるしかないので実装側が規則を決めた」という性質に近い）ため、
+7件のリストには加えていないが、同じ種類のリスク（本番ロジックの前提が一次資料で裏付けられて
+いない）として記録しておく価値がある。それ以外に、`src/lib/pricing/` および `master/` を
+横断して探した範囲では、この7件・上記1件のほかに一次資料が決着しないまま本番で使われている
+仮定は見つからなかった。
