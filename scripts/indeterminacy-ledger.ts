@@ -88,6 +88,7 @@ interface LedgerRow {
   blockingSourceUrls: string;
   runnerUpCompany: string | null;
   runnerUpLow: number | null;
+  closedByAssumption: string; // leader.closedByAssumption を ';' 区切りで（空なら仮定なし）
 }
 
 function itemsFor(priceYen: number, weightG: number, itemCount: number, site: SiteId): Item[] {
@@ -139,6 +140,7 @@ function runOne(args: Args, country: CountryCode, weightG: number, priceYen: num
       rankIndeterminate: result.rankIndeterminate, blockingKeys: '', blockingLabels: '',
       blockingTiers: '', blockingUnknownReasons: '', blockingSourceUrls: '',
       runnerUpCompany: null, runnerUpLow: null,
+      closedByAssumption: '',
     };
   }
 
@@ -163,6 +165,7 @@ function runOne(args: Args, country: CountryCode, weightG: number, priceYen: num
     blockingSourceUrls: blocking.map((l) => l.sourceUrl ?? '').join(';'),
     runnerUpCompany: runnerUp ? runnerUp.serviceId : null,
     runnerUpLow: runnerUp ? runnerUp.total.low : null,
+    closedByAssumption: leader.closedByAssumption.join(';'),
   };
 }
 
@@ -180,7 +183,7 @@ const CSV_HEADER = [
   'leaderCompany', 'leaderMethod', 'leaderLow', 'leaderHigh',
   'rankIndeterminate',
   'blockingKeys', 'blockingLabels', 'blockingTiers', 'blockingUnknownReasons', 'blockingSourceUrls',
-  'runnerUpCompany', 'runnerUpLow',
+  'runnerUpCompany', 'runnerUpLow', 'closedByAssumption',
 ];
 
 function toCsvRow(r: LedgerRow): string {
@@ -189,7 +192,7 @@ function toCsvRow(r: LedgerRow): string {
     r.leaderCompany, r.leaderMethod, r.leaderLow, r.leaderHigh,
     r.rankIndeterminate,
     r.blockingKeys, r.blockingLabels, r.blockingTiers, r.blockingUnknownReasons, r.blockingSourceUrls,
-    r.runnerUpCompany, r.runnerUpLow,
+    r.runnerUpCompany, r.runnerUpLow, r.closedByAssumption,
   ].map(csvEscape).join(',');
 }
 
@@ -207,6 +210,12 @@ function main() {
   const total = rows.length;
   const indeterminate = rows.filter((r) => r.rankIndeterminate);
   const determinate = total - indeterminate.length;
+  // closedByAssumption は rankIndeterminate とは独立の軸: total.high が閉じて
+  // いても（＝rankIndeterminate: false でも）、それが検証済みの決定ではなく
+  // 未確認の仮定に依存していれば非空になる（CLAUDE.md §「状況は理由にならない」
+  // 系の教訓と同じ理由で、両者を混同しないこと——「断定不能ゼロ」と
+  // 「全部確定」は違う）。
+  const closedByAssumptionRows = rows.filter((r) => r.closedByAssumption !== '');
 
   mkdirSync(args.outDir, { recursive: true });
   const csvPath = `${args.outDir}/indeterminacy-${args.date}.csv`;
@@ -216,10 +225,14 @@ function main() {
 
   // 集計データを summary/xlsx 生成スクリプトに渡すための中間 JSON。
   const jsonPath = `${args.outDir}/.indeterminacy-${args.date}.rows.json`;
-  writeFileSync(jsonPath, JSON.stringify({ args, rows, total, indeterminateCount: indeterminate.length }, null, 2), 'utf8');
+  writeFileSync(jsonPath, JSON.stringify({
+    args, rows, total, indeterminateCount: indeterminate.length,
+    closedByAssumptionCount: closedByAssumptionRows.length,
+  }, null, 2), 'utf8');
 
   console.log(`grid: ${total} conditions (${args.countries.length} countries x ${args.weights.length} weights x ${args.prices.length} prices, itemCount=${args.itemCount}, storageDays=${args.storageDays}, site=${args.site})`);
   console.log(`rankIndeterminate: ${indeterminate.length}/${total} (${((indeterminate.length / total) * 100).toFixed(1)}%)`);
+  console.log(`closedByAssumption (leader row depends on an unverified assumption; independent of rankIndeterminate): ${closedByAssumptionRows.length}/${total} (${((closedByAssumptionRows.length / total) * 100).toFixed(1)}%)`);
   console.log(`determinate: ${determinate}/${total}`);
   console.log(`wrote ${csvPath}`);
   console.log(`wrote ${jsonPath} (intermediate, for summary/xlsx generation)`);

@@ -15,6 +15,7 @@ interface LedgerRow {
   rankIndeterminate: boolean; blockingKeys: string; blockingLabels: string; blockingTiers: string;
   blockingUnknownReasons: string; blockingSourceUrls: string;
   runnerUpCompany: string | null; runnerUpLow: number | null;
+  closedByAssumption: string;
 }
 
 function parseArgs(argv: string[]) {
@@ -77,10 +78,12 @@ function main() {
   const jsonPath = `${args.outDir}/.indeterminacy-${args.date}.rows.json`;
   const data = JSON.parse(readFileSync(jsonPath, 'utf8')) as {
     args: { countries: string[]; weights: number[]; prices: number[]; itemCount: number; storageDays: number; site: string };
-    rows: LedgerRow[]; total: number; indeterminateCount: number;
+    rows: LedgerRow[]; total: number; indeterminateCount: number; closedByAssumptionCount?: number;
   };
   const { rows, total, indeterminateCount } = data;
   const indet = rows.filter((r) => r.rankIndeterminate);
+  const closedByAssumptionRows = rows.filter((r) => r.closedByAssumption && r.closedByAssumption !== '');
+  const closedByAssumptionCount = data.closedByAssumptionCount ?? closedByAssumptionRows.length;
 
   // ── 1. 妨げている費目ごとの件数 ──────────────────────────────────────
   // 1条件が複数費目でブロックされていることがあるので、件数は「その費目が
@@ -169,6 +172,12 @@ function main() {
   md.push('');
   md.push(`**rankIndeterminate: ${indeterminateCount}/${total}（${pct(indeterminateCount)}）** `
     + `／ 断定できた: ${total - indeterminateCount}/${total}（${pct(total - indeterminateCount)}）`);
+  md.push('');
+  md.push(`**closedByAssumption: ${closedByAssumptionCount}/${total}（${pct(closedByAssumptionCount)}）** `
+    + '——**`rankIndeterminate` とは独立の軸。**「断定不能ゼロ」は「全部確定」を意味しない: '
+    + '1位行の `total.high` が閉じていて `rankIndeterminate: false` でも、それが検証済みの'
+    + '決定ではなく未確認の仮定（`Row.closedByAssumption`、PR #147）に依存していればここに'
+    + '数える。画面では「CHEAPEST」ではなく「ESTIMATED CHEAPEST」と表示される条件。');
   md.push('');
   md.push('オーナー言及の「297/343 (86.6%)」（Fable 5.1）は、本スクリプトを '
     + '`site: mercari`（既定）で走らせると再現する。`site: yahoo-auctions` では '
