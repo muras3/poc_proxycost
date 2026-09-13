@@ -1,0 +1,4117 @@
+{
+  "sources": [
+    {
+      "proxy": "zenmarket",
+      "url": "https://zenmarket.jp/ja/calc.aspx",
+      "type": "public shipping calculator (no login required)",
+      "robots_txt_checked": "https://zenmarket.jp/robots.txt",
+      "robots_txt_result": "calc.aspx は Disallow に含まれず、User-agent:* に対する制限対象外。Crawl-delay: 5 が指定されているため、本測定でもアクセス間隔を最低5秒空けて実施した。",
+      "terms_checked": "https://zenmarket.jp/ja/useragreement.aspx",
+      "terms_result": "会員規約とご利用規約（施行日：2025年2月1日）を確認。自動操作・スクレイピング・計算機へのアクセスを禁止する条項は確認されなかった。",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "access_method": "Claude in Chrome（ユーザーのローカルChromeを人間同様のUI操作で使用。HTTPクライアント・クラウドブラウザは不使用）",
+      "checked_at": "2026-09-11"
+    }
+  ],
+  "cross_check": {
+    "item_price_field_effect": "商品価格（省略可）は各配送方法の運賃（画面表示額）自体には影響しない。運賃が変わるのは「利用可能な配送方法の集合」のみで、これは各方式の内容品上限価格（NOVA GLOBAL: ¥25,392、ECMS EXPRESS: ¥25,223、航空便（AVIA）小形航空便: ¥200,000）を商品価格が超えるとその方式が選択肢から消え、上限のない方式（船便・EMS・航空便（AVIA）国際小包・FEDEX/FEDEX LOWCOST/DHL/UPS）に置き換わるという形で表れる。¥200,000と¥200,001の比較で航空便（AVIA）小形航空便が1円差で消えることを確認済み。「合計」欄の商品価格・ZenMarket手数料（一律¥500）の内訳表示は商品価格に応じて変わるが、これは表示上の合算であり運賃自体の再計算ではない。",
+    "weight_bracket_behavior": "DE・20x15x10cm基準の重量カーブ（500g〜20kg）を全区間で実測。NOVA GLOBAL・ECMS EXPRESS・FEDEX LOWCOST・FEDEX・UPSは重量とともに運賃が連続的に増加するが、増分は各社異なるブラケット（重量区分）に従う。DHL(GREEN+)は500g〜2000gの範囲で¥5,586のまま据え置かれ、2000g→2500gで¥5,586→¥12,114へ急上昇、以後5000gまで据え置き。すなわち各社とも重量を連続値ではなく離散ブラケットで課金しており、ブラケット境界の位置と粗さが社ごとに異なる。",
+    "dimensional_weight_validation": "寸法走査の結果を「体積重量(cm³/5000)がどの実重量ブラケットに該当するか」という観点で重量カーブと突き合わせたところ、FEDEX LOWCOST・FEDEX・UPS・DHL(GREEN+)は体積重量と実重量(600g)の大きい方を基準に課金しており、両カーブの値が複数の寸法・重量条件間で厳密に一致することを確認した（例：40x30x20cm[体積重量4.8kg]とバラ重量5000gがFEDEX LOWCOST/FEDEX/UPS/DHLで完全一致、20x20x20cm[体積重量1.6kg]と2000gがFEDEX LOWCOST/FEDEX/UPSで完全一致）。この一致はステイル値（未再計算のキャッシュ）バグの誤検知を排除する目的で意図的に用いた。40x40x40cm以上ではNOVA GLOBALのサイズ制限区分自体が切り替わる（長さ上限61/44/37cm・重量上限20kgの区分から、長さ+外周250cm・長さ上限100cm・重量上限30kgの区分へ）ことも確認した。",
+    "no_dims_vs_baseline": "寸法未入力（空欄）の単独条件は、20x15x10cm入力時の600gベースラインより高い運賃になる方式があった（NOVA GLOBAL: ¥3,134 vs ¥2,302、ECMS EXPRESS: ¥4,692 vs ¥3,230）。これは寸法未入力時に計算機側がより大きいデフォルト体積を仮定して体積重量を計算している可能性を示唆する。DHL(GREEN+)・FEDEX LOWCOST・FEDEX・UPSは寸法未入力でもベースラインと同額であり、寸法（体積重量）の影響をこの重量帯では受けていない。"
+  },
+  "observations": [
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2302,
+      "total_jpy": 12802,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3230,
+      "total_jpy": 13730,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5229,
+      "total_jpy": 15729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2600,
+      "total_jpy": 13100,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2691,
+      "total_jpy": 13191,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3060,
+      "total_jpy": 13560,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": [],
+      "notes": "画面上「おすすめ」表示"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4180,
+      "total_jpy": 14680,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4200,
+      "total_jpy": 14700,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5297,
+      "total_jpy": 15797,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5436,
+      "total_jpy": 15936,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5483,
+      "total_jpy": 15983,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6183,
+      "total_jpy": 16683,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2047,
+      "total_jpy": 12547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2500,
+      "total_jpy": 13000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2572,
+      "total_jpy": 13072,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3400,
+      "total_jpy": 13900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3850,
+      "total_jpy": 14350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4155,
+      "total_jpy": 14655,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "GB",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2047,
+      "total_jpy": 12547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2129,
+      "total_jpy": 12629,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2500,
+      "total_jpy": 13000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (DOOR-TO-DOOR ADDRESS)",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2945,
+      "total_jpy": 13445,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3400,
+      "total_jpy": 13900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3570,
+      "total_jpy": 14070,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3850,
+      "total_jpy": 14350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5229,
+      "total_jpy": 15729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "FR",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2047,
+      "total_jpy": 12547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2363,
+      "total_jpy": 12863,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2397,
+      "total_jpy": 12897,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2500,
+      "total_jpy": 13000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3400,
+      "total_jpy": 13900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3850,
+      "total_jpy": 14350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4614,
+      "total_jpy": 15114,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4927,
+      "total_jpy": 15427,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "AU",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 9779,
+      "total_jpy": 20279,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ZENEXPRESS",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3498,
+      "total_jpy": 13998,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約3〜4週間",
+      "extra_fees": [],
+      "notes": "画面上「おすすめ」表示。現地配送：UniUniまたはCanada Post"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2047,
+      "total_jpy": 12547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2500,
+      "total_jpy": 13000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3400,
+      "total_jpy": 13900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3850,
+      "total_jpy": 14350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5297,
+      "total_jpy": 15797,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5436,
+      "total_jpy": 15936,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "CA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6183,
+      "total_jpy": 16683,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "ECMS EXPRESS・FEDEX LOWCOSTはCA向け選択肢に表示されず（対象外）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 1360,
+      "total_jpy": 11860,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 1552,
+      "total_jpy": 12052,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "SF EXPRESS",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 1591,
+      "total_jpy": 12091,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜5日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2100,
+      "total_jpy": 12600,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2150,
+      "total_jpy": 12650,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2347,
+      "total_jpy": 12847,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2500,
+      "total_jpy": 13000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3455,
+      "total_jpy": 13955,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": [],
+      "notes": "最寄りのPUDOロッカーへ配達"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4274,
+      "total_jpy": 14774,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "SG",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5339,
+      "total_jpy": 15839,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 1582,
+      "total_jpy": 12082,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2975,
+      "total_jpy": 13475,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5229,
+      "total_jpy": 15729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2302,
+      "total_jpy": 12802,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3434,
+      "total_jpy": 13934,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5229,
+      "total_jpy": 15729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2302,
+      "total_jpy": 12802,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4063,
+      "total_jpy": 14563,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5229,
+      "total_jpy": 15729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3134,
+      "total_jpy": 13634,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5272,
+      "total_jpy": 15772,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5321,
+      "total_jpy": 15821,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6055,
+      "total_jpy": 16555,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6457,
+      "total_jpy": 16957,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3854,
+      "total_jpy": 14354,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5924,
+      "total_jpy": 16424,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6071,
+      "total_jpy": 16571,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6426,
+      "total_jpy": 16926,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6557,
+      "total_jpy": 17057,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4863,
+      "total_jpy": 15363,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6579,
+      "total_jpy": 17079,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6918,
+      "total_jpy": 17418,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7654,
+      "total_jpy": 18154,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7769,
+      "total_jpy": 18269,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12114,
+      "total_jpy": 22614,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "2000g時点(¥5,586)から重量区分（ブラケット）が上がり急上昇"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5475,
+      "total_jpy": 15975,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7235,
+      "total_jpy": 17735,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7785,
+      "total_jpy": 18285,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 8539,
+      "total_jpy": 19039,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 8823,
+      "total_jpy": 19323,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12114,
+      "total_jpy": 22614,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "2500gと同一ブラケット"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 8356,
+      "total_jpy": 18856,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 9379,
+      "total_jpy": 19879,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 10131,
+      "total_jpy": 20631,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 11198,
+      "total_jpy": 21698,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12114,
+      "total_jpy": 22614,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "2500g/3000gと同一ブラケット"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 13940,
+      "total_jpy": 24440,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 15339,
+      "total_jpy": 25839,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 18522,
+      "total_jpy": 29022,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 18655,
+      "total_jpy": 29155,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 20780,
+      "total_jpy": 31280,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 25330,
+      "total_jpy": 35830,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 36280,
+      "total_jpy": 46780,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 30212,
+      "total_jpy": 40712,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 31051,
+      "total_jpy": 41551,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "重量上限20kgちょうど。これを超えると選択肢から消える見込み（未検証）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 34159,
+      "total_jpy": 44659,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 34615,
+      "total_jpy": 45115,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 46846,
+      "total_jpy": 57346,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 48212,
+      "total_jpy": 58712,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2302,
+      "total_jpy": 12802,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "20x15x10(600g)基準と同額。体積重量(1000/5000=0.2kg)<実重量のため実重量ベース"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3230,
+      "total_jpy": 13730,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5229,
+      "total_jpy": 15729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5622,
+      "total_jpy": 16122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6062,
+      "total_jpy": 16562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 3134,
+      "total_jpy": 13634,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "体積重量8000/5000=1.6kgブラケット。1500g実重量カーブと同額"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5100,
+      "total_jpy": 15600,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5924,
+      "total_jpy": 16424,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": [],
+      "notes": "体積重量8000/5000=1.6kg→2000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6071,
+      "total_jpy": 16571,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "2000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6557,
+      "total_jpy": 17057,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "2000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 2302,
+      "total_jpy": 12802,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "体積重量6000/5000=1.2kgブラケット。1000g実重量と同額"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 4063,
+      "total_jpy": 14563,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": [],
+      "notes": "1000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5272,
+      "total_jpy": 15772,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": [],
+      "notes": "1500g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6055,
+      "total_jpy": 16555,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "1500g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 6457,
+      "total_jpy": 16957,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "1500g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7132,
+      "total_jpy": 17632,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 9379,
+      "total_jpy": 19879,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": [],
+      "notes": "体積重量24000/5000=4.8kg→5000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 10131,
+      "total_jpy": 20631,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "5000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 11198,
+      "total_jpy": 21698,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "5000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 11747,
+      "total_jpy": 22247,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12114,
+      "total_jpy": 22614,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "5000g実重量カーブと完全一致（クロスチェック済）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 18661,
+      "total_jpy": 29161,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 23954,
+      "total_jpy": 34454,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 25274,
+      "total_jpy": 35774,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 27753,
+      "total_jpy": 38253,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 30906,
+      "total_jpy": 41406,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 41034,
+      "total_jpy": 51534,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 5475,
+      "total_jpy": 15975,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "3000g実重量カーブと一致"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7440,
+      "total_jpy": 17940,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7789,
+      "total_jpy": 18289,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 8687,
+      "total_jpy": 19187,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 8823,
+      "total_jpy": 19323,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": [],
+      "notes": "3000g実重量カーブと一致"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12114,
+      "total_jpy": 22614,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 7744,
+      "total_jpy": 18244,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 11474,
+      "total_jpy": 21974,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 11888,
+      "total_jpy": 22388,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12681,
+      "total_jpy": 23181,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12886,
+      "total_jpy": 23386,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 14652,
+      "total_jpy": 25152,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 12279,
+      "total_jpy": 22779,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 14678,
+      "total_jpy": 25178,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 14784,
+      "total_jpy": 25284,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 16208,
+      "total_jpy": 26708,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 19890,
+      "total_jpy": 30390,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 32416,
+      "total_jpy": 42916,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 17437,
+      "total_jpy": 27937,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "この寸法からNOVA GLOBALの制限表示が変化（長さ+外周≤250cm、長さ上限100cm、重さ上限30kgに変更。より小さい寸法では長さ上限61cm/44cm/37cm、重さ上限20kgだった）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 23497,
+      "total_jpy": 33997,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 23958,
+      "total_jpy": 34458,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 26335,
+      "total_jpy": 36835,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 28798,
+      "total_jpy": 39298,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 39450,
+      "total_jpy": 49950,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 25543,
+      "total_jpy": 36043,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 29671,
+      "total_jpy": 40171,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 32667,
+      "total_jpy": 43167,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 34310,
+      "total_jpy": 44810,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 45262,
+      "total_jpy": 55762,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 33961,
+      "total_jpy": 44461,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 40479,
+      "total_jpy": 50979,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 42538,
+      "total_jpy": 53038,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 56352,
+      "total_jpy": 66852,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "スクリーンショットで数値を再確認済み"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "price_jpy": 65496,
+      "total_jpy": 75996,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": [],
+      "notes": "45x45x45(¥32,667)から急上昇。スクリーンショットで入力値・表示額とも再確認済み"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "price_jpy": 3134,
+      "total_jpy": 13634,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3週間",
+      "extra_fees": [],
+      "notes": "寸法未入力（空欄）の単独条件。20x15x10(600g)の¥2,302より高く、デフォルトでより大きい体積重量を仮定している可能性"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "price_jpy": 4692,
+      "total_jpy": 15192,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "1週間以内",
+      "extra_fees": [],
+      "notes": "寸法未入力（空欄）の単独条件"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "price_jpy": 5272,
+      "total_jpy": 15772,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": [],
+      "notes": "寸法未入力（空欄）の単独条件"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "price_jpy": 5586,
+      "total_jpy": 16086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "寸法未入力（空欄）の単独条件。20x15x10基準と同額（DHLは寸法未入力の影響を受けない）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "price_jpy": 6055,
+      "total_jpy": 16555,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "寸法未入力（空欄）の単独条件"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "price_jpy": 6457,
+      "total_jpy": 16957,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": [],
+      "notes": "寸法未入力（空欄）の単独条件"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 2047,
+      "total_jpy": 52547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": [],
+      "notes": "内容品上限価格¥200,000。NOVA GLOBAL/ECMS EXPRESSが上限超過で消えた代わりに新たに出現"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 2500,
+      "total_jpy": 53000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": [],
+      "notes": "内容品上限価格¥1,000,000"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 3400,
+      "total_jpy": 53900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 3850,
+      "total_jpy": 54350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 5229,
+      "total_jpy": 55729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 5586,
+      "total_jpy": 56086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 5622,
+      "total_jpy": 56122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "price_jpy": 6062,
+      "total_jpy": 56562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 2047,
+      "total_jpy": 102547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 2500,
+      "total_jpy": 103000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 3400,
+      "total_jpy": 103900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 3850,
+      "total_jpy": 104350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 5229,
+      "total_jpy": 105729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 5586,
+      "total_jpy": 106086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 5622,
+      "total_jpy": 106122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "price_jpy": 6062,
+      "total_jpy": 106562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 2047,
+      "total_jpy": 202547,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": [],
+      "notes": "内容品上限価格ちょうど¥200,000。この価格までは選択肢に含まれる"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 2500,
+      "total_jpy": 203000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 3400,
+      "total_jpy": 203900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 3850,
+      "total_jpy": 204350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 5229,
+      "total_jpy": 205729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 5586,
+      "total_jpy": 206086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 5622,
+      "total_jpy": 206122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "price_jpy": 6062,
+      "total_jpy": 206562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 2500,
+      "total_jpy": 203001,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 3400,
+      "total_jpy": 203901,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 3850,
+      "total_jpy": 204351,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 5229,
+      "total_jpy": 205730,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 5586,
+      "total_jpy": 206087,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 5622,
+      "total_jpy": 206123,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "price_jpy": 6062,
+      "total_jpy": 206563,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "船便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 2500,
+      "total_jpy": 503000,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2〜3カ月",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "EMS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 3400,
+      "total_jpy": 503900,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約1週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）国際小包",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 3850,
+      "total_jpy": 504350,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "約2週間",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX LOWCOST",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 5229,
+      "total_jpy": 505729,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "3〜7日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "DHL (GREEN+)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 5586,
+      "total_jpy": 506086,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "FEDEX",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 5622,
+      "total_jpy": 506122,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "UPS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "price_jpy": 6062,
+      "total_jpy": 506562,
+      "zenmarket_fee_jpy": 500,
+      "delivery_estimate": "2〜6日",
+      "extra_fees": []
+    }
+  ],
+  "default_box": [
+    20,
+    15,
+    10
+  ],
+  "not_available": [
+    {
+      "proxy": "neokyo",
+      "reason": "robots.txtに該当するため未測定（Disallow: /*?* が計算機URLに該当）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 50000,
+      "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 100000,
+      "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200000,
+      "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 200001,
+      "reason": "内容品の上限価格¥200,000 JPYを1円超過したため選択肢から消えた（¥200,000では¥2,047で選択肢に含まれていた）"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "NOVA GLOBAL (PICKUP POINT / LOCKER)",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "reason": "内容品の上限価格¥25,392 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "ECMS EXPRESS",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "reason": "内容品の上限価格¥25,223 JPYを超過したため選択肢から消えた"
+    },
+    {
+      "proxy": "zenmarket",
+      "method_name": "航空便（AVIA）小形航空便",
+      "country": "DE",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 500000,
+      "reason": "内容品の上限価格¥200,000 JPYを超過したため選択肢から消えた"
+    }
+  ],
+  "coverage": "ZenMarketの当初計画を全条件完了。(1)7カ国×600g、20x15x10cm、¥10,000（US/DE/GB/FR/AU/CA/SG）。(2)ドイツ・20x15x10cm・¥10,000の重量カーブ：500/600/700/1000/1500/2000/2500/3000/5000/10000/20000g（全11点）。(3)ドイツ・600g・¥10,000の寸法走査：10x10x10/20x15x10(再利用)/20x20x20/30x20x10/40x30x20/60x40x30/25³/30³/35³/40³/45³/50³cm（12条件）+ 寸法未入力の単独条件1件。(4)ドイツ・600g・20x15x10cmの商品価格走査：¥10,000(600g基準を再利用)/¥50,000/¥100,000/¥200,000/¥200,001/¥500,000（6条件）。observations合計230件、not_available（利用不可）13件（Neokyoのrobots.txt該当1件含む）。",
+  "notes": "測定は全てユーザーのローカルChromeをClaude in Chromeで人間同様のUI操作により実施。HTTPクライアント・クラウドブラウザは不使用。CAPTCHA・Cloudflare認証は一度も表示されず。アカウント作成・ログイン・購入は一切行っていない。画面表示の円価格をそのまま記録し、通貨換算・推定・丸め・運送会社定価からの逆算は行っていない。robots.txtのCrawl-delay:5に準拠し、各条件間で最低5秒以上の間隔を空けた（複数フィールドを変更した条件では追加の待機時間を挟んだ）。ZenMarketの計算機はAJAXベースで、フィールド変更後にTabで確定させても再計算が正しく発火しない場合があることを測定中に発見した。特に(a)複数フィールドを一括変更した直後、(b)商品価格フィールドの変更が最後の操作だった場合、に古い（stale）運賃が表示され続けるケースがあったため、疑わしい結果は寸法欄を一時的に別の値に変更してから元に戻す「ゆさぶり」操作を行って再計算を強制し、結果を重量カーブとの体積重量クロスチェックで検証した上で確定させた。商品価格は運賃自体（画面表示の各方式の金額）には影響せず、内容品上限価格を超えた方式が選択肢から消えるという形でのみ結果に影響することを確認済み（cross_check参照）。"
+}

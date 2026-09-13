@@ -1,0 +1,2384 @@
+{
+  "sources": [
+    {
+      "proxy": "fromjapan",
+      "url": "https://www.fromjapan.co.jp/en/estimate/",
+      "robots_txt_checked": "https://www.fromjapan.co.jp/robots.txt",
+      "robots_txt_result": "計算機の実URL(/en/estimate/, /en/estimate/calc)はDisallow対象外。Crawl-delay: 30。本セッションでも30秒以上の間隔を空けて操作(他社測定と並行することで待機時間を吸収)。",
+      "terms_checked": "https://www.fromjapan.co.jp/en/title/serviceRule/",
+      "terms_result": "自動操作・スクレイピングを明示的に禁止する条項は確認されなかった(前回セッションでキーワード検索済み、本セッションでは再確認していない)。",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "interval_seconds": 30,
+      "checked_at": "2026-09-12",
+      "item_price_field_present": true,
+      "default_box": [
+        20,
+        15,
+        10
+      ]
+    }
+  ],
+  "grid": {
+    "countries": [
+      "US",
+      "GB",
+      "FR",
+      "AU",
+      "CA",
+      "SG"
+    ],
+    "weight_curve_g": [
+      500,
+      600,
+      700,
+      1000,
+      1500,
+      2000,
+      2500,
+      3000,
+      5000,
+      10000,
+      20000
+    ],
+    "weight_curve_dims_cm": [
+      20,
+      15,
+      10
+    ],
+    "dimension_curve_cm": [
+      [
+        10,
+        10,
+        10
+      ],
+      [
+        20,
+        15,
+        10
+      ],
+      [
+        20,
+        20,
+        20
+      ],
+      [
+        30,
+        20,
+        10
+      ],
+      [
+        40,
+        30,
+        20
+      ],
+      [
+        25,
+        25,
+        25
+      ],
+      [
+        30,
+        30,
+        30
+      ],
+      [
+        35,
+        35,
+        35
+      ],
+      [
+        40,
+        40,
+        40
+      ],
+      [
+        45,
+        45,
+        45
+      ],
+      [
+        50,
+        50,
+        50
+      ]
+    ],
+    "dimension_curve_weight_g": 600,
+    "blank_dimension_condition": true,
+    "planned_conditions": 138,
+    "completed_conditions": 22,
+    "skipped": []
+  },
+  "observations": [
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 2795,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 3539,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 4771,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5109,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5437,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 3506,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 3539,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 4771,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5109,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5437,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 3506,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 3539,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 4771,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5109,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5437,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 3506,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 3539,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 4771,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5109,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5437,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 4124,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge."
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 4250,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 5009,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5299,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5879,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 4772,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge."
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 4895,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 5247,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5819,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5984,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 5336,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge."
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 5557,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 6347,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 6663,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 7446,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "2000g以下ではDHLはFedEx-Economy/Priorityより安いが、2500gで初めてDHLが最高額に逆転(順位変化)"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 5942,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge."
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 6152,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 7296,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 7786,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 7823,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "DHL最高額の逆転パターンは3000gでも継続"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 8086,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge."
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 8418,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 9330,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "2500〜3000gではDHLが最高額だったが、5000gでは再びFedExより安い順位に戻った(順位が元に戻る)"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 10639,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 10832,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 10626,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge."
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 15216,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000gではECMS<DHL<FedEx-Economyだったが、10000gでFedEx-EconomyがECMSとDHLを逆転し2番目に安い順位に変化。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 15861,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 16680,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000gでの通常順位(DHL<FedEx-Economy)に近いが、10000gではFedEx-Economyの方がDHLより安くなった。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 19862,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 21831,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000gではUPSが最安だったが、20000gでFedEx-EconomyがUPSを逆転し最安値に変化(価格順位の入れ替わり)。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 23969,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Estimated shipping fee for UPS does not include the residential surcharge or extended area surcharge. 500g〜10000gまで一貫して最安だったUPSが、20000gで初めてFedEx-Economyに逆転された。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 28994,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": ""
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 32457,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g時点の順位(FedEx-Economy<ECMS<DHL)から変わらずDHLは4番目の順位を維持。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 33253,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "全重量点を通じて一貫して最高額の座を維持。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 3506,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B開始点(寸法カーブ、重量600g固定)。20x15x10cm/600g時点と完全一致——FROM JAPANはこの重量帯では寸法を運賃計算に使用しないことを確認。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 3539,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20x15x10cm/600g時点と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 4771,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20x15x10cm/600g時点と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5109,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20x15x10cm/600g時点と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5437,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20x15x10cm/600g時点と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 4250,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第2点[20,20,20]cm/600g。[10,10,10]cm時点(3506円)から上昇し、Grid Aの実重量1500g点の値(4250円)と完全一致——他4方式(UPS/DHL/FedEx-Economy/FedEx-Priority、いずれも2000g点と一致)より低い重量帯に相当し、ECMSは他方式より寸法重量への切替閾値が低い(または換算係数が異なる)ことを示唆する。初回get_page_textは[10,10,10]cm時点の値を約6秒残留して返すレンダリング遅延バグを確認、再読み取り2回で確定した値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 4772,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "UPS/DHL/FedEx-Economy/FedEx-Priorityの4方式はGrid Aの2000g実重量点の価格と完全一致した——[20,20,20]cm(体積8000cm³)で寸法重量課金に切り替わったことを示す。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 5247,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "同上。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5819,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "同上。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5984,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "同上。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 3506,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第3点[30,20,10]cm(体積6000cm³)/600g。[10,10,10]cm時点(3506円)と完全一致し不変——[20,20,20]cm時点(4250円)より下降した。体積は[10,10,10]cm(1000cm³)より大きいにもかかわらず[10,10,10]cm時点と同額に戻っており、ECMSの寸法重量換算が単純な体積(L×W×H)ではなく寸法の組み合わせ方に依存する可能性を示唆する(ZenMarketのECMS EXPRESSでも同様の非単調挙動を確認済み)。初回・再読み取りの2回とも同一値で安定を確認。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 4124,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "[10,10,10]cm(3539円)と[20,20,20]cm(4772円)の中間的な値——UPS/DHL/FedEx-Economy/FedEx-Priorityの4方式はECMSと異なり連続的な体積依存パターンを示す。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 5009,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "[10,10,10]cm(4771円)と[20,20,20]cm(5247円)の中間的な値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5299,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "[10,10,10]cm(5109円)と[20,20,20]cm(5819円)の中間的な値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5879,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "[10,10,10]cm(5437円)と[20,20,20]cm(5984円)の中間的な値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 7360,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第4点[40,30,20]cm(体積24000cm³)/600g。大きく上昇したが、Grid Aの5000g点(8418円)には届いていない(3000g点6152円と5000g点8418円の間)。他4方式(UPS/DHL/FedEx-Economy/FedEx-Priority)がいずれも5000g点に完全一致しているのとは対照的——ECMSはこの箱サイズでも他方式より寸法重量換算が緩やかであることを再確認。初回・再読み取り2回とも同一値で安定。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 8086,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの実重量5000g点(8086円)と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 9330,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの実重量5000g点(9330円)と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 10639,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの実重量5000g点(10639円)と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 10832,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの実重量5000g点(10832円)と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 6152,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第5点[25,25,25]cm(体積15625cm³)。Grid Aの実重量3000g点(6152円)と完全一致。初回・再読み取り2回とも同一値で安定。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 6427,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの3000g点(5942円)と5000g点(8086円)の中間値——ECMSとは異なり、この点でも完全一致しない中間的な挙動。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 7725,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの3000g点(7296円)と5000g点(10639円)の中間値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 7873,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの3000g点(7786円)に近いが完全一致ではない中間値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 8200,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid Aの3000g点(7823円)と5000g点(9330円)の中間値。この時点でDHLが5方式中の最高額——過去2点(30,20,10cm/40,30,20cm)ではFedEx-Priorityが最高額だったのに対し、順位が入れ替わった。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 7806,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第6点[30,30,30]cm(体積27000cm³)。Grid Aの3000g点(6152円)と5000g点(8418円)の中間値——第5点に続きGrid A離散点への完全一致なし。Calculate後4秒待機+再読み取り(計2秒後さらに再読み取り)で同一値を確認、staleでないことを確認済み。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 8326,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(8086円)をわずかに上回り、10000g点(10626円)未満の中間値。前回[25,25,25]cm時点(6427円、3000〜5000g間)から明確に上昇し、対応する帯が5000〜10000g間に移行したことを示す。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 10065,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(9330円)と10000g点(16680円)の中間値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 11551,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(10639円)と10000g点(15216円)の中間値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 13085,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(10832円)と10000g点(19862円)の中間値。5方式中の最高額に浮上——[25,25,25]cm時点ではDHLが最高額だったが、本条件でFedEx-Priorityに順位が戻った(3度目の位置逆転)。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 10143,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第7点[35,35,35]cm(体積42875cm³)。5000g点(8086円)と10000g点(10626円)の中間値だが10000g点にかなり近い。本条件で5方式中の最安に返り咲いた——[30,30,30]cmではECMSが最安だった。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 11280,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(8418円)と10000g点(15861円)の中間値。[30,30,30]cm(7806円)から上昇したが、UPSに最安の座を譲った。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 14400,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(10639円)と10000g点(15216円)の中間値、10000g点にかなり近い。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 15211,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(9330円)と10000g点(16680円)の中間値、10000g点にかなり近い。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 15691,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "5000g点(10832円)と10000g点(19862円)の中間値。[30,30,30]cmに続き5方式中の最高額を維持。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 16102,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "Grid B第8点[40,40,40]cm(体積64000cm³)。10000g点(15216円)と20000g点(21831円)の中間値だが10000g点にかなり近い。本条件で5方式中の最安に浮上——[35,35,35]cmではUPSが最安だった。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 17118,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(15861円)と20000g点(28994円)の中間値、10000g点寄り。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 18748,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(10626円)と20000g点(23969円)の中間値。[35,35,35]cmでは最安だったが、本条件で3番目に後退——Grid A重量カーブでは500g〜10000gまで一貫して最安だったUPSが、寸法カーブのこの領域では相対的に不利になっている。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 21414,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(16680円)と20000g点(32457円)の中間値。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 24492,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(19862円)と20000g点(33253円)の中間値。[30,30,30]cm以降、5方式中の最高額を継続維持。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 20602,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(15216円)と20000g点(21831円)の中間値、20000g点にかなり接近。5方式中の最安を維持([40,40,40]cmに続き2回連続)。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 22723,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(10626円)と20000g点(23969円)の中間値、20000g点に接近。[40,40,40]cmでは3番目だったが、本条件で2番目に浮上——ECMSとの順位が再逆転した。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 22974,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(15861円)と20000g点(28994円)の中間値。[40,40,40]cmでは2番目だったが、本条件でUPSに僅差(251円)で抜かれ3番目に後退。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 30091,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(16680円)と20000g点(32457円)の中間値、20000g点にかなり接近。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 31822,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(19862円)と20000g点(33253円)の中間値、20000g点にかなり接近。[30,30,30]cm以降、5方式中の最高額を継続維持(4回連続)。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "ECMS",
+      "price_jpy": 30268,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "10000g点(15861円)と20000g点(28994円)を初めて上回った。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "DHL",
+      "price_jpy": 40536,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20000g点(32457円)を上回った。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 41903,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20000g点(21831円)を大幅に上回った。triple #9(20602円)から2倍以上に急騰——Grid A重量カーブ及びGrid B寸法カーブ全期間を通じて最安値を維持し続けていた方式が、本条件(最終点)で一転して3番目に後退した。急激な変化のため要注意(下記cross_check参照)。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 42833,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20000g点(33253円)を上回った。[30,30,30]cm以降5回連続で最高額だったが、本条件でUPSに抜かれ2番目に後退。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 5,
+      "method_name": "UPS",
+      "price_jpy": 53043,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "20000g点(23969円)を大幅に上回った。triple #9(22723円)から2倍以上に急騰——Grid A重量カーブでは500〜10000gまで一貫して最安、Grid B寸法カーブでも中位を保っていた方式が、本条件で一転して5方式中最高額となった。FedEx-Economyと同様の急激な変化。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "methods_shown_total": 3,
+      "method_name": "ECMS",
+      "price_jpy": 3506,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "[20,15,10]cm@600g時点の値(3506円)と完全一致——同条件は体積重量が20×15×10÷5000=600gとなり実重量と偶然一致していたため、寸法空欄時は実重量のみで計算されていることを示す。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "methods_shown_total": 3,
+      "method_name": "FedEx - Economy",
+      "price_jpy": 5109,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "同上、[20,15,10]cm@600g時点の値(5109円)と完全一致。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": 10000,
+      "methods_shown_total": 3,
+      "method_name": "FedEx - Priority",
+      "price_jpy": 5437,
+      "export_clearance_fee_jpy": 0,
+      "handling_fee_jpy": 500,
+      "domestic_delivery_fee_jpy": 700,
+      "screen_note": "同上、[20,15,10]cm@600g時点の値(5437円)と完全一致。"
+    }
+  ],
+  "not_available": [
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post EMS / International Parcel / Small Packet / ePacket Light",
+      "evidence_class": "counted_absence",
+      "reason": "画面の選択肢自体に一切表示されない。\"Only available shipping methods are displayed.\"の注記あり、個別の不可メッセージは出ない。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "SF Express Economy Express / ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid A最終重量点(20000g)まで一貫して不可。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B開始点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第2点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第3点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第4点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第5点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第6点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第7点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第8点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B第9点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "methods_shown_total": 5,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "同上。Grid B最終点でも不変。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "methods_shown_total": 3,
+      "method_name": "UPS・DHL",
+      "evidence_class": "counted_absence",
+      "reason": "Grid C(空欄寸法条件)。[20,15,10]cm@600gでは表示されていたUPS(3539円)・DHL(4771円)の2方式が、寸法欄を空欄にした場合には選択肢から完全に消失した(methods_shown_total 5→3)。個別の不可メッセージは出ず、リストから静かに消える形(counted_absence)。ECMS・FedEx-Economy・FedEx-Priorityは寸法なしでも実重量ベースでそのまま計算されるのに対し、UPS・DHLは寸法情報がないと見積り自体を提示しない、という方式間の非対称な挙動が確認された。"
+    },
+    {
+      "proxy": "fromjapan",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "methods_shown_total": 3,
+      "method_name": "Japan Post各種・SF Express・ECMS Standard Express",
+      "evidence_class": "counted_absence",
+      "reason": "重量・寸法カーブ全域を通じて不可のパターンと同一。Grid Cでも不変。"
+    }
+  ],
+  "cross_check": {
+    "weight_bracket": "US: 0.5kg→ECMS 2795円、0.6〜1.0kgはECMS 3506円で一定(UPS/DHL/FedExは0.5〜1.0kgまで完全に一定)、1.5kgで全方式が上昇しUPSが最安に逆転(4124円)。2.0kgでも全方式がさらに一段上昇(UPS 4772円/ECMS 4895円/DHL 5247円/FedEx-Economy 5819円/FedEx-Priority 5984円)し、UPS最安の順位は2.0kgでも継続。2.5kgでも再度上昇(UPS 5336円/ECMS 5557円/FedEx-Economy 6347円/FedEx-Priority 6663円/DHL 7446円)し、ここで初めて順位に変化——2.0kgまではDHLがFedEx-Economy/Priorityより安かったが、2.5kgでDHLが全方式中最高額に逆転した。3.0kgでも同じ逆転パターンが継続(UPS 5942円/ECMS 6152円/FedEx-Economy 7296円/FedEx-Priority 7786円/DHL 7823円)。ところが5.0kgでは順位が元(0.5〜2.0kg時点)に戻り、DHL(9330円)が再びFedEx-Economy(10639円)・FedEx-Priority(10832円)より安くなった(UPS 8086円/ECMS 8418円/DHL 9330円/FedEx-Economy 10639円/FedEx-Priority 10832円)。つまりDHLの「最高額化」は2.5〜3.0kgの範囲に限定された一時的な逆転であり、5.0kgでは解消される非単調な挙動。10.0kgではさらに別の順位変化が発生:UPS 10626円/FedEx-Economy 15216円/ECMS 15861円/DHL 16680円/FedEx-Priority 19862円。5.0kg時点ではECMS<DHL<FedEx-Economyの順だったが、10.0kgでFedEx-EconomyがECMSとDHLの両方を逆転し2番目に安い方式になった(DHLとFedEx-Priorityは最高額帯のまま)。1.5kg以降はステップごとに値が変わっており、0.5〜1.0kgのようなフラット帯には戻っていない。実重量ブラケット課金であることをURL非依存の画面値で確認。Grid A最終点の20.0kgではさらに別の順位変化が発生: FedEx-Economy 21831円/UPS 23969円/ECMS 28994円/DHL 32457円/FedEx-Priority 33253円。500g〜10000gまで一貫して最安だったUPSが、20.0kgで初めてFedEx-Economyに逆転され2番目の順位に後退した。DHL(32457円)は10000g時点の4番目の順位を維持し、FedEx-Priorityが全重量点を通じて一貫して最高額を維持している。つまりFROM JAPANでは重量が上がるにつれて(1)2.5〜3.0kgでのDHLの一時的最高額化→5.0kgで解消、(2)10.0kgでのFedEx-EconomyのECMS/DHL逆転、(3)20.0kgでのFedEx-EconomyのUPS逆転、という3段階の異なる順位変化が異なる重量帯・異なる方式ペアで発生しており、単一の単純な規則には従っていないことが確認された。Grid B(寸法カーブ、重量600g固定)の第1点[10,10,10]cmでは、ECMS 3506円/UPS 3539円/DHL 4771円/FedEx-Economy 5109円/FedEx-Priority 5437円と、20x15x10cm/600g時点と完全に一致した。箱の体積が3000cm³から1000cm³に縮小しても価格が全く変わらないことから、FROM JAPANはこの重量帯(0.6kg程度)では寸法を運賃計算に使用せず、実重量のみで課金していると考えられる——これはNeokyo・Buyeeと同様の挙動で、ZenMarketだけがこの重量・箱サイズ帯で寸法に反応する例外的存在であることが裏付けられた。ただしGrid B第2点[20,20,20]cm(体積8000cm³)ではこの「寸法非依存」の結論が覆された。UPS 4772円/DHL 5247円/FedEx-Economy 5819円/FedEx-Priority 5984円の4方式はいずれもGrid Aの実重量2000g点と完全一致し、[10,10,10]cm時点から明確に上昇——Neokyoと同様、ある閾値(1000cm³〜8000cm³の間)を境に寸法重量課金へ切り替わることが確認された。一方ECMSは4250円で、これはGrid Aの実重量1500g点と一致し、他4方式が到達した2000g点には届いていない——ECMSだけが他4方式より低い寸法重量換算係数または切替閾値を持つことを示唆する、ZenMarketで観測された方式間の感応度差異と類似のパターン。この結果、[10,10,10]cm単独の観測だけでは「寸法を全く使わない」という誤った結論に至っていたことになり、寸法カーブは最低2点(できれば体積の異なる複数点)を確認しないと課金方式を正しく特定できないという方法論上の教訓が、Neokyoに続きFROM JAPANでも再確認された。Grid B第3点[30,20,10]cm(体積6000cm³、元の[20,15,10]cmと最も近い縦横比)ではさらに興味深い結果となった。UPS(4124円)/DHL(5009円)/FedEx-Economy(5299円)/FedEx-Priority(5879円)の4方式はいずれも[10,10,10]cm値と[20,20,20]cm値のちょうど中間的な値を取り、体積に対して連続的に反応するパターンを示した。一方ECMSだけは3506円——[10,10,10]cm時点と完全に同額に戻り、体積が6000cm³(1000cm³超)であるにもかかわらず変化しなかった。これはZenMarketのECMS EXPRESSで観測された非単調挙動(体積だけでは説明できず、箱の縦横比や最長辺などの別要素に依存する可能性)と酷似しており、ECMSという方式名を共有する両社(ZenMarket・FROM JAPAN)が、同じ配送業者・同じ料金ロジックに依拠している可能性を示唆する——今後の検証ポイントとして記録。Grid B第4点[40,30,20]cm(体積24000cm³)ではこの傾向がさらに明確になった。UPS(8086円)・DHL(9330円)・FedEx-Economy(10639円)・FedEx-Priority(10832円)の4方式はいずれもGrid Aの実重量5000g点に完全一致し、体積拡大に素直に追従した。一方ECMSは7360円で、Grid Aの3000g点(6152円)と5000g点(8418円)の間に位置し、依然として他4方式より低い寸法重量換算(または独自の計算式)を持つことが4点連続で確認された。これはZenMarketのECMS EXPRESSが小〜中サイズの箱で非単調、大きい箱(24000cm³)で急上昇に転じたのとは異なるパターンであり、両社のECMSが同一ロジックを共有している可能性は本点のデータではむしろ弱まった——今後さらなる検証が必要。Grid B第5点[25,25,25]cm(体積15625cm³、立方体形状)ではECMS(6152円)がGrid Aの実重量3000g点に完全一致する一方、UPS(6427円)・FedEx-Economy(7725円)・FedEx-Priority(7873円)・DHL(8200円)の4方式はいずれも3000g点と5000g点の間の中間値となり、Grid Aの離散点への完全一致は見られなかった。Neokyo・Buyeeでも同じ[25,25,25]cm点で同様の「離散点に一致しない」現象が観測されており、複数社にまたがる共通パターンとして記録に値する。また、この点でDHLが5方式中の最高額に浮上した([30,20,10]cm・[40,30,20]cmではFedEx-Priorityが最高額)——重量帯だけでなく寸法カーブでも、方式間の順位が箱の形状によって入れ替わることが確認された。Grid B第6点[30,30,30]cm(体積27000cm³)ではECMS(7806円)・UPS(8326円)・DHL(10065円)・FedEx-Economy(11551円)・FedEx-Priority(13085円)の全5方式がGrid Aの離散点(3000g/5000g/10000g)のいずれとも完全一致しない中間値となり、第5点で始まった「非一致」がさらに継続した。特徴的なのは、UPSが5000g点(8086円)をわずかに上回ったことで、対応する内挿区間が第5点時点の「3000〜5000g間」から「5000〜10000g間」へ全体的にシフトしたこと。また最高額方式がDHL([25,25,25]cm時点)からFedEx-Priorityに再び入れ替わった——[30,20,10]cm・[40,30,20]cmではFedEx-Priority、[25,25,25]cmではDHL、[30,30,30]cmでは再びFedEx-Priorityという、3度目の順位反転。Neokyo(DHL Express Worldwideの消滅)・Buyee(体積重量5000g超での連続的価格帯への移行)と合わせ、[30,30,30]cm付近を境に複数社で挙動の質的変化(消滅・連続化・順位反転)が観測されており、この体積帯が複数社に共通する何らかの閾値である可能性が示唆される。Grid B第7点[35,35,35]cm(体積42875cm³)では、UPS(10143円)・ECMS(11280円)・FedEx-Economy(14400円)・DHL(15211円)・FedEx-Priority(15691円)の全5方式が引き続きGrid Aの離散点(5000g/10000g)のいずれとも完全一致しない中間値となり、第5・6点から続く「非一致」が3点連続となった。特筆すべきは最安方式の入れ替わり——[30,30,30]cmまではECMSが最安だったが、本条件でUPSに最安の座を明け渡した(UPS 10143円<ECMS 11280円)。一方、最高額方式はFedEx-Priority(15691円)が[30,30,30]cm時点から継続して維持した。全体として5000〜10000g帯の中でも10000g寄りの値に収斂しつつあり、体積の増加に伴い各方式が徐々にGrid Aの上位ブラケットへ漸近していく様子がうかがえる。 Grid B第8点[40,40,40]cm(体積64000cm³)では、FedEx-Economy(16102円)・ECMS(17118円)・UPS(18748円)・DHL(21414円)・FedEx-Priority(24492円)の全5方式が引き続きGrid Aの離散点(10000g/20000g)のいずれとも完全一致しない中間値となった。注目すべきは、Grid A重量カーブでは500g〜10000gの全域で一貫して最安方式だったUPSが、本条件で3番目(FedEx-Economy、ECMSに次ぐ)に後退したこと——寸法ベースの課金では重量ベースと異なる相対的な有利不利が生じることを示す一例。最高額のFedEx-Priorityは[30,30,30]cm以降3点連続で最高額の座を維持しており、この方式は他の4方式と比べ寸法拡大への感応度が高い可能性がある。 Grid B第9点[45,45,45]cm(体積91125cm³)。5方式全てが10000g点と20000g点の中間だが20000g点にかなり近い水準まで上昇。順位はFedEx-Economy(20602円)<UPS(22723円)<ECMS(22974円、UPSとの差わずか251円)<DHL(30091円)<FedEx-Priority(31822円)。[40,40,40]cmではUPSが3番目・ECMSが2番目だったが、本条件でUPSとECMSの順位が再逆転しUPSが2番目に戻った——寸法カーブ後半で両者が僅差で競り合っている状況を示す。FedEx-Priorityは[30,30,30]cm以降4回連続で最高額を維持。 Grid B(寸法カーブ)全10点完了。最終点[50,50,50]cm(体積125000cm³)で順位が劇的に再編成された:ECMS(30268円、最安)<DHL(40536円)<FedEx-Economy(41903円)<FedEx-Priority(42833円)<UPS(53043円、最高額)。特筆すべきは、FedEx-Economy(triple #9の20602円→41903円、2.03倍)とUPS(triple #9の22723円→53043円、2.33倍)の2方式が、triple #9からtriple #10にかけて他方式(ECMS 1.32倍、DHL 1.35倍、FedEx-Priority 1.35倍)よりはるかに急激な上昇を示したこと。UPSはGrid A重量カーブ全域(500〜10000g)で一貫して最安値だった方式であり、FedEx-Economyも寸法カーブのほぼ全域で最安値を維持していた——両方式とも寸法カーブ最終点でのみ突然大幅な追加料金(おそらく大型貨物向けオーバーサイズ料金や体積重量の非線形な階級区分)が発生したことを示唆する。2回の読み取り(render-lag protocol)で値は完全に一致しており測定エラーではないが、単発の測定点であるため確証には追加測定が望ましい——「違和感のある」知見として記録する。 Grid C(空欄寸法条件)実施。Country of Delivery=United States、Retail price=10000円、Weight=0.6kgを入力し、Length/Width/Heightを空欄のまま計算。methods_shown_totalが5→3に減少し、UPS・DHLの2方式が選択肢から完全に消失した(counted_absence)。残る3方式(ECMS 3506円・FedEx-Economy 5109円・FedEx-Priority 5437円)は[20,15,10]cm@600g時点の値と完全に一致しており、寸法なし時は実重量のみで計算されることを示す。UPS・DHLだけが寸法情報を必須としている点は、5方式中3方式(ECMS/FedEx-Economy/FedEx-Priority)と2方式(UPS/DHL)とで見積りロジックが異なることを示す注目すべき知見。",
+    "bug_found_3000g_addendum": "3000g測定時、weight欄を3に更新しCalculateを押した直後、get_page_text/screenshotで最大5秒程度2500g時点の古い値(5336円等)が残留する事象を2回連続で観測。3回目の確認(クリックから約5秒後)で新しい値(UPS 5942円等、全5方式で2500g比明確に上昇)に切り替わったことを確認。これはNeokyoで確認済みの「遷移中の古い表示を拾う」レンダリング競合と同種の現象で、FROM JAPANでも再計算後の反映に数秒のラグがあることが判明した。今後は最低3秒、理想的には5秒待ってから読み取ることとする。",
+    "bug_found": "本セッション中にFROM JAPANの入力フォームで3件の事故を検出・修正した。(1)Calculate後にページが毎回不規則にスクロールし、キャッシュ済み座標でのクリックが的を外し重量欄が更新されないまま古い結果を表示(700g・1000g時点、撮り直しで訂正済み)。(2)スクロールずれにより誤って隣接する「Domestic delivery fee」欄に重量値を入力してしまい700→1に書き換わった事故(即座に検知しダブル修正)。(3)ref指定でのクリックが要素がDOM上に残っていても実際には効かないことがある(サイレント失敗、エラーは出ない)。以後は「入力→zoomで数値確認→都度スクリーンショットでボタン位置再確認→クリック」を徹底している。",
+    "verification_protocol": "FROM JAPANのみ、他3社(Neokyo/ZenMarket/Buyee)と異なり座標キャッシュが使えないため、1条件あたり毎回フルスクリーンショットでの位置確認が必須。これにより1条件あたりの手数が他社の約2倍になっている。"
+  }
+}

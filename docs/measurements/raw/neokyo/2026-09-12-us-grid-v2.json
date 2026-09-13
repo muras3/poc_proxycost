@@ -1,0 +1,2490 @@
+{
+  "sources": [
+    {
+      "proxy": "neokyo",
+      "url": "https://neokyo.com/en/shipping-rates-estimate",
+      "robots_txt_checked": "https://neokyo.com/robots.txt",
+      "robots_txt_result": "ユーザーが2026-09-12に事前確認済み(Disallow: /*?* はクエリ文字列のクロール制御であり通常のフォーム利用を禁止するものではない)。本セッションでは再確認していない。",
+      "terms_checked": "ユーザー事前確認済み。bot/automation/scrapingの明示的禁止条項なしと確認済み。",
+      "terms_result": "同上",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "interval_seconds": 10,
+      "checked_at": "2026-09-12",
+      "item_price_field_present": false,
+      "default_box": [
+        20,
+        15,
+        10
+      ]
+    }
+  ],
+  "grid": {
+    "countries": [
+      "US",
+      "GB",
+      "FR",
+      "AU",
+      "CA",
+      "SG"
+    ],
+    "weight_curve_g": [
+      500,
+      600,
+      700,
+      1000,
+      1500,
+      2000,
+      2500,
+      3000,
+      5000,
+      10000,
+      20000
+    ],
+    "weight_curve_dims_cm": [
+      20,
+      15,
+      10
+    ],
+    "dimension_curve_cm": [
+      [
+        10,
+        10,
+        10
+      ],
+      [
+        20,
+        15,
+        10
+      ],
+      [
+        20,
+        20,
+        20
+      ],
+      [
+        30,
+        20,
+        10
+      ],
+      [
+        40,
+        30,
+        20
+      ],
+      [
+        25,
+        25,
+        25
+      ],
+      [
+        30,
+        30,
+        30
+      ],
+      [
+        35,
+        35,
+        35
+      ],
+      [
+        40,
+        40,
+        40
+      ],
+      [
+        45,
+        45,
+        45
+      ],
+      [
+        50,
+        50,
+        50
+      ]
+    ],
+    "dimension_curve_weight_g": 600,
+    "blank_dimension_condition": true,
+    "planned_conditions": 138,
+    "completed_conditions": 22,
+    "skipped": []
+  },
+  "observations": [
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 5558,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4651,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6031,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 5558,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4651,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6031,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 5558,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4651,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6031,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 5558,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4651,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6031,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 6140,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4914,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6294,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 6680,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 5178,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6558,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 7230,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 7756,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 9136,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 7819,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 7895,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 9275,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 11083,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 8454,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 9834,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 17442,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 32431,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "5000g比で約3.8倍と急激な上昇。5000gまではFedEx Connect Plusが最高額だったが、10000gでDHL2方式がFedExを逆転し最高額帯に変化。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 33811,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "同上。5000g比で約3.4倍。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 29719,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "重量30kg上限に対し20kgは上限の2/3。10000g比で約1.7倍。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 40919,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "10000g比で約1.26倍。10000gでの急激な傾き上昇(5000g→10000gで約3.8倍)に比べ、10000g→20000gの上昇率は大きく落ち着いており、傾きが再び緩やかになった。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 42299,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "10000g比で約1.25倍。DHL Express Worldwideと同様、10000g→20000gの上昇率は5000g→10000gの区間より緩やか。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 5558,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B開始点(寸法カーブ、重量600g固定)。20x15x10cm/600gの値と完全に一致——Neokyoはこの箱サイズ帯では寸法変更が価格に影響しないことを確認(実重量ベースの課金)。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4651,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "20x15x10cm/600gと完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6031,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "20x15x10cm/600gと完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 6680,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "重要な発見: 実重量600gのまま変わらないが、箱を20x20x20cm(体積8000cm³、URLのtotal_volume=100)に拡大したところ、価格はGrid Aの2000g/[20,15,10]cm点と完全に一致する値に跳ね上がった。[10,10,10]cmでは価格不変だったのに対し、この箱サイズでは体積重量が実重量を上回り運賃計算に使われていることを示す——小さい箱では実重量課金、大きい箱では体積重量課金に切り替わる閾値が存在することが確認された。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 5178,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの2000g/[20,15,10]cm点と完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6558,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの2000g/[20,15,10]cm点と完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 6140,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B第3点[30,20,10]cm(体積6000cm³)/600g。[20,20,20]cm(体積8000cm³、6680円)より下降し、Grid Aの1500g/[20,15,10]cm点(6140円)と完全一致。体積が8000→6000cm³に縮小したことで対応する体積重量ブラケットも1段下がったことを示す——単純な体積比例(6000/8000=0.75)ではなく、Grid Aの離散的な重量ブラケット(1500g)に一致した。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 4914,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの1500g/[20,15,10]cm点(4914円)と完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 6294,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの1500g/[20,15,10]cm点(6294円)と完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 11083,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B第4点[40,30,20]cm(体積24000cm³)/600g。Grid Aの5000g/[20,15,10]cm点(11083円)と完全一致——体積が6000cm³→24000cm³(4倍)に拡大し、対応ブラケットも1500g→5000g相当へ大きくジャンプした。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 8454,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの5000g/[20,15,10]cm点(8454円)と完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 9834,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの5000g/[20,15,10]cm点(9834円)と完全一致。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 8364,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "重要な発見: Grid B第5点[25,25,25]cm(体積15625cm³)/600gでは、初めてGrid Aのどの重量点(3000g:7819円/5000g:11083円)とも完全に一致しない中間的な値(8364円)となった。過去4点(1000/8000/6000/24000cm³)は全てGrid Aの離散点に完全一致していたが、この点だけは中間値を示しており、Neokyoの体積重量換算もある範囲では連続的(または未観測の細かいブラケット)である可能性を示唆する新発見。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 8035,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの3000g点(7895円)と5000g点(8454円)の中間的な値。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 9415,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの3000g点(9275円)と5000g点(9834円)の中間的な値。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 8,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 11853,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "重要な発見: Grid B第6点[30,30,30]cm(体積27000cm³)/600gで、これまで常に利用可能だった「DHL Express Worldwide (2-6 days)」が画面から完全に消滅した(不可メッセージも表示されず、行自体が存在しない=counted_absence)。methods_shown_totalが9→8に減少。DHL EXPRESS 12:00は引き続き利用可能。この箱サイズ(または最長辺30cm)がDHL Express Worldwideのサイズ上限に抵触した可能性が高い。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 8,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 12232,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの5000g点(9834円)と10000g点(33811円)の間の値(9834円寄り)。DHL Express Worldwideが消滅した一方、EXPRESS 12:00は引き続き提示された。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 14174,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B第7点[35,35,35]cm(体積42875cm³)。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 27636,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "【重要・要再検証】[30,30,30]cm時点で行ごと消滅していた(counted_absence)DHL Express Worldwideが本条件で再び出現した。methods_shown_totalも8→9に復帰。サイズが30cm→35cmへとさらに拡大したにもかかわらず消滅から復活した点は、単純な「一定サイズを超えると利用不可になる」という上限モデルでは説明できない——(a)30cm時点の消滅が一時的な表示バグ/読み込み不良だった、(b)何らかの非単調な判定ロジック(体積ではなく別の指標に依存)が働いている、のいずれかを示唆する。次回以降、[30,30,30]cmを再測定して再現性を確認する必要がある。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 29016,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの10000g点(33811円)未満、5000g点(9834円)超の中間値域。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 21417,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B第8点[40,40,40]cm(体積64000cm³)。Grid Aの10000g点(17442円)を上回る。DHL Express Worldwideは引き続き出現(triple #7に続き2回連続)——[30,30,30]cmでの消滅がやはり一時的な表示不具合だった可能性を補強する。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 34978,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの10000g点(33811円)をわずかに上回る値——本条件で初めてGrid Aの10000g点を超過した。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 36358,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの10000g点(33811円)を上回る。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 28108,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。Grid Aの10000g点(17442円)を大きく上回る。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 39646,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "triple #7,#8に続き3回連続で出現——[30,30,30]cmでの消滅が一時的表示不具合だった可能性をさらに補強する。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 41026,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid Aの10000g点(33811円)を上回る。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "price_jpy": 42836,
+      "delivery_estimate": "3-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。Grid Aの20000g点の水準に近づく。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "price_jpy": 46628,
+      "delivery_estimate": "2-6 days",
+      "extra_fees": [],
+      "screen_note": "triple #7,#8,#9に続き4回連続で出現——寸法カーブ全10点の最終点でも一貫して存在。[30,30,30]cmでの消滅(triple #6)は再現せず、一時的表示不具合だった可能性が極めて高いことがGrid B完走により確定的となった。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "price_jpy": 48008,
+      "delivery_estimate": "2-5 days",
+      "extra_fees": [],
+      "screen_note": "Grid B寸法カーブ最終点。"
+    }
+  ],
+  "not_available": [
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority (2-3 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Economy (5-7 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post EMS (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "Japan Post Surface (2-4 months)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "UPS Express Saver (2-5 days)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country."
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第3点でも6方式の不可パターンは不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第4点でも6方式の不可パターンは不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第5点でも6方式の不可パターンは不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "methods_shown_total": 8,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第6点でも6方式の不可パターン(明示メッセージ付き)は不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "methods_shown_total": 8,
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "evidence_class": "counted_absence",
+      "reason": "これまでのGrid A・Grid B全条件で常に表示・利用可能だったが、[30,30,30]cm(体積27000cm³)で初めて画面から行ごと消滅。他の6方式(evidence_class: declared)とは異なり、不可を示す明示メッセージも一切表示されない——サイズ上限超過による完全な選択肢除外と推定される。",
+      "correction_after_reverification": "【訂正】triple #7([35,35,35]cm)測定でDHL Express Worldwideが再出現(27636円)したことを受け、同一条件[30,30,30]cmを直後に再測定したところ10852円で出現した。他の全方式は初回測定値と完全一致しており、DHL Express Worldwideの消滅のみ再現しなかった。よってこのcounted_absenceは実際のサイズ制限ではなく、初回測定時の一時的な表示不具合であった可能性が高いと判断する(詳細はcross_check.note_13_grid_b_triple6_reverification参照)。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第7点でも6方式の不可パターン(明示メッセージ付き)は不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第8点でも6方式の不可パターンは不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B第9点でも6方式の不可パターンは不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "methods_shown_total": 9,
+      "method_name": "FedEx International Priority・FedEx International Economy・Japan Post EMS/Airmail/Surface・UPS Express Saver",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "* Not available or suspended in your country.",
+      "screen_note": "Grid B寸法カーブ最終点[50,50,50]cmでも6方式の不可パターンは不変。"
+    },
+    {
+      "proxy": "neokyo",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "methods_shown_total": 0,
+      "method_name": "ALL METHODS (Grid C: blank-dimensions condition)",
+      "evidence_class": "declared",
+      "explicit_message_on_screen": "This field is required.",
+      "reason": "Grid C(寸法欄を空欄にする条件)を新規ページで実施。Country=United States、Weight=600gを入力し、Length/Width/Heightの3フィールドを空欄のまま「Estimate rates」をクリックしたところ、寸法欄の下に赤字で「This field is required.」というバリデーションエラーが表示され、見積り自体が実行されなかった(Carrierテーブルは表示されず)。Neokyoでは寸法の入力が必須(クライアント側バリデーションで強制)であり、寸法なしでの見積りは構造的に不可能——重量のみでの見積りには対応していないことが確認された。Postcodeフィールドも同時に必須表示されていたが、これはGrid Cの主眼(寸法必須性)とは独立した挙動であり、寸法必須性の結論には影響しない。"
+    }
+  ],
+  "cross_check": {
+    "note_1": "US・20x15x10cmでは500g/600g/700g/1000gの4点すべてで運賃・利用可否パターンが完全に一致(FedEx Connect Plus 5558円, DHL Express Worldwide 4651円, DHL EXPRESS12:00 6031円のみ利用可、他6方式は同一文言で利用不可)。これは実際の重量帯(ブラケット)課金であり、取りこぼしではないことをURLクエリパラメータ(package_weight)が毎回正しく変化していることで確認済み。",
+    "note_2": "1000g条件で一度、get_page_text直後の読み取りが遷移中の古い表示(Weight: 700 g)を拾う事故が発生。3秒待機後の再読み取りで正しい値(Weight: 1000 g)を確認し、価格も含め再検証済み。取りこぼし対策としてmethods_shown_totalに加え、表示された重量エコー行と入力値の一致確認を今後も行う。",
+    "note_3": "Neokyo・USでは日本郵便(EMS/Airmail/Surface)がいずれも「* Not available or suspended in your country.」という明示メッセージ付き(evidence_class: declared)で表示される。無言で消える(counted_absence)のではない点が、他社(FROM JAPAN)との重要な違い。",
+    "note_4": "1500g・2000gでは500〜1000gのフラット帯から明確に上昇(FedEx Connect Plus: 5558→6140→6680円、DHL Express Worldwide: 4651→4914→5178円、DHL EXPRESS12:00: 6031→6294→6558円)。500〜1000gが同一運賃だったのは重量ブラケット課金の下限帯にすぎず、1000g超で連続的に運賃が変わることを確認。利用可否パターン(6方式不可)は全重量帯で不変。",
+    "note_5": "10000gでDHL2方式(Express Worldwide, EXPRESS 12:00)が5000g比でそれぞれ約3.8倍・約3.4倍という急激な上昇を示し、FedEx Connect Plus(約1.6倍)を逆転して最高額帯に変化した。3000g→5000gまでの上昇率(FedExが最も急な傾き)とは逆の傾向で、5000g→10000gの区間でDHL側の傾きが急激に強まっている。これが単純な線形+ブラケット制ではなく、DHL固有の重量帯別の非線形な料金体系による可能性を示唆するが、画面には計算式が表示されないため未確定。",
+    "note_6": "Grid A最終点の20000g(重量上限30kgの2/3)では、10000gで見られた急激な上昇(DHL約3.4〜3.8倍)が沈静化し、全3方式とも10000g比で1.25〜1.7倍程度の緩やかな上昇に戻った。FedEx Connect Plus(29719円)は依然としてDHL2方式(40919円/42299円)より安く、10000gで確立された「DHLが最高額」の順位はそのまま維持された(5000g→10000gの逆転がさらに逆戻りすることはなかった)。つまり10000g付近に局所的な急勾配区間が存在し、その前後(5000g以下、20000g)では傾きが相対的に緩やかという、単純な線形でもブラケットでもない複雑な重量-価格関係が示唆される。",
+    "note_7_grid_b": "Grid B(寸法カーブ、重量600g固定)の第1点[10,10,10]cmでは、FedEx Connect Plus 5558円・DHL Express Worldwide 4651円・DHL EXPRESS 12:00 6031円と、Grid Aの[20,15,10]cm/600g点と完全に同一の値が得られた。箱の体積が3000cm³から1000cm³へ縮小したにもかかわらず価格が変わらないことから、Neokyoはこの重量帯では寸法(体積)を運賃計算に使用せず、実重量のみでブラケット課金していると考えられる。Grid Bの第2点[20,20,20]cmで即座にこの予想が的中: 体積が1000cm³→8000cm³に拡大したところ、価格がGrid Aの2000g/[20,15,10]cm点(FedEx Connect Plus 6680円/DHL Express Worldwide 5178円/DHL EXPRESS 12:00 6558円)と完全一致する値に跳ね上がった。つまり[10,10,10]cmでは実重量(600g)が体積重量を上回るため実重量課金だったが、[20,20,20]cmでは体積重量が実重量を上回り、体積重量ベースの課金に切り替わったと考えられる。この閾値は[10,10,10]cmと[20,20,20]cmの間、あるいは元の[20,15,10]cm(体積3000cm³)のどこかにある可能性が高い——20x15x10cmの箱では500〜1000gまで運賃が完全にフラットだった事実(体積重量が固定されていたため)と整合的な解釈になる。",
+    "note_8_grid_b_triple3": "Grid B第3点[30,20,10]cm(体積6000cm³)/600gでは、FedEx Connect Plus 6140円・DHL Express Worldwide 4914円・DHL EXPRESS 12:00 6294円と、[20,20,20]cm(体積8000cm³)時点の値から明確に下降し、Grid Aの1500g/[20,15,10]cm点と完全一致した。体積が8000→6000cm³(0.75倍)に縮小しただけで対応するGrid Aブラケットが2000g→1500gへ1段下がったことから、Neokyoの体積重量換算は単純な線形比例ではなく、Grid Aの離散的重量ブラケット構造にそのまま量子化されていることが3点目でも裏付けられた。",
+    "note_9_grid_b_triple4": "Grid B第4点[40,30,20]cm(体積24000cm³)/600gでは、FedEx Connect Plus 11083円・DHL Express Worldwide 8454円・DHL EXPRESS 12:00 9834円と、Grid Aの5000g/[20,15,10]cm点に完全一致する値まで大きく跳ね上がった。体積が6000cm³→24000cm³(4倍)に拡大したのに対応するGrid Aブラケットは1500g→5000g(約3.3倍)に上昇しており、これまでの3点(1000/8000/6000cm³→500-1000g/2000g/1500gブラケット)と合わせて見ると、Neokyoの体積重量換算係数は概ね「体積cm³÷5(標準的な体積重量divisor 5000の類似値、または独自の係数)」に近い可能性があるが、正確な式は依然として画面に表示されず未確定。",
+    "note_10_grid_b_triple5": "Grid B第5点[25,25,25]cm(体積15625cm³)/600gで、初めてGrid Aの離散点(3000g/5000g)のどちらとも完全一致しない中間的な値(FedEx Connect Plus 8364円、DHL Express Worldwide 8035円、DHL EXPRESS 12:00 9415円)が観測された。これまでの4点(1000/8000/6000/24000cm³)は全て何らかのGrid A実重量点に完全一致していたが、体積重量換算後の値がGrid Aの離散重量点(500,600,700,1000,1500,2000,2500,3000,5000,10000,20000g)のいずれとも一致しない場合、価格は実重量ベースの表と同じ連続的な内挿(または未測定のより細かいブラケット)で決まっている可能性が高いことを示す重要な発見。note_9の推定式(体積cm³÷5相当)で計算すると15625/5=3125g相当となり、実際のGrid Aの3000g点(7819/7895/9275円)にかなり近いが完全一致はしていない——係数がやや異なるか、真のブラケット境界が3000gと3125gの間にある可能性がある。",
+    "note_11_grid_b_triple6_dhl_disappearance": "Grid B第6点[30,30,30]cm(体積27000cm³)/600gで、これまでGrid A全11重量点・Grid B第1〜5点(合計16条件)を通じて一度も欠けたことのなかった「DHL Express Worldwide (2-6 days)」が画面から完全に姿を消した。他の恒常的不可6方式(FedEx Priority/Economy、Japan Post EMS/Airmail/Surface、UPS Express Saver)はいずれも明示的な「* Not available or suspended in your country.」メッセージ付きで表示され続けているのに対し、DHL Express Worldwideは行自体が存在せず、不可メッセージも一切ない——evidence_classをdeclaredではなくcounted_absenceとして記録した。methods_shown_totalは8に減少(9→8)。DHL EXPRESS 12:00は引き続き提供され12232円(Grid Aの5000g点9834円と10000g点33811円の間)。この現象は寸法(30cm×30cm×30cm、最長辺30cmまたは体積27000cm³)がDHL Express Worldwideのサイズ制限に抵触したことが原因と推測されるが、画面上に制限値の明示はなく確定はできない。今後のトリプル(#7以降、最長辺35cm以上)でこの消滅が継続するか、あるいは他の方式にも同様の消滅が起きるかを注視する必要がある。",
+    "note_12_grid_b_triple7_dhl_reappearance": "【重要な反証】Grid B第7点[35,35,35]cm(体積42875cm³)で、[30,30,30]cm時点で完全に消滅していたDHL Express Worldwideが27636円で再出現した(methods_shown_total 8→9に復帰)。サイズ縮小ではなく拡大(30cm→35cm)した条件で消滅方式が復活したことは、note_11で立てた「サイズ上限超過による除外」という仮説と直接矛盾する。考えられる説明は(1)[30,30,30]cm測定時の一時的な表示不具合(レンダリング競合やキャッシュ由来)によって誤って消滅と記録した、(2)実際には単純なサイズ上限ではなく、特定の寸法の組み合わせに対してのみ発生する非単調な例外処理が存在する、のいずれか。",
+    "note_13_grid_b_triple6_reverification": "【結論・訂正】上記の矛盾を受け、triple #7測定の直後に[30,30,30]cm/600gの条件を同一タブで再測定した(dims欄を30/30/30に再設定し、Estimate ratesを再クリック)。再測定結果: FedEx Connect Plus 11853円(初回と完全一致)、DHL Express Worldwide 10852円(★出現——初回はcounted_absenceだった)、DHL EXPRESS 12:00 12232円(初回と完全一致)。DHL Express Worldwide以外の全方式が初回測定と一致する一方、唯一DHL Express Worldwideだけが初回は消滅・再測定では出現という結果になった。これにより、note_11で記録した「[30,30,30]cmでDHL Express Worldwideが消滅する」という発見は再現性がなく、初回測定時の一時的な表示不具合(ページ読み込み遅延、キャッシュ、レンダリング競合等)であった可能性が極めて高いと結論する。つまりtriple #6のnot_availableエントリ(DHL Express Worldwide, evidence_class: counted_absence)は誤検知であり、正しくはこの方式もtriple #6時点で利用可能(価格帯としては再測定値10852円に近い値)だったと判断すべきである。エビデンス優先の原則に基づき、当初のnot_availableエントリは削除せず記録として残すが、本note及びnote_12の反証をもって「これはサイズ上限による除外ではなく、一過性の表示欠落だった」という訂正結論を確定情報として扱う。今後Neokyoで同種の「行の消滅」を観測した場合は、単発の観測で確定させず、可能な限りその場で再測定して再現性を確認すること。",
+    "note_14_grid_b_triple9": "Grid B第9点[45,45,45]cm(体積91125cm³, weight=600g)。DHL Express Worldwideがtriple #7,#8に続き3回連続で出現(39646円)——note_13で立てた「triple #6の消滅は一時的表示不具合」という仮説と整合的。FedEx Connect Plus(28108円)、DHL EXPRESS 12:00(41026円)ともにGrid Aの10000g点を大きく上回り続けている。6方式の不可パターン(declared)は本条件でも不変。",
+    "note_15_grid_b_complete": "Grid B(寸法カーブ、weight=600g固定)全10点が完了した([10,10,10]〜[50,50,50]cm)。DHL Express Worldwideはtriple #7以降4回連続で出現しており、triple #6([30,30,30]cm)での消滅は再現しなかった——note_13の再検証結論(一時的表示不具合)を補強する最終的な証拠となった。FedEx Connect Plus・DHL EXPRESS 12:00とも寸法増加に伴い連続的に上昇を続けている。",
+    "note_16_grid_c": "Grid C(空欄寸法条件)を実施。Neokyoは寸法(Length/Width/Height)の入力を必須としており(client-side validation: \"This field is required.\")、寸法を空欄にした状態では見積りが実行できない。したがってNeokyoについては「寸法なし」の見積り結果自体が存在しない——他4社(ZenMarket, Buyee, FROM JAPAN)で寸法任意入力が許可されている場合との対比が重要な発見となる。"
+  }
+}

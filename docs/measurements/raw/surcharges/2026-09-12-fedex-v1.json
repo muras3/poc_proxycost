@@ -1,0 +1,152 @@
+{
+  "carrier": "fedex",
+  "sources": [
+    {
+      "url": "https://www.fedex.com/robots.txt",
+      "robots_txt_checked": "https://www.fedex.com/robots.txt",
+      "robots_txt_result": "User-agent: * / Allow: / (および特定の一部クエリ付きURLのAllowリスト) / Disallow: /*?* / Disallow: /libs/ / Disallow: /en-us/quick-help/* / Disallow: /en-us/GDCMTestSites/* / Disallow: /us/developer/WebHelp/* / Disallow: /content/dam/fedex-com/hdn/ / Sitemap: https://www.fedex.com/en-us/sitemap.xml / Sitemap: https://www.fedex.com/global/sitemap_index.xml / Disallow: /content/fedex-com/global/en_us/* / Disallow: /content/fedex-com/sites/us/* / Disallow: /content/fedex-com/sites/* 。Crawl-delayの指定なし。今回アクセスしたページ（/ja-jp/shipping/surcharges.html, /ja-jp/shipping/surcharges/other-surcharges.html, /ja-jp/ancillary-clearance-service.html, /ja-jp/shipping/rates.html, /ja-jp/terms-of-use.html、いずれもクエリ文字列なし）およびPDF（/content/dam/fedex/international/rates/配下）はいずれもDisallow対象条項に該当しないことを確認した。同一ドメイン（fedex.com）配下のため、ja-jp向け専用のrobots.txtは別途存在しない。",
+      "terms_checked": "https://www.fedex.com/ja-jp/terms-of-use.html",
+      "terms_result": "検索キーワード「robot」「crawl」「automated」「scraping」に完全一致する語は本文中に見つからなかった。ただし第2条（fedex.comの利用）に次の記述あり（原文引用）：「fedex.comから情報を取得すること、またはfedex.comを通じて情報を提供することを目的として、許可されていないスクリプティング技術を利用することは固く禁止されています。」これは自動化/スクレイピング行為を禁止する趣旨の条項に相当すると考えられる。また同条には「fedex.comは、FedExの現在および将来のお客様が、FedExとやり取りをするために利用することのみを目的として提供されます。その他の個人または組織がfedex.comを利用することや、その他の目的のためにfedex.comを利用することはできません。」との記載もあり。",
+      "captcha_encountered": false,
+      "account_created_or_login_used": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "checked_on": "2026-09-12",
+      "origin_scope": "日本発の表（fedex.com/ja-jp）"
+    }
+  ],
+  "compliance_note": "通関手数料ページ（ancillary-clearance-service.html）の国/地域選択プルダウンは、自動化ツールのマウスクリックでは選択イベントが正しく発火しなかったため、同一タブ内でJavaScriptを実行しselect要素のvalueを設定してchangeイベントをdispatchする方法で選択した（ページ遷移やHTTPリクエストの直接発行は行っておらず、既にロード済みの同一ページ内での操作）。ただし上記terms_result記載の『許可されていないスクリプティング技術の利用禁止』条項に抵触する可能性があるため、依頼元に開示する。",
+  "fuel_surcharge": {
+    "percentage": 49.0,
+    "effective_period": "2026年9月14日 - 2026年9月20日（毎週月曜日に更新され請求書に反映される。料率は算定週の2週間前の米国ガルフコースト（USGC）ケロシンタイプジェット燃料スポット価格に基づく）",
+    "differs_by_service": true,
+    "per_service": [
+      {
+        "service": "フェデックス・インターナショナル・エクスプレス・フレイト（IXF）およびフェデックス・インターナショナル・エアポート・ツー・エアポート（ATA）を除く全FedExサービス",
+        "percentage": 49.0
+      },
+      {
+        "service": "フェデックス・インターナショナル・エクスプレス・フレイト（IXF）",
+        "percentage": null
+      },
+      {
+        "service": "フェデックス・インターナショナル・エアポート・ツー・エアポート（ATA）",
+        "percentage": null
+      }
+    ],
+    "included_in_displayed_rate": null,
+    "included_in_displayed_rate_quote": null,
+    "source": "https://www.fedex.com/ja-jp/shipping/surcharges.html",
+    "quote": "14 9月, 2026 - 20 9月, 2026 / $4.082 / 49.00% 。「FedExサービスの燃料割増金の料率は、ケロシンタイプのジェット燃料1ガロン当たりの米国ガルフコースト（USGC）スポット価格に基づき毎週変更されます。」「燃料割増金については、フェデックス・インターナショナル・エクスプレス・フレイト®（IXF）およびフェデックス・インターナショナル・エアポート・ツー・エアポート（ATA）の各サービスを除くすべてのフェデックスサービスに適用されます。フェデックス・インターナショナル・エクスプレス・フレイト®（IXF）およびフェデックス・インターナショナル・エアポート・ツー・エアポート（ATA）サービスでは、異なる燃料割増金を適用していますので、詳細は営業担当者までお問い合わせください。」「FedExの燃料割増金についての変更は毎週月曜日に適用され、お客様の請求書に反映されます。」「ご注意：燃料割増金について料率の算出は、該当する週の2週間前のジェット燃料米国ガルフコースト価格に基づきますが、米国エネルギー省による燃料価格の公表が遅れた場合、フェデックスは従前の燃料割増金について料率を適用することがあります。」料率テーブル抜粋：$4.01-$4.04→48.50%／$4.04-$4.07→48.75%／$4.07-$4.10→49.00%／$4.10-$4.13→49.25%／$4.13-$4.16→49.50%",
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch"
+  },
+  "remote_area_surcharge": {
+    "amount": null,
+    "currency": null,
+    "unit": null,
+    "postcode_list_url": null,
+    "postcode_list_format": null,
+    "source": null,
+    "quote": null,
+    "checked_on": "2026-09-12",
+    "confidence": "direct_fetch",
+    "not_found_reason": "地域外配達料（ODA）・地域外集荷料（OPA）という項目名自体は燃料割増金ページの『燃料割増金の算定対象となるサーチャージ一覧』内で言及を確認した（https://www.fedex.com/ja-jp/shipping/surcharges.html）が、具体的な金額・単位・郵便番号リストはHTMLページ上には見当たらなかった。金額の詳細は『2026 輸出およびインポートワン サーチャージ等諸料金詳細』PDF（https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-sur-ja-jp-2026.pdf、全5ページ）や『日本輸出料金』PDF（https://www.fedex.com/content/dam/fedex/international/rates/fedex-rates-exp-ja-jp-2026.pdf、全5ページ）に記載されている可能性が高いが、これらのPDFはChromeブラウザ上で開いたところ、サムネイル一覧には内容が表示されるものの、メイン表示ペインのスクリーンショットおよびページテキスト抽出（get_page_text／JavaScriptのdocument.body.innerText）がいずれも空/ブランクを返し、本文を読み取ることができなかった（PDFビューアの技術的な描画・テキスト抽出上の制約）。数字を推測で埋めることはできないため、amount等はnullとした。"
+  },
+  "clearance_fee_by_country": [
+    {
+      "country": "US",
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 17.50,
+      "currency": "USD",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または$17.50」。ページ上に『いずれか高い方』等の明示的な比較文言はなく、『2.5%または$17.50』という表記のみ（原文ママ）。米国宛て・FedEx標準サービス（Ground系）ページに掲載。別途『米国 | FedEx速達サービス』という選択肢も存在するが、今回選択した『米国 | FedEx標準サービス』ページの内容を記載。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: 米国 | FedEx標準サービス）",
+      "quote": "支払手数料 / 支払われた関税およびその他税金の2.5%または$17.50 / 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "DE",
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 15.00,
+      "currency": "EUR",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または15.00 EUR」。『いずれか高い方』等の明示的な比較文言はページ上になし（原文ママ）。ページ末尾に『料金はユーロ建てです』との明記あり。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: ドイツ）",
+      "quote": "支払手数料 / 支払われた関税およびその他税金の2.5%または15.00 EUR / 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "GB",
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 12.90,
+      "currency": "GBP",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または$12.90 GBP」。原文ママで通貨記号が『$』、末尾ラベルが『GBP』という混在表記になっている（サイト側の表記の不整合とみられる）。『いずれか高い方』の明示文言はなし。別項目『関税その他税金転送手数料（第三国支払者用）』は『最低£15.00または関税およびその他税金の2.5%』（こちらは£記号）。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: イギリス）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または$12.90 GBP 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "FR",
+      "percentage_of_duty_and_tax": 2.5,
+      "minimum_amount": 15.00,
+      "currency": "EUR",
+      "formula_note": "「支払手数料：支払われた関税およびその他税金の2.5%または15.00 EUR」。ドイツのページと同一文言。『いずれか高い方』の明示文言はページ上になし（原文ママ）。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: フランス）",
+      "quote": "支払手数料 支払われた関税およびその他税金の2.5%または15.00 EUR 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "AU",
+      "percentage_of_duty_and_tax": 2.90,
+      "minimum_amount": 24.00,
+      "currency": "AUD",
+      "formula_note": "「支払手数料：2.90%または最低24.00 AUD」（フェデックス・アカウントで規制料金を決済する顧客向け）。別項目『ROD FEE（関税、その他の税金手数料）』（FedExアカウントを持たない顧客向け）では『関税その他税金の2.9％または貨物あたりAUD24のいずれか高い額』と、明示的に『いずれか高い額』の比較文言あり。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: オーストラリア）",
+      "quote": "支払手数料 2.90%または最低24.00 AUD 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。前払いした合計金額に加えて、料金に記載されている手数料を支払者に請求させていただきます。各地域でのサービス詳細：この手数料は、規制料金をフェデックス・アカウントで決済するお客様に適用されます。 / ROD FEE（関税、その他の税金手数料） 関税その他税金の2.9％または貨物あたりAUD24のいずれか高い額。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "CA",
+      "percentage_of_duty_and_tax": 3.10,
+      "minimum_amount": 12.00,
+      "currency": "CAD",
+      "formula_note": "「支払手数料：関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方」。明示的に『いずれか大きい方』の比較文言あり。『カナダ | FedEx標準サービス』『カナダ FedEx Express』の両方の国/地域選択で同一の文言・料率を確認。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: カナダ | FedEx標準サービス、および カナダ FedEx Express）",
+      "quote": "支払手数料 関税およびその他の税金の合計の3.10%、または$12.00 CADのいずれか大きい方 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    },
+    {
+      "country": "SG",
+      "percentage_of_duty_and_tax": 5.0,
+      "minimum_amount": 24.00,
+      "currency": "SGD",
+      "formula_note": "シンガポールのページでは『支払手数料』という項目名ではなく『特別取扱手数料』という項目名で、他国の支払手数料と同一の説明文（税関当局への期限内の支払いを保証するため…）が付与されている。『最低SGD24、または輸入関税その他の税金の5％、最大SGD120』とあり、他国のスキーマ（下限のみ）と異なり上限（最大SGD120）が明記されている点に注意。上限額はこのJSONのスキーマにフィールドがないためformula_noteにのみ記載。別途『関税その他税金転送手数料』（第三国支払者用）は『最低SGD 35または関税およびその他税金の5%』。",
+      "source": "https://www.fedex.com/ja-jp/ancillary-clearance-service.html （国/地域選択: シンガポール）",
+      "quote": "特別取扱手数料 最低SGD24、または輸入関税その他の税金の5％、最大SGD120 税関当局への期限内の支払いを保証するため、FedExがお客様に代わり、該当する関税その他の税金、およびその他の規制手数料を前払いすることがあります。支払人は、当社が支払った合計金額に加えて、料金に記載されている手数料を支払わなければなりません。",
+      "checked_on": "2026-09-12",
+      "confidence": "direct_fetch"
+    }
+  ],
+  "not_found": [
+    {
+      "item": "remote_area_surcharge（地域外配達料ODA／地域外集荷料OPAの具体的金額・単位）",
+      "reason": "HTMLページ上では項目名の言及のみで金額の記載が見当たらず、金額が記載されていると思われる公式PDF（fedex-rates-sur-ja-jp-2026.pdf、fedex-rates-exp-ja-jp-2026.pdf）はChromeのPDFビューアで開いたが、画面キャプチャ・テキスト抽出のいずれでも本文を取得できなかった（技術的制約）。数字を推測で埋めることは禁止されているため空欄。"
+    },
+    {
+      "item": "remote_area_surcharge（対象郵便番号リストの有無・URL・形式）",
+      "reason": "同上の理由によりPDFの中身を確認できず、郵便番号リストの有無・URL・形式を特定できなかった。"
+    },
+    {
+      "item": "fuel_surcharge.included_in_displayed_rate（表示運賃に燃油サーチャージが含まれるか否か）",
+      "reason": "燃料割増金ページ（https://www.fedex.com/ja-jp/shipping/surcharges.html）および見つかった他のページに、見積り・表示運賃に燃料サーチャージが含まれる／含まれないという趣旨の文言は見当たらなかった。運賃見積りツール（ratefinder等）を実際に操作すれば記載がある可能性があるが、本タスクでは見積り実行が禁止されているため確認していない。"
+    },
+    {
+      "item": "fuel_surcharge per_service（IXF・ATAの具体的な料率）",
+      "reason": "ページ上に『IXFおよびATAは異なる燃料割増金を適用、詳細は営業担当者まで』とのみ記載があり、具体的な数値は非公開だった。"
+    }
+  ]
+}

@@ -1,0 +1,4025 @@
+{
+  "sources": [
+    {
+      "proxy": "neokyo",
+      "url": "https://neokyo.com/en/shipping-rates-estimate",
+      "robots_checked": "2026-09-12: Disallow: /*?* / Crawl-delay: 10（ユーザーが事前に確認済み。今回は再調査していない）",
+      "terms_checked": "2026-09-12: bot、automation、scrapingの明示的禁止条項は確認されず（ユーザーが事前に確認済み。今回は再調査していない）",
+      "measured_at": "2026-09-12",
+      "interval_seconds": 10,
+      "input_fields": [
+        "Choose your country（配送先国、ドロップダウン/コンボボックス）",
+        "Postcode（郵便番号、テキスト入力、国選択後に入力可能になる）",
+        "Weight（重量、g単位、上限30kg）",
+        "Dimensions（寸法、cm x cm x cm、各辺上限150cm）",
+        "Add package（荷物を追加するボタン。複数梱包のシミュレーションが可能。今回は常にPackage数=1で測定）"
+      ],
+      "access_method": "Claude in Chrome（ユーザーのローカルChromeを人間同様のUI操作で使用。HTTPクライアント・クラウドブラウザ・クエリ文字列URLの直接生成/直接遷移・内部API直接呼び出しは一切不使用）",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "item_price_field_present": false,
+      "item_price_field_note": "計算機フォームに商品価格の入力欄は存在しない。したがって商品価格走査は実施不能であり、この事実のみを記録する。"
+    }
+  ],
+  "cross_check": {
+    "condition": {
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null
+    },
+    "observed": [
+      {
+        "method_name": "FedEx International Priority (2-3 days)",
+        "price_jpy": 6471
+      },
+      {
+        "method_name": "FedEx International Economy (5-7 days)",
+        "price_jpy": 5880
+      },
+      {
+        "method_name": "Japan Post EMS (2-5 days)",
+        "price_jpy": 3400
+      },
+      {
+        "method_name": "Japan Post Airmail (6-10 days)",
+        "price_jpy": 3850
+      },
+      {
+        "method_name": "Japan Post Surface (2-4 months)",
+        "price_jpy": 2500
+      },
+      {
+        "method_name": "DHL Express Worldwide (2-6 days)",
+        "price_jpy": 4577
+      },
+      {
+        "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+        "price_jpy": 5957
+      }
+    ],
+    "successful": true
+  },
+  "observations": [
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6471,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5880,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5558,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4651,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6031,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6003,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5412,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4662,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "GB",
+      "postcode": "SW1A 1AA",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5224,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6471,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5880,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4842,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9205,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9040,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4852,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3785,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5165,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "AU",
+      "postcode": "2000",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2375,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5370,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5277,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5378,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4651,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5371,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5362,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5266,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3934,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2150,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2100,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3592,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4972,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "SG",
+      "postcode": "018989",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2363,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6471,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5880,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3150,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6471,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5880,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3650,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6471,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5880,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7003,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6364,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5550,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6000,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3100,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7159,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6519,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6700,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6000,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3100,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8061,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7332,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7750,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8150,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3700,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9944,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11324,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8979,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8158,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8800,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8150,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3700,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9944,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11324,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11646,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 10587,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 13000,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 12450,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4900,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9944,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11324,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 20931,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 18951,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 23500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 23200,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7900,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 46549,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 47929,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 37179,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 30537,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 44500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 39200,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11900,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 56485,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 57865,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6471,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5880,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7159,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ2000g帯と同額(体積重量=20x20x20/5000=1.6kgが適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6519,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ2000g帯と同額(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 7003,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ1500g帯と同額(体積重量=30x20x10/5000=1.2kgが適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 6364,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ1500g帯と同額(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 4577,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 5957,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11646,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ5000g帯と同額(体積重量=40x30x20/5000=4.8kgが適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 10587,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ5000g帯と同額(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9944,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLも2500g帯以上と同額(体積重量=4.8kgが適用されたとみられる。DHLも寸法を考慮している証拠)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11324,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLも2500g帯以上と同額(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 28044,
+      "extra_fees": [],
+      "screen_note": "実重量600gだが大型寸法により実重量カーブの5000g〜10000g帯相当の金額に上昇(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 24138,
+      "extra_fees": [],
+      "screen_note": "実重量600gだが大型寸法により実重量カーブの5000g〜10000g帯相当の金額に上昇(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 51020,
+      "extra_fees": [],
+      "screen_note": "実重量600gだが大型寸法により実重量カーブの10000g〜20000g帯相当の金額に上昇(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 52400,
+      "extra_fees": [],
+      "screen_note": "実重量600gだが大型寸法により実重量カーブの10000g〜20000g帯相当の金額に上昇(体積重量が適用されたとみられる)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9124,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ体積重量適用により3000g帯相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 8308,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExのみ体積重量適用により3000g帯相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 9944,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLも体積重量適用により2500g〜5000g帯相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 11324,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLも体積重量適用により2500g〜5000g帯相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 13363,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により5000g帯超相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 12117,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により5000g帯超相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 13606,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLも体積重量適用により5000g帯超相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 14986,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLも体積重量適用により5000g帯超相当の金額"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 16362,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇継続"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 14858,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇継続"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 39228,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用により大幅上昇(30cm³→35cm³でDHLのみ急増、非線形な帯変化)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 40608,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用により大幅上昇(30cm³→35cm³でDHLのみ急増、非線形な帯変化)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 26743,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇(35³比でさらに増加)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 23350,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇(35³比でさらに増加)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3850,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 2500,
+      "extra_fees": [],
+      "screen_note": ""
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 49530,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用によりさらに上昇"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 50910,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用によりさらに上昇"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 35899,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇(40³比でさらに増加)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 29688,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇(40³比でさらに増加)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": "価格は40³以前と同額(体積重量の影響が見られない)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 54995,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用によりさらに上昇"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 56375,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用によりさらに上昇"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 58112,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇(45³比でさらに増加)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 47542,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがFedExは体積重量適用により上昇(45³比でさらに増加)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 3400,
+      "extra_fees": [],
+      "screen_note": "価格は40³以前と同額(体積重量の影響が見られない)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 65404,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用によりさらに上昇"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": null,
+      "price_jpy": 66784,
+      "extra_fees": [],
+      "screen_note": "実重量600gだがDHLは体積重量適用によりさらに上昇"
+    }
+  ],
+  "default_box": [
+    20,
+    15,
+    10
+  ],
+  "not_available": [
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "US",
+      "postcode": "10001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "FR",
+      "postcode": "75001",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "CA",
+      "postcode": "M5V 3L9",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "他国では表示される\"Not available\"の注記もなく、DHLの一覧から当該メソッド自体が表示されなかった（欄が消失）"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        60,
+        40,
+        30
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった(40³以下の同条件では価格3850円で利用可能だったが、45³で利用不可に変化)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった(40³以下の同条件では価格2500円で利用可能だったが、45³で利用不可に変化)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった(45³と同様に利用不可)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった(45³と同様に利用不可)"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "reason": "画面に \"Not available or suspended in your country.\" と表示され金額が示されなかった"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Priority (2-3 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Economy (5-7 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "FedEx International Connect Plus (3-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post EMS (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Airmail (6-10 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "Japan Post Surface (2-4 months)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL Express Worldwide (2-6 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "DHL EXPRESS 12:00 (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    },
+    {
+      "proxy": "neokyo",
+      "method_name": "UPS Express Saver (2-5 days)",
+      "country": "DE",
+      "postcode": "10115",
+      "weight_g": 600,
+      "dims_cm": null,
+      "reason": "寸法欄を空にする(削除)と数値は0扱いとなり、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示された。この状態でEstimate ratesを押しても結果表は更新されず、直前の50×50×50cm条件の結果が表示されたままだった。したがって寸法未入力条件では見積り自体が送信不能であり、価格を取得できなかった。"
+    }
+  ],
+  "coverage": "1) 国×重量600g・寸法20×15×10cm固定: 7か国(US, DE, GB, FR, AU, CA, SG)で計測完了。2) ドイツ(郵便番号10115)の重量カーブ: 寸法20×15×10cm固定で500/600/700/1000/1500/2000/2500/3000/5000/10000/20000gの11点を計測完了。3) ドイツ(郵便番号10115、重量600g)の寸法スキャン: 10×10×10, 20×15×10(初回計測の再利用), 20×20×20, 30×20×10, 40×30×20, 60×40×30, および立方体25×25×25, 30×30×30, 35×35×35, 40×40×40, 45×45×45, 50×50×50cmの計12条件を計測完了。加えて寸法欄を空にした「寸法未入力」条件を1件別途試行。4) 商品価格スキャン: 計算機フォームに商品価格の入力欄が存在しないため実施不能(sources[0].item_price_field_present=false)。観測データ件数: observations 196件、not_available 65件。",
+  "notes": "・寸法未入力条件について: 3つの寸法欄をすべて空にすると数値は0として扱われ、画面に赤枠と\"Please enter a value greater than or equal to 1.\"という入力検証エラーが表示され、Estimate ratesを押しても結果表は更新されなかった(直前の50×50×50cm時点の結果が残ったまま)。このためNeokyoの計算機では寸法未入力での見積り取得はUI上不可能であり、この事実のみをnot_availableに記録した(価格の推定は行っていない)。・体積重量の挙動: FedEx International Priority/Economyは実重量600gのまま箱の寸法を大きくするとより高い価格帯に切り替わり、寸法に応じた重量換算が適用されているとみられる。DHL Express Worldwide/EXPRESS 12:00は10×10×10cm〜30×20×10cm程度の小さい寸法では600g時点の価格から変化しなかったが、40×30×20cm以降で価格が上昇し始め、35×35×35cm・40×40×40cmではさらに大きく上昇した(具体的な換算係数は自己算出せず、観測された価格の変化傾向のみを screen_note に記録した)。Japan Post EMS/Airmail/Surfaceは10×10×10cm〜40×40×40cmまで価格が一定(3400/3850/2500円)だったが、45×45×45cmおよび50×50×50cmではAirmailとSurfaceが画面から\"Not available or suspended in your country.\"表示に変わり、利用不可となった(EMSは3400円のまま利用可能)。これは実重量ではなく寸法(体積または一辺の長さ)に起因する変化とみられるが、正確な閾値や算出式は自己推定していない。・カナダ向けのDHL EXPRESS 12:00は、他の利用不可メソッドのような\"Not available\"表示すら伴わず、一覧から当該行自体が消失していた(明示的な利用不可表示があるケースとは区別して記録している)。・国別の利用可能メソッド数にはばらつきがあり、USでは日本郵便(Japan Post)の選択肢が一つも表示されなかった一方、GB・AU・SGでは9メソッド中9メソッドすべてが表示された。・計測中に2回、Chrome拡張との接続が一時的に切断される事象が発生したが、いずれも再接続後にそれまでの取得済みデータを失うことなく継続した。1回目はドイツ2000g条件の取得中に発生し、再接続後にページ上に結果が既に反映されていたため、推定値を用いることなくその値をそのまま記録できた。2回目はbrowser_batchの一時的なタイムアウトで、軽量な接続確認により拡張自体は生きていることを確認し、個別の操作で復旧した(データ損失なし)。・すべての条件は原則として1回のみ計測しており、繰り返し測定によるばらつきの検証は行っていない。・価格はすべて画面表示された円建て金額をそのまま記録しており、換算・丸め・推定・逆算は一切行っていない。"
+}

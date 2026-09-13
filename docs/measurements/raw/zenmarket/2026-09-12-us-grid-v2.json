@@ -1,0 +1,3417 @@
+{
+  "sources": [
+    {
+      "proxy": "zenmarket",
+      "url": "https://zenmarket.jp/en/calc.aspx",
+      "robots_txt_checked": "https://zenmarket.jp/robots.txt",
+      "robots_txt_result": "前回セッションで確認済み(計算機ページ/en/calc.aspxはDisallow対象外、明示的なCrawl-delayの記載なし)。本セッションでは再確認していない。",
+      "terms_checked": "前回セッションで確認済み。bot/automation/scrapingを明示的に禁止する条項なし。",
+      "terms_result": "同上",
+      "captcha_or_cloudflare_encountered": false,
+      "account_created_or_login_used": false,
+      "purchase_made": false,
+      "access_method": "Claude in Chrome（ローカルChromeのUI操作のみ）",
+      "interval_seconds": 10,
+      "checked_at": "2026-09-12",
+      "item_price_field_present": true,
+      "default_box": [
+        20,
+        15,
+        10
+      ]
+    }
+  ],
+  "grid": {
+    "countries": [
+      "US",
+      "GB",
+      "FR",
+      "AU",
+      "CA",
+      "SG"
+    ],
+    "weight_curve_g": [
+      500,
+      600,
+      700,
+      1000,
+      1500,
+      2000,
+      2500,
+      3000,
+      5000,
+      10000,
+      20000
+    ],
+    "weight_curve_dims_cm": [
+      20,
+      15,
+      10
+    ],
+    "dimension_curve_cm": [
+      [
+        10,
+        10,
+        10
+      ],
+      [
+        20,
+        15,
+        10
+      ],
+      [
+        20,
+        20,
+        20
+      ],
+      [
+        30,
+        20,
+        10
+      ],
+      [
+        40,
+        30,
+        20
+      ],
+      [
+        25,
+        25,
+        25
+      ],
+      [
+        30,
+        30,
+        30
+      ],
+      [
+        35,
+        35,
+        35
+      ],
+      [
+        40,
+        40,
+        40
+      ],
+      [
+        45,
+        45,
+        45
+      ],
+      [
+        50,
+        50,
+        50
+      ]
+    ],
+    "dimension_curve_weight_g": 600,
+    "blank_dimension_condition": true,
+    "planned_conditions": 138,
+    "completed_conditions": 22,
+    "skipped": []
+  },
+  "observations": [
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 3300,
+      "total_with_fees_jpy": 13800,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4361,
+      "total_with_fees_jpy": 14861,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 6072,
+      "total_with_fees_jpy": 16572,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 6700,
+      "total_with_fees_jpy": 17200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 7900,
+      "total_with_fees_jpy": 18400,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 3300,
+      "total_with_fees_jpy": 13800,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4361,
+      "total_with_fees_jpy": 14861,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 6072,
+      "total_with_fees_jpy": 16572,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 6700,
+      "total_with_fees_jpy": 17200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 7900,
+      "total_with_fees_jpy": 18400,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 3300,
+      "total_with_fees_jpy": 13800,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4361,
+      "total_with_fees_jpy": 14861,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 6072,
+      "total_with_fees_jpy": 16572,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 6700,
+      "total_with_fees_jpy": 17200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 700,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 7900,
+      "total_with_fees_jpy": 18400,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 3300,
+      "total_with_fees_jpy": 13800,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4361,
+      "total_with_fees_jpy": 14861,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 6072,
+      "total_with_fees_jpy": 16572,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 6700,
+      "total_with_fees_jpy": 17200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 7900,
+      "total_with_fees_jpy": 18400,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 3300,
+      "total_with_fees_jpy": 13800,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4361,
+      "total_with_fees_jpy": 14861,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 6072,
+      "total_with_fees_jpy": 16572,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 6700,
+      "total_with_fees_jpy": 17200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 1500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 7900,
+      "total_with_fees_jpy": 18400,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 3300,
+      "total_with_fees_jpy": 13800,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4361,
+      "total_with_fees_jpy": 14861,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 6072,
+      "total_with_fees_jpy": 16572,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 6700,
+      "total_with_fees_jpy": 17200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 7900,
+      "total_with_fees_jpy": 18400,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 4000,
+      "total_with_fees_jpy": 14500,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 4692,
+      "total_with_fees_jpy": 15192,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 6353,
+      "total_with_fees_jpy": 16853,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6829,
+      "total_with_fees_jpy": 17329,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 7580,
+      "total_with_fees_jpy": 18080,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 9100,
+      "total_with_fees_jpy": 19600,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 9200,
+      "total_with_fees_jpy": 19700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 9510,
+      "total_with_fees_jpy": 20010,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "2000g以下ではDHLは中位価格だったが、2500gで初めて最高額に逆転(順位変化)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 4000,
+      "total_with_fees_jpy": 14500,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "2500g時点と完全に同額(この方式のみ2500〜3000gがフラット)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 5236,
+      "total_with_fees_jpy": 15736,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 7493,
+      "total_with_fees_jpy": 17993,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 7935,
+      "total_with_fees_jpy": 18435,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 8468,
+      "total_with_fees_jpy": 18968,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 9200,
+      "total_with_fees_jpy": 19700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "2500g時点と完全に同額(この方式も2500〜3000gがフラット)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 9904,
+      "total_with_fees_jpy": 20404,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "最高額の座を維持"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 10300,
+      "total_with_fees_jpy": 20800,
+      "delivery_estimate": "~1 week",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 5400,
+      "total_with_fees_jpy": 15900,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 7582,
+      "total_with_fees_jpy": 18082,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 10470,
+      "total_with_fees_jpy": 20970,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 10796,
+      "total_with_fees_jpy": 21296,
+      "delivery_estimate": "3-7 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 11480,
+      "total_with_fees_jpy": 21980,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "5000gでは中位順位に戻る(EMS/AIRMAILより安い)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 11843,
+      "total_with_fees_jpy": 22343,
+      "delivery_estimate": "2-6 days",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 14200,
+      "total_with_fees_jpy": 24700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 15100,
+      "total_with_fees_jpy": 25600,
+      "delivery_estimate": "~1 week",
+      "screen_note": "最高額の座を維持"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 8900,
+      "total_with_fees_jpy": 19400,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "total_with_fees_jpyは20000g測定準備中に同一重量点(10000g)の画面を再確認して取得(画面表示値)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 13566,
+      "total_with_fees_jpy": 24066,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown; total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 18087,
+      "total_with_fees_jpy": 28587,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "5000g時点ではFEDEXの方が安かったが、10000gでFEDEX LOWCOSTがFEDEXを逆転し安価側に変化(価格順位の入れ替わり)。total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 19499,
+      "total_with_fees_jpy": 29999,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "5000gではFEDEX(10470円)<FEDEX LOWCOST(10796円)だったが、10000gでは逆転しFEDEX LOWCOST(18087円)<FEDEX(19499円)。total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 20025,
+      "total_with_fees_jpy": 30525,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 25046,
+      "total_with_fees_jpy": 35546,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "5000g時点の中位順位を維持(EMS/AIRMAILより安い)。total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 26700,
+      "total_with_fees_jpy": 37200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 27100,
+      "total_with_fees_jpy": 37600,
+      "delivery_estimate": "~1 week",
+      "screen_note": "最高額の座を維持。total_with_fees_jpyは再確認により取得(理由は同上)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 14900,
+      "total_with_fees_jpy": 25400,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 24582,
+      "total_with_fees_jpy": 35082,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 28165,
+      "total_with_fees_jpy": 38665,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "10000gではUPSはFEDEX/FEDEX LOWCOSTより高かったが、20000gでUPSが両FedEx系列を逆転し安価側に変化(価格順位の大きな入れ替わり)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 29348,
+      "total_with_fees_jpy": 39848,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "10000gではFEDEX LOWCOST<FEDEXだったが、20000gでFEDEX<FEDEX LOWCOSTに再逆転(2度目の順位反転)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 32606,
+      "total_with_fees_jpy": 43106,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "5000g:FEDEX<FEDEX LOWCOST → 10000g:FEDEX LOWCOST<FEDEX → 20000g:FEDEX<FEDEX LOWCOSTと、2回連続で順位が反転している"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 38074,
+      "total_with_fees_jpy": 48574,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "10000g時点の中位順位を維持(EMS/AIRMAILより安い)"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 46700,
+      "total_with_fees_jpy": 57200,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": ""
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 51100,
+      "total_with_fees_jpy": 61600,
+      "delivery_estimate": "~1 week",
+      "screen_note": "最高額の座を維持"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B開始点(寸法カーブ、重量600g固定)。20x15x10cm/600g時点(3300円)より大幅に安い——ZenMarketは寸法(体積)を運賃計算に使用しており、Neokyo/Buyee/FROM JAPANとは異なる挙動であることが確認された重要な発見。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": 13191,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "20x15x10cm/600g時点(6072円)の半分以下に低下。20x15x10cm/2000g以降この方式は消失していたが、600g/この小さい箱サイズでは引き続き利用可能(Max weight 2kgの範囲内)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 3060,
+      "total_with_fees_jpy": 13560,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown; 20x15x10cm/600g時点(4361円)より低下。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "20x15x10cm/600g時点では9方式中最高額(7900円)だったが、この小さい箱では4180円まで下がり中位に後退——箱サイズによる順位変化が非常に大きい一例。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "20x15x10cm/600g時点(6700円)より低下。EMSとほぼ同額(4200 vs 4180)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5297,
+      "total_with_fees_jpy": 15797,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "20x15x10cm/600g時点(5707円)よりやや低下。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 5436,
+      "total_with_fees_jpy": 15936,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "20x15x10cm/600g時点(6044円)よりやや低下。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 5483,
+      "total_with_fees_jpy": 15983,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "20x15x10cm/600g時点(6277円)よりやや低下。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        10,
+        10,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6183,
+      "total_with_fees_jpy": 16683,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "20x15x10cm/600g時点(6650円)よりやや低下。20x15x10cmでは9方式中最高額はEMS(7900円)でUPSは中位寄りだったが、10x10x10cmではEMSが4180円まで大きく下がった一方UPSの下落幅は小さく、この箱サイズでは逆にUPSが最高額に入れ替わった——箱サイズによって最高額方式そのものが変わる、重要な順位逆転。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "10x10x10cm時点と完全一致——この方式は箱サイズ拡大(体積8000cm³)に反応していない。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": 13191,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "10x10x10cm時点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 3587,
+      "total_with_fees_jpy": 14087,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "RECOMMENDED badge shown; 10x10x10cm時点(3060円)より上昇——SURFACE/AIRMAIL Smallとは異なりこの方式は箱サイズに反応している(中間的な感応度)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "10x10x10cm時点と完全一致——この方式も箱サイズ拡大に反応していない。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "10x10x10cm時点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5707,
+      "total_with_fees_jpy": 16207,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "重要な発見: 20x15x10cm(元のGrid A)/600g時点の値(5707円)と完全一致——10x10x10cm時点(5297円)からは上昇している。FEDEXはSURFACE/EMS/AIRMAILより箱サイズへの感応度が高く、体積が増えると速やかに元の20x15x10cm相当の運賃に戻る。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 6044,
+      "total_with_fees_jpy": 16544,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "20x15x10cm時点の値(6044円)と完全一致。10x10x10cm時点(5436円)より上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 6277,
+      "total_with_fees_jpy": 16777,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "20x15x10cm時点の値(6277円)と完全一致。10x10x10cm時点(5483円)より上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        20,
+        20,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6650,
+      "total_with_fees_jpy": 17150,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "20x15x10cm時点の値(6650円)と完全一致。10x10x10cm時点(6183円)より上昇——最高額の座は10x10x10cmではUPSだったが、この箱サイズではEMS(4180円)より高いため再びUPSが最高額を維持。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B第3点[30,20,10]cm(体積6000cm³)。[10,10,10]cm・[20,20,20]cm時点といずれも完全一致——この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": 13191,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去2点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 3060,
+      "total_with_fees_jpy": 13560,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "重要な発見: [20,20,20]cm時点(3587円)より下降し、[10,10,10]cm時点(3060円)と完全一致した。体積は[10,10,10]cm(1000cm³)より[30,20,10]cm(6000cm³)の方が大きいにもかかわらず、ECMSの価格は箱の体積そのものではなく、寸法の組み合わせ方(例えば最長辺や縦横高の各値、または長さ+胴回りなどの合成指標)に依存している可能性を示唆する——単純な体積(L×W×H)だけでは説明できない挙動。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "過去2点と完全一致。この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去2点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5684,
+      "total_with_fees_jpy": 16184,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[10,10,10]cm(5297円)と[20,20,20]cm(5707円)の中間的な値——体積6000cm³は8000cm³と1000cm³の間にあり、FEDEXの価格もその中間に位置する点で、他社(Neokyo/FROM JAPAN)のような離散ブラケットへの完全一致ではなく、より連続的な寸法重量換算をしている可能性を示唆する。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 5735,
+      "total_with_fees_jpy": 16235,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "[10,10,10]cm(5483円)と[20,20,20]cm(6277円)の中間的な値。FEDEXと同様の連続的な感応パターン。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 5740,
+      "total_with_fees_jpy": 16240,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[10,10,10]cm(5436円)と[20,20,20]cm(6044円)の中間的な値。FEDEX/FEDEX LOWCOSTと同様の連続的な感応パターン。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        20,
+        10
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6395,
+      "total_with_fees_jpy": 16895,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[10,10,10]cm(6183円)と[20,20,20]cm(6650円)の中間的な値。UPSも連続的な感応パターンを示す。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B第4点[40,30,20]cm(体積24000cm³)。過去3点全てと完全一致——この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": 13191,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去3点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 6409,
+      "total_with_fees_jpy": 16909,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "重要な発見: [30,20,10]cm時点(3060円)から一気に6409円へ倍増した。ECMSはこれまで非単調(体積と無関係に見える変動)だったが、体積24000cm³という大きな箱では明確に上昇に転じ、他の連続反応組(FEDEX等)と同様の挙動を示した——小さい/中程度の箱では寸法の組み合わせに依存する複雑な挙動、大きい箱では素直に上昇するという2段階の可能性。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "過去3点と完全一致。この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去3点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 10470,
+      "total_with_fees_jpy": 20970,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,20,10]cm時点(5684円)からほぼ倍増。体積24000cm³への拡大で急激に上昇——連続反応組の中でも特に急な上昇を示した。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 10796,
+      "total_with_fees_jpy": 21296,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "[30,20,10]cm時点(5735円)からほぼ倍増。FEDEXと同様の急上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 11480,
+      "total_with_fees_jpy": 21980,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,20,10]cm時点(5740円)からほぼ倍増。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        30,
+        20
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 11843,
+      "total_with_fees_jpy": 22343,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,20,10]cm時点(6395円)からほぼ倍増。この時点で9方式中の最高額はUPS(11843円)——ECMS EXPRESS(6409円)を大きく上回り、最高額の座を維持。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B第5点[25,25,25]cm(体積15625cm³)。過去4点全てと完全一致——この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": 13191,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去4点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "過去4点と完全一致。この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去4点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 5236,
+      "total_with_fees_jpy": 15736,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "[30,20,10]cm(3060円)と[40,30,20]cm(6409円)の中間的な値——立方体に近い[25,25,25]cmでは、これまでの非単調な挙動から一転し、体積の順序(15625cm³は6000と24000の間)と整合する中間値を取った。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 7498,
+      "total_with_fees_jpy": 17998,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,20,10]cm(5684円)と[40,30,20]cm(10470円)の中間的な値。連続反応組の一貫したパターンを維持。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 7943,
+      "total_with_fees_jpy": 18443,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "[30,20,10]cm(5735円)と[40,30,20]cm(10796円)の中間的な値。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 9301,
+      "total_with_fees_jpy": 19801,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,20,10]cm(6395円)と[40,30,20]cm(11843円)の中間的な値。9方式中の最高額は引き続きDHL(GREEN+)ではなくUPSより高いDHL(GREEN+)——確認のため次行参照。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        25,
+        25,
+        25
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 10298,
+      "total_with_fees_jpy": 20798,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,20,10]cm(5740円)と[40,30,20]cm(11480円)の中間的な値。この時点で9方式中の最高額はDHL(GREEN+)(10298円)——[40,30,20]cm時点ではUPSが最高額だったが、[25,25,25]cmではDHL(GREEN+)がUPS(9301円)を上回り最高額に入れ替わった、新たな順位変化。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B第6点[30,30,30]cm(体積27000cm³)。過去5点全てと完全一致——この方式は寸法変更に一貫して無反応。全9方式とも引き続き表示されており、Neokyoで観測されたDHL Express Worldwideの消滅のような現象はZenMarketでは発生していない。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": 13191,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去5点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "過去5点と完全一致。この方式は寸法変更に一貫して無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去5点と完全一致。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 6817,
+      "total_with_fees_jpy": 17317,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "[25,25,25]cm(5236円)から上昇継続。体積の増加(15625→27000cm³)に伴い単調増加を維持。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 12867,
+      "total_with_fees_jpy": 23367,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[25,25,25]cm(7498円)から大幅に上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 11930,
+      "total_with_fees_jpy": 22430,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "[25,25,25]cm(7943円)から大幅に上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 14392,
+      "total_with_fees_jpy": 24892,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[25,25,25]cm(9301円)から大幅に上昇。この時点で9方式中の最高額はUPS(14392円)——[25,25,25]cmではDHL(GREEN+)が最高額だったが、再びUPSが最高額に入れ替わった。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        30,
+        30,
+        30
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 12836,
+      "total_with_fees_jpy": 23336,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[25,25,25]cm(10298円)から上昇したが、UPS(14392円)には及ばず2番目に高い方式となった。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B第7点[35,35,35]cm(体積42875cm³)。過去6点と完全一致——引き続き寸法変更に無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "過去6点と完全一致。無反応組。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去6点と完全一致。無反応組。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 10251,
+      "total_with_fees_jpy": 20751,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "[30,30,30]cm(6817円)から大幅上昇し単調増加を継続。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 14590,
+      "total_with_fees_jpy": 25090,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "[30,30,30]cm(11930円)から上昇継続。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 15039,
+      "total_with_fees_jpy": 25539,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,30,30]cm(12867円)から上昇継続。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 17871,
+      "total_with_fees_jpy": 28371,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,30,30]cm(14392円)から上昇継続したが、DHL(GREEN+)(22332円)に最高額の座を譲り2番目となった。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 22332,
+      "total_with_fees_jpy": 32832,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[30,30,30]cm(12836円)からほぼ倍増する急上昇。UPS(17871円)を上回り、本条件では最高額に浮上した——[30,30,30]cmまではUPSが最高額だったが再度DHL(GREEN+)に入れ替わった。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": 13100,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid B第8点[40,40,40]cm(体積64000cm³)。過去7点と完全一致——引き続き寸法変更に無反応。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "過去7点と完全一致。無反応組。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": 14700,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "過去7点と完全一致。無反応組。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 14603,
+      "total_with_fees_jpy": 25103,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "[35,35,35]cm(10251円)から上昇継続。単調増加を維持。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "UPS",
+      "price_jpy": 22322,
+      "total_with_fees_jpy": 32822,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[35,35,35]cm(17871円)から上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 22815,
+      "total_with_fees_jpy": 33315,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "[35,35,35]cm(14590円)から上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "FEDEX",
+      "price_jpy": 23267,
+      "total_with_fees_jpy": 33767,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[35,35,35]cm(15039円)から上昇。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 8,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 29592,
+      "total_with_fees_jpy": 40092,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "[35,35,35]cm(22332円)から上昇継続。8方式中の最高額を維持。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。methods_shown_totalが8→6に減少——SURFACEとAIRMAIL (AVIA) Standard Parcelが本条件で初めて選択肢から消失した(詳細はnot_available・cross_check参照)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 19516,
+      "total_with_fees_jpy": 30016,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。methods_shown_totalが8→6に減少——SURFACEとAIRMAIL (AVIA) Standard Parcelが本条件で初めて選択肢から消失した(詳細はnot_available・cross_check参照)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "UPS",
+      "price_jpy": 26744,
+      "total_with_fees_jpy": 37244,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。methods_shown_totalが8→6に減少——SURFACEとAIRMAIL (AVIA) Standard Parcelが本条件で初めて選択肢から消失した(詳細はnot_available・cross_check参照)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "FEDEX",
+      "price_jpy": 28523,
+      "total_with_fees_jpy": 39023,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。methods_shown_totalが8→6に減少——SURFACEとAIRMAIL (AVIA) Standard Parcelが本条件で初めて選択肢から消失した(詳細はnot_available・cross_check参照)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 30840,
+      "total_with_fees_jpy": 41340,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。methods_shown_totalが8→6に減少——SURFACEとAIRMAIL (AVIA) Standard Parcelが本条件で初めて選択肢から消失した(詳細はnot_available・cross_check参照)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 36256,
+      "total_with_fees_jpy": 46756,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid B第9点[45,45,45]cm(体積91125cm³)。methods_shown_totalが8→6に減少——SURFACEとAIRMAIL (AVIA) Standard Parcelが本条件で初めて選択肢から消失した(詳細はnot_available・cross_check参照)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": 14680,
+      "delivery_estimate": "~1 week",
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。SURFACE・AIRMAIL (AVIA) Standard Parcelの消失はtriple #9に続き継続——methods_shown_total=6が定着。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 25636,
+      "total_with_fees_jpy": 36136,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。SURFACE・AIRMAIL (AVIA) Standard Parcelの消失はtriple #9に続き継続——methods_shown_total=6が定着。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "UPS",
+      "price_jpy": 38853,
+      "total_with_fees_jpy": 49353,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。SURFACE・AIRMAIL (AVIA) Standard Parcelの消失はtriple #9に続き継続——methods_shown_total=6が定着。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "FEDEX",
+      "price_jpy": 41659,
+      "total_with_fees_jpy": 52159,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。SURFACE・AIRMAIL (AVIA) Standard Parcelの消失はtriple #9に続き継続——methods_shown_total=6が定着。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 47580,
+      "total_with_fees_jpy": 58080,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。SURFACE・AIRMAIL (AVIA) Standard Parcelの消失はtriple #9に続き継続——methods_shown_total=6が定着。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "item_price_jpy": 10000,
+      "methods_shown_total": 6,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 55592,
+      "total_with_fees_jpy": 66092,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "Grid B第10点(最終点)[50,50,50]cm(体積125000cm³)。SURFACE・AIRMAIL (AVIA) Standard Parcelの消失はtriple #9に続き継続——methods_shown_total=6が定着。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "SURFACE",
+      "price_jpy": 2600,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "about 2-3 months",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "price_jpy": 2691,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "ECMS EXPRESS",
+      "price_jpy": 3587,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "5~13 days",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "EMS",
+      "price_jpy": 4180,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "~1 week",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "price_jpy": 4200,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "~2 weeks",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX",
+      "price_jpy": 5684,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "FEDEX LOWCOST",
+      "price_jpy": 5735,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "3-7 days",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "DHL (GREEN+)",
+      "price_jpy": 5740,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": null,
+      "item_price_jpy": null,
+      "methods_shown_total": 9,
+      "method_name": "UPS",
+      "price_jpy": 6395,
+      "total_with_fees_jpy": null,
+      "delivery_estimate": "2-6 days",
+      "screen_note": "Grid C(空欄寸法条件)。新規ページでCountry=United States(デフォルト)、Weight=600g、寸法欄(Length/Width/Height)を空欄のまま(placeholder表示のみ)で計算。9方式全てが表示され(AIRMAIL Small Parcel・AIRMAIL Standard Parcelとも出現)、値は同一重量点[20,15,10]cm@600gの結果(SURFACE 3300円等)よりも一貫して低い——寸法未入力時はより小さい/無視できるデフォルト体積として扱われていることを示唆する、真正な再計算である。"
+    }
+  ],
+  "not_available": [
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 2500,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "500〜2000gでは表示されていた方式(Max weight 2kg指定あり)が、2500gの結果画面から選択肢ごと消失。個別の不可メッセージは出ず、リストから静かに消える形。2kg上限という画面上の記載と整合的。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 3000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "2500gに続き3000gでも引き続き選択肢から消失。2kg上限のため継続的に非表示と判断。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 5000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "5000gでも引き続き選択肢から消失。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 10000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "10000gでも引き続き選択肢から消失(2500g以降一貫して不在)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 20000,
+      "dims_cm": [
+        20,
+        15,
+        10
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "20000gでも引き続き選択肢から消失(2500g以降、Grid A全重量点で一貫して不在)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        35,
+        35,
+        35
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "Grid B第1〜6点([10,10,10]cm〜[30,30,30]cm)では実重量600g(2kg上限を大きく下回る)のため一貫して表示されていたが、[35,35,35]cmで初めて選択肢から消失した。画面に明記された制限(Length+Width+Height≤90cm、Max length 60cm、Max weight 2kg)のうち、本条件は重量は問題ないが縦横高の合計が35+35+35=105cm>90cmとなり寸法合計上限を超過する——Grid Aで観測された「2kg重量上限による消失」とは異なる、寸法合計上限による消失という新しい経路が確認された。他の8方式には影響なし。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        40,
+        40,
+        40
+      ],
+      "methods_shown_total": 8,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "[35,35,35]cmに続き本条件でも消失。縦横高の合計40×3=120cm>90cmとなり、寸法合計上限超過による消失が継続している。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "methods_shown_total": 6,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "[35,35,35]cm・[40,40,40]cmに続き本条件でも消失。縦横高の合計45×3=135cm>90cmとなり、寸法合計上限超過による消失が継続している。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "methods_shown_total": 6,
+      "method_name": "SURFACE",
+      "evidence_class": "counted_absence",
+      "reason": "Grid B第1〜8点([10,10,10]cm〜[40,40,40]cm、体積1000〜64000cm³)を通じて価格が完全に一定(寸法変更に無反応)だった方式が、[45,45,45]cm(体積91125cm³)で初めて選択肢から消失した。価格が体積に反応しないタイプの方式であるため、消滅は連続的な運賃計算式ではなく何らかのハード上限(最大長・縦横高合計・体積上限のいずれか)への到達を示唆するが、消失直前の画面にこの方式自身の制限値の明記はなく、正確な上限値は確認できていない。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        45,
+        45,
+        45
+      ],
+      "methods_shown_total": 6,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "SURFACEと同時に、同条件[45,45,45]cmで初めて選択肢から消失した。この方式もGrid B第1〜8点を通じて価格が完全に一定だったため、SURFACE同様ハード上限への到達が疑われるが、正確な制限値は画面上で確認できていない。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "methods_shown_total": 6,
+      "method_name": "AIRMAIL (AVIA) Small Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "縦横高の合計50×3=150cm>90cmとなり、寸法合計上限超過による消失が継続している(triple #7以降4回連続)。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "methods_shown_total": 6,
+      "method_name": "SURFACE",
+      "evidence_class": "counted_absence",
+      "reason": "triple #9([45,45,45]cm)に続き本条件でも消失。Grid B全期間(体積1000〜91125cm³)で価格が完全に一定だった実績と合わせ、[40,40,40]cmと[45,45,45]cmの間のどこかにハード上限が存在すると考えられる。"
+    },
+    {
+      "proxy": "zenmarket",
+      "country": "US",
+      "weight_g": 600,
+      "dims_cm": [
+        50,
+        50,
+        50
+      ],
+      "methods_shown_total": 6,
+      "method_name": "AIRMAIL (AVIA) Standard Parcel",
+      "evidence_class": "counted_absence",
+      "reason": "SURFACEと同時にtriple #9から消失し、本条件(最終点)でも継続。"
+    }
+  ],
+  "cross_check": {
+    "flat_pricing_note": "US・20x15x10cm・アイテム価格1万円固定では、500g〜2000gの全6重量点で9方式すべての運賃が完全に一定(SURFACE 3300円〜EMS 7900円まで変化なし)。ZenMarketはこの重量帯・箱サイズでは重量ベースではなく体積重量(20×15×10÷5000=0.6kg=600g)で課金している可能性が高い。600g以下の実重量点(500g)も同額である点は要注意——500gの実重量が600gの体積重量を下回っていても同額なので、体積重量と実重量の「大きい方」を採用するルールと矛盾しない。ただし本セッションでは2000gまでしか検証しておらず、体積重量(600g)を大きく超える重量(5000g,10000g,20000gなど)で運賃が変化するかどうかは未検証。",
+    "availability_note": "500〜2000gの6重量点では9方式全てが選択可能だったが、2500gで初めてAIRMAIL(AVIA) Small Parcel(画面上でMax weight 2kgと明記)が選択肢から消失し、8方式に減少(counted_absence)。これは推測ではなく画面上の明示的な重量上限記載と、消失タイミングが2000g→2500gの境界と一致することから、真の重量制限による欠落と判断。他社(Neokyo/Buyeeなど)がUSでJapan Post系やFedEx一部方式を「declared」(明示メッセージ付き)で不可としているのとは異なり、ZenMarketはこの欠落を無言で処理する。",
+    "price_reordering_note": "500〜2000gではDHL(GREEN+)は9方式中中位の価格だったが、2500gで最高額(9510円)に逆転し、EMS(9100円)・AIRMAIL(AVIA)Standard(9200円)を上回った。同様の順位逆転はFROM JAPAN(2.5kgでDHLが最高額化)でも観測されており、複数社に共通する挙動である可能性がある。ただし3000gではEMS(10300円)がDHL(9904円)を再び上回り最高額に戻っており、DHLの「最高額化」は2500gだけの一時的な現象で、3000gでは順位がさらに変化することが判明。SURFACE(4000円)とAIRMAIL(AVIA)Standard(9200円)は2500g→3000gでピンポイントに同額のままだった一方、他7方式は全て金額が変化しており、価格ブラケットの粒度が方式ごとに異なることを示唆する。5000gではDHL(11480円)は中位順位に戻り、EMS(15100円)が最高額を維持——DHLの「最高額化」は2500〜3000gに限定された一時的な現象で、5000gでは解消された。これはFROM JAPANで観測されたDHLの同種の非単調な順位変化(2.5〜3.0kgで最高額→5.0kgで元に戻る)と一致するパターンであり、複数社に共通するDHL特有の価格ブラケット構造である可能性が高い。10000gではさらに別の順位変化を確認: FEDEX LOWCOST(18087円)<FEDEX(19499円)となり、5000g時点(FEDEX 10470円<FEDEX LOWCOST 10796円)から順位が入れ替わった。DHL(GREEN+, 25046円)は引き続き中位(EMS・AIRMAIL Standardより安い)を維持し、EMS(27100円)が最高額の座を維持している。FEDEXとFEDEX LOWCOSTの逆転は5000g→10000gの区間で発生しており、DHLの2500〜3000g限定の逆転とは異なるタイミング・異なる方式ペアで起きている点に留意——同一サイト内でも方式ごとに順位変化が起きる重量帯が異なることを示す。20000gでは2つの大きな変化が同時に発生した。(1) UPS(28165円)が10000g時点でFEDEX(19499円)・FEDEX LOWCOST(18087円)より高かったのに対し、20000gでは両FedEx系列を逆転し2番目に安い方式になった(価格順位のジャンプ)。(2) FEDEXとFEDEX LOWCOSTの相対順位が再度反転し、5000g:FEDEX<FEDEX LOWCOST → 10000g:FEDEX LOWCOST<FEDEX → 20000g:FEDEX<FEDEX LOWCOSTと、同じ2方式ペアで2回連続の順位反転(振動)が確認された。これは単調な傾き変化ではなく、重量帯によって複数方式の相対順位が繰り返し入れ替わる、より複雑な非単調挙動があることを示す。DHL(GREEN+, 38074円)は10000g時点の中位順位(EMS・AIRMAILより安い)を維持しており、EMS(51100円)が全重量点を通じて一貫して最高額を維持している。",
+    "recommended_badge_caveat": "ECMS EXPRESSに「RECOMMENDED」バッジが付与されているが、これは価格順で2番目に安いだけであり、ユーザー指摘の通り「Recommendedバッジ=利用可能の証拠」にはならない点に注意(このケースでは実際に利用可能だったが、バッジの有無と可否は別軸の情報として記録している)。",
+    "dimension_curve_finding": "Grid B(寸法カーブ、重量600g固定)の第1点[10,10,10]cmで極めて重要な発見があった。Grid A(20x15x10cm)では500〜2000gの6重量点で運賃が完全にフラットだったため、ZenMarketは体積重量(20×15×10÷5000=600g)に基づく課金であり実重量とは無関係だと推測していた。ところが箱を10x10x10cm(体積重量=200g)に縮小したところ、実重量は600gのまま変わらないにもかかわらず、全9方式で価格が明確に下落した(例: SURFACE 3300円→2600円、ECMS EXPRESS 4361円→3060円、EMS 7900円→4180円)。これは実重量が同じでも寸法(体積)そのものが運賃計算に影響することを示しており、単純な「実重量と体積重量の大きい方を採用」というモデルとも矛盾する(実重量600g>体積重量200gなら実重量で課金されるはずだが、価格は変化した)。さらに順位も大きく変化した——20x15x10cmでは9方式中最高額はEMS(7900円)だったが、10x10x10cmではEMSが4180円まで下がり中位に後退し、代わりにUPS(6183円)が最高額に入れ替わった。これは単一のブラケット制でも単純な体積重量制でもなく、方式ごとに寸法への感応度が大きく異なる(EMS/AIRMAIL系は寸法縮小への反応が大きく、UPS/FEDEX系は反応が小さい)ことを示す、ZenMarket特有の複雑な料金体系の証拠と考えられる。Grid Bの第2点[20,20,20]cm(体積8000cm³)ではさらに明確な分岐が見えた。SURFACE・AIRMAIL Small・EMS・AIRMAIL Standardの4方式は[10,10,10]cm時点と完全に同額のまま変化しなかった(体積拡大に無反応)。一方、FEDEX・DHL(GREEN+)・FEDEX LOWCOST・UPSの4方式は、元の20x15x10cm(Grid A)/600g時点の値に完全に復帰した(FEDEX 5707円、DHL 6044円、FEDEX LOWCOST 6277円、UPS 6650円)——これはFedEx/DHL/UPS系がおそらく標準的な体積重量divisor(例:5000)を使用しており、20x20x20cm(体積重量1600g)が実重量600gを上回るため即座に体積重量課金に切り替わったのに対し、Japan Post系(SURFACE/AIRMAIL/EMS)は体積重量を全く考慮しない、または遥かに高い閾値を持つことを強く示唆する。ECMS EXPRESSだけが両者の中間的な値(3587円、10x10x10cmの3060円と20x15x10cmの4361円の間)を示しており、この方式独自の(おそらくより緩やかな)体積重量計算式を持つ可能性がある。Grid B第3点[30,20,10]cm(体積6000cm³、元の[20,15,10]cmと最も近い縦横比)では、「無反応組」(SURFACE/AIRMAIL Small/EMS/AIRMAIL Standard)は引き続き完全に不変だったが、ECMS EXPRESSは予想に反して[20,20,20]cm時点(3587円)より下降し[10,10,10]cm時点と完全同額(3060円)に戻った——体積だけで単調に説明できず、寸法の組み合わせ方(細長い箱か立方体に近い箱か)が影響している可能性を示す新たな異常値。一方FEDEX(5684円)・FEDEX LOWCOST(5735円)・DHL(GREEN+)(5740円)・UPS(6395円)の4方式はいずれも[10,10,10]cm値と[20,20,20]cm値のちょうど中間的な値を取り、Neokyo/FROM JAPANで見られたような離散ブラケットへの完全一致ではなく、より連続的な体積依存の価格関数を持つことが示唆される。ECMS EXPRESSだけがこの連続的パターンから外れている点は、ZenMarketの料金体系が方式ごとに全く異なるロジック(離散ブラケットに従うもの、連続関数に従うもの、体積以外の要素に依存するもの)で構成されている可能性を強く示唆し、残り8トリプルでの継続検証が必要。Grid B第4点[40,30,20]cm(体積24000cm³)ではさらに劇的な変化が観測された。SURFACE/AIRMAIL Small/EMS/AIRMAIL Standardの4方式は引き続き完全に不変(無反応)だったが、ECMS EXPRESSはこれまでの非単調な挙動から一転、[30,20,10]cm時点(3060円)から6409円へほぼ倍増し、明確な上昇に転じた。同時にFEDEX(10470円)・FEDEX LOWCOST(10796円)・DHL(GREEN+)(11480円)・UPS(11843円)の4方式も[30,20,10]cm時点からほぼ倍増する急上昇を示した——これらの連続反応組は体積が24000cm³という大きな箱サイズになると、[10,10,10]〜[30,20,10]cmで見られた緩やかな増加から、より急な(場合によっては非線形な)上昇局面に入ることが示唆される。ECMS EXPRESSの非単調性は小〜中サイズの箱(1000〜6000cm³)に限定される現象で、大きな箱(24000cm³)では他方式と同様に体積の増加に応じて上昇するという、2段階的な挙動をしている可能性が高い。Grid B第5点[25,25,25]cm(体積15625cm³、立方体形状)ではECMS EXPRESSも含め全ての「連続反応組」が体積の順序と整合する中間値を示した——ECMS EXPRESS 5236円([30,20,10]cmの3060円と[40,30,20]cmの6409円の間)、FEDEX 7498円、FEDEX LOWCOST 7943円、UPS 9301円、DHL(GREEN+)10298円と、いずれも過去2点の間に収まった。ECMS EXPRESSの非単調性は立方体に近い形状(縦横高がほぼ等しい箱)では発生せず、細長い箱([30,20,10]など縦横比が偏った形状)でのみ現れる可能性が示唆される——今後の検証課題。また、この点で最高額の座がUPSからDHL(GREEN+)に入れ替わるという新たな順位変化も観測された([40,30,20]cm時点ではUPS 11843円が最高額だったが、[25,25,25]cmではDHL(GREEN+) 10298円がUPS 9301円を上回った)。Grid B第6点[30,30,30]cm(体積27000cm³)では全9方式が引き続き表示され、Neokyoで観測されたDHL Express Worldwideの消滅のような現象はZenMarketでは発生しなかった。ECMS EXPRESS(6817円)・FEDEX(12867円)・FEDEX LOWCOST(11930円)・DHL(GREEN+)(12836円)・UPS(14392円)はいずれも[25,25,25]cm時点から単調に上昇を継続。最高額の座は再びUPS(14392円)に戻り、DHL(GREEN+)(12836円)が僅差の2番目となった——[40,30,20]cm(UPS最高額)→[25,25,25]cm(DHL(GREEN+)最高額)→[30,30,30]cm(UPS最高額)という、狭い体積範囲(15625〜27000cm³)内での順位の往復が確認された。Grid B第7点[35,35,35]cm(体積42875cm³)で、Neokyoに類似する重要な発見があった——Grid B開始([10,10,10]cm)以来、[30,30,30]cmまでの全7点で一貫して表示されていた「AIRMAIL (AVIA) Small Parcel」が初めて選択肢から消失し、methods_shown_totalが9から8に減少した(counted_absence)。この方式はGrid A(重量カーブ、寸法固定20x15x10cm)でも2500g以降、画面明記の「Max weight 2kg」制限により消失することが既に確認済みだったが、本条件では実重量600gと2kg上限には全く抵触しない。一方、画面に明記されたもう一つの制限「Length+Width+Height≤90cm」に対しては、35+35+35=105cmとなり明確に超過する——Grid Aとは異なる経路(寸法合計上限)による消失であることが、画面上の制限記載から高い確度で説明できる。これはNeokyoのDHL Express Worldwide消滅(原因不明、後に再出現という矛盾も判明)とは対照的に、消失の理由を画面上の記載から具体的に特定できた稀有なケースである。この点を除く8方式(SURFACE/EMS/AIRMAIL Standard/ECMS EXPRESS/FEDEX/FEDEX LOWCOST/UPS/DHL(GREEN+))は全て[30,30,30]cm時点から単調に上昇を継続し、特にDHL(GREEN+)(22332円)が[30,30,30]cm(12836円)からほぼ倍増する急上昇を見せ、UPS(17871円)を上回って最高額に返り咲いた——[40,30,20]cm(UPS)→[25,25,25]cm(DHL)→[30,30,30]cm(UPS)→[35,35,35]cm(DHL)と、最高額方式の座が4点連続で往復するという、これまでで最も顕著な非単調順位変化が確認された。Grid B第8点[40,40,40]cm(体積64000cm³)では、AIRMAIL (AVIA) Small Parcelの消失が[35,35,35]cmに続き継続し(40×3=120cm>90cm)、残る8方式(SURFACE/EMS/AIRMAIL Standard/ECMS EXPRESS/FEDEX/FEDEX LOWCOST/UPS/DHL(GREEN+))は全て単調な上昇を継続した。DHL(GREEN+)(29592円)が引き続き最高額を維持し、[35,35,35]cm(22332円)からの上昇幅も他方式と比べ大きい。無反応組4方式(SURFACE/EMS/AIRMAIL Standard/ここではAIRMAIL Smallは消失中)は全点で価格不変を継続している。 【新知見・triple #9[45,45,45]cm】methods_shown_totalが8→6へ減少。AIRMAIL Small Parcelの消失(寸法合計>90cm)に加え、Grid B全期間を通じて価格が寸法変化に完全に無反応だったSURFACEとAIRMAIL (AVIA) Standard Parcelの2方式が同時に初めて消失した。この2方式は体積に応じた連続的な価格変化を一切示さなかったため、今回の消失は運賃計算式ではなくハード上限(最大長・縦横高合計等)への到達を示すと考えられるが、消失直前の画面にこれら2方式自身の制限値表示はなく、正確な閾値([40,40,40]cmと[45,45,45]cmの間のどこか)は特定できていない。 Grid B(寸法カーブ)全10点完了。最終点[50,50,50]cmでもmethods_shown_total=6が継続し、SURFACE・AIRMAIL (AVIA) Standard Parcelの消失(triple #9から)、AIRMAIL (AVIA) Small Parcelの消失(triple #7から、寸法合計>90cm)がいずれも安定的に再現された。ECMS EXPRESS(25636円)・UPS(38853円)・FEDEX(41659円)・DHL(GREEN+)(47580円)・FEDEX LOWCOST(55592円、最終点で最高額に浮上)は寸法増加に伴い連続的に上昇を続けている。",
+    "note_grid_c": "Grid C(空欄寸法条件)実施。ZenMarketは寸法を任意入力としており(画面表示「Parcel dimensions in centimeters (optional)」)、空欄のまま計算が可能。9方式全て表示され(methods_shown_total=9、AIRMAIL Small Parcel・Standard Parcelとも出現しサイズ制限による除外は発生せず)、価格は同一重量600g・[20,15,10]cm時点の値より一貫して低い(例:SURFACE 2600円 vs 3300円、ECMS EXPRESS 3587円 vs 4361円)。これはNeokyo(寸法必須、空欄では見積り自体が実行不可)とは対照的な挙動であり、5社間の寸法必須性の違いを示す重要な発見。"
+  }
+}
