@@ -37,10 +37,12 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { EXPORT_DECLARATION_FEE_YEN, EXPORT_DECLARATION_FEE_THRESHOLD_JPY, SERVICE_BY_ID, SERVICES } from './services';
 import type { Service } from './services';
-import { compare } from './compare';
+import { compare, EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE } from './compare';
 import type { Item } from './types';
 import { COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, evalClearanceRuleYen } from './courier-clearance';
 import type { CountryCode } from './types';
+import { MASTER_TIER_TO_CODE_TIER } from './tier-vocab';
+import type { MasterTier } from './tier-vocab';
 
 // ── マスタ読み込み ──────────────────────────────────────────────
 const FEES_JSON_PATH = path.join(__dirname, '../../../master/fees.json');
@@ -1022,6 +1024,169 @@ describe('display ── マスタの `display` 分類がコードに効いて�
     const buyee = compare({ items: [free], country: 'US' }).rows.find((r) => r.serviceId === 'buyee')!;
     const dom = buyee.lines.find((l) => l.key === 'domestic-shipping')!;
     expect(dom.amount).toBe(0);
+  });
+});
+
+// ============================================================================
+// TIER ── master/fees.json の tier（A_confirmed/B_inferred/C_unknown）と
+// src の Tier（fixed/estimate/unverified/none）が一致していること（PR #137）。
+//
+// ## 背景
+//
+// Fable 5.1 が `master/fees.json` の tier を5行書き換えて走らせたところ、
+// 5/5 生存・既存1,100件すべてが通った ── **確度は何のテストにも検査されて
+// いなかった。** 画面（`src/lib/ui/tiers.tsx`）は `tier: fixed` を
+// 「Published（料金表どおり）」と表示するので、master が「推論」と言っている
+// 費目を画面が「料金表どおり」と断定する事故が、静かに起こりうる状態だった。
+//
+// ## 対応表
+//
+// `tier-vocab.ts` の `MASTER_TIER_TO_CODE_TIER` が唯一の対応表（A_confirmed→fixed、
+// B_inferred→unverified、C_unknown→none）。このテストは **master の tier を
+// 一次情報として読み**、そこから期待値を作って src 側の値と比べる ── 両方を
+// 同じ方向に書き換えても通ってしまう構造にしない（T-F0 と同じ設計原則）。
+//
+// ## スコープ
+//
+// **対象は MAPPED バケットの行のうち、対応する `src/` の値が tier を持つもの
+// だけ。** NOT_IN_CODE の行はそもそも `src/` に対応する値が無いので、tier の
+// 比較自体が成立しない（この境界は `master-sync.test.ts` 自身の「網羅性」
+// テストが MAPPED/CONFLICT/NOT_IN_CODE の3バケットで全行を覆っていることを
+// 保証している）。MAPPED の行のうち、対応する値が真偽値・null・重量表バンド
+// など tier を持たない型（`chargedPerDistinctItem`・`storage` の日数など）の
+// ものは、比較対象が無いのでここにも入れていない——`docs/audit/` の監査メモに
+// 除外理由を明記する。
+// ============================================================================
+interface TierCheckEntry extends RowKeyParts {
+  /** src 側の tier（`Tier`）。 */
+  readCodeTier: () => string;
+  /** master 側の tier（3値）。findRow(...).tier から動的に読む。 */
+  readMasterTier: () => MasterTier;
+}
+
+const TIER_CHECKS: TierCheckEntry[] = [
+  // PR #137 で見つかった食い違い①: F02/buyee は master が B_inferred
+  // （2019年のBEENOSプレスリリース由来、現行ページ未再確認）なのに、
+  // `fee.tier: 'fixed'`（F12 保証プランと共有）を読んでいたため fixed に見えていた。
+  // `perOrderYenTier` を新設して修正済み。
+  {
+    id: 'F02', company: 'buyee', name: '購入手数料',
+    readCodeTier: () => svc('buyee').fee.perOrderYenTier ?? svc('buyee').fee.tier,
+    readMasterTier: () => findRow('F02', 'buyee', '購入手数料').tier as MasterTier,
+  },
+  {
+    id: 'F12', company: 'buyee', name: '保証プラン',
+    readCodeTier: () => svc('buyee').fee.tier,
+    readMasterTier: () => findRow('F12', 'buyee', '保証プラン').tier as MasterTier,
+  },
+  // PR #137 で見つかった食い違い②③: F26/zenmarket・F26/neokyo は master が
+  // B_inferred（ZenMarket/Neokyo 自身のページでの直接の quote が無い）なのに、
+  // `exportClearanceLine()` が全社一律 `'fixed'` を付けていた。
+  // `EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE` で社ごとに分けて修正済み。
+  {
+    id: 'F26', company: 'buyee', name: '輸出通関手数料',
+    readCodeTier: () => EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE.buyee!,
+    readMasterTier: () => findRow('F26', 'buyee', '輸出通関手数料').tier as MasterTier,
+  },
+  {
+    id: 'F26', company: 'fromjapan', name: '輸出通関手数料',
+    readCodeTier: () => EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE.fromjapan!,
+    readMasterTier: () => findRow('F26', 'fromjapan', '輸出通関手数料').tier as MasterTier,
+  },
+  {
+    id: 'F26', company: 'jauce', name: '追加通関手数料',
+    readCodeTier: () => EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE.jauce!,
+    readMasterTier: () => findRow('F26', 'jauce', '追加通関手数料').tier as MasterTier,
+  },
+  {
+    id: 'F26', company: 'zenmarket', name: '輸出通関手数料',
+    readCodeTier: () => EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE.zenmarket!,
+    readMasterTier: () => findRow('F26', 'zenmarket', '輸出通関手数料').tier as MasterTier,
+  },
+  {
+    id: 'F26', company: 'neokyo', name: '輸出通関手数料',
+    readCodeTier: () => EXPORT_CLEARANCE_FEE_TIER_BY_SERVICE.neokyo!,
+    readMasterTier: () => findRow('F26', 'neokyo', '輸出通関手数料').tier as MasterTier,
+  },
+  // ── 以下、確認できた範囲で master A_confirmed = fixed のまま一致している行 ──
+  {
+    id: 'F09', company: 'jauce', name: '出品者への銀行送金料',
+    readCodeTier: () => svc('jauce').fee.bankFeeTier ?? svc('jauce').fee.tier,
+    readMasterTier: () => findRow('F09', 'jauce', '出品者への銀行送金料').tier as MasterTier,
+  },
+  {
+    id: 'F06', company: 'fromjapan', name: '支払手数料（JDirectItems のみ）',
+    readCodeTier: () => svc('fromjapan').fee.paymentInsideJapanTier ?? svc('fromjapan').fee.tier,
+    readMasterTier: () => findRow('F06', 'fromjapan', '支払手数料（JDirectItems のみ）').tier as MasterTier,
+  },
+  {
+    id: 'F14', company: 'neokyo', name: '梱包料',
+    readCodeTier: () => svc('neokyo').packing!.tier,
+    readMasterTier: () => findRow('F14', 'neokyo', '梱包料').tier as MasterTier,
+  },
+  {
+    id: 'F14', company: 'jauce', name: '梱包（Smart）',
+    readCodeTier: () => svc('jauce').packing!.tier,
+    readMasterTier: () => findRow('F14', 'jauce', '梱包（Smart）').tier as MasterTier,
+  },
+  {
+    id: 'F14', company: 'zenmarket', name: '初回梱包・まとめ梱包',
+    readCodeTier: () => svc('zenmarket').fee.tier, // rule.type "zero"。packing が無いこと自体は MAPPED 側で検査済み
+    readMasterTier: () => findRow('F14', 'zenmarket', '初回梱包・まとめ梱包').tier as MasterTier,
+  },
+  {
+    id: 'F36', company: 'buyee', name: 'AU GST 代理徴収',
+    readCodeTier: () => svc('buyee').prepaidImportTax!.AU!.tier,
+    readMasterTier: () => findRow('F36', 'buyee', 'AU GST 代理徴収').tier as MasterTier,
+  },
+  {
+    id: 'F36', company: 'buyee', name: 'SG GST 代理徴収',
+    readCodeTier: () => svc('buyee').prepaidImportTax!.SG!.tier,
+    readMasterTier: () => findRow('F36', 'buyee', 'SG GST 代理徴収').tier as MasterTier,
+  },
+  {
+    id: 'F36', company: 'zenmarket', name: '豪州 GST 代理徴収',
+    readCodeTier: () => svc('zenmarket').prepaidImportTax!.AU!.tier,
+    readMasterTier: () => findRow('F36', 'zenmarket', '豪州 GST 代理徴収').tier as MasterTier,
+  },
+  {
+    id: 'F36', company: 'zenmarket', name: 'EU/UK VAT 前払い（2026-03-02から強制）',
+    readCodeTier: () => svc('zenmarket').prepaidImportTax!.DE!.tier,
+    readMasterTier: () => findRow('F36', 'zenmarket', 'EU/UK VAT 前払い（2026-03-02から強制）').tier as MasterTier,
+  },
+  {
+    id: 'F36', company: 'neokyo', name: '着地国の税を代理徴収',
+    readCodeTier: () => svc('neokyo').prepaidImportTax!.AU!.tier,
+    readMasterTier: () => findRow('F36', 'neokyo', '着地国の税を代理徴収').tier as MasterTier,
+  },
+  {
+    id: 'F36', company: 'fromjapan', name: '豪州 GST 代理徴収',
+    readCodeTier: () => svc('fromjapan').prepaidImportTax!.AU!.tier,
+    readMasterTier: () => findRow('F36', 'fromjapan', '豪州 GST 代理徴収').tier as MasterTier,
+  },
+  {
+    id: 'F30', company: 'fromjapan', name: '配送方法の可否（商品代に依存）',
+    readCodeTier: () => svc('fromjapan').postage['small-packet-air']!.tier,
+    readMasterTier: () => findRow('F30', 'fromjapan', '配送方法の可否（商品代に依存）').tier as MasterTier,
+  },
+];
+
+describe('TIER ── master/fees.json の tier と src/ の Tier が対応表どおり一致する', () => {
+  for (const e of TIER_CHECKS) {
+    it(`${e.id}/${e.company} ${e.name}`, () => {
+      const masterTier = e.readMasterTier();
+      expect(MASTER_TIER_TO_CODE_TIER).toHaveProperty(masterTier);
+      expect(e.readCodeTier()).toBe(MASTER_TIER_TO_CODE_TIER[masterTier]);
+    });
+  }
+});
+
+// F02/zenmarket ヤフオク・F07/jauce は T-F11a / 既知の例外として下で個別に検査する
+// （`tier-vocab.ts` のコメント参照 ── 額は quote 付きだが解釈/計算式の確度が別軸）。
+describe('TIER の既知の例外 ── 額の確度と解釈/計算式の確度が別軸のため対応表の外', () => {
+  it('F07/jauce: 額（¥40+3.9%）は master A_confirmed だが、gross-up 解釈は原文確認できず code は unverified のまま', () => {
+    expect(findRow('F07', 'jauce', '入金手数料').tier).toBe('A_confirmed');
+    expect(svc('jauce').deposit!.tier).toBe('unverified');
   });
 });
 
