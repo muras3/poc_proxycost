@@ -11,7 +11,7 @@ import {
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import {
-  COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, courierCarrierOf, evalClearanceRuleYen,
+  aggregateClearanceFee, COURIER_CLEARANCE, COURIER_CLEARANCE_UNKNOWN, courierCarrierOf,
 } from './courier-clearance';
 import {
   EXPORT_DECLARATION_FEE_SOURCE, EXPORT_DECLARATION_FEE_THRESHOLD_JPY,
@@ -1514,31 +1514,68 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       const dutyTaxYen = (i: number) =>
         (taxResult.perParcel[i]!.duty.yen ?? 0) + (taxResult.perParcel[i]!.vat.yen ?? 0);
       const declaredLocal = (i: number) => parcelTaxBases[i]!.itemsYen / countryCcyRate;
-      let feeYen: number;
-      let allZero: boolean;
-      if (route.per === 'per_shipment') {
-        const totalDutyTax = parcelTaxBases.reduce((a, _, i) => a + dutyTaxYen(i), 0);
-        const totalDeclaredLocal = parcelTaxBases.reduce((a, b) => a + b.itemsYen, 0) / countryCcyRate;
-        allZero = totalDutyTax === 0;
-        feeYen = evalClearanceRuleYen(route.rule, totalDutyTax, totalDeclaredLocal, ccyToJpy);
-      } else {
-        allZero = parcelTaxBases.every((_, i) => dutyTaxYen(i) === 0);
-        feeYen = parcelTaxBases.reduce(
-          (a, _, i) => a + evalClearanceRuleYen(route.rule, dutyTaxYen(i), declaredLocal(i), ccyToJpy), 0);
-      }
+      // **税ゼロ時のこの費目は、単位（`per_shipment` なら荷物全体、`per_parcel` なら
+      // 小包1つ1つ）ごとに判定する——カート全体で「1件でも税があれば全部課す」と
+      // 丸めると、税ゼロの小包がまるごと最低額を払わされる（PR #93 が
+      // `prepaid-import-tax` 側でやった、カート単位に丸めて本来の費目を消す/膨らませる
+      // 失敗をここで再現することになる）。集計は `aggregateClearanceFee`
+      // （`courier-clearance.ts`）に一元化してある——DHL/UPS/FedExは working
+      // treatment（`docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md`）
+      // により税ゼロの単位を0円と仮定し、ECMSは仮定の対象外（ECMS自身の式が
+      // duty+tax=0で自然に0を返すので、常に実額として扱う）。
+      const units = route.per === 'per_shipment'
+        ? [{
+          dutyPlusTaxYen: parcelTaxBases.reduce((a, _, i) => a + dutyTaxYen(i), 0),
+          declaredLocal: parcelTaxBases.reduce((a, b) => a + b.itemsYen, 0) / countryCcyRate,
+        }]
+        : parcelTaxBases.map((_, i) => ({ dutyPlusTaxYen: dutyTaxYen(i), declaredLocal: declaredLocal(i) }));
+      const agg = aggregateClearanceFee(route.rule, carrier!, units, ccyToJpy);
+      const { knownFeeYen, assumedZeroCapYen } = agg;
+      const anyAssumedZero = agg.assumedZeroCount > 0;
+
       const label = `${carrier} destination clearance fee`;
       const perNote = route.per === 'per_shipment' ? 'charged once per shipment' : 'charged per parcel';
-      if (allZero) {
+      if (anyAssumedZero) {
         // **税ゼロ時に課すかは、この費目の一次資料7か国×4社どれにも書かれていない**
-        // （3本の監査ノートが共通して報告）。0円と書けば「無料と確認済み」という嘘、
-        // 最低額を書けば「満額と確認済み」という別の嘘になるので、額を出さず null 行に
-        // する——`totalRange()` により `total.high` が自動的に開く。
-        lines.push(L('courier-clearance-fee', `${label} (unknown when duty/tax is zero)`, null,
-          'no duty or tax is due on this cart, and none of the rate documents say whether the'
-          + ` destination clearance fee still applies when there is nothing to advance — ${route.basisNote}`,
-          'none'));
+        // （3本の監査ノート、`docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md` が
+        // 「一次資料からは決着しない」行き止まりと確定済み）。オーナーは working
+        // treatment として「税ゼロなら手数料も0」を採用した（F28/F40と対の判断、
+        // `master/carrier-surcharges.json#conclusions.zero_duty_clearance_fee_working_treatment`、
+        // id C13）。**F28/F40とは逆方向のリスク**——込みだと仮定するF28/F40は過大計上側に
+        // 倒れるが、これは過小計上側に倒れる（仮定が外れていれば、本来はこの分だけ高い）。
+        // 0円と決め打ちする代わりに `amountKind: 'range'` にして、low=仮定通りの実額・
+        // high=仮定が外れて税ゼロの小包にも最低額が課された場合の額、を両方見せる。
+        const lowYen = Math.round(knownFeeYen);
+        const highYen = Math.round(knownFeeYen + assumedZeroCapYen);
+        const zeroCount = agg.assumedZeroCount;
+        const totalCount = agg.totalCount;
+        lines.push({
+          key: 'courier-clearance-fee',
+          label: `${label} (assumed zero on ${zeroCount} of ${totalCount}` +
+            `${route.per === 'per_shipment' ? ' shipment' : ' parcel'}${totalCount === 1 ? '' : 's'}` +
+            ' with no duty/tax due)',
+          amount: lowYen,
+          amountKind: 'range',
+          amountHighYen: highYen,
+          rangeNote: `low: ${zeroCount === totalCount ? 'no' : 'only the taxed'} unit(s) billed under the`
+            + ' owner-decided working treatment that this fee is not charged when nothing is advanced'
+            + ' (cross-referencing the F28 fuel-surcharge and F40 remote-area-surcharge working'
+            + ' treatments, master/carrier-surcharges.json#conclusions, id C13 — same shape, opposite'
+            + ' direction of risk: this one understates rather than overstates if the assumption is'
+            + ` wrong); high: the same units billed at this carrier's minimum fee as if duty/tax were`
+            + ' not the trigger — none of the rate documents say which is correct'
+            + ` (${route.basisNote})`,
+          note: `${perNote}; no duty or tax is due on ${zeroCount} of ${totalCount} unit(s), and none of`
+            + ' the rate documents say whether the destination clearance fee still applies when there is'
+            + ' nothing to advance — we assume it is not charged (owner-decided working treatment,'
+            + ' see docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md); if that'
+            + ` assumption is wrong this row understates by up to ¥${Math.round(assumedZeroCapYen)}` +
+            `; ${route.basisNote}`,
+          tier: 'estimate',
+          sourceUrl: route.sourceUrl,
+        });
       } else {
-        lines.push(L('courier-clearance-fee', label, Math.round(feeYen),
+        lines.push(L('courier-clearance-fee', label, Math.round(knownFeeYen),
           `${perNote}; ${route.basisNote}`, route.tier, route.sourceUrl));
       }
     } else if (unknownNote) {

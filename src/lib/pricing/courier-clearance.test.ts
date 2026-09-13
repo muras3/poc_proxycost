@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { compare } from './compare';
-import { evalClearanceRuleYen } from './courier-clearance';
+import { aggregateClearanceFee, COURIER_CLEARANCE, evalClearanceRuleYen } from './courier-clearance';
 import type { Item, Row } from './types';
 
 // F34（通関手数料・業者軸）の配線を pin する。`courier-clearance.ts` のデータそのものは
@@ -64,28 +64,90 @@ describe('F34: Australia composes the customs authority charge and the carrier\'
   });
 });
 
-describe('F34: a zero-duty courier row does not present as bounded', () => {
-  test('SG DHL under the S$400 GST-free / duty-free threshold cannot assert a point clearance fee', () => {
+describe('F34: a zero-duty courier row does not present as bounded (owner-decided working treatment,' +
+  ' docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md)', () => {
+  test('SG DHL under the S$400 GST-free / duty-free threshold assumes no fee, but keeps the line' +
+    ' and an open total.high (F28/F40-shaped working treatment, opposite direction of risk)', () => {
     // シンガポールは duty が常に0（dutyRate:0）、GST は S$400 以下で免税。
-    // 安いカートなら duty+tax は文字通り0——このとき「立て替えるものが無いから
-    // 手数料も0」なのか「最低額は無条件に課される」のか、DHLのどの一次資料にも
-    // 書かれていない（docs/audit/f34-dhl-seven-countries-2026-09-12.md）。
+    // 安いカートなら duty+tax は文字通り0——一次資料はどちらとも書いていないが
+    // （docs/audit/f34-dhl-seven-countries-2026-09-12.md）、オーナーは
+    // 「立て替えるものが無いから手数料も0」を working treatment として採用した。
     const rows = compare({ items: items(1, 600, 3000), country: 'SG', method: 'courier-dhl' }).rows;
     const row = byId(rows, 'fromjapan');
     const fee = row.lines.find((l) => l.key === 'courier-clearance-fee');
     expect(fee).toBeDefined();
-    expect(fee!.amount).toBeNull(); // 0円と決め打ちしない——total.high を開く
-    expect(fee!.note).toContain('nothing to advance');
+    // no fee amount is asserted under the assumption (low side of the range is 0)...
+    expect(fee!.amount).toBe(0);
+    expect(fee!.amountKind).toBe('range');
+    // ...but the line stays (never silently dropped) and total.high stays open above total.low,
+    // quantifying exactly what this assumption is worth if it turns out to be wrong: DHL SG's own
+    // minimum fee (S$20 -> ~¥2,467 at the fixed rate used in tests).
+    expect(fee!.amountHighYen).toBeGreaterThan(fee!.amount!);
+    // `total.high` は courier 行に常に付随する `courier-destination-fees`（燃油/遠隔地の
+    // 未知、F28/F40）で既に無条件に開いている——この行の range 自体が `total.high` を
+    // 開閉するわけではないが、その開いた状態は正しく維持される（決して閉じない）。
     expect(row.total.high).toBeNull();
+    expect(fee!.note).toContain('nothing to advance');
+    expect(fee!.note).toContain('owner-decided working treatment');
+    expect(fee!.tier).toBe('estimate'); // 仮定に基づく行——DHL SGのtier: 'fixed'をそのまま流用しない
   });
 
-  test('the same route above the threshold (duty/tax > 0) resolves to a real fixed amount', () => {
+  test('the same route above the threshold (duty/tax > 0) resolves to a real fixed amount, unchanged', () => {
     const rows = compare({ items: items(1, 600, 300_000), country: 'SG', method: 'courier-dhl' }).rows;
     const row = byId(rows, 'fromjapan');
     const fee = row.lines.find((l) => l.key === 'courier-clearance-fee')!;
     expect(fee.amount).not.toBeNull();
     expect(fee.amount).toBeGreaterThan(0);
+    expect(fee.amountKind ?? 'point').not.toBe('range'); // 仮定を通らない——ただの実額
     expect(fee.tier).toBe('fixed'); // DHL SGはA_confirmed
+  });
+
+  test("ECMS's zero-duty behaviour comes from its own source (a conditional advance-payment fee)," +
+    ' not from the DHL/UPS/FedEx working treatment', () => {
+    // ECMS SG（tier: fixed, rateMin(0.03, 0)）: 最低額そのものが0円なので、
+    // duty+tax=0のときは式を評価するだけで正しく0円になる——working treatmentの
+    // 仮定を経由していない。amountKind: 'range' にならず、tierも'fixed'のまま。
+    // ECMS EXPRESS は ZenMarket のみが扱う便名（courier-ecms は他社、postage.ts 参照）。
+    const rows = compare({ items: items(1, 600, 3000), country: 'SG', method: 'courier-ecms-express' }).rows;
+    const row = byId(rows, 'zenmarket');
+    const fee = row.lines.find((l) => l.key === 'courier-clearance-fee')!;
+    expect(fee.amount).toBe(0);
+    expect(fee.amountKind ?? 'point').not.toBe('range'); // 仮定の器（range）を経由していない
+    expect(fee.tier).toBe('fixed'); // sourced（ECMS自身のT&Cの条件文）——'estimate'に落とさない
+    expect(fee.note).not.toContain('owner-decided working treatment');
+  });
+
+  test('a cart whose parcels straddle duty-free — one owes duty/tax, the other does not — is priced' +
+    ' per parcel, not rounded up or down to the whole cart (the PR #93-shaped failure, reproduced' +
+    ' here for the clearance fee instead of prepaid-import-tax)', () => {
+    // `aggregateClearanceFee`（`compare.ts` が実際に呼ぶのと同じ関数）を、DHL SGの
+    // 実データ（`COURIER_CLEARANCE.SG.DHL`）で直接叩く。**実際の5社の master データには
+    // 「per-order分割 かつ DHL/UPS/FedEx を扱う」組み合わせが1つも無い**——per-order
+    // 分割ができるのはBuyeeだけで、Buyeeは自社便（courier-buyee-air）とECMSしか
+    // 扱わない（ECMSはこの working treatment の対象外）。そのため `compare()` 経由では
+    // この状況（per_parcel かつ working-treatment対象の carrier で複数小包がまたがる）
+    // を今のmasterデータで再現できない——ここでは集計関数そのものを直接検証する
+    // （F34の帯構造テスト・`evalClearanceRuleYen` の単体テストと同じ立て付け）。
+    const dhlSg = COURIER_CLEARANCE.SG!.DHL!;
+    const ccyToJpy = 123.33; // SGD、`master/rates.ts` の固定レートと同オーダーの値（テスト用）
+    const units = [
+      { dutyPlusTaxYen: 30_000, declaredLocal: 300_000 / ccyToJpy }, // 課税小包
+      { dutyPlusTaxYen: 0, declaredLocal: 3000 / ccyToJpy },          // 免税小包（S$400未満）
+    ];
+    const agg = aggregateClearanceFee(dhlSg.rule, 'DHL', units, ccyToJpy);
+    // 免税小包1つだけに仮定が適用され、課税小包はそのまま実額——カート全体を
+    // 「1件でも税があるから全部課税」（過大計上）や「税ゼロの小包があるから全部
+    // 免除」（過小計上）のどちらにも丸めていない。
+    expect(agg.assumedZeroCount).toBe(1);
+    expect(agg.totalCount).toBe(2);
+    expect(agg.knownFeeYen).toBeGreaterThan(0); // 課税小包の実額
+    expect(agg.assumedZeroCapYen).toBeGreaterThan(0); // 免税小包に本来課され得た最低額
+    // 免税小包を「税ゼロ」判定から漏らして両方に最低額を課していたら knownFeeYen が
+    // 2倍近くになる——それとは違う値であることも合わせて確認する。
+    const bothChargedYen = evalClearanceRuleYen(dhlSg.rule, units[0]!.dutyPlusTaxYen, units[0]!.declaredLocal, ccyToJpy)
+      + evalClearanceRuleYen(dhlSg.rule, units[1]!.dutyPlusTaxYen, units[1]!.declaredLocal, ccyToJpy);
+    expect(agg.knownFeeYen).toBeLessThan(bothChargedYen);
+    expect(agg.knownFeeYen + agg.assumedZeroCapYen).toBeCloseTo(bothChargedYen, 6);
   });
 });
 

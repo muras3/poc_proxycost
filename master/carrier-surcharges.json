@@ -893,6 +893,62 @@
         "decision_rule": "(a)と(b)で価格差が出れば、その差額が遠隔地サーチャージ相当額と整合するかを確認する。差が出なければ、遠隔地サーチャージが表示価格に反映されていない（または該当判定自体が機能していない）ことを疑う。",
         "required_field": "methods_shown_total を両条件で必ず記録する（原則2により必須）。"
       }
+    },
+    "zero_duty_clearance_fee_working_treatment": {
+      "id": "C13_zero_duty_working_treatment_2026_09_13",
+      "note_on_field": "これは master/customs.json#clearance（宅配便DHL/UPS/FedEx/ECMSの通関/立替手数料そのものの一次資料値）とは別の、独立したフィールドである。C11（燃油）・C12（遠隔地）と同じ形——一次資料が決着しない論点について、オーナーが下した運用判断をここに記録する。一次情報の測定値そのものではない。fuel_surcharge_working_treatment（C11）・remote_area_surcharge_working_treatment（C12）と対で読むこと。",
+      "decided_on": "2026-09-13",
+      "decided_by": "オーナー（Tatsuya氏）",
+      "cross_reference": "docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md（この論点が一次資料からは決着しない『行き止まり』であることを確定した監査）と、docs/audit/zero-duty-clearance-fee-working-treatment-2026-09-13.md（本working treatmentの決定経緯）を参照。C11（燃油）・C12（遠隔地）と同日・同じオーナーによる判断ではないが、意図的に同じ形（reasoned_judgement_unconfirmed、grounds_supporting/grounds_against、pending_test）にしている。",
+      "treatment": "宅配便4社（DHL/UPS/FedEx/ECMS）のうち、DHL・UPS・FedExの3社については、ある小包（`per_parcel`）またはある荷物全体（`per_shipment`）のduty+taxが0円のとき、目的地側の通関/立替手数料（Duty Tax Processing / Disbursement Fee 等）は課されないものとして扱う。compare.ts側では、この単位に対する評価額を実額（total.lowに積む額）には含めず、amountKind: 'range' の amountHighYen 側にのみ『仮定が外れていた場合の上乗せ分（＝その社の最低額相当）』として残す。ECMSはこの working treatment の対象外——ECMS自身のT&Cの条件文（advance発生時のみ3%）が、duty+tax=0のとき自然に手数料0を導くので、仮定を挟まず常に実額（sourced）として扱う。",
+      "confidence": "reasoned_judgement_unconfirmed",
+      "confidence_vocabulary_note": "C11・C12と同じ語彙上の区別を適用する。既存の confidence 語彙（direct_fetch / search_snippet / search_snippet_no_verbatim_quote）は『一次ページの記述にどう到達したか』という取得経路を表し、記述自体が事実として確認されていることを前提にする。ここで記録するのは事実の取得経路ではなく、事実が未確認のまま下した運用判断の確度であり、reasoned_judgement_unconfirmed（一般論からの推論による判断であり、一次情報での確認は得られていない）を用いる。",
+      "claim_precision_note": "記録している主張は『税ゼロなら手数料は課されない』ではなく、『これこれの根拠に基づき、課されないと仮定して扱うことにした。この判断は未検証であり、以下の実験で決着する』という主張である。C11・C12と全く同じ精度の取り方をしている。",
+      "direction_of_error_note": "**C11・C12とは逆方向のリスクを負う、このプロジェクトで初めての working treatment。** C11（燃油）・C12（遠隔地）は『込みだと仮定する』ことで、その仮定が外れていた場合に見積りが実際より**高く**出続けるリスク（過大計上）を負う。この working treatment は逆——『手数料は課されないと仮定する』ことで、仮定が外れていた場合に見積りが実際より**低く**出続けるリスク（過小計上）を負う。このプロジェクトの既存の習慣は『見積りが低すぎるかもしれない』ことをより危険な誤りとして扱ってきた（docs/PRINCIPLES.md 原則1の残余リスクの置き場所の議論、原則2の『無かったことは証拠にならない』も同じ方向の慎重さから来ている）ので、この working treatment はその習慣に照らして相対的に重い判断になる。だからこそ amount を単純に0円にせず、amountKind: 'range' で amountHighYen 側に上乗せ分を必ず残す——0円と最低額のどちらか一方に決め打ちする代わりに、区間で両方の可能性を保持する。",
+      "quantification": {
+        "text": "docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md が試算した『この仮定が外れていた場合に見積りから消える額』（＝各社の最低額そのもの、declaredがdeminimis以下でduty+taxが文字通り0円になるカートの場合）:",
+        "figures_jpy": [
+          { "route": "CA UPS Standard", "local": "CAD 7.40", "jpy_approx": 838 },
+          { "route": "CA UPS Express系", "local": "CAD 11.65", "jpy_approx": 1319 },
+          { "route": "CA DHL Express（non_account_holder）", "local": "CAD 18.00", "jpy_approx": 2038 },
+          { "route": "SG DHL Express", "local": "SGD 20.00", "jpy_approx": 2467 },
+          { "route": "US DHL/UPS/FedEx（参照値）", "local": "USD 17.50", "jpy_approx": 2734 },
+          { "route": "SG UPS", "local": "SGD 22.50", "jpy_approx": 2775 },
+          { "route": "AU DHL Express", "local": "AUD 23.00", "jpy_approx": 2589 },
+          { "route": "AU UPS（GST込み）", "local": "AUD 26.18", "jpy_approx": 2948 }
+        ],
+        "note": "AU UPS・SG UPSの2ルートはUS基準（¥2,734）を上回る——『US基準とだいたい同じ桁』という監査の要約は正確だが、この2ルートだけは実際にはUS基準より高い。deminimis以下のカート1件あたり、この working treatment が仮に間違っていた場合に見積りから消える額は、ルートによって約¥838〜約¥2,948の幅を持つ。"
+      },
+      "grounds_supporting": [
+        {
+          "ref": "G1_ecms_conditional_wording_generalized_cautiously",
+          "strength": "direct_statement_single_carrier_generalized_with_caution",
+          "text": "ECMSのT&Cは『If ECMS EXPRESS advances any Customs Duties on behalf of a Receiver, ECMS EXPRESS is entitled to charge ... a duty advance payment fee of 3%』と条件文で書いている——advanceする対象が無ければ手数料の基準額自体が発生しない、と読める唯一の直接記述。DHL/UPS/FedExの一次資料にはこの形の条件文は無いが、通関手数料という費目の性質そのもの（立替に対する手数料）から類推すると、advanceする対象がゼロの状況でこの費目が発生しない、という構造の方が、無条件のフラット最低額が発生するという構造よりも一般的にあり得る、という一般論からの推論。ECMS1社の直接の記述を他社に一般化しており、原則3（1社で確認したことを一般化しない）に照らして弱い根拠であることを明記する。"
+        },
+        {
+          "ref": "G2_postal_operators_do_publish_exemption",
+          "strength": "consistent_with_not_proof_of",
+          "text": "docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md が報告する通り、5つの郵便事業者は税ゼロ時の免除規定を公表している一方、宅配便4社（DHL/UPS/FedEx/ECMSのECMS以外）はどこも明示していない。郵便側の実務がそうなっていることは、宅配便側も同じ実務を取っているはずだという証明にはならないが（consistent with, not proof of）、通関手数料という費目全体の一般的な作られ方についての弱い傍証にはなる。"
+        }
+      ],
+      "grounds_against": [
+        {
+          "ref": "G3_flat_minimum_formulas_may_be_unconditional",
+          "strength": "counter_evidence_structural",
+          "text": "DHL/UPS/FedExの式はいずれも『rate × advanced amount、ただし最低額X』という形で、advanced amountが0でも最低額側が無条件に発生する設計は珍しくない（銀行の振込手数料等、多くの実務で『処理そのものにかかる固定コスト』として最低額を設けるのは一般的）。この式の形自体からは、税ゼロで完全に0になるのか、それとも処理手数料として最低額が残るのか、どちらとも判定できない——`docs/audit/f34-zero-duty-clearance-fee-2026-09-12.md`が『行き止まり』と確定した理由そのもの。"
+        },
+        {
+          "ref": "G4_direction_of_error_is_the_opposite_of_this_projects_usual_caution",
+          "strength": "self_critical_note",
+          "text": "上のdirection_of_error_noteの通り、この working treatment はこのプロジェクトの既存の習慣（過小計上をより警戒する）と逆方向のリスクを取る。オーナーが下した判断であり覆さないが、この非対称性自体を隠さず記録しておく。"
+        }
+      ],
+      "pending_test": {
+        "status": "requested_not_yet_returned",
+        "condition": "CA・AU・SGのいずれか（deminimis以下のカートが最も起こりやすい3か国）で、DHL ExpressまたはUPSの、申告価格が当該国のdeminimis閾値未満（CA: CAD 20未満、AU: A$1,000未満、SG: S$400未満）で、duty・taxの実額がゼロと明記された請求書・配送記録を1件確保する。",
+        "decision_rule": "その請求書上にDuty Tax Processing／Disbursement Fee相当の行が存在するか、存在しないかを見る。存在すれば『税ゼロでも課す』、存在しなければ『税ゼロなら課さない』の直接証拠になる——推論を挟まず、行の有無だけで決着する。",
+        "required_field": "現状 master/fixtures.json にはこの形の実請求が1件も無い（f34-zero-duty-clearance-fee-2026-09-12.md 参照）。"
+      }
     }
   }
 }
