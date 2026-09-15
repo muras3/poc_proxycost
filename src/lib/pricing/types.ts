@@ -171,6 +171,30 @@ export interface Line {
   note: string;
   tier: Tier;
   sourceUrl?: string | null;
+  /**
+   * `amount === null`（未取得）のとき、**なぜ無いのか**の種別（UIの記号に落とすための
+   * 構造化フィールド、`docs/design/caveat-ui-grammar.md` §5）。`unknownReason` の散文とは
+   * 別に機械可読で持つ。**`amount !== null` の行には付けない**（意味を持たない）。
+   *
+   *   - `'structural-absence'` … 制度上その費目が存在しない（米国の連邦売上税
+   *     "none at federal level" 等）。**「未公表」と同じ顔（`'unpublished'`）にしない**
+   *     ——存在しないことと、存在するが額を知らないことは別の事実。
+   *   - `'unpublished-capped'` … 額は非公表だが、`unknownCapYen`/`unknownCapNote` で
+   *     上端の見積りが置ける（Jauce の保管料が該当。`courier-clearance.ts` 由来の
+   *     着地通関手数料 range も本来ここに当たるが、このPR時点では未整理——後述）。
+   *   - `'unpublished'` … 額が非公表で、上端の見積りも無い。
+   *   - `'conditional'` … このPRでは実装しない。監査（`caveat-coverage-audit.md`）を
+   *     読んでも「条件付きで未知」を証明できる具体的な構築箇所を1つも特定できな
+   *     かった（すべて上の3種のどれかに実際は当てはまる）ので、根拠の無い分岐を
+   *     足さない（CLAUDE.md §9「状況は理由にならない」）。型のUnionには残すが、
+   *     どのコードもこの値を返さない。
+   *
+   * **未設定（`undefined`）= まだ分類していない。**`compare.ts` の大半の `amount: null`
+   * 行（宅配便の未価格化・寸法上限超過など）は、このPRの時点でこのフィールドを
+   * 明示的に埋めていない——「'unpublished' の既定値」と黙って読み替えないこと。
+   * 個別に出典を確認して埋めるのは次のPRの作業として残す。
+   */
+  unknownKind?: 'structural-absence' | 'unpublished-capped' | 'unpublished' | 'conditional';
 }
 
 export type WeightOrigin = 'table' | 'assumed' | 'user';
@@ -316,6 +340,34 @@ export interface Row {
   /** comparable が false の理由（英語、画面にそのまま出す）。 */
   notComparableReason: string | null;
   /**
+   * `notComparableReason` を UI の記号に落とすための種別（`docs/design/caveat-ui-grammar.md`
+   * §5、監査 #20 の12分岐を3記号——売っていない／測っていない／運べない——に集約する下準備）。
+   * `comparable === true` の行は常に `null`。`compare.ts` の `notComparableReason` を
+   * 組む switch 文の各分岐がそのまま対応する（同じ関数・同じ条件から作る。文字列の
+   * 正規表現で分けない）。
+   *
+   *   - `'not-sold'`            … その方式（郵便 or 宅配便）自体をこの社が扱っていない
+   *   - `'not-to-country'`      … 扱ってはいるが、この宛先には出していない
+   *   - `'price-cap'`           … 申告額がこの方式の上限を超える。**この分岐は今のマスタ
+   *     （`services.ts`）では宅配便に `priceCapJpy` を持つレートが無いため、宅配便側では
+   *     構造的に発火しない**（監査 #20f「条件未発見」）。郵便側の上限超過では発火する。
+   *   - `'size-limit'`          … 寸法がこの方式の上限を超える。**既定の箱寸法
+   *     （20×15×10cm）はどの方式の上限も下回るため、このPR時点のマスタでは構造的に
+   *     発火しない**（監査 #20k「条件未発見」）。到達可能な条件が無いだけで、
+   *     コード（`dimensionsExceedLimit`）自体は生きている。
+   *   - `'weight-limit'`        … 実重量がこの方式の重量上限（`maxGramsFor`）を超える
+   *   - `'below-measured-floor'` … 日本郵便を売らず、宅配便の実測範囲の下限より軽い
+   *     （測っていないだけで「運べない」と決まったわけではない、監査 #20a）
+   *   - `'no-priced-method'`    … 上のどれにも当てはまらないが、この社のどの方式にも
+   *     この重量・宛先の価格が付いていない（宅配便が値付け前・全方式が未測定 等）
+   *
+   * 監査が候補に挙げていた `'not-measured'` は、上の分岐と重複するか到達しない
+   * （`'below-measured-floor'` と `'no-priced-method'` のどちらかに実際は当てはまる）
+   * ため、根拠の無い8個目の値を足さずに外した（CLAUDE.md §9）。
+   */
+  notComparableKind: 'not-sold' | 'not-to-country' | 'price-cap' | 'size-limit'
+    | 'weight-limit' | 'below-measured-floor' | 'no-priced-method' | null;
+  /**
    * 「おすすめ」枠に入るか（P1-2）。**下端で並べたとき1位の幅と重なる社**を、
    * 1位自身を含めて最大3社（1位 + 重なる社2社まで）まで囲う。
    * 重なる社が無ければ1位だけが true（単独1位）。`comparable` が false の行は常に false。
@@ -354,6 +406,15 @@ export interface Row {
     /** 例: '1–3 months'。画面はここをそのまま出す——「除外した」ではなく理由を書く。 */
     days: string;
     note: string;
+    /**
+     * **このPRでは実装していない**（`docs/design/caveat-ui-grammar.md` §5 が候補に
+     * 挙げた `Row.surface.totalYen`）。`shipYen` は Surface 便**単体の送料**で、総額まで
+     * 作り直すには行全体（手数料・関税・VAT・入金手数料まで）をこの便で組み直す
+     * `buildRow` 相当の処理が要る。既存の `buildRow` は `method` を1つ受け取って
+     * 行全体を組む構造になっており、Surface を「既定の行に載る副次フィールド」
+     * のまま総額だけ差し替える既存の合成ヘルパーが無い——推測で組み立てると
+     * 数値不変の保証が崩れるリスクがあるため、フィールドを足さずに理由をここに残す。
+     */
   } | null;
   /**
    * **この行が実際に価格を計算した個口の内訳。**`parcels` は個数（`number`）
@@ -368,6 +429,76 @@ export interface Row {
    * を置き換えない（既存の呼び出し側はそのまま動く）——追加のフィールド。
    */
   boxes: ParcelBox[];
+  /**
+   * `tag` の文字列 "1 parcel assumed" を UI が正規表現で拾わなくて済むように
+   * `Service.parcelVerified`（`services.ts`）をそのまま出す構造化フィールド
+   * （`docs/design/caveat-ui-grammar.md` §5、監査 #31）。
+   * `true` = 代行がまとめることを公表規約・実測で確認済み。`false` = 未確認（仮定）。
+   */
+  parcelVerified: boolean;
+  /**
+   * この行が実際に使った方式（`method`）の重量上限（グラム）。
+   *
+   * **郵便方式（`PostalMethod`）は `postage.ts` の `maxGramsFor(method, cc)` から
+   * 実値が取れる**（日本郵便の公表料金表の上限そのもの）。
+   *
+   * **宅配便（`CourierMethod`）は常に `null`。**CLAUDE.md §9 に記録されているとおり、
+   * `src/lib/pricing/` のどこにも運送会社の重量上限のマスタが無い——4社中、拒否しないと
+   * 確認できているのは DHL だけで、UPS は国で割れ、FedEx はデータが無く、ECMS は非公表。
+   * 「20kgで止まっている」という現状のデータの届く範囲を上限として書くのは、
+   * まさに CLAUDE.md §9 が禁じる「状況を理由にする」ことになるので、まだ確認できて
+   * いない事実として `null` のままにする（推測値を入れない）。
+   */
+  weightLimitG: number | null;
+  /**
+   * この行が実際に使った方式の所要日数と、その確度（`docs/design/caveat-ui-grammar.md`
+   * §5、監査 #57・#3-9）。**郵便と宅配便を同じ顔（確度なしの文字列）で出さない**
+   * ための構造化フィールド。
+   *
+   * 郵便（`PostalMethod`）は `POSTAL_METHODS`（`postage.ts`）の `days`/`daysSourceUrl`/
+   * `daysTier`/`tracked` をそのまま出す——日本郵便の公表料金表に基づく一次情報。
+   *
+   * 宅配便（`CourierMethod`）は `tier: 'none'`・`sourceUrl: null` に固定する
+   * （`compare.ts` の `buildRow` が明示的にそう組む——`courierRate?.sourceUrl` は
+   * **便のレート自体の出典**であって日数の出典ではないので、`tier: 'none'` の
+   * 行に紐付けない）。`docs/audit/courier-transit-days-2026-09-13.md` の結論どおり、
+   * 便名の括弧書きから抜いた日数（例 "2-5 days"）は「保証か目安か確認できない」
+   * ——`compare.ts` の `buildRow` 自身がこの行の `days` を常に `'not yet modeled'`
+   * として扱っている（日数を順位・総額の計算に一切使っていない）のと同じ理由で、
+   * `tier` を `'fixed'`/`'estimate'` などに格上げしない。`text` には便名から抜けた
+   * 日数の文字列（非公表なら 'transit time not published' 等）をそのまま入れるが、
+   * それを確定した事実として描くかは UI 側の責任（線種を `tier` で決める）。
+   *
+   * **`tracked`: 宅配便は現状すべて `true` に固定されている（`postage.ts` の
+   * `COURIER_METHODS`/`buildRow` の `spec` 双方が決め打ち）が、これは各社の追跡
+   * サービスの有無を1件ずつ確認した結果ではない——このPRが持ち込んだ値ではなく、
+   * 既存のエンジンにあった未検証の決め打ちをそのまま構造化フィールドに昇格した
+   * だけ。**宅配便の `tracked: true` を「確認済み」として読んではいけない**
+   * （郵便の `tracked` は `POSTAL_METHODS` に個別の値があり、こちらは信頼できる）。
+   *
+   * `minDays`/`maxDays` は `text` が明示的な日数の数字を含むときだけ機械的に抜き出す
+   * （"12–26 days" → `{minDays:12, maxDays:26}`、"10 days or less" → `{minDays:null,
+   * maxDays:10}`）。**月単位の表記（"1–3 months"）や単位の無い表記（"a week or
+   * less"）は日数に変換しない**——30日／週での換算は我々が作った数字になり、
+   * 一次情報の言い換えではなくなるため。`tier !== 'fixed'`（宅配便）のときは
+   * 常に両方 `null`（`text` に確度の無い数字が書かれていても、それを構造化フィールド
+   * に数値として格上げしない）。
+   */
+  days: {
+    text: string;
+    tier: Tier;
+    sourceUrl: string | null;
+    tracked: boolean;
+    minDays: number | null;
+    maxDays: number | null;
+  };
+  /**
+   * この社の情報源が一次情報か（`Service.primarySource`、`services.ts`）。
+   * UI が `SERVICE_BY_ID` を別途引かずに済むように行へ転記しただけ（監査 #94/#35）。
+   * **このPR時点では全社 `true`**（`services.ts` に `primarySource: false` の社が無い
+   * ——監査 #94「条件未発見」のとおり、この値で分岐しても今は何も変わらない）。
+   */
+  primarySource: boolean;
 }
 
 /**
@@ -501,6 +632,23 @@ export interface WeightSensitivity {
    * 動いていない順位が動いたことになる。
    */
   decisive: boolean;
+  /**
+   * `decisive` が両端の「おすすめ枠の**集合**」（`bracketIds`、行 id）が変わったことを
+   * 言うだけで、両端の勝者の**名前**が同じ場合を表現できない問題への対応
+   * （`docs/design/caveat-ui-grammar.md` §5、監査 #12・#3-3）。
+   *
+   * 例: 500g でも 10kg でも `winnerAtLow`/`winnerAtHigh` は同じ "FROM JAPAN" だが、
+   * 実際にはおすすめ枠に**同時に入る顔ぶれ**（例えば500gでは FROM JAPAN 単独、
+   * 10kg では FROM JAPAN + Buyee の2社）が変わっている——`decisive` はこの
+   * 「枠の集合が変わった」を正しく捉えているが、`winnerAtLow`/`winnerAtHigh` の
+   * 文字列だけを読むと何も変わっていないように見える（監査 S1 vs S1b の食い違い）。
+   *
+   * `bracketAtLow`/`bracketAtHigh` はその端で `computeBracket()` が実際に作った
+   * 枠（`recommended`/`equivalent` の行）のラベルをそのまま並べたもの。
+   * 比較可能な行が無い端（`winnerAtLow`/`High` が `null`）では空配列。
+   */
+  bracketAtLow: string[];
+  bracketAtHigh: string[];
 }
 
 export interface CompareResult {
@@ -539,6 +687,26 @@ export interface CompareResult {
    * 画面・`measured.ts`・README はこのフラグで「安定」と「判定不能」を描き分ける。
    */
   rankIndeterminate: boolean;
+  /**
+   * `rankIndeterminate` が true のときの範囲の種別と、1位候補の行 id
+   * （`docs/design/caveat-ui-grammar.md` §5、監査 #3-1）。`isIndeterminate()` は
+   * **1位グループ（`total.low` が最小の行、同着なら複数）だけ**を見て判定する
+   * ——2位以下の閉じた差は確定しているのに、既存の `indeterminateNote` の文言
+   * "These N companies sit within the same uncertainty" が全員を巻き込んで読める
+   * （監査の実例: EMS 12kg×5 の CA で、閉区間で確定している ZenMarket +¥622 と
+   * Neokyo +¥10,881 が「6社とも判別できない」と読めてしまう）。
+   *
+   * `indeterminateScope` は現状 `'leader'` の1種類しか無い（`isIndeterminate` が
+   * 判定不能の範囲を1位だけに絞る、という定義がこれ1つしか実装されていないため）。
+   * `rankIndeterminate === false` のときは `null`。
+   *
+   * `leaderIds` は `isIndeterminate` が内部で計算する「1位グループ」（`total.low`が
+   * 最小の comparable な行の id）——`indeterminateNote` が使う `comparable[0]` の
+   * 1社だけではなく、同着があれば複数入る。`rankIndeterminate === false` のときは
+   * 空配列。
+   */
+  indeterminateScope: 'leader' | null;
+  leaderIds: string[];
   /** 英語で1行。画面にそのまま出す。 */
   rankStabilityNote: string;
   /** bands があるときの総額全体の幅。 */
@@ -555,6 +723,17 @@ export interface CompareResult {
    * 重量が全点そろっているときだけ。利用者が入れた重量の点は入れない（幅を知らない）。
    */
   weightSensitivity: Record<string, WeightSensitivity>;
+  /**
+   * 宛先の事実（`restricted-goods.ts` の `LITHIUM_AIRMAIL_LISTED` から国だけで決まる。
+   * カートの中身を見ない）。UI が条件帯にリチウム電池の常時開示を立てるのに、
+   * `restricted-goods.ts` を別途importせずに済むよう `compare()` の結果に転記した
+   * （`docs/design/caveat-ui-grammar.md` §5、監査 #83）。
+   *
+   * `lithiumAirmailListed === false` の宛先（このツールが扱う7カ国では GB・DE）は、
+   * 航空郵便でリチウム電池入りの品を受け付ける宛先の一覧に載っていない
+   * （日本郵便公表の一覧、`LITHIUM_AIRMAIL_LISTED` のコメント参照）。
+   */
+  destinationFacts: { lithiumAirmailListed: boolean };
 }
 
 export interface CompareInput {
