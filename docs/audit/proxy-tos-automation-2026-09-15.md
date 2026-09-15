@@ -19,9 +19,20 @@
 |---|---|---|---|
 | Buyee | 条項なし | **明示的に禁止** | 規約本文は**実行Aだけが取得**（`https://buyee.jp/help/common/terms?lang=en`）。実行Bでは `https://buyee.jp/help/common/terms` が HTTP 403 |
 | ZenMarket | 条項なし | 禁止条項なし。**第三者アクセス時の免責あり** | 免責条項は**実行Bだけが発見** |
-| FROM JAPAN | **不明** | **不明** | 両実行とも取得失敗。本調査（タスク1）でも取得できなかった（後述） |
+| FROM JAPAN | 条項なし | **明示的に禁止**（Art. 3.2） | 規約本文は実行A・実行B・本タスクのPlaywright再試行すべてで取得失敗。**オーナーが通常のブラウザで取得した本文を追加コミットで反映**（後述） |
 | Neokyo | 条項なし | 条項なし | 両実行で一致 |
 | Jauce | 条項なし | **委任・譲渡を禁止** | **実行Bだけが発見** |
+
+### 最終分類（追加コミットで更新）
+
+**第三者によるアカウント操作**
+- 明示的に禁止: **Buyee**（Art. 2, 4(2)）／**FROM JAPAN**（Art. 3.2）／**Jauce**（委任・譲渡の禁止） ── **5社中3社**
+- 禁止条項なし: ZenMarket（第三者アクセス時の免責のみ）／Neokyo
+
+**自動化・ボット・スクレイピング**
+- 明示的に禁止: なし
+- 明示的に許可: なし
+- 条項が見つからない: **5社すべて**（FROM JAPAN の本文確認により、「確認できなかった」は0社になった。「見つからない」は「禁止されていない」ではない。後述の留保を参照）
 
 ## 社ごとの逐語引用
 
@@ -54,10 +65,35 @@
 
 ### FROM JAPAN
 
-- **両実行とも規約本文の取得に失敗している。**
-- 実行A・実行B共通の失敗記録: `https://www.fromjapan.co.jp/en/title/serviceRule/` は WebFetch で HTTP 403。`curl`（ブラウザ UA）では HTTP 200 だが、本文は Vue の SPA でクライアントサイド描画されており、静的 HTML に規約テキストが含まれていない。`https://www.fromjapan.co.jp/en/terms/` は HTTP 403（または後述の再確認で HTTP 404）。
-- **本タスク（タスク1）での追加調査結果は「取得できなかった」節に詳述する。結論として、今回も本文取得には至らなかった。**
-- 自動化・アカウント操作・API・料金転記のいずれについても: **不明（未取得）。**「禁止されていない」ではなく、規約本文そのものに到達できていないため判断材料が無い。
+- URL: `https://www.fromjapan.co.jp/en/title/serviceRule/`（"Last updated" **April 30, 2026**）
+- **取得経路**: この環境からの機械的な取得は、実行A・実行B・本タスクのPlaywright再試行を含めて**3回すべて失敗している**（WebFetch は HTTP 403／`curl` は HTTP 200 だが Vue の SPA でクライアントサイド描画のため本文なし／ヘッドレス Chromium は規約描画に必要なコアリソースが `net::ERR_TOO_MANY_RETRIES` で失敗。詳細は下記「タスク1」節）。**最終的に本文を取得できたのは、オーナーが自身の通常のブラウザで同URLを開き、本文を貼り付けたものである。**この環境の到達性の限界を示す実例として、経緯ごと記録する。
+- Article 3.2（アカウント共有の明示的禁止 ── 最重要）:
+  > "Members are prohibited from the sharing, lending, transfer, sale, etc. of their membership or ID, etc. to a third party."
+- Article 3.3（第三者の不正利用でも会員の責任）:
+  > "Upon confirmation of a registered user ID and password, we consider the user of the account to be the owner, and use of the account to be the member's full responsibility. We will not be liable for any losses even in the case of unauthorized use of an ID by a third party. Payment to cover any damages incurred to the member or our company will be the member's responsibility."
+- Article 2.3（第三者による代理登録の禁止）:
+  > "Users are prohibited from having third parties register to become a member on their behalf."
+- Article 5.2（アカウント停止事由）:
+  > "Using a user ID for illegal purposes, or having a third party use a member's account for illegal purposes."
+  >
+  > **この停止事由は「不正な目的での」第三者利用に限定されている点に注意。** Art. 3.2 の包括的な禁止とは適用範囲が異なる。
+- Article 12 末尾（第三者を通じた禁止行為）:
+  > "Additionally, members are prohibited from taking any action listed above through a third party."
+- Article 12 の禁止行為のうち自動化に関係しうるもの:
+  > "Intentionally interfering with the business operations of our service, or of a seller's site."
+  > "Illegally entering our site server or other computers."
+  >
+  > **どちらもボット・スクレイピング・自動化を名指ししてはいない。**「自動化がここでいう業務妨害と読まれる余地はある」という指摘はできるが、**それは条文そのものではなく条文の解釈である**ことを明記する。
+- Article 17（準拠法・管轄）:
+  > "All Terms of Service and individual agreements conform to and will be interpreted in accordance with Japanese law only."
+  > "it shall be submitted to the Tokyo District Court or Tokyo Summary Court as the exclusive agreement jurisdictional court of first instance."
+  > "The application of the United Nations Convention on Contracts for the International Sale of Goods is expressly excluded."
+- 自動化・ボット・スクレイピングに関する条項: 本文全体を確認した上で、**名指しした条項はなし。**「禁止されていない」とは書かない。
+- アカウント共有・第三者操作に関する条項: **明示的に禁止**（Article 3.2）。
+- API の利用条件: **該当条項なし。**
+- 料金表の転記・再掲に関する条項: **該当条項なし。**Article 8 に自社の料金体系についての記載はあるが、これは料金の説明であって、料金表の転記・再掲を制限する条項ではない。
+- **Buyee（Art. 4(3)）と FROM JAPAN（Art. 3.3）は、ほぼ同じ構造の条文を持っている**: 「登録済みのIDとパスワードでの利用は会員本人の利用とみなし、第三者による不正利用であっても会社は免責され、損害の負担は会員側」という設計である。この構造は2社共通で、**責任が利用者に降りる**設計であることを指摘しておく。
+- FROM JAPAN のフッターには「[Notification Based on the Act on Specified Commercial Transactions](https://www.fromjapan.co.jp/en/title/transactionAct/)」（特定商取引法に基づく表記）へのリンクがある。**日本の代行業者が海外向け英語サービスにおいても特定商取引法に基づく表記を出している実例**であり、Article 17 が準拠法を日本法・専属管轄を東京地裁と定めていることと合わせて、自社の事業者表示のあり方を検討する際の参照点として記録する。
 
 ### Neokyo
 
@@ -120,7 +156,7 @@ ZenMarket には一般利用者向けの公式見積画面（`https://zenmarket.
 
 ### 結論（正直な現状）
 
-**タスク1は失敗した。** FROM JAPAN の利用規約本文は、今回も取得できなかった。
+**この環境からの機械的な取得はすべて失敗した。** FROM JAPAN の利用規約本文は、Playwright での再試行を含め、この環境からは一度も取得できていない。
 
 原因として観測できた事実は以下のとおりである。ここから先を推測で断定しない（CLAUDE.md §9）。
 
@@ -129,7 +165,7 @@ ZenMarket には一般利用者向けの公式見積画面（`https://zenmarket.
 - この失敗は再現性があるが、失敗するリソースの組み合わせは試行ごとに異なった（ある回は JS チャンクとフォント、別の回は翻訳データと CSS）。
 - ネットワークレベルで何が起きているのか（プロキシ側の同時接続数制限か、ヘッドレス Chromium 特有の挙動か、サイト側の何らかの識別によるものか）は、この調査の範囲では特定できていない。技術的な原因を推測で断定することはしない。
 
-したがって、FROM JAPAN の「自動化」「アカウント操作」「API」「料金転記」の4条項は、**両実行に加え本タスクの追加試行を経てもなお不明のまま**である。「規約に書かれていないだろう」という推測は行わない。
+**最終的に本文を得られたのは、この環境からの取得ではない。** オーナーが自身の通常のブラウザで同URLを直接開き、本文を貼り付けたものを、上の「FROM JAPAN」節に反映した。**3回の機械的な取得失敗の末に、この環境の外（オーナーの手元のブラウザ）から取得した**という経緯自体を、この環境の到達性の限界の実例として記録しておく。「この環境から取得できない」ことと「規約が存在しない・確認できない」ことは別であり、後者ではなく前者だった。
 
 ## 2つの実行で結果が食い違った箇所
 
@@ -147,8 +183,9 @@ ZenMarket には一般利用者向けの公式見積画面（`https://zenmarket.
 
 上記の逐語引用から読み取れる範囲では、禁じられているのは「第三者が利用者のアカウントを使うこと」であって、自動化や AI そのものを名指しで禁じている条項は5社中どこにも見つかっていない。この読みに基づくと:
 
-- **(A) サーバ側のヘッドレスブラウザが利用者のセッション（ログイン済みアカウント）を操作する設計**は、Buyee（Article 2・4(2)）や Jauce（委任・譲渡の禁止、ログイン情報共有の禁止）の文言に触れる可能性がある。行為の主体が「利用者本人」ではなく「利用者に代わって動くサーバ側のプロセス」になるため。
+- **(A) サーバ側のヘッドレスブラウザが利用者のセッション（ログイン済みアカウント）を操作する設計**は、**5社中3社**（Buyee: Article 2・4(2)、FROM JAPAN: Article 3.2、Jauce: 委任・譲渡の禁止、ログイン情報共有の禁止）の文言に触れる可能性がある。行為の主体が「利用者本人」ではなく「利用者に代わって動くサーバ側のプロセス」になるため。**残る2社（ZenMarket・Neokyo）は明文の禁止条項が無いだけであり、許可されているわけではない**（前述の留保のとおり）。
 - **(B) 利用者自身のブラウザ上で動く設計（ブラウザ拡張機能等）**であれば、行為者が利用者本人のまま変わらないため、文言上は (A) と同じ形では抵触しない可能性がある。
+- FROM JAPAN の本文確認により、この2択の判断材料が5社中3社（過半数）で「明文で禁止」に固まった。**したがって、サーバ側から利用者のアカウントを操作する設計を採る余地は、5社中3社について明文上ない。**残り2社も「許可されている」という積極的な根拠は無いため、実質的には (B) の利用者自身のブラウザ上で動く設計を軸に検討するのが妥当と考えられる。
 
 **この区別はあくまでコーディネーターによる規約文言の読み方であり、法的な判断や助言ではない。**実際の設計判断の前には、必要に応じて法務的な確認を別途行うべきものとして扱う。
 
