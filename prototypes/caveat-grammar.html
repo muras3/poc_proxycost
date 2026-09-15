@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caveat grammar - static specimen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap">
+<!--
+  Static specimen for docs/design/caveat-ui-grammar.md.
+  Numbers are copied from ProxyCost.compare() output (engine.js at main dceaea6):
+    S1  = CA, example cart (5 items), cheapest per service
+    S16 = CA, EMS fixed, 12 kg x 5
+    S3  = CA, DHL fixed (Neokyo row)
+  Nothing here is computed; it is a drawing of the grammar, not a product.
+  ASCII only: every non-ASCII glyph is an HTML entity.
+-->
+<style>
+:root{--paper:#F2EDE3;--ink:#1B1A17;--ink2:#5B574E;--hair:rgba(27,26,23,.2);--red:#D7261E;--indigo:#2B3A8C;
+--sans:'Public Sans',system-ui,sans-serif;--mono:'Spline Sans Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans)}
+.wrap{max-width:1120px;margin:0 auto;padding:24px 32px 60px}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:15px;font-weight:700;margin:40px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--ink)}
+h3{font-size:13px;font-weight:600;margin:18px 0 6px;color:var(--ink2)}
+p.lede{margin:0 0 6px;color:var(--ink2);max-width:80ch}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.lbl{font:600 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+
+/* ---- the seven means ---- */
+.means{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px 28px}
+.mean{border-top:1px solid var(--hair);padding-top:8px}
+.mean b{display:block;font-size:13px}
+.mean small{display:block;color:var(--ink2);font-size:12px;margin-bottom:8px}
+.spec{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:baseline;font-size:14px}
+.spec span{display:inline-flex;flex-direction:column;gap:3px}
+.spec i{font-style:normal;font-size:10.5px;color:var(--ink2)}
+
+/* line styles = provenance of a figure */
+.u{padding-bottom:1px;border-bottom:1.5px solid var(--ink)}
+.u.est{border-bottom-style:dashed;border-bottom-color:var(--indigo);color:var(--indigo)}
+.u.sec{border-bottom-style:dotted}
+.u.none{border-bottom:0;color:var(--ink2)}
+
+/* the three marks */
+.bang{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid var(--red);color:var(--red);font:700 11px/1 var(--mono);vertical-align:-3px}
+.q{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border:1.5px solid var(--red);border-radius:50%;color:var(--red);font:700 10px/1 var(--mono);vertical-align:-3px}
+.sec-mk{display:inline-flex;align-items:center;justify-content:center;min-width:15px;height:15px;border:1px solid var(--indigo);color:var(--indigo);font:600 10px/1 var(--mono);padding:0 3px;vertical-align:-3px}
+
+/* interval strip */
+.strip{position:relative;height:10px;width:100%;max-width:220px}
+.strip .axis{position:absolute;left:0;right:0;top:4px;height:1px;background:var(--hair)}
+.strip .bar{position:absolute;top:2px;height:5px;background:var(--ink)}
+.strip .bar.est{background:repeating-linear-gradient(90deg,var(--indigo) 0 4px,transparent 4px 7px)}
+.strip .bar.open{background:linear-gradient(90deg,var(--ink) 0 55%,rgba(27,26,23,0))}
+.strip .bar.pt{width:2px}
+.strip .lead{position:absolute;top:0;bottom:0;width:1px;background:var(--red)}
+
+/* stamp */
+.stamp{display:inline-flex;flex-direction:column;align-items:center;transform:rotate(-5deg);font:700 11px/1.05 var(--mono);letter-spacing:.12em;color:var(--red);border:1.5px solid var(--red);padding:3px 8px 2px;text-transform:uppercase}
+.stamp small{font-size:7.5px;letter-spacing:.2em}
+
+/* ---- board ---- */
+.board{border-top:1px solid var(--ink);border-bottom:1px solid var(--hair);margin-top:8px}
+.cond{display:flex;gap:10px;align-items:baseline;padding:9px 12px 8px;border-top:1.5px solid var(--red);font-size:14.5px;line-height:1.4;margin:0}
+.band{padding:4px 12px 5px;border-top:1px solid var(--hair);font-size:12px;color:var(--ink2);margin:0}
+.bh,.rw{display:grid;grid-template-columns:38px minmax(0,1.5fr) 150px 64px 190px 150px;column-gap:14px;align-items:start;padding:12px 12px}
+.bh{padding:8px 12px;border-bottom:1px solid var(--hair)}
+.rw{border-bottom:1px solid var(--hair);position:relative}
+.rw.first{padding-top:30px}
+.rw.first .stamp{position:absolute;left:56px;top:4px}
+.rw.out{color:var(--ink2)}
+.rk{font:600 16px var(--mono)}
+.rw.first .rk{color:var(--red)}
+.svcwrap{display:flex;flex-direction:column;gap:2px;min-width:0}
+.svc{font-size:16px;font-weight:600;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+.svc small{font-weight:400;font-size:12px;color:var(--ink2)}
+.ref{font-size:11px;color:var(--ink2)}
+.ship{font-size:12px;display:flex;flex-direction:column;gap:1px}
+.ship .d{color:var(--ink2)}
+.ship .sea{color:var(--ink2);font-size:11px}
+.boxes{font-size:12px;color:var(--ink2);display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.bx{display:inline-block;width:14px;height:10px;border:1.5px solid var(--ink);border-radius:1px}
+.bx.est{border-style:dashed;border-color:var(--indigo)}
+.diff{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.diff .v{font:700 19px var(--mono)}
+.diff .v.lead{font-size:13px;letter-spacing:.06em;color:var(--red)}
+.diff .v.nr{font-size:11px;letter-spacing:.06em;color:var(--ink2)}
+.tot{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.tot .t{font:500 13.5px var(--mono)}
+.tot .t .plus{font-weight:700;color:var(--red)}
+.tot .miss{font-size:11px;color:var(--ink2)}
+.r{text-align:right;justify-self:end}
+.rowcav{grid-column:2/-1;display:flex;gap:8px;align-items:baseline;font-size:13px;margin-top:4px}
+.bracket{position:absolute;left:0;top:0;bottom:0;width:4px;border-left:2px solid var(--ink);border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+.bracket.mid{border-top:0;border-bottom:0}
+.bracket.top{border-bottom:0}
+.bracket.bot{border-top:0}
+.rule{padding:6px 12px;font-size:11px;color:var(--ink2);border-bottom:1px solid var(--hair);border-top:1px solid var(--ink);letter-spacing:.06em;text-transform:uppercase}
+
+/* cart */
+.cart{margin-top:8px;border-top:1px solid var(--ink)}
+.cart .head{display:flex;gap:14px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--hair)}
+.item{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:12px;padding:10px 0;border-bottom:1px solid var(--hair)}
+.thumb{width:44px;height:44px;border:1px solid var(--hair);background:#E9E2D3}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;font-size:12px;color:var(--ink2);margin-top:4px}
+.fin{font:500 14px var(--mono);color:var(--ink)}
+.fin.est{color:var(--indigo);border-bottom:1.5px dashed var(--indigo)}
+.fin.as{color:var(--ink);border-bottom:1.5px dotted var(--red)}
+.fin.fix{border-bottom:1.5px solid var(--ink)}
+.itemcav{grid-column:2;display:flex;gap:8px;align-items:baseline;font-size:13px;margin-top:6px;padding-top:6px;border-top:1px solid var(--hair)}
+
+/* two frames */
+.frames{display:grid;grid-template-columns:1fr;gap:36px;align-items:start}
+.phone{width:390px;justify-self:start;margin-top:8px;padding:0 14px 20px;outline:1.5px solid var(--ink);container-type:inline-size}
+.phone .bh{display:none}
+.phone .rw{grid-template-columns:30px minmax(0,1fr) auto;grid-template-areas:"rk sv tt" "rk sh sh" "rk df df" "rk cv cv";row-gap:6px}
+.phone .rk{grid-area:rk}.phone .svcwrap{grid-area:sv}.phone .ship{grid-area:sh;flex-direction:row;flex-wrap:wrap;gap:2px 10px}
+.phone .boxes{display:none}.phone .diff{grid-area:df;align-items:flex-start}.phone .tot{grid-area:tt}
+.phone .rowcav{grid-area:cv;grid-column:auto}
+.phone .strip{max-width:100%}
+.phone .rw.first{padding-top:34px}
+.phone .rw.first .stamp{left:44px}
+@media (max-width:900px){.phone{width:100%;max-width:390px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Caveat grammar &mdash; static specimen</h1>
+<p class="lede">Seven means, seven meanings. One means never carries two meanings; one meaning never uses two means. Numbers below are copied from <code>compare()</code> output (CA example cart, EMS 12 kg &times; 5, DHL fixed). Companion to <code>docs/design/caveat-ui-grammar.md</code>.</p>
+
+<h2>1. The seven means</h2>
+<div class="means">
+  <div class="mean"><b>Line style under a figure = where the number comes from</b><small>Nothing else changes line style. No amber, no tilde.</small>
+    <div class="spec num"><span><em class="u">&#xA5;9,660</em><i>solid: published</i></span><span><em class="u est">&#xA5;800</em><i>dashed: our estimate</i></span><span><em class="u sec">&#xA5;2,800</em><i>dotted: second-hand</i></span><span><em class="u none">&mdash;</em><i>no line: not in the total</i></span></div></div>
+  <div class="mean"><b>Shape of the number = width, top, precision</b><small>Totals rounded to &#xA5;100; differences to the yen. No &asymp;.</small>
+    <div class="spec num"><span>&#xA5;53,200 &#x2013; 55,300<i>range, top known</i></span><span>&#xA5;60,500<span class="plus" style="color:var(--red);font-weight:700">+</span><i>no top can be placed</i></span><span>&#x2265; +&#xA5;1,788<i>difference is a floor</i></span><span>+&#xA5;11,365<i>difference is exact</i></span></div></div>
+  <div class="mean"><b>Interval strip = how far a total can stretch, and whether it touches 1st</b><small>Shared axis, origin = 1st place low end. Fade = no upper bound. Dashed = closed only by our assumption.</small>
+    <div class="spec"><span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar est" style="left:0;width:9%"></span></span><i>1st, estimated (closed by fuel-surcharge assumption)</i></span><span><span class="strip"><span class="axis"></span><span class="bar" style="left:7%;width:13%"></span></span><i>range, overlaps 1st</i></span><span><span class="strip"><span class="axis"></span><span class="bar open" style="left:29%;width:60%"></span></span><i>no upper bound</i></span><span><span class="strip"><span class="axis"></span><span class="bar pt" style="left:45%"></span></span><i>point (certain)</i></span></div></div>
+  <div class="mean"><b>Three marks, three meanings</b><small>Nothing else is a mark. No warning triangle, no star, no arrows.</small>
+    <div class="spec"><span><span class="bang">!</span><i>a fact that changes the decision</i></span><span><span class="q">?</span><i>we hold no number (placeholder)</i></span><span><span class="sec-mk">&#xA7;</span><i>a source or a formula can be read</i></span></div></div>
+  <div class="mean"><b>Position = when to read it</b><small>Condition strip above the board (max 1 line + 1 always-on band). Figures in the row. Reasons behind &#xA7; or inside the opened delivery log. Unranked rows below a rule.</small></div>
+  <div class="mean"><b>State = not compared / not selectable</b><small>Unranked: no rank number, total &mdash;, grey, below the rule. Disabled method option + reason. Placeholder item drawn with a dotted outline.</small>
+    <div class="spec"><span><span class="bx"></span> <span class="bx"></span><i>2 boxes, parcel count verified</i></span><span><span class="bx est"></span><i>1 box, assumed (not verified)</i></span></div></div>
+  <div class="mean"><b>Motion = only two events</b><small>Rows slide when the order changes (260 ms). The stamp is pressed when 1st is decided. Nothing else moves; both stop under prefers-reduced-motion.</small>
+    <div class="spec"><span><span class="stamp"><small>estimated</small>cheapest</span><i>closed by an assumption</i></span><span><span class="stamp">cheapest</span><i>closed by published figures</i></span><span><span class="stamp">leads</span><i>top end open: indeterminate</i></span></div></div>
+</div>
+
+<h2>2. Specimen &mdash; CA, example cart, cheapest per service (S1)</h2>
+<div class="frames">
+<div>
+  <p class="cond"><span class="bang">!</span><span>1st place changes with the weight of one item &mdash; <span class="num">&#x53E4;&#x672C; &#x307E;&#x3068;&#x3081;&#x58F2;&#x308A;</span> <span class="q">?</span> 1 kg. At 500 g: FROM JAPAN. At 10 kg: FROM JAPAN + Buyee consolidated. <a href="#cart">Check this weight</a> <span class="sec-mk">&#xA7;</span></span></p>
+  <p class="band">We never check whether alcohol, lithium batteries and blades can be shipped. Displayed shipping rates are estimated as fuel-surcharge inclusive. Remote-area surcharges are not included. <span class="sec-mk">&#xA7;</span></p>
+  <div class="board">
+    <div class="bh"><span class="lbl">Rank</span><span class="lbl">Service</span><span class="lbl">Ships by</span><span class="lbl">Boxes</span><span class="lbl r">vs 1st</span><span class="lbl r">Total</span></div>
+
+    <div class="rw first"><span class="bracket top"></span><span class="stamp"><small>estimated</small>cheapest</span>
+      <span class="rk">01</span>
+      <span class="svcwrap"><span class="svc">FROM JAPAN</span><span class="ref">pays us a % of your purchase</span></span>
+      <span class="ship"><span>UPS</span><span class="d"><em class="u none">days &mdash;</em></span><span class="sea">sea 1&#x2013;3 mo <span class="num">&#xA5;9,650</span></span></span>
+      <span class="boxes"><span class="bx"></span></span>
+      <span class="diff"><span class="v lead">1ST</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar est" style="left:0;width:9%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;53,200 &#x2013; 55,300</em></span></span>
+    </div>
+
+    <div class="rw"><span class="bracket mid"></span>
+      <span class="rk">02</span>
+      <span class="svcwrap"><span class="svc">Neokyo</span><span class="ref">pays us nothing</span></span>
+      <span class="ship"><span>FedEx Intl Connect Plus</span><span class="d"><em class="u sec">3&#x2013;5 days</em></span><span class="sea">sea 1&#x2013;3 mo <span class="num">&#xA5;9,650</span></span></span>
+      <span class="boxes"><span class="bx"></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;1,788</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar" style="left:7%;width:13%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;54,900 &#x2013; 58,200</em></span></span>
+    </div>
+
+    <div class="rw"><span class="bracket bot"></span>
+      <span class="rk">03</span>
+      <span class="svcwrap"><span class="svc">ZenMarket</span><span class="ref">pays us &#xA5;100 if you sign up</span></span>
+      <span class="ship"><span>FEDEX</span><span class="d"><em class="u none">days &mdash;</em></span><span class="sea">sea 2&#x2013;3 mo <span class="num">&#xA5;3,300 &#x2013; 4,000</span></span></span>
+      <span class="boxes"><span class="bx est"></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;2,673</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar" style="left:11%;width:12%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;55,800 &#x2013; 58,800</em></span></span>
+    </div>
+
+    <div class="rw">
+      <span class="rk">04</span>
+      <span class="svcwrap"><span class="svc">Buyee <small>consolidated</small></span><span class="ref">pays us a % of your purchase</span></span>
+      <span class="ship"><span>Buyee Air Delivery</span><span class="d"><em class="u none">days &mdash;</em></span></span>
+      <span class="boxes"><span class="bx"></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;7,358</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar open" style="left:29%;width:60%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;60,500</em><span class="plus">+</span></span><span class="miss"><em class="u none">+ package consolidation</em></span></span>
+      <span class="rowcav"><span class="bang">!</span><span>One box only if you ask Buyee to combine your orders.</span></span>
+    </div>
+
+    <div class="rw">
+      <span class="rk">05</span>
+      <span class="svcwrap"><span class="svc">Jauce</span><span class="ref">pays us nothing</span></span>
+      <span class="ship"><span>EMS</span><span class="d"><em class="u">a week or less</em></span><span class="sea">sea 1&#x2013;3 mo <span class="num">&#xA5;9,650</span></span></span>
+      <span class="boxes"><span class="bx"></span></span>
+      <span class="diff"><span class="v num">+&#xA5;11,365</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar pt" style="left:45%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;64,500</em></span></span>
+    </div>
+
+    <div class="rw">
+      <span class="rk">06</span>
+      <span class="svcwrap"><span class="svc">Buyee <small>default</small></span><span class="ref">pays us a % of your purchase</span></span>
+      <span class="ship"><span>Small packet (airmail)</span><span class="d"><em class="u">10 days or less</em> &middot; untracked</span></span>
+      <span class="boxes"><span class="bx"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span><span class="bx"></span></span>
+      <span class="diff"><span class="v num">+&#xA5;20,457</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar pt" style="left:82%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;73,600</em></span></span>
+      <span class="rowcav"><span class="bang">!</span><span>Ask Buyee to combine before shipping: about &#xA5;13,099 less. Their fee for combining is unpublished.</span></span>
+    </div>
+  </div>
+  <p class="lede" style="margin-top:6px">Bracket on the left = these rows overlap 1st place's interval (recommended + equivalent, drawn as one thing). No badges. Grey <em class="u none">days &mdash;</em> = carrier transit time not published; dotted = taken from the proxy's label, unverified; solid = Japan Post figure.</p>
+
+  <h3>Unranked row (S3, DHL fixed) &mdash; below a rule, no rank, no total</h3>
+  <div class="board">
+    <div class="rule">Not ranked &mdash; the largest cost is missing</div>
+    <div class="rw out">
+      <span class="rk">&mdash;</span>
+      <span class="svcwrap"><span class="svc">Neokyo</span><span class="ref">pays us nothing</span></span>
+      <span class="ship"><span>DHL</span><span class="d"><em class="u none">not sold here</em></span></span>
+      <span class="boxes"></span>
+      <span class="diff"><span class="v nr">NOT RANKED</span></span>
+      <span class="tot"><span class="t"><em class="u none">&mdash;</em></span></span>
+      <span class="rowcav"><span style="color:var(--ink2)">Neokyo does not offer this courier.</span></span>
+    </div>
+  </div>
+
+  <h3>Indeterminate 1st (S16, EMS 12 kg &times; 5) &mdash; the leader's top end is open, the others are not</h3>
+  <p class="cond"><span class="bang">!</span><span>1st place's total has no upper bound (outsourced packing, unpublished), so it may not be the cheapest. Shipping method moves the total more than company choice. <a href="#">Change method</a></span></p>
+  <div class="board">
+    <div class="rw first"><span class="stamp">leads</span>
+      <span class="rk">01</span>
+      <span class="svcwrap"><span class="svc">FROM JAPAN</span><span class="ref">pays us a % of your purchase</span></span>
+      <span class="ship"><span>EMS</span><span class="d"><em class="u">a week or less</em></span></span>
+      <span class="boxes"><span class="bx"></span><span class="bx"></span><span class="bx"></span></span>
+      <span class="diff"><span class="v lead">LEADS</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar open" style="left:0;width:95%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;220,400</em><span class="plus">+</span></span><span class="miss"><em class="u none">+ outsourced packing</em></span></span>
+    </div>
+    <div class="rw">
+      <span class="rk">02</span>
+      <span class="svcwrap"><span class="svc">ZenMarket</span><span class="ref">pays us &#xA5;100 if you sign up</span></span>
+      <span class="ship"><span>EMS</span><span class="d"><em class="u">a week or less</em></span></span>
+      <span class="boxes"><span class="bx"></span><span class="bx"></span><span class="bx"></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;622</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar pt" style="left:2.5%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;221,100</em></span></span>
+    </div>
+    <div class="rw">
+      <span class="rk">03</span>
+      <span class="svcwrap"><span class="svc">Neokyo</span><span class="ref">pays us nothing</span></span>
+      <span class="ship"><span>EMS</span><span class="d"><em class="u">a week or less</em></span></span>
+      <span class="boxes"><span class="bx"></span><span class="bx"></span><span class="bx"></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;10,881</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar pt" style="left:43%"></span></span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;231,300</em></span></span>
+    </div>
+  </div>
+  <p class="lede" style="margin-top:6px">The fade on row 01 reaches past every other bar: that is the whole statement. Rows 02 and 03 keep their exact difference to each other (&#xA5;10,259) &mdash; we do not call them &quot;within our error&quot;.</p>
+
+  <h3 id="cart">Cart with a placeholder weight</h3>
+  <div class="cart">
+    <div class="head"><span class="lbl">Cart</span><span class="num">5 items &middot; 3.3 kg</span><span><span class="q">?</span> <span class="num">1 of 5</span> at a placeholder weight</span></div>
+    <div class="item"><span class="thumb"></span><div>
+      <div>&#x521D;&#x97F3;&#x30DF;&#x30AF; 1/7 &#x30B9;&#x30B1;&#x30FC;&#x30EB;&#x30D5;&#x30A3;&#x30AE;&#x30E5;&#x30A2;</div>
+      <div class="meta"><span class="fin est">&#xA5;12,800</span><span>current bid</span><span class="fin est">1,400 g</span><span>1/7 scale figure &middot; n=647 <span class="sec-mk">&#xA7;</span></span><span class="fin est">&#xA5;800</span><span>domestic, our guess</span></div>
+    </div></div>
+    <div class="item"><span class="thumb"></span><div>
+      <div>&#x53E4;&#x672C; &#x307E;&#x3068;&#x3081;&#x58F2;&#x308A; 20&#x518A; &#x6587;&#x5EAB;</div>
+      <div class="meta"><span class="fin est">&#xA5;2,500</span><span>current bid</span><span class="fin as">1,000 g</span><span class="q">?</span><span>no weight data &mdash; our number <span class="sec-mk">&#xA7;</span></span></div>
+      <div class="itemcav"><span class="bang">!</span><span>This weight decides 1st place. At 500 g: FROM JAPAN. At 10 kg: FROM JAPAN + Buyee consolidated.</span></div>
+    </div></div>
+    <div class="item"><span class="thumb"></span><div>
+      <div>&#x30EC;&#x30C8;&#x30ED;&#x30B2;&#x30FC;&#x30E0; &#x30BD;&#x30D5;&#x30C8; &#x7BB1;&#x8AAC;&#x4ED8;&#x304D;</div>
+      <div class="meta"><span class="fin fix">&#xA5;3,980</span><span>listing page &middot; read 2026-09-12</span><span class="fin est">300 g</span><span>Retro game cartridge &middot; n=880 <span class="sec-mk">&#xA7;</span></span></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- 390 px frame: same rows, three-tier layout -->
+<div class="phone">
+  <p class="cond" style="font-size:13.5px"><span class="bang">!</span><span>1st place changes with the weight of one item <span class="q">?</span>. <a href="#cart">Check it</a> <span class="sec-mk">&#xA7;</span></span></p>
+  <p class="band">Shipability never checked. Rates estimated fuel-surcharge inclusive; remote-area surcharges not included. <span class="sec-mk">&#xA7;</span></p>
+  <div class="board">
+    <div class="rw first"><span class="bracket top"></span><span class="stamp"><small>estimated</small>cheapest</span>
+      <span class="rk">01</span>
+      <span class="svcwrap"><span class="svc">FROM JAPAN</span><span class="ref">pays us a %</span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;53,200 &#x2013; 55,300</em></span></span>
+      <span class="ship"><span>UPS</span><span class="d"><em class="u none">days &mdash;</em></span><span class="sea">sea 1&#x2013;3 mo &#xA5;9,650</span></span>
+      <span class="diff"><span class="v lead">1ST</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar est" style="left:0;width:9%"></span></span></span>
+    </div>
+    <div class="rw"><span class="bracket mid"></span>
+      <span class="rk">02</span>
+      <span class="svcwrap"><span class="svc">Neokyo</span><span class="ref">pays us nothing</span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;54,900 &#x2013; 58,200</em></span></span>
+      <span class="ship"><span>FedEx Connect Plus</span><span class="d"><em class="u sec">3&#x2013;5 days</em></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;1,788</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar" style="left:7%;width:13%"></span></span></span>
+    </div>
+    <div class="rw"><span class="bracket bot"></span>
+      <span class="rk">03</span>
+      <span class="svcwrap"><span class="svc">ZenMarket</span><span class="ref">pays us &#xA5;100</span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;55,800 &#x2013; 58,800</em></span></span>
+      <span class="ship"><span>FEDEX</span><span class="d"><em class="u none">days &mdash;</em></span><span class="bx est" style="margin-left:4px"></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;2,673</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar" style="left:11%;width:12%"></span></span></span>
+    </div>
+    <div class="rw">
+      <span class="rk">04</span>
+      <span class="svcwrap"><span class="svc">Buyee <small>consolidated</small></span><span class="ref">pays us a %</span></span>
+      <span class="tot"><span class="t"><em class="u est">&#xA5;60,500</em><span class="plus">+</span></span><span class="miss"><em class="u none">+ consolidation</em></span></span>
+      <span class="ship"><span>Buyee Air</span><span class="d"><em class="u none">days &mdash;</em></span></span>
+      <span class="diff"><span class="v num">&#x2265; +&#xA5;7,358</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar open" style="left:29%;width:60%"></span></span></span>
+      <span class="rowcav"><span class="bang">!</span><span>One box only if you ask Buyee to combine.</span></span>
+    </div>
+    <div class="rw">
+      <span class="rk">05</span>
+      <span class="svcwrap"><span class="svc">Jauce</span><span class="ref">pays us nothing</span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;64,500</em></span></span>
+      <span class="ship"><span>EMS</span><span class="d"><em class="u">a week or less</em></span></span>
+      <span class="diff"><span class="v num">+&#xA5;11,365</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar pt" style="left:45%"></span></span></span>
+    </div>
+    <div class="rw">
+      <span class="rk">06</span>
+      <span class="svcwrap"><span class="svc">Buyee <small>default</small></span><span class="ref">pays us a %</span></span>
+      <span class="tot"><span class="t"><em class="u">&#xA5;73,600</em></span></span>
+      <span class="ship"><span>Small packet air</span><span class="d"><em class="u">10 days or less</em> &middot; untracked &middot; 5 boxes</span></span>
+      <span class="diff"><span class="v num">+&#xA5;20,457</span><span class="strip"><span class="axis"></span><span class="lead"></span><span class="bar pt" style="left:82%"></span></span></span>
+      <span class="rowcav"><span class="bang">!</span><span>Ask Buyee to combine: about &#xA5;13,099 less; their fee is unpublished.</span></span>
+    </div>
+  </div>
+  <p class="lede" style="font-size:12px;margin-top:6px">390 px: three tiers per row (name + total / method / difference + strip). Per row: at most one <span class="bang">!</span>, one <span class="sec-mk">&#xA7;</span>, no <span class="q">?</span>. Red appears at most twice above the fold.</p>
+</div>
+</div>
+</div>
+</body>
+</html>
