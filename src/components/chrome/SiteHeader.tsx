@@ -1,26 +1,26 @@
 import Link from 'next/link';
 
+// 「1行の説明」（"Some pay us, some don't — that never moves a row."）は
+// src/app/page.tsx のヒーロー文（同趣旨の開示）と重複するため、ここでは
+// 出さない。ヘッダーは複数ページ（/weights /sources /privacy）で共通に
+// 出るので、丈を Mock 相当まで太らせるとどのページでも最初の画面が
+// 圧迫される（desktop layout の e2e が実測していた: 順位表が最初の
+// 画面から押し出される）。ロゴ + ナビだけの一段に絞る。
 export function SiteHeader() {
   return (
-    <header className="border-b-[3px] border-double border-ink pt-6 pb-2">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-baseline justify-between gap-x-5 gap-y-3 px-4">
+    <header className="border-b-2 border-ink py-3">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-baseline justify-between gap-x-5 gap-y-2 px-4">
         <Link
           href="/"
-          className="font-display text-[32px] font-extrabold uppercase leading-none tracking-wide text-ink sm:text-[38px]"
+          className="font-display text-2xl font-extrabold uppercase leading-none tracking-wide text-ink"
         >
           proxy<span className="text-post-red">cost</span>
         </Link>
-        <nav aria-label="Site" className="flex items-center gap-4 font-mono text-xs text-ink">
+        <nav aria-label="Site navigation" className="flex items-center gap-4 font-mono text-xs text-ink">
           <Link href="/weights" className="hover:underline">Weights</Link>
           <Link href="/sources" className="hover:underline">Sources</Link>
         </nav>
       </div>
-      <p className="mx-auto mt-2 w-full max-w-6xl px-4 text-sm text-ink-2">
-        What five Japanese proxies would charge you, landed at your door.{' '}
-        <strong className="font-semibold text-ink">
-          Some pay us, some don&apos;t — that never moves a row.
-        </strong>
-      </p>
     </header>
   );
 }

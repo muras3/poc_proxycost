@@ -14,6 +14,22 @@
   --color-post-red: #d7261e;
   --color-post-blue: #2b3a8c;
   --color-ad-bg: #dedede;
+
+  /*
+   * `--color-paper`（body の地色）は #F2EDE3 で、旧地色 #FAFAF9（ほぼ白）より
+   * 暗い。Tailwind の `text-neutral-500`（既存の補助文字。tiers.tsx・各ページの
+   * 見出し上のラベル等、多数のコンポーネントで使用）と `text-amber-700`
+   * （`tierClass.estimate`。確度「推定」の数字の色）は、旧地色では AA
+   * （4.5:1）を満たしていたが、新しい紙色では 4.06:1 / 4.30:1 に落ちて違反する
+   * （2026-09-15、e2e/a11y.spec.ts の axe 実測で確認）。
+   *
+   * 該当コンポーネントを1つずつ改修すると PR-B/PR-C が並行編集している
+   * ファイル（RankBoard・ItemList・Calculator 等）に触れて衝突するので、
+   * ここでトークン自体を1段暗い色に上書きする。ダークモードの
+   * `dark:text-neutral-400` / `dark:text-amber-400` は別クラスなので影響しない。
+   */
+  --color-neutral-500: var(--color-neutral-600);
+  --color-amber-700: var(--color-amber-800);
 }
 
 /* next/font が <html>/<body> に置く CSS 変数を Tailwind のフォントトークンに接続する。
