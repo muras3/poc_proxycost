@@ -275,8 +275,10 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     const cheapest = /(^|\s)(CHEAPEST|LEADS)(\s|$)/.test(text);
     const diffMatch = text.match(/\+¥([\d,]+)/);
     // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
+    // **比べられない行は順位の列から外れる**（PR-B、RankBoard）ので数字が無い
+    // ——`comparable === false` のときだけ欠落を許す。
     const shown = text.match(/^(\d+)\s/);
-    if (!shown) throw new Error(`row ${i} shows no rank number: ${text}`);
+    if (!shown && comparable) throw new Error(`row ${i} shows no rank number: ${text}`);
     // **社名と変種は `data-row-id`（例: 'buyee:consolidated'）から読む。**
     // 以前はここを行の地の文の部分一致（`text.includes('consolidated' | 'default')`）
     // で読んでいたため、ZenMarket の Surface 便注記 "not used as the **default**
@@ -297,7 +299,7 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     const variant = variantPart ?? null;
     out.push({
       rank: i + 1,
-      shownRank: Number(shown[1]),
+      shownRank: shown ? Number(shown[1]) : 0,
       tied: /tied with /.test(text),
       name,
       variant,
