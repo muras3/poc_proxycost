@@ -142,3 +142,85 @@ test('the lithium-airmail badge is always visible for GB/DE and absent elsewhere
   await shipTo(page, 'US');
   await expect(page.getByTestId('lithium-airmail-badge')).toHaveCount(0);
 });
+
+/**
+ * Ship by の選択肢の整理（2026-09-16、オーナー指摘「郵便5＋宅配便15の20個は複雑すぎる」）。
+ * **順位・総額・選べる便そのものは一切変えていない**——既定で見せる範囲と、
+ * 名前の書き方だけを変えた。
+ */
+test('Ship by hides the methods that are not priced for the destination, and opens them on demand', async ({ page }) => {
+  await gotoCompare(page);
+  const picker = page.locator('#ship-by-select');
+  const toggle = page.getByTestId('ship-by-unpriced-toggle');
+
+  // 米国では価格の付かない便は1つ（SF Express）。既定ではその1つが選択肢に居ない。
+  await expect(toggle).toContainText('Show 1 not priced for United States');
+  await expect(picker.locator('option[value="courier-sf-express"]')).toHaveCount(0);
+  // 灰色の無効項目が既定で並んでいないこと（開くまで無効の選択肢はゼロ）。
+  await expect(picker.locator('option:disabled')).toHaveCount(0);
+
+  // 開くと、従来どおり「選べない理由」付きの無効な項目として見える（消しはしない）。
+  await toggle.click();
+  const sf = picker.locator('option[value="courier-sf-express"]');
+  await expect(sf).toHaveCount(1);
+  await expect(sf).toBeDisabled();
+  await expect(sf).toContainText('not priced for United States');
+  await expect(toggle).toContainText('Hide 1 not priced for United States');
+
+  // 宛先を変えると件数も国名も追従する（ドイツは5便が未価格）。開いた状態は
+  // 利用者が選んだものなので、宛先を変えても勝手に畳まない。
+  await shipTo(page, 'DE');
+  await expect(page.getByTestId('ship-by-unpriced-toggle'))
+    .toContainText('Hide 5 not priced for Germany');
+  await expect(picker.locator('option:disabled')).toHaveCount(5);
+});
+
+test('Ship by groups the methods by carrier, with the names cleaned up and the raw label kept', async ({ page }) => {
+  await gotoCompare(page);
+  const picker = page.locator('#ship-by-select');
+
+  // グループの見出し = 運送会社。郵便が先頭。
+  const groups = await picker.locator('optgroup').evaluateAll(
+    (gs) => gs.map((g) => (g as HTMLOptGroupElement).label));
+  expect(groups[0]).toBe('Japan Post');
+  for (const c of ['FedEx', 'DHL', 'UPS', 'ECMS', 'Buyee']) expect(groups).toContain(c);
+  // 会社ごとに1つの見出し（同じ会社が2度出ない）。
+  expect(new Set(groups).size).toBe(groups.length);
+
+  // 先頭は既定の「Cheapest that fits」のまま。
+  await expect(picker.locator('option').first()).toHaveText(/^Cheapest that fits/);
+
+  // 便名は整形されている: 全部大文字をやめ、グループ名と重複する会社名を落とし、
+  // 括弧の日数は名前から外して右に出す。
+  const fedexTexts = await picker.locator('optgroup[label="FedEx"] option').allInnerTexts();
+  expect(fedexTexts.join(' | ')).toContain('Lowcost');
+  expect(fedexTexts.join(' | ')).toContain('Connect Plus · 3–5 days');
+  for (const t of fedexTexts) {
+    expect(t, `会社名が便名に重複している: ${t}`).not.toMatch(/FedEx/i);
+    expect(t, `原文の全部大文字が残っている: ${t}`).not.toMatch(/\b[A-Z]{3,}\b/);
+    expect(t, `括弧の日数が名前に残っている: ${t}`).not.toMatch(/\(\d/);
+  }
+  // 種別を社が書いていない便は Standard と決めつけない。
+  expect(fedexTexts.join(' | ')).toContain('(tier not published)');
+
+  // **原文は捨てていない**——どの社のどの表記かが `title` に残る。
+  await expect(picker.locator('option[value="courier-fedex-lowcost"]'))
+    .toHaveAttribute('title', 'ZenMarket: “FEDEX LOWCOST”');
+});
+
+test('the Ship by field, with the not-priced list open, causes no horizontal scroll at 390', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoCompare(page);
+  await shipTo(page, 'DE'); // 未価格が5便＝行が一番長くなる宛先
+  const toggle = page.getByTestId('ship-by-unpriced-toggle');
+  await toggle.click();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow, '390px で横スクロールが出ている').toBeLessThanOrEqual(1);
+  // 畳むボタンはキーボードで押せる（`<button>` のまま、select とは別の操作）。
+  await toggle.focus();
+  await expect(toggle).toBeFocused();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+});

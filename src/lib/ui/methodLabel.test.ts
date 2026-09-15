@@ -6,13 +6,13 @@ describe('methodLabel', () => {
     expect(methodLabel('ems')).toBe('EMS');
     expect(methodLabel('parcel-air')).toBe('International parcel (airmail)');
   });
-  test('resolves a courier method id to the labelRaw carried by COURIER_METHODS', () => {
-    // labelRaw の中身は社の一次情報に依存するので固定文字列では比べず、
-    // 「未知の識別子そのままではない・非空」であることだけを確認する
-    // （`src/lib/pricing` の値を書き換えていないことの回帰にはならないが、
-    // ここは pure な対応表引きなので、既存の COURIER_METHODS を信頼してよい）。
-    const label = methodLabel('courier-ups');
-    expect(label).not.toBe('courier-ups');
-    expect(label.length).toBeGreaterThan(0);
+  test('resolves a courier method id to the cleaned-up carrier + service name', () => {
+    // **2026-09-16**: 各社の原文（`labelRaw`）ではなく、`methodDisplay.ts` で整形した
+    // 表示名を返すようになった。原文は `methodRawNote()` が出す（そちらの検査は
+    // `methodDisplay.test.ts`——原文と一字一句一致することを見ている）。
+    expect(methodLabel('courier-fedex-lowcost')).toBe('FedEx Lowcost');
+    expect(methodLabel('courier-dhl-express-worldwide')).toBe('DHL Express Worldwide');
+    // 社が種別を書いていない便は、勝手に Standard と名乗らない。
+    expect(methodLabel('courier-ups')).toBe('UPS (tier not published)');
   });
 });

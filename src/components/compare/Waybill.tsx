@@ -6,6 +6,9 @@ import { COURIER_METHODS, POSTAL_METHODS, courierMethodAvailable } from '@/lib/p
 import type {
   CountryCode, CourierMethod, Item, Line, PostalMethod, ProvinceCode,
 } from '@/lib/pricing/types';
+import {
+  UNTRACKED, methodGroups, methodRawNote, notPricedFor,
+} from '@/lib/ui/methodDisplay';
 import { grams, yen } from '@/lib/ui/format';
 import { Mark } from './Popover';
 
@@ -38,6 +41,11 @@ export function Waybill({
   onCartToggle: () => void;
 }) {
   const [placeOpen, setPlaceOpen] = useState(false);
+  // その宛先で値段が付かない便を出すか。**既定は隠す**——20個の選択肢のうち、
+  // 押しても何も起きない項目が灰色で混ざっていると、選べる範囲そのものが読めない。
+  // 「無い」と「選べない」を混同しないための開示（docs/UI-DESIGN.md）は、消すのではなく
+  // 「Show N not priced for …」の1行に畳んで、開けば従来どおり理由付きで見えるようにする。
+  const [unpricedOpen, setUnpricedOpen] = useState(false);
   // 開閉のあとにフォーカスを移す先（描画後に1回だけ使う）。
   const focusNext = useRef<string | null>(null);
   const setFocusId = (id: string) => { focusNext.current = id; };
@@ -53,6 +61,15 @@ export function Waybill({
   const countryName = COUNTRIES[country].name;
   const avg = `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%`;
   const courierCount = COURIER_METHODS.filter((m) => courierMethodAvailable(m.id, country)).length;
+  // 郵便5方式は全宛先で価格化済み。宅配便だけが宛先で割れる（`courierMethodAvailable`）。
+  const priced = (id: PostalMethod | CourierMethod) => !id.startsWith('courier-')
+    || courierMethodAvailable(id as CourierMethod, country);
+  const pricedGroups = methodGroups(priced);
+  const unpricedGroups = methodGroups((id) => !priced(id));
+  const unpricedCount = unpricedGroups.reduce((s, g) => s + g.methods.length, 0);
+  // 選ばれている便がその宛先で価格化されていないとき（宛先を変えた直後など）は、
+  // 畳んだままだと `<select>` が自分の値を表示できない。そのときは開いた状態で出す。
+  const showUnpriced = unpricedOpen || (method !== 'cheapest' && !priced(method));
 
   return (
     <section className="waybill" id="waybill" aria-label="Conditions" data-testid="conditions-bar">
@@ -177,24 +194,38 @@ export function Waybill({
           onChange={(e) => onMethod(e.target.value as MethodChoice)}
         >
           <option value="cheapest">Cheapest that fits — per service</option>
-          <optgroup label="Japan Post">
-            {POSTAL_METHODS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {`${m.label} · ${m.days}${m.tracked ? '' : ' · no tracking'}`}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Courier">
-            {COURIER_METHODS.map((m) => {
-              const ok = courierMethodAvailable(m.id, country);
-              return (
-                <option key={m.id} value={m.id} disabled={!ok}>
-                  {ok ? `${m.label} · ${m.days}` : `${m.label} · not priced for ${countryName}`}
+          {pricedGroups.map((g) => (
+            <optgroup key={g.carrier} label={g.carrier}>
+              {g.methods.map((m) => (
+                <option key={m.id} value={m.id} title={methodRawNote(m.id)}>
+                  {`${m.service} · ${m.days}${m.tracked ? '' : ` · ${UNTRACKED}`}`}
                 </option>
-              );
-            })}
-          </optgroup>
+              ))}
+            </optgroup>
+          ))}
+          {showUnpriced && unpricedGroups.map((g) => (
+            <optgroup key={g.carrier} label={g.carrier}>
+              {g.methods.map((m) => (
+                <option key={m.id} value={m.id} disabled title={methodRawNote(m.id)}>
+                  {`${m.service} · ${notPricedFor(country)}`}
+                </option>
+              ))}
+            </optgroup>
+          ))}
         </select>
+        {unpricedCount > 0 && (
+          <button
+            type="button"
+            className="link wshowmore"
+            id="ship-by-unpriced"
+            data-testid="ship-by-unpriced-toggle"
+            aria-expanded={showUnpriced}
+            aria-controls="ship-by-select"
+            onClick={() => setUnpricedOpen((v) => !v)}
+          >
+            {showUnpriced ? 'Hide' : 'Show'} {unpricedCount} {notPricedFor(country)}
+          </button>
+        )}
       </div>
 
       <div className="wb">

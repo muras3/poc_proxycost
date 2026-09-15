@@ -68,6 +68,9 @@ button,input,select{font:inherit;color:inherit}
 .wplacebtn .est{color:var(--indigo);border-bottom:1.5px dashed var(--indigo)}
 .wpick{display:flex;flex-direction:column;gap:6px;min-width:0}
 .wpick .link{font:11px var(--mono);align-self:flex-start}
+/* "Show N not priced for …" — the collapsed tail of the Ship by list. Sits in the sub-line slot
+   so the field keeps its height rhythm, and wraps instead of widening the grid column at 390px. */
+.wshowmore{font:10.5px var(--mono);align-self:flex-start;text-align:left;max-width:100%;white-space:normal}
 .wcart{overflow:hidden;text-overflow:ellipsis;max-width:100%}
 @container (max-width:900px){.waybill{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @container (max-width:420px){.waybill{grid-template-columns:minmax(0,1fr)}}

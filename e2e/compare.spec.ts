@@ -948,11 +948,16 @@ test('18b. the shipping method is a control, and picking one moves every total',
   // 選択肢には日数が載っていて、選ぶ前に時間が見える。
   const options = await picker.locator('option').allInnerTexts();
   expect(options.join(' | ')).toMatch(/1–3 months/);
-  expect(options.join(' | ')).toMatch(/no tracking/);
+  // 追跡の無い便の言い回しは画面全体で1つ（`methodDisplay.ts` の `UNTRACKED`）。
+  expect(options.join(' | ')).toMatch(/untracked/);
   expect(options.join(' | ')).toMatch(/Cheapest that fits/);
-  // **宅配便もいまは選択肢にある**（P2 で実測運賃を配線済み）。
-  for (const c of ['FedEx', 'DHL', 'UPS']) {
-    expect(options.join(' | '), `${c} が選択肢に居ない`).toContain(c);
+  // **宅配便もいまは選択肢にある**（P2 で実測運賃を配線済み）。運送会社は
+  // 選択肢の文字ではなくグループの見出し（`<optgroup label>`）に出るようになった
+  // ので、会社名はそちらで確かめる（便名のほうは会社名を重ねない）。
+  const groups = await picker.locator('optgroup').evaluateAll(
+    (gs) => gs.map((g) => (g as HTMLOptGroupElement).label));
+  for (const c of ['FedEx', 'DHL', 'UPS', 'Japan Post']) {
+    expect(groups, `${c} のグループが無い`).toContain(c);
   }
 });
 
