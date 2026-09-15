@@ -172,6 +172,30 @@ export function longItems(items: Item[]): Item[] {
 }
 
 /**
+ * カートの1点が alcoholItems / longItems のどちらのラインに当たるかを1語で返す
+ * (docs/design/caveat-ui-grammar.md 5, 監査 #84/#85 の「カートの品に ! を付ける」
+ * ための下準備)。
+ *
+ * Item 型そのものにはフィールドを足さない。Item は入力型で、必須フィールドを
+ * 足すと呼び出し側（src/components/ の全経路）に対応を強制することになる
+ * ——このPRは「エンジンに構造化フィールドを足す」が対象で、UI 配線は別PRの範囲
+ * (CLAUDE.md 8「数値とUIを混ぜない」と同じ理由で、入力契約を変える変更も分ける)。
+ * 代わりに Item を受けて種別を返す純関数として export する。
+ *
+ * 両方に同時に当たることは無い（ALCOHOL_WEIGHT_LINE_IDS と
+ * LONG_ITEM_WEIGHT_LINE_IDS は排他）——万一両方に該当する将来のラインが
+ * 追加された場合は酒を優先する（酒の方が「送れないかもしれない」で影響が強い）。
+ */
+export function restrictedKindFor(item: Item): 'alcohol' | 'long' | null {
+  if (item.weightLineId == null) return null;
+  const alcoholIds: readonly string[] = ALCOHOL_WEIGHT_LINE_IDS;
+  if (alcoholIds.includes(item.weightLineId)) return 'alcohol';
+  const longIds: readonly string[] = LONG_ITEM_WEIGHT_LINE_IDS;
+  if (longIds.includes(item.weightLineId)) return 'long';
+  return null;
+}
+
+/**
  * 重量表のラインの見出し（'Sake / spirits, 700-750ml bottle'）。
  * `Item.weightSource` は出典と件数まで含む長い文字列なので、警告文には向かない。
  * **表の1か所から引く。**画面に文字列を書き写すと、表を直したとき片方だけ古くなる。

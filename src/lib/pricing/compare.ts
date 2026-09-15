@@ -20,7 +20,7 @@ import {
 import { groupByShop, isPerListingSite, oneOrderPerItem, shopIdFor, type ShopGrouping } from './shops';
 import { splitByWeightLimit, type PackableItem, type ParcelPack } from './parcels';
 import { ASSUMED_WEIGHT_RANGE_G } from './weights';
-import { alcoholItems } from './restricted-goods';
+import { alcoholItems, LITHIUM_AIRMAIL_LISTED } from './restricted-goods';
 import { US_HTS_SOURCE_URL, readUsDuty } from './us-duty';
 import type {
   CourierMethod, PostalMethod,
@@ -474,8 +474,10 @@ export function taxLines(
   const vatKinds = new Set(vatPerParcel.map((v) => v.kind));
   if (vatKinds.has('no-rate')) {
     // P1-4: 連邦売上税が無いこと自体は国の制度の話で、どの社を使っても同じ。
-    out.push(L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl,
-      'shared'));
+    out.push({
+      ...L('vat', 'Sales tax / VAT', null, 'none at federal level', 'none', c.sourceUrl, 'shared'),
+      unknownKind: 'structural-absence',
+    });
   } else if (vatKinds.size === 1 && vatKinds.has('seller-collects')) {
     out.push(L('vat', vatLabel, 0,
       c.sellerCollectsBelow != null
@@ -839,6 +841,7 @@ function storageLine(
         unknownReason,
         unknownCapYen: capYen,
         unknownCapNote: capNote,
+        unknownKind: 'unpublished-capped',
       };
     }
   }
@@ -1860,6 +1863,42 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       + ' for anyone willing to wait',
   } : null;
 
+  // **`notComparableKind`: `notComparableReason` の文言を組む switch と同じ条件を
+  // たどるだけの、UI 記号用の種別（`docs/design/caveat-ui-grammar.md` §5、監査 #20）。**
+  // 文字列を正規表現で分けるのではなく、文言を作った本人の分岐をそのまま複製する。
+  const notComparableKind: Row['notComparableKind'] = shipYen != null ? null
+    : noPricedCandidate
+      ? (postalUnavailableForCountry && courierBelowFloor ? 'below-measured-floor'
+        : postalUnavailableForCountry ? 'not-to-country'
+        : 'no-priced-method')
+    : isCourier
+      ? (!courierRate ? 'not-sold'
+        : courierRate.unavailableIn?.includes(ctx.cc) ? 'not-to-country'
+        : priceCapExceeded ? 'price-cap'
+        : 'no-priced-method')
+    : !rate ? 'not-sold'
+    : rate.unavailableIn?.includes(ctx.cc) ? 'not-to-country'
+    : priceCapExceeded ? 'price-cap'
+    : dimensionsExceedLimit(parcelDims, rate.dimensionLimit) ? 'size-limit'
+    : 'weight-limit';
+
+  // **`days`: `spec` は郵便・宅配便どちらも既に `days`/`daysSourceUrl`/`daysTier`/
+  // `tracked` を同じ形で持っている**（宅配便は `buildRow` 冒頭で `days: 'not yet
+  // modeled'`・`daysTier: 'none'` に固定済み——`docs/audit/courier-transit-days-
+  // 2026-09-13.md` の結論どおり、便名の括弧書きの日数を確度の無い数字として
+  // 昇格させない）。ここでは `text` から明示的な日数の数字が読めるときだけ、
+  // かつ `daysTier === 'fixed'`（一次情報）のときだけ数値化する。
+  const daysNumeric: { minDays: number | null; maxDays: number | null } = (() => {
+    if (spec.daysTier !== 'fixed') return { minDays: null, maxDays: null };
+    const rangeMatch = spec.days.match(/^(\d+)\s*[–-]\s*(\d+)\s*days?$/);
+    if (rangeMatch) return { minDays: Number(rangeMatch[1]), maxDays: Number(rangeMatch[2]) };
+    const orLessMatch = spec.days.match(/^(\d+)\s*days?\s*or less$/);
+    if (orLessMatch) return { minDays: null, maxDays: Number(orLessMatch[1]) };
+    // 'a week or less' や '1–3 months' のような単位変換・言い換えが要る表記は、
+    // 数字が明示的でも変換しない（週→日・月→日は我々が作った数字になる）。
+    return { minDays: null, maxDays: null };
+  })();
+
   const label = variant === 'consolidated' ? `${svc.name}, consolidated`
     : variant === 'default' ? `${svc.name}, default`
     : svc.name;
@@ -1909,8 +1948,19 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
       .filter((x) => x.link.direct)
       .map((x) => ({ itemId: x.item.id, title: x.item.title, url: x.link.url })),
     approximate,
+    parcelVerified: svc.parcelVerified,
+    weightLimitG: isCourier ? null : maxGramsFor(method as PostalMethod, ctx.cc),
+    days: {
+      text: spec.days,
+      tier: spec.daysTier,
+      sourceUrl: spec.daysSourceUrl || null,
+      tracked: spec.tracked,
+      ...daysNumeric,
+    },
+    primarySource: svc.primarySource,
     // 国際送料が取れていない行は、取れている行と総額を比べられない。
     comparable: shipYen != null,
+    notComparableKind,
     notComparableReason: shipYen != null ? null
       // **F2: 何も値段が付かなかった場合を、方式を1つ名指しして語らない。**
       // `?? 'ems'` のフォールバックは方式を「選んだ」わけではなく、下の
@@ -2233,6 +2283,19 @@ export function isIndeterminate(rows: Row[]): boolean {
 }
 
 /**
+ * `isIndeterminate` が内部で見ている「1位グループ」（`total.low` が最小の
+ * comparable な行）の id を返す。`CompareResult.leaderIds` のため
+ * （`docs/design/caveat-ui-grammar.md` §5、監査 #3-1）。**`isIndeterminate` と
+ * 同じ計算をここでも行う**——`rows` が呼び出し間で変わらない前提なら結果は一致する。
+ */
+function leaderIdsFor(rows: Row[]): string[] {
+  const comparable = rows.filter((r) => r.comparable);
+  if (comparable.length === 0) return [];
+  const leadLow = Math.min(...comparable.map((r) => r.total.low));
+  return comparable.filter((r) => r.total.low === leadLow).map((r) => r.id);
+}
+
+/**
  * 判定不能の文言（P1-2、判断3）。**社名を全部並べない。**
  * 比較可能な社の数と、1位（下端最小）の名だけを言う——`docs/ROADMAP.md` の
  * 全社重なり表示（「最安を狙える可能性が最も高い: Neokyo」）と同じ要約の仕方で、
@@ -2372,9 +2435,11 @@ function weightSensitivityFor(
         cc, province, assumeUnknownG: null, weightScale: 1, method, storageDays,
       });
       const ids = cheapestIds(rows);
+      const bracket = bracketIds(rows);
       return {
         ids,
-        bracket: bracketIds(rows),
+        bracket,
+        bracketLabels: bracket.map((id) => rows.find((r) => r.id === id)?.label ?? id),
         // 同額なら全部並べる。1つだけ名指しすると、並びの偶然で選んだ社を
         // 「その重量での最安」と言い切ることになる。
         label: ids.length
@@ -2398,6 +2463,8 @@ function weightSensitivityFor(
       // （`bracketChanged` のコメント参照）。「比べられなくなった」端（枠が空）は
       // 「替わった」に数えない。
       decisive: [lo, hi].some((w) => bracketChanged(baseBracket, w.bracket)),
+      bracketAtLow: lo.bracketLabels,
+      bracketAtHigh: hi.bracketLabels,
     };
   }
   return out;
@@ -2463,10 +2530,12 @@ export function compare(
     fetchedOn: RATES_FETCHED_ON,
     sourceUrl: RATES_SOURCE_URL,
   };
+  const destinationFacts = { lithiumAirmailListed: LITHIUM_AIRMAIL_LISTED[country] };
   const empty: CompareResult = {
     rows: [], bands: null, rowTotalRange: null, rowDiffRange: null,
-    rankStable: true, rankIndeterminate: false, rankStabilityNote: '', totalRangeYen: null,
-    currency, hasUnknownWeight: false, weightSensitivity: {},
+    rankStable: true, rankIndeterminate: false, indeterminateScope: null, leaderIds: [],
+    rankStabilityNote: '', totalRangeYen: null,
+    currency, hasUnknownWeight: false, weightSensitivity: {}, destinationFacts,
   };
   if (!items.length) return empty;
 
@@ -2518,6 +2587,8 @@ export function compare(
       rows: base,
       rankStable: stable,
       rankIndeterminate: indeterminate,
+      indeterminateScope: indeterminate ? 'leader' : null,
+      leaderIds: indeterminate ? leaderIdsFor(base) : [],
       // **「1位が動くか」ではなく「おすすめ枠の集合が動くか」を言う**（P1-2、判断2）。
       // `stable` はいま枠の完全一致で決まっているので、安定なら基準の枠がそのまま
       // 両端でも枠だと言い切ってよい（`dropped` は不安定側でだけ使う）。
@@ -2637,6 +2708,8 @@ export function compare(
     rowDiffRange,
     rankStable: stable,
     rankIndeterminate: indeterminate,
+    indeterminateScope: indeterminate ? 'leader' : null,
+    leaderIds: indeterminate ? leaderIdsFor(mid.rows) : [],
     rankStabilityNote: indeterminate
       ? indeterminateNote(mid.rows.filter((r) => r.comparable))
       : stable
@@ -2649,5 +2722,6 @@ export function compare(
     hasUnknownWeight: true,
     // 重量が無い点がある間は、1点ずつ動かす基準の重量も無い。
     weightSensitivity: {},
+    destinationFacts,
   };
 }
