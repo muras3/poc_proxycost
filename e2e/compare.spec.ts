@@ -7,7 +7,6 @@ import {
   cartItem,
   costRow,
   costRowByKey,
-  DECIDES,
   emptyCart,
   emsOnlyNote,
   findRow,
@@ -27,7 +26,7 @@ import {
   restrictedNote,
   rowCells,
   weightBox,
-  type RankRow, shipTo, openScopeNote, openRestrictedNote,
+  type RankRow, shipTo, openScopeNote, openRestrictedNote, openNeedleNote, closeCart,
 } from './helpers';
 import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
 import {
@@ -354,9 +353,8 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
 
   // **この品の重量が1位を決める**（カート1点、カナダ。2026-09-12 六か国拡張後の実測:
   // 500 g で FROM JAPAN、10 kg で Buyee）。仮置きの数字を信じるなと、その場で言う。
-  await expect(li.getByText(DECIDES)).toBeVisible();
-  // 名指しは太字の見出しの後ろ、同じ段落の中（Mock v3 `.decisive`）。段落ごと読む。
-  const flag = (await li.getByText(DECIDES).locator('xpath=ancestor::p[1]').innerText()).replace(/\s+/g, ' ');
+  await expect(li.getByTestId('decisive-note')).toBeVisible();
+  const flag = (await li.getByTestId('decisive-note').innerText()).replace(/\s+/g, ' ');
   expect(flag).toMatch(/at 500 g/);
   expect(flag).toMatch(/at 10 kg/);
   // 名指しされた2社は違う社であること（同じ社なら「決める」は嘘）。
@@ -802,34 +800,35 @@ test('17. when the weight decides the winner, the note says so and takes you to 
   await shipTo(page, 'CA');
   await emptyCart(page);
   await addByHand(page, PLUSH, 3000);
-  const note = page.getByText(/The recommended range changes with the weight/);
-  await expect(note).toBeVisible();
+  // Mock v3 #1: 「重量で1位が変わる」は文章ではなく形——1位の札の横で揺れる秤の針と、
+  // 畳んだカートの赤い点。`rankStabilityNote` の文は針の注釈の中で読める。
+  const note = await openNeedleNote(page);
+  await expect(note).toContainText(/The recommended range changes with the weight/);
   await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
   // 表の中央値と仮置きを「あなたがくれた重量」とは呼ばない。
   await expect(note).toContainText('our weight estimate');
   await expect(note).not.toContainText('you gave us');
+  await page.keyboard.press('Escape');
 
   // **この仮置きの1点が1位を決める**（500 g で FROM JAPAN、10 kg で Buyee。実測、
   // テスト5と同じ）。
   await openCart(page);
-  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toBeVisible();
-  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toContainText('at 500 g');
-  await expect(cartItem(page, PLUSH).getByText(DECIDES)).toContainText('at 10 kg');
+  await expect(cartItem(page, PLUSH).getByTestId('decisive-note')).toBeVisible();
+  await expect(cartItem(page, PLUSH).getByTestId('decisive-note')).toContainText('at 500 g');
+  await expect(cartItem(page, PLUSH).getByTestId('decisive-note')).toContainText('at 10 kg');
 
-  // モバイルではカートを畳んでおく。ボタンが開いてくれること自体を見る。
-  const toggle = page.getByTestId('cart-line');
-  if (await cart(page).getByRole('listitem').first().isVisible()) {
-    await toggle.click();
-    await expect(cart(page).getByRole('listitem').first()).toBeHidden();
-  }
+  // カートを畳む。畳んだ1行には決め手の品が赤い点つきで名指しされている。
+  await closeCart(page);
+  await expect(cart(page).getByRole('listitem').first()).toBeHidden();
+  await expect(page.getByTestId('cart-decisive-mark')).toBeVisible();
 
-  // 導線: 押すと、1位を決めている品の重量入力にフォーカスが移る。
-  await page.getByRole('button', { name: 'Check the weights in your cart' }).click();
+  // 導線: 「Check」を押すと、1位を決めている品の重量入力にフォーカスが移る。
+  await page.getByTestId('cart-decisive-mark').getByRole('button', { name: 'Check' }).click();
   const focused = page.locator(':focus');
   await expect(focused).toHaveAttribute('aria-label', /^Weight in grams of /);
   await expect(focused).toBeVisible();
   const title = ((await focused.getAttribute('aria-label')) ?? '').replace(/^Weight in grams of /, '');
-  await expect(cartItem(page, title).getByText(DECIDES)).toBeVisible();
+  await expect(cartItem(page, title).getByTestId('decisive-note')).toBeVisible();
 });
 
 /** 表に当たる、軽くて安い1点（漫画1冊、P25–P75 は 200–250 g）。 */
@@ -868,9 +867,13 @@ test('18. a single item: the US total is not indeterminate, even though the brac
   await expect(li.getByRole('link', { name: /manga volume/i })).toBeVisible();
   await expect(li.getByText('entered by you')).toHaveCount(0);
 
-  // 枠は重量で動く（不安定）が、「判定不能」ではない——同等の印は出ない。
-  await expect(page.getByText(/The recommended range changes with the weight/)).toBeVisible();
+  // 枠は重量で動く（不安定）が、「判定不能」ではない——見出しは「Can't tell who leads」に
+  // ならず、1位は「LEADS」ではなく「1ST」。同等の印（判定不能の注意）も出ない。
+  await expect(page.getByText(/Can.t tell who leads/)).toHaveCount(0);
+  await expect(page.getByTestId('indeterminate-note')).toHaveCount(0);
   await expect(page.getByText(/sit within the same uncertainty/)).toHaveCount(0);
+  expect((await readRanking(page))[0]!.cheapest).toBe(true);
+  await expect(ranking(page).locator('.flap.diff.lead').first()).toHaveAttribute('aria-label', '1ST');
 
   // それでも直せる。直せば総額は動く。
   const before = await readRanking(page);
@@ -1069,10 +1072,11 @@ test('19. the ranking says which methods are priced, US couriers included, other
     expect(text).toContain(nameList(ALTERNATIVE_SHIPPING_VERIFIED));
   }
 
-  // 総額を読む前に目に入る位置（順位表の上）に居ること。
-  const noteBox = (await note.boundingBox())!;
+  // 総額を読む前に目に入る位置（順位表の上、条件欄の「Ship by」の横）に注釈の印が居ること。
+  await page.keyboard.press('Escape');
+  const markBox = (await page.getByRole('button', { name: 'About: How methods are compared' }).boundingBox())!;
   const rankBox = (await ranking(page).boundingBox())!;
-  expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(rankBox.y + 1);
+  expect(markBox.y + markBox.height).toBeLessThanOrEqual(rankBox.y + 1);
 });
 
 test('20. the disclosure stays through real use, and it comes and goes with the ranking', async ({ page }) => {
@@ -1517,7 +1521,8 @@ test.describe('mobile layout', () => {
 
   test('14. no cost×company table on a phone until the fold is opened', async ({ page }) => {
     await gotoCompare(page);
-    // 全社費目表は折りたたみの中（Mock v3 `#all-fees`）。開くまで表は見えない。
+    // Mock v3: 全社費目表は閉じた折りたたみ。見出しは見えるが、表は開くまで出ない。
+    expect(await breakdownTable(page).evaluate((el) => (el as HTMLDetailsElement).open)).toBe(false);
     await expect(breakdownTable(page).getByRole('table')).toBeHidden();
     // 順位リストの中の表も、開くまでは出ていない。
     await expect(ranking(page).getByRole('table')).toHaveCount(0);
@@ -1558,8 +1563,10 @@ test.describe('mobile layout', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
 
     // 行を開いてもカートを開いても、開き直せば居る。
+    await page.keyboard.press('Escape');
     await openRankRow(page, 0);
     await expect(await openScopeNote(page)).toBeVisible();
+    await page.keyboard.press('Escape');
     await openCart(page);
     await expect(await openScopeNote(page)).toBeVisible();
   });
