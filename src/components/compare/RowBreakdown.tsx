@@ -40,6 +40,13 @@ export function RowBreakdown({ row, cheapest }: { row: Row; cheapest: Row }) {
                 <span className="block">{l.label}</span>
                 <span className="block text-[11px] text-neutral-500">
                   {l.note}
+                  {l.key === 'intl-shipping' && (
+                    // 日数の原文（閉じた行には出さない。棒の形の根拠をここで読めるようにする）。
+                    <span data-testid="intl-days" className="block">
+                      Arrival: {row.days.tier === 'fixed' || /not published/i.test(row.days.text) ? row.days.text : `transit time not published (${row.days.text})`}
+                      {row.days.tracked ? '' : ' — untracked'}
+                    </span>
+                  )}
                   {isUncapped && (
                     <span className={`ml-1 ${tierClass.none}`}>— no upper bound</span>
                   )}

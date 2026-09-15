@@ -135,20 +135,31 @@ test('1b. ZenMarket is never misdetected as variant "default" by its own Surface
   // ——`src/lib/pricing/compare.ts`）。したがって ZenMarket の行は常に
   // `variant: null` のはず。
   //
-  // それにもかかわらず、既定のカート（米国宛）で ZenMarket の行は必ずこの一文を
-  // 含む——Surface 便（1〜3ヶ月）を既定にしない理由の注記:
+  // 既定のカート（米国宛）で ZenMarket の行を開くと、必ずこの一文を含む
+  // ——Surface 便（1〜3ヶ月）を既定にしない理由の注記:
   //   "not used as the **default** because it takes 1-3 months"
   // `readRanking` がかつて `text.includes('default')` で変種を判定していたころ、
   // この地の文だけでこの行が `variant: 'default'` と**誤検出**されていた
   // （実際にはこの社に default 変種はそもそも存在しない）。
+  //
+  // **PR-B（順位ボード作り替え）で、この一文（Row.surface の段落）は
+  // 「閉じた行に文章の段落を置かない」方針により閉じた行から開いた内訳の中へ
+  // 移った。**プローブの文言そのものは閉じた行の地の文（`readRanking` が読む
+  // `r.text`）にはもう出ないので、`readRanking` の variant 判定
+  // （`data-row-id` 由来、地の文を見ない）が正しく効いていることを閉じた行で
+  // 確認しつつ、プローブの文言自体が消えていないこと（このテストが何も検査
+  // しなくなっていないこと）は行を開いて確かめる。
   await gotoCompare(page);
   const rows = await readRanking(page);
   const zen = rows.find((r) => r.name === 'ZenMarket');
   expect(zen, 'ZenMarket row not found in the default ranking').toBeTruthy();
+  expect(zen!.variant).toBeNull();
+
+  const zenIndex = rows.findIndex((r) => r.name === 'ZenMarket');
+  const zenRow = await openRankRow(page, zenIndex);
   // 誤検出の引き金がまだそこにあることを確かめる——このプローブ自体が
   // 消えていたら、このテストは何も検査していないことになる。
-  expect(zen!.text).toMatch(/not used as the default/);
-  expect(zen!.variant).toBeNull();
+  await expect(zenRow.getByTestId('surface-alternative')).toContainText(/not used as the default/);
 });
 
 test('2. rank is decided by the total alone — paying us buys neither the top spot nor safety from the bottom', async ({ page }) => {
@@ -1471,9 +1482,19 @@ test.describe('mobile layout', () => {
     // 「or more (upper bound unknown)」のような長い文字列が右列の内容幅を
     // 押し広げ、`min-w-0 flex-1` の左列（社名・内訳）が単語ごとに折り返される
     // ところまで潰れていた。既定カート（米国）は `rankIndeterminate` で
-    // 全行がこの文言を持つので、ここで直接そのレイアウトを縛る。
+    // 全行がこの文言を持っていた。
+    //
+    // **PR-B（順位ボード作り替え）で「or more (upper bound unknown)」の文言
+    // 自体を閉じた行から外した**（台帳 #22/#30、Fable レビュー）——`TotalBar`
+    // の右端フェードだけで同じ情報を伝える。ここでの崩れの再現条件は消えた
+    // （むしろ右列は以前より短くなった）が、**この崩れ自体の検出手段として
+    // レイアウトの縛りは残す価値がある**——右列が今後また長い文言を持てば
+    // 同じ形で崩れうる。前提条件（上限不明の行が存在すること）は、文言では
+    // なく `TotalBar` の `data-upper-unknown` 属性で確認する。
     await gotoCompare(page);
-    await expect(page.getByText(/upper bound unknown/).first()).toBeVisible();
+    await expect(
+      ranking(page).locator('[data-testid="total-bar"][data-upper-unknown="true"]').first(),
+    ).toBeAttached();
 
     const rows = ranking(page).locator('li[data-row-id]');
     const n = await rows.count();
@@ -1487,13 +1508,14 @@ test.describe('mobile layout', () => {
       // 行数ぶん異常に伸びる。**幅と高さの両方**を縛ることで、片方だけを
       // 通す偶然の実装を防ぐ。
       //
-      // 上限は 260 → 300 に引き上げた（このコミット）。260 は afcca4f
-      // （P1-3 追修正、この崩れを塞いだ時点）で決めた値で、当時 row-info には
-      // Surface 代替行が無かった。その後 f794b20（P2 UI）で `Row.surface` の
-      // 「Surface option — …」行が row-info に追加され、正常な（潰れていない）
-      // 内訳を持つ行の実測高さが 264px になった——300 はこの正当な追加行を
-      // 通しつつ、単語ごとの折り返し崩れ（コメント通り「行数ぶん異常に伸びる」
-      // ので数百px単位で跳ね上がる）はまだ確実に検出できる値。
+      // 上限は 260 → 300 に引き上げた。260 は afcca4f（P1-3 追修正、この崩れを
+      // 塞いだ時点）で決めた値で、当時 row-info には Surface 代替行が無かった。
+      // f794b20（P2 UI）で `Row.surface` の「Surface option — …」行が row-info に
+      // 追加され、実測高さが 264px になった——その後 PR-B（順位ボード作り替え）で
+      // Surface の段落は「閉じた行に文章の段落を置かない」方針により開いた中へ
+      // 移し、代わりに総額バー・到着バー・箱数を右列（`row-info` の外）に足した。
+      // 300 はどちらの構成でも、単語ごとの折り返し崩れ（コメント通り「行数ぶん
+      // 異常に伸びる」ので数百px単位で跳ね上がる）を確実に検出できる値のまま。
       expect(infoBox.width, `row ${i}: 左列が潰れている（${Math.round(infoBox.width)}px）`)
         .toBeGreaterThan(rowBox.width * 0.5);
       expect(rowBox.height, `row ${i}: 行の高さが異常（${Math.round(rowBox.height)}px）`)
