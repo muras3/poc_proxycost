@@ -25,8 +25,9 @@ test('the destination + province field is merged into one cell, and shows the un
   await expect(province).toHaveCount(1);
   await expect(province).toHaveValue('');
 
-  // 未選択の既定表示（mock-v3 の「province ≈ avg」）。
-  await expect(destination).toContainText(/province.*avg/);
+  // 未選択の既定表示。文言は既存の `ProvincePicker` のまま
+  // （`e2e/taxes.spec.ts` が "we estimate {avg}" を一言一句で掴んでいる）。
+  await expect(destination).toContainText(/we estimate/);
 
   await province.selectOption('ON');
   await expect(province).toHaveValue('ON');

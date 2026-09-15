@@ -557,8 +557,16 @@ test.describe('layout', () => {
     expect(p.y, '箱が順位表より下に来ている').toBeLessThanOrEqual(rank.y);
     expect(rank.y, 'カートが順位表より上に来ている').toBeLessThanOrEqual(c.y);
 
+    // **文書内の絶対位置で比べる。**`openCart` はカートの行（画面外にありうる）を
+    // クリックするので、Playwright がそこへスクロールする——`boundingBox()` は
+    // ビューポート相対なので、箱自体は動いていなくてもスクロール量だけ数値が
+    // ずれる。scrollY を足して文書内の絶対位置に直してから比べる。
+    const scrollBefore = await page.evaluate(() => window.scrollY);
     await openCart(page);
+    const scrollAfter = await page.evaluate(() => window.scrollY);
     const pAfter = (await parcel(page).boundingBox())!;
-    expect(Math.abs(pAfter.y - p.y), 'カートを開くと箱の位置が動いた').toBeLessThan(2);
+    const before = p.y + scrollBefore;
+    const after = pAfter.y + scrollAfter;
+    expect(Math.abs(after - before), 'カートを開くと箱の位置が動いた').toBeLessThan(2);
   });
 });

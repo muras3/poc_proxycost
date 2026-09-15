@@ -101,7 +101,7 @@ export function Calculator() {
         items={priced}
         country={country}
         row={result.rows.find((r) => r.cheapest) ?? null}
-        className="mt-4"
+        className="mt-3"
       />
 
       {empty ? (

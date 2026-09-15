@@ -23,7 +23,7 @@ export function AlwaysOnIcons({
     <div
       role="group"
       aria-label="Always-on notes"
-      className="flex flex-wrap items-center gap-2 border-t border-b border-neutral-200 py-2 dark:border-neutral-800"
+      className="flex flex-wrap items-center gap-2 border-t border-neutral-200 py-1 dark:border-neutral-800"
     >
       <details className="group relative">
         <summary

@@ -47,7 +47,7 @@ export function ConditionsBar({
   return (
     <div
       data-testid="conditions-bar"
-      className="grid min-w-0 grid-cols-1 gap-3 border border-neutral-200 bg-paper-2 p-3 text-xs sm:grid-cols-2 lg:grid-cols-4 dark:border-neutral-800"
+      className="grid min-w-0 grid-cols-1 gap-2 border border-neutral-200 bg-paper-2 p-2 text-xs sm:grid-cols-2 lg:grid-cols-4 dark:border-neutral-800"
     >
       {/* 1. 送り先 ＋ 州（統合）。 */}
       <div className="min-w-0" data-testid="destination-cell">
@@ -93,10 +93,11 @@ export function ConditionsBar({
 }
 
 /**
- * 州の表示。**選択済みなら `Canada · Ontario`、未選択なら `Canada · province ≈ avg`**
- * （mock-v3 §conditions、`wPlace` の文言そのまま）。中身は `ProvincePicker` と
- * 同じ `<select>`——率の一覧・既定「未選択」の理由は `ProvincePicker.tsx` の
- * コメントを見よ。ここでは見せ方（1行に繋げて出す）だけを変える。
+ * 州の表示。見せ方は mock-v3 §conditions（送り先セルの中に繋げて出す、
+ * 未選択は破線で「まだ確定していない」を示す）に寄せるが、**中身の文言は
+ * 変えない**——旧 `ProvincePicker.tsx` の `<select>` とまったく同じ options
+ * （`e2e/taxes.spec.ts` が「Not chosen — we estimate {avg}」を一言一句で
+ * 掴んでいる）。率の一覧・既定「未選択」の理由もそちらのコメントのまま。
  */
 function ProvinceInline({
   province, onChange,
@@ -117,7 +118,9 @@ function ProvinceInline({
             : 'min-w-0 max-w-full truncate rounded border border-dashed border-indigo-400 bg-transparent px-1 py-0.5 text-indigo-700 dark:border-indigo-500 dark:text-indigo-300'
         }
       >
-        <option value="">province &asymp; avg ({avg})</option>
+        {/* 文言は元の `ProvincePicker` のまま（`e2e/taxes.spec.ts` が
+            "we estimate {avg}" を一言一句で掴んでいる）。見せ方だけを統合欄に変えた。 */}
+        <option value="">Not chosen — we estimate {avg}</option>
         {PROVINCE_CODES.map((c) => {
           const p = CA_PROVINCES[c];
           return (
@@ -129,7 +132,7 @@ function ProvinceInline({
         })}
       </select>
       <span className="sr-only">
-        {selected ? `${COUNTRIES.CA.name} · ${selected.name}` : `${COUNTRIES.CA.name} · province ≈ avg`}
+        {selected ? `${COUNTRIES.CA.name} · ${selected.name}` : `${COUNTRIES.CA.name} · province not chosen`}
       </span>
     </label>
   );
