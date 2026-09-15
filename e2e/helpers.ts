@@ -435,7 +435,7 @@ export async function addByHand(
   if (!(await form.isVisible())) await page.getByRole('button', { name: 'Add by hand', exact: true }).first().click();
   await page.getByLabel('Item name').fill(title);
   await page.getByLabel('Price ¥').fill(String(priceYen));
-  if (site) await page.getByLabel('Site').selectOption(site);
+  if (site) await form.getByLabel('Site').selectOption(site); // マストヘッドの nav も aria-label="Site" なのでフォームの中から引く
   await form.getByRole('button', { name: 'Add by hand', exact: true }).click();
 }
 
