@@ -458,14 +458,23 @@ export interface Row {
    * 郵便（`PostalMethod`）は `POSTAL_METHODS`（`postage.ts`）の `days`/`daysSourceUrl`/
    * `daysTier`/`tracked` をそのまま出す——日本郵便の公表料金表に基づく一次情報。
    *
-   * 宅配便（`CourierMethod`）は `tier: 'none'`・`sourceUrl: null` に固定する。
-   * `docs/audit/courier-transit-days-2026-09-13.md` の結論どおり、便名の括弧書きから
-   * 抜いた日数（例 "2-5 days"）は「保証か目安か確認できない」——`compare.ts` の
-   * `buildRow` 自身がこの行の `days` を常に `'not yet modeled'` として扱っている
-   * （日数を順位・総額の計算に一切使っていない）のと同じ理由で、`tier` を
-   * `'fixed'`/`'estimate'` などに格上げしない。`text` には便名から抜けた日数の文字列
-   * （非公表なら 'transit time not published' 等）をそのまま入れるが、それを
-   * 確定した事実として描くかは UI 側の責任（線種を `tier` で決める）。
+   * 宅配便（`CourierMethod`）は `tier: 'none'`・`sourceUrl: null` に固定する
+   * （`compare.ts` の `buildRow` が明示的にそう組む——`courierRate?.sourceUrl` は
+   * **便のレート自体の出典**であって日数の出典ではないので、`tier: 'none'` の
+   * 行に紐付けない）。`docs/audit/courier-transit-days-2026-09-13.md` の結論どおり、
+   * 便名の括弧書きから抜いた日数（例 "2-5 days"）は「保証か目安か確認できない」
+   * ——`compare.ts` の `buildRow` 自身がこの行の `days` を常に `'not yet modeled'`
+   * として扱っている（日数を順位・総額の計算に一切使っていない）のと同じ理由で、
+   * `tier` を `'fixed'`/`'estimate'` などに格上げしない。`text` には便名から抜けた
+   * 日数の文字列（非公表なら 'transit time not published' 等）をそのまま入れるが、
+   * それを確定した事実として描くかは UI 側の責任（線種を `tier` で決める）。
+   *
+   * **`tracked`: 宅配便は現状すべて `true` に固定されている（`postage.ts` の
+   * `COURIER_METHODS`/`buildRow` の `spec` 双方が決め打ち）が、これは各社の追跡
+   * サービスの有無を1件ずつ確認した結果ではない——このPRが持ち込んだ値ではなく、
+   * 既存のエンジンにあった未検証の決め打ちをそのまま構造化フィールドに昇格した
+   * だけ。**宅配便の `tracked: true` を「確認済み」として読んではいけない**
+   * （郵便の `tracked` は `POSTAL_METHODS` に個別の値があり、こちらは信頼できる）。
    *
    * `minDays`/`maxDays` は `text` が明示的な日数の数字を含むときだけ機械的に抜き出す
    * （"12–26 days" → `{minDays:12, maxDays:26}`、"10 days or less" → `{minDays:null,

@@ -15,8 +15,10 @@ import type { CompareInput, CountryCode, Item, ProvinceCode } from './types';
  * `PROVINCES`）から `compare()` を呼び、総額・順位・差額・方式・箱の分かれ方・
  * 費目の額だけを拾った射影（`project*`）を国ごとにまとめて SHA-256 を取り、
  * 下の `EXPECTED_DIGEST` と比較する——射影そのものは日ごと変わりうる出力なので
- * 保存せず、変更前の main（`72bae6b`）でこのテストと同じロジックを走らせて
- * 得た digest だけをここに固定する。
+ * 保存せず、このブランチの分岐元 `origin/main`（このPRを開始した時点のコミット
+ * `2cf4355`。`git show origin/main:src/lib/pricing/...` で `src/lib/pricing/`・
+ * `src/data/weights.ts` を抽出し、このテストと同じロジックを走らせて）得た
+ * digest だけをここに固定する。
  *
  * **`project*` は手で列挙したフィールドだけを拾う。**`JSON.stringify(row)` のような
  * 丸ごとシリアライズにすると、このPRで足した新フィールドがそのまま射影に混ざり、
@@ -94,9 +96,9 @@ function digestFor(cc: CountryCode): string {
   return createHash('sha256').update(canonical(results)).digest('hex');
 }
 
-// **これらは変更前の main（`72bae6b`）で、上と同じロジックを走らせて得た digest。**
-// 変更後にこの値と一致すれば、上に列挙した数値射影（総額・順位・差額・方式・
-// 箱の分かれ方・費目の額）は1件も変わっていない。
+// **これらは分岐元 `origin/main`（コミット `2cf4355`）で、上と同じロジックを
+// 走らせて得た digest。**変更後にこの値と一致すれば、上に列挙した数値射影
+// （総額・順位・差額・方式・箱の分かれ方・費目の額）は1件も変わっていない。
 const EXPECTED_DIGEST: Record<CountryCode, string> = {
   US: 'f3f0990ce0a56df94604aa38b3945942a9e5cfb6804316729add8b46726b77e5',
   GB: '6b268c81ff09ed6aca44a54bedec02de296ae503e623b228ad4767efb2e9b389',

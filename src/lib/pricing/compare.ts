@@ -1953,7 +1953,13 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
     days: {
       text: spec.days,
       tier: spec.daysTier,
-      sourceUrl: spec.daysSourceUrl || null,
+      // **宅配便は常に `null`。**`buildRow` 冒頭の `spec`（宅配便）は
+      // `daysSourceUrl: courierRate?.sourceUrl ?? svc.sourceUrl ?? ''` を持つが、
+      // これは「便のレート自体の出典」であって「日数の出典」ではない——`text` が
+      // 'not yet modeled'／`daysTier` が 'none' の行に URL を添えると、確度の無い
+      // 主張に出典が付いているように読める（CLAUDE.md §9 が禁じる形）。郵便だけ
+      // `spec.daysSourceUrl`（日本郵便の公表料金表そのもの）を使う。
+      sourceUrl: isCourier ? null : (spec.daysSourceUrl || null),
       tracked: spec.tracked,
       ...daysNumeric,
     },
