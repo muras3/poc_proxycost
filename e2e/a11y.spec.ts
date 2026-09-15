@@ -103,7 +103,7 @@ test('the free-shipping-domestic note has no WCAG A/AA violations either', async
 
   const box = page.getByRole('checkbox', { name: 'shipping included by seller' }).first();
   if (!(await box.isVisible())) {
-    await page.getByRole('button', { name: /^Cart \(/ }).click();
+    await page.getByTestId('cart-line').click();
   }
   await box.check();
   await expect(page.getByText(/domestic shipping fees may occur/i)).toBeVisible();

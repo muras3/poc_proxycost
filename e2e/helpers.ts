@@ -114,18 +114,18 @@ export function weightBox(page: Page, title: string): Locator {
 }
 
 /** 「この品の重量だけで1位が替わる」の名指し。compare() の weightSensitivity が出す。 */
-export const DECIDES = /This weight decides the cheapest/;
+export const DECIDES = /This weight decides 1st place/;
 
+/** 全社費目表（Mock v3 `#all-fees`）。横スクロールする器が region で、その中に `table.ct`。 */
 export function breakdownTable(page: Page): Locator {
-  return page.getByRole('region', { name: 'Cost breakdown' });
+  return page.getByRole('region', { name: 'All fees table, scrolls sideways' });
 }
 
 /**
- * **PR-C（2026-09-15）で全社費目表・What could be off が折りたたみになった。**
- * `<details data-testid="breakdown-toggle">` の中に入っている——閉じたままでは
- * `breakdownTable`/`WhatCouldBeOff` の中身は `toBeVisible()` に落ちる（`hidden`
- * になるのは `<details>` の既定挙動）。中身を見るテストは先にこれを開く。
- * 既に開いていれば何もしない。
+ * **全社費目表・What could be off は折りたたみ（Mock v3 `details.fold`）。**
+ * `<summary data-testid="breakdown-toggle">` を押して開く——閉じたままでは
+ * `breakdownTable` の中身は `toBeVisible()` に落ちる（`hidden` になるのは
+ * `<details>` の既定挙動）。中身を見るテストは先にこれを開く。既に開いていれば何もしない。
  */
 export async function openBreakdown(page: Page): Promise<void> {
   const summary = page.getByTestId('breakdown-toggle');
@@ -429,12 +429,19 @@ export async function setMethod(page: Page, method: string): Promise<void> {
 export async function addByHand(
   page: Page, title: string, priceYen: number, site?: string,
 ): Promise<void> {
-  const form = page.getByRole('button', { name: 'Or add an item by hand' });
-  if (await form.count()) await form.click();
+  // 開閉のリンクも送信ボタンも「Add by hand」と名乗る（Mock v3 `.addsub` / `.manual`）。
+  // 送信のほうはフォームの中から引く。
+  const form = page.getByRole('form', { name: 'Add an item by hand' });
+  if (!(await form.isVisible())) await page.getByRole('button', { name: 'Add by hand', exact: true }).first().click();
   await page.getByLabel('Item name').fill(title);
   await page.getByLabel('Price ¥').fill(String(priceYen));
   if (site) await page.getByLabel('Site').selectOption(site);
-  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+  await form.getByRole('button', { name: 'Add by hand', exact: true }).click();
+}
+
+/** たたんだカート1行の「n items · ≈x kg」（Mock v3 `.cartline`）。カートが空なら無い。 */
+export function cartLine(page: Page): Locator {
+  return cart(page).getByText(/^\d+ items? · /);
 }
 
 /** カートを空にする。 */

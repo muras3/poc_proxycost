@@ -38,7 +38,7 @@ test('opening the manual-add form while Canada is selected causes no horizontal 
     await page.setViewportSize({ width, height: 900 });
     await gotoCompare(page);
     await page.getByLabel('Ship to').selectOption('CA');
-    await page.getByRole('button', { name: 'Or add an item by hand' }).click();
+    await page.getByRole('button', { name: 'Add by hand', exact: true }).first().click();
     await expect(page.getByLabel('Item name')).toBeVisible();
 
     const overflow = await page.evaluate(() => ({

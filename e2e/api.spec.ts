@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { cartLine } from './helpers';
 
 // 検索と商品ページ取得の口。**キーが無い状態が既定**なので、そこで壊れないことが要点。
 
@@ -85,18 +86,14 @@ test.describe('the calculator survives an unusable search', () => {
     const banner = page.getByRole('dialog', { name: 'Cookie consent' });
     if (await banner.count()) await banner.getByRole('button', { name: 'Reject' }).click();
 
-    const before = await page.getByRole('button', { name: /^Cart \(/ }).count()
-      ? await page.getByRole('button', { name: /^Cart \(/ }).innerText()
-      : await page.getByRole('heading', { name: /^Cart \(/ }).innerText();
+    const before = await cartLine(page).innerText();
 
     await page.getByLabel('Listing URL or keyword').fill('http://127.0.0.1/item/1');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
 
     await expect(page.getByText(/public listing URL|Could not read|will not fetch/i)).toBeVisible();
 
-    const after = await page.getByRole('button', { name: /^Cart \(/ }).count()
-      ? await page.getByRole('button', { name: /^Cart \(/ }).innerText()
-      : await page.getByRole('heading', { name: /^Cart \(/ }).innerText();
+    const after = await cartLine(page).innerText();
     expect(after, 'a failed fetch must not add an item').toBe(before);
   });
 
@@ -105,9 +102,7 @@ test.describe('the calculator survives an unusable search', () => {
     const banner = page.getByRole('dialog', { name: 'Cookie consent' });
     if (await banner.count()) await banner.getByRole('button', { name: 'Reject' }).click();
 
-    const cart = async () => (await page.getByRole('button', { name: /^Cart \(/ }).count()
-      ? page.getByRole('button', { name: /^Cart \(/ }).innerText()
-      : page.getByRole('heading', { name: /^Cart \(/ }).innerText());
+    const cart = () => cartLine(page).innerText();
     const before = await cart();
 
     // Brave が返してくる形そのまま。実測ではヤフオクの候補 192 件中 189 件がこれだった
