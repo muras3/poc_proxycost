@@ -8,15 +8,15 @@ import Link from 'next/link';
 // 画面から押し出される）。ロゴ + ナビだけの一段に絞る。
 export function SiteHeader() {
   return (
-    <header className="border-b-2 border-ink py-3">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-baseline justify-between gap-x-5 gap-y-2 px-4">
+    <header className="border-b border-ink py-2">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-baseline justify-between gap-x-5 gap-y-1 px-4">
         <Link
           href="/"
-          className="font-display text-2xl font-extrabold uppercase leading-none tracking-wide text-ink"
+          className="font-display text-xl font-extrabold uppercase leading-none tracking-wide text-ink"
         >
           proxy<span className="text-post-red">cost</span>
         </Link>
-        <nav aria-label="Site navigation" className="flex items-center gap-4 font-mono text-xs text-ink">
+        <nav aria-label="Primary" className="flex items-center gap-4 font-mono text-xs text-ink">
           <Link href="/weights" className="hover:underline">Weights</Link>
           <Link href="/sources" className="hover:underline">Sources</Link>
         </nav>
