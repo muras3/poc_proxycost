@@ -348,8 +348,10 @@ ol.stages{list-style:none;margin:0;padding:0}
 /* folded cart */
 .cartline{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:26px 0 0;padding:8px 0;border-top:1.5px solid var(--ink);border-bottom:1px solid var(--hair)}
 .cartline .num{font:500 15px var(--mono)}
-.provpick{display:inline-flex;gap:6px;align-items:baseline;padding:2px 0 4px 28px;font:11px var(--mono);color:var(--indigo)}
-.provpick select{font:12px var(--mono);border:0;border-bottom:1.5px dashed var(--indigo);background:transparent;color:var(--ink)}
+/* 選択肢の文言が長い（「Not sure — average 12.0% until you pick」等）ので、select に幅の上限を
+   置かないと 390px で行を開いたとき横スクロールが出る（scrollWidth 542 > 390、CA で再現）。 */
+.provpick{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;max-width:100%;padding:2px 0 4px 28px;font:11px var(--mono);color:var(--indigo)}
+.provpick select{font:12px var(--mono);border:0;border-bottom:1.5px dashed var(--indigo);background:transparent;color:var(--ink);max-width:100%;min-width:0}
 .door{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px;padding:6px 0 0 28px}
 .door .v{font:700 24px var(--mono);font-variant-numeric:tabular-nums;border-bottom:4px double var(--ink);padding-bottom:1px}
 .door .v .plus{color:var(--red)}
