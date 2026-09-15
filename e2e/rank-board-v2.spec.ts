@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
-  addByHand, emptyCart, gotoCompare, openRankRow, ranking, readRanking, weightBox,
+  addByHand, emptyCart, gotoCompare, openCart, openRankRow, ranking, readRanking, weightBox,
 } from './helpers';
 
 /**
@@ -142,6 +142,8 @@ test.describe('rank board v2 — closed row shape', () => {
       if (lightenCart) {
         await emptyCart(page);
         await addByHand(page, 'Light item for small-packet-air check', 1000);
+        // PR-C でカートは既定で畳まれる。重量欄に触る前に開く。
+        await openCart(page);
         await weightBox(page, 'Light item for small-packet-air check').fill('300');
         await weightBox(page, 'Light item for small-packet-air check').blur();
       }
@@ -296,6 +298,8 @@ test.describe('rank board v2 — Fable review shapes', () => {
     await gotoCompare(page);
     await emptyCart(page);
     await addByHand(page, 'Light item for end-shape check', 1000);
+    // PR-C でカートは既定で畳まれる。重量欄に触る前に開く。
+    await openCart(page);
     await weightBox(page, 'Light item for end-shape check').fill('300');
     await weightBox(page, 'Light item for end-shape check').blur();
     const shipBy = page.getByLabel('Ship by');
