@@ -155,7 +155,8 @@ export function DeliveryLog({
       );
       return (
         <div key={l.key}>
-          <div className={`ln ${a.cls}`} role="row" data-cost-key={l.key}>
+          {/* `fixed` は Tailwind の `position:fixed` と衝突するので、確定値にはクラスを付けない（Mock の CSS に `.ln.fixed` の規則は無い）。 */}
+          <div className={`ln ${a.cls === 'fixed' ? '' : a.cls}`} role="row" data-cost-key={l.key}>
             <span className="l" role="cell">{l.label}</span>
             <span className="lead" aria-hidden="true" />
             <span className="t" role="cell">{a.tag} <Mark title={l.label} body={note} /></span>

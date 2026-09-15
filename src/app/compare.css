@@ -6,7 +6,7 @@
  */
 :root{
   --paper:#F2EDE3;--paper2:#E9E2D3;--ink:#1B1A17;--ink2:#5B574E;--hair:rgba(27,26,23,.28);
-  --red:#D7261E;--indigo:#2B3A8C;--kraft:#A98B5E;
+  --red:#B9201A;--indigo:#2B3A8C;--kraft:#A98B5E;
   --ad-bg:#DEDEDC;--ad-line:#8C8C8A;--ad-ink:#3A3A3A;
   --serif:var(--font-big-shoulders),'Big Shoulders','Arial Narrow',Impact,sans-serif;
   --mono:var(--font-spline-mono),'Spline Sans Mono',ui-monospace,Menlo,monospace;
@@ -21,7 +21,7 @@ body{font-family:var(--sans);font-size:15px;line-height:1.5;overflow-x:hidden}
 .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.078em;text-transform:uppercase;color:var(--ink2)}
 .jp{font-family:var(--jp)}
 :focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
-a{color:var(--indigo);text-underline-offset:3px}
+a{color:var(--indigo);text-decoration:underline;text-underline-offset:3px}
 button,input,select{font:inherit;color:inherit}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .app{container-type:inline-size;max-width:1120px;margin:0 auto;padding:0 32px 40px}

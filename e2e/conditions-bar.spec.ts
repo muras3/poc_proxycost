@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
-  addByHand, cart, gotoCompare, isCollapsed, openCart,
+  addByHand, cart, gotoCompare, isCollapsed, openCart, shipTo,
 } from './helpers';
 
 /**
@@ -16,29 +16,33 @@ test('the destination + province field is merged into one cell, and shows the un
   const destination = page.getByTestId('destination-cell');
   await expect(destination).toBeVisible();
 
-  // 他国では州の欄が無い。
+  // 他国では州の欄が無い（閉じた送り先ボタンにも州は出ない）。
   await expect(page.getByLabel('Province')).toHaveCount(0);
 
-  // カナダを選ぶと、送り先セルの中に州の欄が現れる（別セルではない＝4欄のまま）。
-  await page.getByLabel('Ship to').selectOption('CA');
+  // カナダを選ぶと、送り先セルの**中**に州が繋がって出る（別セルではない＝4欄のまま）。
+  // 未選択は「province ≈ avg」（Mock v3 `.wplacebtn .est`）——選ぶまでは平均率の推定。
+  await shipTo(page, 'CA');
+  await expect(destination.locator('#wPlace')).toContainText(/Canada · province ≈ avg/);
+
+  // 送り先を開くと州の select が同じセルの中に出る。既定は未選択で、平均率を名乗る
+  // （文言は旧 `ProvincePicker` のまま。`e2e/taxes.spec.ts` が "we estimate {avg}" を掴む）。
+  await destination.locator('#wPlace').click();
   const province = destination.getByLabel('Province');
   await expect(province).toHaveCount(1);
   await expect(province).toHaveValue('');
+  await expect(province).toContainText(/we estimate/);
 
-  // 未選択の既定表示。文言は既存の `ProvincePicker` のまま
-  // （`e2e/taxes.spec.ts` が "we estimate {avg}" を一言一句で掴んでいる）。
-  await expect(destination).toContainText(/we estimate/);
-
+  // 州を選ぶと閉じて、ボタンに州名が出る。
   await province.selectOption('ON');
-  await expect(province).toHaveValue('ON');
+  await expect(destination.locator('#wPlace')).toContainText(/Canada · Ontario/);
 });
 
 test('opening the manual-add form while Canada is selected causes no horizontal scroll, at 1280 and 390', async ({ page }) => {
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await gotoCompare(page);
-    await page.getByLabel('Ship to').selectOption('CA');
-    await page.getByRole('button', { name: 'Add by hand', exact: true }).first().click();
+    await shipTo(page, 'CA');
+    await page.getByRole('button', { name: 'Add by hand', expanded: false }).first().click();
     await expect(page.getByLabel('Item name')).toBeVisible();
 
     const overflow = await page.evaluate(() => ({
@@ -128,13 +132,13 @@ test('the lithium-airmail badge is always visible for GB/DE and absent elsewhere
   await gotoCompare(page);
   await expect(page.getByTestId('lithium-airmail-badge')).toHaveCount(0);
 
-  await page.getByLabel('Ship to').selectOption('GB');
+  await shipTo(page, 'GB');
   const badge = page.getByTestId('lithium-airmail-badge');
   await expect(badge).toBeVisible();
-  await expect(badge).toContainText('Li-ion: no airmail');
+  await expect(badge).toContainText(/does not take lithium batteries by air mail/);
   // 常時表示——アイコンを何も押さなくても読める。
   expect(await isCollapsed(badge)).toBe(false);
 
-  await page.getByLabel('Ship to').selectOption('US');
+  await shipTo(page, 'US');
   await expect(page.getByTestId('lithium-airmail-badge')).toHaveCount(0);
 });

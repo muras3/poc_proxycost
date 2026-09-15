@@ -29,7 +29,7 @@ export function FreeShippingDomesticNote({
   if (!items.some((i) => i.freeShipping)) return null;
 
   return (
-    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+    <p>
       <span className={tierClass.estimate}>Domestic shipping</span>: your basket has a
       listing marked &ldquo;free shipping.&rdquo; Buyee states that domestic shipping fees
       may occur due to a change of shipping method, even though &ldquo;Free shipping&rdquo;

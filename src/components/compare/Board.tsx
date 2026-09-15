@@ -72,7 +72,7 @@ export function Board({
 
   return (
     <section className={`board ${uniform ? 'uniform' : ''}`} aria-label="Ranking">
-      <div className="bh" aria-hidden="true">
+      <div className="bh">
         <span className="lbl">Rank</span>
         <span className="lbl">Service</span>
         <span className="lbl c-ship">Ships by / arrives</span>
