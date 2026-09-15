@@ -69,18 +69,18 @@ export interface RankRow {
   rank: number;
   /** 行が実際に表示している順位の数字。同額なら前の行と同じ数字になる。 */
   shownRank: number;
-  /** 「tied with …」を名乗っているか。同額の行だけが名乗る。 */
+  /** 「Tied with …」を名乗っているか（行の下の注記）。同額の行だけが名乗る。 */
   tied: boolean;
   /** 'Neokyo' / 'Buyee' など。 */
   name: string;
   /** 'consolidated' / 'default' / null。 */
   variant: string | null;
-  /** `approx. total ~¥33,500` から読んだ数字。幅表示のときは下限。比較不能なら null。 */
+  /** 総額の列 `¥33,500 – 34,000` から読んだ数字。幅表示のときは下限。比較不能なら null。 */
   total: number | null;
   /** 最安との差額。最安行は 0。 */
   diff: number;
   cheapest: boolean;
-  /** 行の生テキスト。'pays us nothing' の判定などに使う。 */
+  /** 行（`li`）の生テキスト。閉じた行は見出し＋注記、開いた行は配達ログも含む。 */
   text: string;
   /**
    * 総額が出ている行か。**出ていない行は総額も差額も持たない**——国際送料が
@@ -94,9 +94,13 @@ export function ranking(page: Page): Locator {
   return page.getByRole('region', { name: 'Ranking' });
 }
 
-/** 順位リストの各行の見出しボタン。開閉はこれを押す。 */
+/**
+ * 順位リストの各行の見出しボタン（配達ログ `log-<id>` を開閉する）。行の中には
+ * 注釈（§）や1位の札の横の秤の針もボタンなので、`getByRole('button')` では数が合わない
+ * ——開閉先（`aria-controls`）で引く。
+ */
 export function rankButtons(page: Page): Locator {
-  return ranking(page).getByRole('button');
+  return ranking(page).locator('li[data-row-id] > button[aria-controls^="log-"]');
 }
 
 export function cart(page: Page): Locator {
@@ -273,27 +277,32 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
       + `row ids seen: ${JSON.stringify(rowIds)}`,
     );
   }
+  const lis = ranking(page).locator('li[data-row-id]');
   const out: RankRow[] = [];
   for (let i = 0; i < n; i++) {
-    const text = (await buttons.nth(i).innerText()).replace(/\s+/g, ' ').trim();
-    // **比べられない行は 'NOT COMPARABLE' と `approx. total —` を出す。**
+    const li = lis.nth(i);
+    // 閉じた行の全文（見出しボタン ＋ 行に属する注記）。開いた行なら配達ログも含む。
+    const text = (await li.innerText()).replace(/\s+/g, ' ').trim();
+    // **比べられない行は差の列に 'NOT RANKED'、総額の列に `—` を出す**（Mock v3）。
     // 額が無いことが正しい状態なので、ここで落とさずに null として持ち帰る。
-    const comparable = !/NOT COMPARABLE/.test(text);
-    const totalMatch = text.match(/approx\. total\s*~?(¥[\d,]+)/);
-    if (comparable && !totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
+    const totalText = (await li.getByTestId('row-total').innerText()).replace(/\s+/g, ' ').trim();
+    const diffLabel = (await li.getByTestId('row-diff').locator('.flap').getAttribute('aria-label')) ?? '';
+    const comparable = diffLabel !== 'NOT RANKED';
+    const totalMatch = totalText.match(/^(¥[\d,]+)/);
+    if (comparable && !totalMatch) throw new Error(`row ${i} has no total: ${totalText} / ${text}`);
     if (!comparable && totalMatch) {
       throw new Error(`row ${i} is not comparable but still prints a total: ${text}`);
     }
-    // 判定不能では「CHEAPEST」と言い切らず「LEADS」に変わる（P1-3 追修正、
-    // `RankBoard` の `diffText`）——`row.cheapest`（下端最小）という事実自体は
-    // 変わらないので、どちらの文言でも同じ意味として読む。
-    const cheapest = /(^|\s)(CHEAPEST|LEADS)(\s|$)/.test(text);
-    const diffMatch = text.match(/\+¥([\d,]+)/);
-    // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
-    // **比べられない行は順位の列から外れる**（PR-B、RankBoard）ので数字が無い
+    // 1位の差の列は '1ST'。判定不能では「1位」と言い切らず 'LEADS' に変わる
+    // ——`row.cheapest`（下端最小）という事実自体は変わらないので同じ意味として読む。
+    const cheapest = diffLabel === '1ST' || diffLabel === 'LEADS';
+    const diffMatch = diffLabel.match(/\+¥([\d,]+)/);
+    // 順位の列の数字がその行の順位（'01' 形式）。並び順（i+1）と一致するとは限らない。
+    // **比べられない行は順位の列から外れる**（`—`）ので数字が無い
     // ——`comparable === false` のときだけ欠落を許す。
-    const shown = text.match(/^(\d+)\s/);
-    if (!shown && comparable) throw new Error(`row ${i} shows no rank number: ${text}`);
+    const rankText = (await li.getByTestId('row-rank').innerText()).trim();
+    const shown = rankText.match(/^(\d+)/);
+    if (!shown && comparable) throw new Error(`row ${i} shows no rank number: ${rankText} / ${text}`);
     // **社名と変種は `data-row-id`（例: 'buyee:consolidated'）から読む。**
     // 以前はここを行の地の文の部分一致（`text.includes('consolidated' | 'default')`）
     // で読んでいたため、ZenMarket の Surface 便注記 "not used as the **default**
@@ -315,7 +324,7 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     out.push({
       rank: i + 1,
       shownRank: shown ? Number(shown[1]) : 0,
-      tied: /tied with /.test(text),
+      tied: /Tied with /.test(text),
       name,
       variant,
       total: totalMatch ? parseYen(totalMatch[1]!) : null,
@@ -353,7 +362,7 @@ export function costRow(li: Locator, label: string | RegExp): Locator {
  * 文言ではなくこちらで引く。**
  */
 export function costRowByKey(li: Locator, key: string): Locator {
-  return li.locator(`tr[data-cost-key="${key}"]`);
+  return li.locator(`[role="row"][data-cost-key="${key}"]`);
 }
 
 /** 表の1行を、セルの文字列の配列にする。 */
@@ -426,15 +435,43 @@ export async function setMethod(page: Page, method: string): Promise<void> {
   await page.locator('#ship-by-select').selectOption(method);
 }
 
+/**
+ * 宛先を選ぶ（条件欄、Mock v3 `waybill`）。宛先は1行の文字（`#wPlace`）で、押すと
+ * 国（と、カナダなら州）の select が開く。選び終えたら「Done」で畳む。
+ */
+export async function setCountry(page: Page, code: string): Promise<void> {
+  const place = page.locator('#wPlace');
+  if (await place.count()) await place.click();
+  await page.locator('#wCountry').selectOption(code);
+  const done = page.locator('#wPlaceDone');
+  if (await done.count()) await done.click();
+}
+
+/**
+ * 開いた行の配達ログで、費目の1行に付いた注釈（§）を開き、ポップオーバーの本文を返す。
+ * 費目の説明文・出典は行の中ではなくここに居る（Mock v3 `mk(l.label, note)`）。
+ */
+export async function lineNote(row: Locator): Promise<string> {
+  const page = row.page();
+  await row.getByRole('button', { name: /^About: / }).click();
+  const pop = page.locator('#pop');
+  await expect(pop).toBeVisible();
+  const text = (await pop.innerText()).replace(/\s+/g, ' ').trim();
+  await page.keyboard.press('Escape');
+  await expect(pop).toBeHidden();
+  return text;
+}
+
 export async function addByHand(
   page: Page, title: string, priceYen: number, site?: string,
 ): Promise<void> {
-  const form = page.getByRole('button', { name: 'Or add an item by hand' });
-  if (await form.count()) await form.click();
+  // 手入力フォーム（Mock v3 `.manual`）は「Add by hand」のリンクで開閉する（`aria-expanded`）。
+  const toggle = page.getByRole('button', { name: 'Add by hand', expanded: false }).first();
+  if (await toggle.count()) await toggle.click();
   await page.getByLabel('Item name').fill(title);
   await page.getByLabel('Price ¥').fill(String(priceYen));
-  if (site) await page.getByLabel('Site').selectOption(site);
-  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+  if (site) await page.getByRole('form', { name: 'Add an item by hand' }).getByLabel('Site').selectOption(site);
+  await page.getByRole('form', { name: 'Add an item by hand' }).getByRole('button', { name: 'Add by hand' }).click();
 }
 
 /** カートを空にする。 */

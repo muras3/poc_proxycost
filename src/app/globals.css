@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* 比較画面（Mock v3 の移し替え）。クラス名・値は prototypes/mock-v3.html と同じ。 */
+@import "./compare.css";
 
 /*
  * デザイントークン契約（PR-A/B/C 共通）。詳細は docs/design/ui-tokens.md。
