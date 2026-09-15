@@ -524,15 +524,13 @@ describe('equal totals get equal rank', () => {
 
   test('**the alphabetical tiebreak used to hand first place to the service that pays us**', () => {
     // 旧実装は `a.total.low - b.total.low || a.serviceName.localeCompare(b.serviceName)` だった。
-    // 'Buyee' < 'Neokyo' なので、同額のとき**報酬を払う Buyee が、報酬ゼロの Neokyo を
-    // 常に押しのけて上に来ていた。**順位に報酬を使わないという約束を第2の鍵が破っていた。
+    // 'Buyee' < 'Neokyo' なので、同額のとき**アルファベット順で Buyee が Neokyo を
+    // 常に押しのけて上に来ていた。**2026-09-15時点、代行5社は誰も報酬を払わないが、
+    // アルファベット順のタイブレークが無いこと自体は変わらず縛る。
     const rows = midTie();
     const buyee = byId(rows, 'buyee');
     const neokyo = byId(rows, 'neokyo');
-    expect(buyee.paysUs).toBe(true);
-    expect(neokyo.paysUs).toBe(false);
     expect(buyee.total.low).toBe(neokyo.total.low);
-    // いまはどちらも同じ順位で、報酬を払う社が上の順位を取れない。
     expect(buyee.rank).toBe(neokyo.rank);
   });
 

@@ -485,7 +485,12 @@ export interface Service {
    * 「無い」と「0」を区別できるように、ここに 0 を置くことはしない。
    */
   prepaidImportTax?: Partial<Record<CountryCode, PrepaidImportTax>>;
-  /** アフィリエイト報酬を払うか。**順位計算には一切使わない。** */
+  /**
+   * アフィリエイト報酬を払うか。**順位計算には一切使わない**（`rank()`/`byTotal`
+   * は総額のみで比較する。`buildRow()` はこの値を `Row.paysUs` へそのまま渡す
+   * だけの表示用フィールド）。**2026-09-15時点、代行5社のどことも契約が無い**
+   * ので全社 `false`/`null`。契約が発生したら、その社だけ戻す。
+   */
   paysUs: boolean;
   referralNote: string | null;
 }
@@ -833,9 +838,9 @@ export const SERVICES: Service[] = [
         sourceUrl: 'https://neokyo.com/en/shipping', checkedOn: '2026-09-06',
       },
     },
-    // 最もよく最安になる会社が、報酬を払わない。それでも順位は総額のみで決める。
+    // 契約なし（2026-09-15時点）。上の paysUs コメント参照。
     paysUs: false,
-    referralNote: 'pays us nothing',
+    referralNote: null,
   },
   {
     id: 'zenmarket',
@@ -1300,8 +1305,9 @@ export const SERVICES: Service[] = [
         sourceUrl: ZENMARKET_VAT_PRECHARGE_URL, checkedOn: '2026-09-07',
       },
     },
-    paysUs: true,
-    referralNote: 'pays us ¥100 if you sign up',
+    // 契約なし（2026-09-15時点）。上の paysUs コメント参照。
+    paysUs: false,
+    referralNote: null,
   },
   {
     id: 'fromjapan',
@@ -1708,8 +1714,9 @@ export const SERVICES: Service[] = [
         sourceUrl: 'https://www.fromjapan.co.jp/translate/en_help.txt', checkedOn: '2026-09-06',
       },
     },
-    paysUs: true,
-    referralNote: 'pays us a % of your purchase',
+    // 契約なし（2026-09-15時点）。上の paysUs コメント参照。
+    paysUs: false,
+    referralNote: null,
   },
   {
     id: 'buyee',
@@ -1955,8 +1962,9 @@ export const SERVICES: Service[] = [
         sourceUrl: 'https://buyee.jp/helpcenter/guide/sg-gst?lang=en', checkedOn: '2026-09-06',
       },
     },
-    paysUs: true,
-    referralNote: 'pays us a % of your purchase',
+    // 契約なし（2026-09-15時点）。上の paysUs コメント参照。
+    paysUs: false,
+    referralNote: null,
   },
   {
     id: 'jauce',
@@ -2100,7 +2108,7 @@ export const SERVICES: Service[] = [
         sourceUrl: 'https://www.jauce.com/australian-gst', checkedOn: '2026-09-06',
       },
     },
-    // 報酬の有無を確認できていない。払うと書けないので払わない扱いにする。
+    // 契約なし（2026-09-15時点）。上の paysUs コメント参照。
     paysUs: false,
     referralNote: null,
   },
