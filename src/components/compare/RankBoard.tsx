@@ -270,11 +270,13 @@ export function RankBoard({
               data-row-id={row.id}
               data-indeterminate-group={inIndeterminateGroup ? 'true' : undefined}
               className={
+                // **全行で左罫線の幅を予約する**（透明）——グループ行だけ 2px+pl-2 ずれると、
+                // モバイルで棒の左端が行ごとにずれて共通スケールが崩れる。
                 inBracket
                   ? 'border-l-2 border-emerald-500 dark:border-emerald-400'
                   : inIndeterminateGroup
                     ? 'border-l-2 border-indigo-500 dark:border-indigo-400'
-                    : ''
+                    : 'border-l-2 border-transparent'
               }
             >
               {/* **412px で右列（差額・総額）の長い文字列が左列を1語幅まで潰していた**
@@ -289,7 +291,7 @@ export function RankBoard({
                 type="button"
                 onClick={() => setOpen(isOpen ? null : row.id)}
                 aria-expanded={isOpen}
-                className={`flex w-full flex-col gap-1 py-3 text-left sm:flex-row sm:items-start sm:gap-3 ${(inBracket || inIndeterminateGroup) ? 'pl-2' : ''}`}
+                className={`flex w-full flex-col gap-1 py-3 text-left sm:flex-row sm:items-start sm:gap-3 pl-2`}
               >
                 <span className="flex w-full items-start gap-3 sm:contents">
                 {/* **比べられない行は順位の列から外す。**`row.comparable === false` の
@@ -353,7 +355,7 @@ export function RankBoard({
                 {/* 差額が主役。総額はその下に小さく添える。
                     **412px 未満は横幅いっぱい・左寄せで折り返す。**`shrink-0` のまま
                     幅を持たせなかったのが崩れの原因だった（上のコメント）。 */}
-                <span className="w-full text-left sm:w-auto sm:shrink-0 sm:text-right">
+                <span className="w-full text-left sm:w-48 sm:shrink-0 sm:text-right" data-testid="row-figures">
                   <span
                     className={`block font-semibold num ${
                       !row.comparable
@@ -378,7 +380,7 @@ export function RankBoard({
                   {/* 総額＋不確かさの棒。全行共通スケール（`totalDomainMax`）。
                       比べられない行は総額そのものを名乗らないので棒も出さない。 */}
                   {row.comparable && (
-                    <span className="mt-1 flex justify-end">
+                    <span className="mt-1 flex justify-start">
                       <TotalBar total={row.total} domainMax={totalDomainMax} />
                     </span>
                   )}
@@ -387,7 +389,7 @@ export function RankBoard({
                       その方式ではそもそも送れないので、到着日数を出すと
                       「この方式で送れる」かのように見える。 */}
                   {row.comparable && (
-                    <span className="mt-1.5 flex justify-end">
+                    <span className="mt-1.5 flex justify-start">
                       <ArrivalBar days={row.days} method={row.method} />
                     </span>
                   )}

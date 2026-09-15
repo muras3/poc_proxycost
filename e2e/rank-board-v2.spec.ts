@@ -102,7 +102,7 @@ test.describe('rank board v2 — closed row shape', () => {
     }
   });
 
-  test('upper-bound-unknown total bar fades at the right edge instead of drawing a false ceiling', async ({ page }) => {
+  test('upper-bound-unknown total bar draws an open dotted end instead of a false ceiling', async ({ page }) => {
     await gotoCompare(page);
     const rows = ranking(page).locator('li[data-row-id]');
     const n = await rows.count();
@@ -112,7 +112,11 @@ test.describe('rank board v2 — closed row shape', () => {
       if ((await bar.count()) === 0) continue;
       if ((await bar.getAttribute('data-upper-unknown')) === 'true') {
         sawUnknown = true;
-        await expect(rows.nth(i).getByTestId('total-bar-fade')).toBeVisible();
+        const openEnd = rows.nth(i).getByTestId('total-bar-open-end');
+        await expect(openEnd).toBeVisible();
+        const ob = await openEnd.boundingBox();
+        expect(ob!.width, `row ${i}: open end must have a visible fixed length`).toBeGreaterThanOrEqual(12);
+        await expect(bar).toHaveAttribute('aria-label', /no upper bound/);
       }
     }
     expect(sawUnknown, 'expected at least one row with an unknown upper bound in the default cart')
@@ -248,4 +252,78 @@ test.describe('rank board v2 — no horizontal scroll', () => {
       expect(scrolls, `document is wider than the viewport at ${width}px`).toBe(false);
     });
   }
+});
+
+test.describe('rank board v2 — Fable review shapes', () => {
+  test('upper-unknown open end stays visible on a row whose low sits at 100% of the scale (US, EMS)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await gotoCompare(page);
+    await page.getByLabel('Ship by').selectOption('ems');
+    const bars = ranking(page).locator('[data-testid="total-bar"][data-upper-unknown="true"]');
+    await expect.poll(() => bars.count()).toBeGreaterThan(0);
+    const n = await bars.count();
+    let sawFull = false;
+    for (let i = 0; i < n; i++) {
+      const bar = bars.nth(i);
+      const track = await bar.getByTestId('total-bar-track').boundingBox();
+      const openEnd = bar.getByTestId('total-bar-open-end');
+      await expect(openEnd).toBeVisible();
+      const ob = (await openEnd.boundingBox())!;
+      expect(ob.width).toBeGreaterThanOrEqual(12);
+      // 下限の位置に関係なく、点線は棒の右端より右まで途切れず見えている。
+      if (ob.x >= track!.x + track!.width - 1) sawFull = true;
+    }
+    expect(sawFull, 'expected a low=100% upper-unknown row (US EMS Jauce)').toBe(true);
+  });
+
+  for (const width of [390, 1280]) {
+    test(`total bars share the same left x on every row, incl. long method names (${width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await gotoCompare(page);
+      const bars = ranking(page).getByTestId('total-bar');
+      await expect.poll(() => bars.count()).toBeGreaterThan(1);
+      const xs = await bars.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+      const arrivals = await ranking(page).getByTestId('arrival-bar-track')
+        .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+      const labels = await ranking(page).getByTestId('arrival-bar').allInnerTexts();
+      expect(labels.some((l) => l.length > 30), `expected a long method name: ${labels}`).toBe(true);
+      expect(new Set(xs).size, `total-bar left x differs: ${xs}`).toBe(1);
+      expect(new Set(arrivals).size, `arrival-bar left x differs: ${arrivals}`).toBe(1);
+    });
+  }
+
+  test('untracked and unpublished arrival bars end in different shapes', async ({ page }) => {
+    await gotoCompare(page);
+    await emptyCart(page);
+    await addByHand(page, 'Light item for end-shape check', 1000);
+    await weightBox(page, 'Light item for end-shape check').fill('300');
+    await weightBox(page, 'Light item for end-shape check').blur();
+    const shipBy = page.getByLabel('Ship by');
+
+    await shipBy.selectOption('small-packet-air');
+    const untracked = ranking(page).locator('[data-testid="arrival-bar"][data-tracked="false"]').first();
+    await expect(untracked).toBeVisible();
+    const ring = untracked.locator('[data-testid="arrival-bar-end"]');
+    await expect(ring).toHaveAttribute('data-end', 'untracked');
+    await expect(ring).toBeVisible();
+    const ringRadius = await ring.evaluate((e) => getComputedStyle(e).borderRadius);
+    await expect(untracked.getByRole('img')).toHaveAttribute('aria-label', /untracked/);
+
+    await shipBy.selectOption('courier-ups');
+    const unpub = ranking(page).locator('[data-testid="arrival-bar"][data-published="false"]').first();
+    await expect(unpub).toBeVisible();
+    const end = unpub.locator('[data-testid="arrival-bar-end"]');
+    await expect(end).toHaveAttribute('data-end', 'unpublished');
+    expect(await unpub.getByTestId('arrival-bar-segment').getAttribute('class')).toContain('border-dotted');
+    await expect(unpub.getByRole('img')).toHaveAttribute('aria-label', /not published/);
+    const endRadius = await end.evaluate((e) => getComputedStyle(e).borderRadius);
+    expect(endRadius).not.toBe(ringRadius);
+  });
+
+  test('opened row shows the raw arrival text in the international shipping line', async ({ page }) => {
+    await gotoCompare(page);
+    await page.getByLabel('Ship by').selectOption('ems');
+    await openRankRow(page, 0);
+    await expect(ranking(page).getByTestId('intl-days').first()).toContainText('a week or less');
+  });
 });

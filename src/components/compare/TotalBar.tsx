@@ -1,13 +1,19 @@
 import { totalBarStops } from '@/lib/ui/scales';
+import { yen } from '@/lib/ui/format';
+
+/** 上限不明の「開いた終端」の固定長（px）。下限の位置に関係なく常にこの長さで描く。 */
+const OPEN_END_PX = 16;
 
 /**
  * 総額＋不確かさの棒。**全行共通のスケール**（`domainMax` は呼び出し側が
  * 全行の `total.high ?? total.low` の最大から一度だけ計算して渡す）で、
  * 行間で長さを比べられるようにする。
  *
- * 下限までは濃く塗り、下限〜上限は薄く塗る（「本当に確定した部分」と
- * 「幅の中のどこか」を塗り分ける）。**上限不明のときは右端をフェードさせる**
- * ——確定した右端がある絵にしない（`totalIntervalText` の「or more」と同じ規則）。
+ * 下限までは濃く塗り、下限〜上限は薄く塗る。**上限不明のときは、下限の終端から
+ * 固定長の途切れた点線を右へ延ばす（開いた終端）。**以前の右端フェード
+ * （92→100% の13px）は `lowPct` が高い行でほぼ見えず、点推定＝偽の上限に
+ * 見えていた（Fable レビュー）。点線は目盛り（160px）の外側に予約した
+ * `OPEN_END_PX` の余白へはみ出せるので、`lowPct` が100%でも必ず見える。
  */
 export function TotalBar({
   total,
@@ -18,49 +24,50 @@ export function TotalBar({
 }) {
   if (!(domainMax > 0)) return null;
   const { lowPct, highPct, upperUnknown } = totalBarStops(total, domainMax);
+  const label = upperUnknown
+    ? `at least ${yen(total.low)}, no upper bound`
+    : total.high != null && total.high > total.low
+      ? `${yen(total.low)} to ${yen(total.high)}`
+      : yen(total.low);
   return (
     <div
       data-testid="total-bar"
       data-upper-unknown={upperUnknown ? 'true' : 'false'}
-      // **`w-full` ではなく固定幅にする。**右列の親（`sm:w-auto sm:shrink-0`）は
-      // デスクトップで内容にあわせて縮む幅だけを持つので、`w-full` は「その行の
-      // 中身の幅」を指すことになり、行ごとに違う値になる（実測: 行によって
-      // 160px/135px と割れた——「全行共通スケール」という前提そのものが
-      // 見た目で壊れていた、ローカル e2e で検出）。`w-40`（160px）で固定し、
-      // どの親幅の下でも同じ実測幅になるようにする。
-      className="relative h-1.5 w-40 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
+      role="img"
+      aria-label={label}
+      // 目盛り（`w-40`＝160px）＋開いた終端用の予約（全行共通）。
+      // 行によって幅を変えない——共通スケールの前提。
+      className="relative h-1.5 shrink-0"
+      style={{ width: 160 + OPEN_END_PX + 2 }}
     >
-      {/* 下限まで濃く。 */}
       <div
-        className="absolute inset-y-0 left-0 bg-neutral-600 dark:bg-neutral-400"
-        style={{ width: `${lowPct}%` }}
-      />
-      {upperUnknown ? (
-        // 上限不明: 下限から右端まで、濃→透明のグラデーションでフェードさせる。
-        // 確定した右端を描かない。
-        // **`lowPct` が100%に張り付く行がある**（domain の最大値自身がこの行の
-        // `low` のとき）——そのままだと幅0のフェードになり「フェードしている」
-        // という絵そのものが描けない。フェードの開始位置だけ92%で頭打ちにし、
-        // 常に見える幅を残す（下限バー自体の位置・幅は変えない——`lowPct` の
-        // 素の値のまま）。
+        data-testid="total-bar-track"
+        className="absolute inset-y-0 left-0 w-40 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
+      >
+        {/* 下限まで濃く。 */}
         <div
-          data-testid="total-bar-fade"
-          className="absolute inset-y-0"
-          style={{
-            left: `${Math.min(lowPct, 92)}%`,
-            right: 0,
-            background: 'linear-gradient(to right, currentColor, transparent)',
-            opacity: 0.35,
-          }}
+          className="absolute inset-y-0 left-0 bg-neutral-600 dark:bg-neutral-400"
+          style={{ width: `${lowPct}%` }}
         />
-      ) : (
-        highPct != null &&
-        highPct > lowPct && (
+        {!upperUnknown && highPct != null && highPct > lowPct && (
           <div
             className="absolute inset-y-0 bg-neutral-400/70 dark:bg-neutral-500/60"
             style={{ left: `${lowPct}%`, width: `${highPct - lowPct}%` }}
           />
-        )
+        )}
+      </div>
+      {upperUnknown && (
+        // 開いた終端: 下限の右端から固定長の点線。閉じた端点を描かない。
+        <div
+          data-testid="total-bar-open-end"
+          className="absolute border-t-2 border-dotted border-neutral-600 dark:border-neutral-400"
+          style={{
+            left: `calc(${(lowPct / 100) * 160}px + 2px)`,
+            width: OPEN_END_PX,
+            top: '50%',
+            marginTop: -1,
+          }}
+        />
       )}
     </div>
   );
