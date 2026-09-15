@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { gotoCompare, openRankRow, ranking, readRanking } from './helpers';
+import { addByHand, gotoCompare, openRankRow, ranking, readRanking, weightBox } from './helpers';
 
 /**
  * PR-B（順位ボードと配達ログ）の担当範囲だけを縛る e2e。
@@ -20,15 +20,25 @@ test.describe('rank board v2 — closed row shape', () => {
   });
 
   test('a not-comparable row has no rank number and sits out of the rank column', async ({ page }) => {
+    // **既定カートの non-comparable 状態には依存しない**——実測で既定カート
+    // (US) は Neokyo も含めて全行 comparable になりうる（データ次第で動く）。
+    // e2e/compare.spec.ts のテスト18cと同じ手法で、方式の上限を超える重さの
+    // 品を足し、方式を「小形包装物」に固定して**確実に**全行 non-comparable
+    // にする。
     await gotoCompare(page);
+    await addByHand(page, 'Heavy box for rank-column check', 8000);
+    const heavy = weightBox(page, 'Heavy box for rank-column check');
+    await heavy.fill('5000');
+    await heavy.blur();
+    await page.getByLabel('Ship by').selectOption('small-packet-air');
+
+    await expect.poll(async () => {
+      const rows = await readRanking(page);
+      return rows.length > 0 && rows.every((r) => !r.comparable);
+    }).toBe(true);
+
     const all = await readRanking(page);
-    const notComparable = all.filter((r) => !r.comparable);
-    // 既定カート（米国）は Neokyo が日本郵便を売らず non-comparable になる
-    // （e2e/compare.spec.ts のテスト1と同じ前提）。0件なら前提が崩れているので
-    // スキップではなく明示的に失敗させる。
-    expect(notComparable.length, 'expected at least one not-comparable row in the default cart')
-      .toBeGreaterThan(0);
-    for (const r of notComparable) {
+    for (const r of all) {
       expect(r.shownRank, `${r.name}: not-comparable row must not show a rank number`).toBe(0);
     }
   });
@@ -80,11 +90,28 @@ test.describe('rank board v2 — closed row shape', () => {
   });
 
   test('arrival bar line style encodes published vs. unpublished, tracked vs. untracked', async ({ page }) => {
+    // **既定カートの方式の顔ぶれには依存しない**——`method: 'cheapest'` は行ごとに
+    // 宅配便/郵便のどちらが実際に選ばれるか実測データ次第で動く（未公表の宅配便
+    // ばかりだと数字に変換できる `days` が1行も無いこともありうる）。
+    // 「International parcel (airmail)」（`parcel-air`、`POSTAL_METHODS` の
+    // `days: '12–26 days'`, `daysTier: 'fixed'`, `tracked: true`）を明示的に選び、
+    // **数字の棒が実線で出ること**を確実に検証する。
     await gotoCompare(page);
+    await page.getByLabel('Ship by').selectOption('parcel-air');
+
     const rows = ranking(page).locator('li[data-row-id]');
-    const n = await rows.count();
+    await expect.poll(async () => {
+      const n = await rows.count();
+      for (let i = 0; i < n; i++) {
+        const bar = rows.nth(i).getByTestId('arrival-bar');
+        if ((await bar.count()) === 0) continue;
+        if ((await bar.getAttribute('data-mode')) === 'numeric') return true;
+      }
+      return false;
+    }, 'expected at least one numeric arrival bar after forcing parcel-air').toBe(true);
+
     let sawSolid = false;
-    let sawDotted = false;
+    const n = await rows.count();
     for (let i = 0; i < n; i++) {
       const bar = rows.nth(i).getByTestId('arrival-bar');
       if ((await bar.count()) === 0) continue;
@@ -92,10 +119,10 @@ test.describe('rank board v2 — closed row shape', () => {
       const segment = rows.nth(i).getByTestId('arrival-bar-segment');
       const cls = (await segment.getAttribute('class')) ?? '';
       if (cls.includes('border-solid')) sawSolid = true;
-      if (cls.includes('border-dotted')) sawDotted = true;
+      expect(cls, 'parcel-air is a published (fixed-tier) rate — must not render dotted')
+        .not.toContain('border-dotted');
     }
-    // 郵便（公表・実線）と宅配便（未公表・点線）が両方存在するはずの既定カート。
-    expect(sawSolid || sawDotted, 'expected at least one numeric arrival bar').toBe(true);
+    expect(sawSolid, 'expected parcel-air rows to render a solid (published) segment').toBe(true);
   });
 
   test('Buyee shows the 1⇄5 paired box count on both its default and consolidated rows', async ({ page }) => {

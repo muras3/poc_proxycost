@@ -32,11 +32,16 @@ export function TotalBar({
       {upperUnknown ? (
         // 上限不明: 下限から右端まで、濃→透明のグラデーションでフェードさせる。
         // 確定した右端を描かない。
+        // **`lowPct` が100%に張り付く行がある**（domain の最大値自身がこの行の
+        // `low` のとき）——そのままだと幅0のフェードになり「フェードしている」
+        // という絵そのものが描けない。フェードの開始位置だけ92%で頭打ちにし、
+        // 常に見える幅を残す（下限バー自体の位置・幅は変えない——`lowPct` の
+        // 素の値のまま）。
         <div
           data-testid="total-bar-fade"
           className="absolute inset-y-0"
           style={{
-            left: `${lowPct}%`,
+            left: `${Math.min(lowPct, 92)}%`,
             right: 0,
             background: 'linear-gradient(to right, currentColor, transparent)',
             opacity: 0.35,
