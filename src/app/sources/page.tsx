@@ -515,8 +515,8 @@ export default function SourcesPage() {
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           So the calculator tells you when your result sits near a crossover, and the weight you type
           in matters more than any other number on the page. What still holds is that the ranking is
-          decided by the total alone: some of these companies pay us and some do not, and that never
-          moves a row.
+          decided by the total alone: no company pays us today, and the sort never reads that field
+          regardless.
         </p>
       </section>
 

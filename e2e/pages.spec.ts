@@ -129,7 +129,7 @@ test.describe('/sources — the fee, postage and tax tables', () => {
     await open(page, '/sources');
     const body = await page.locator('body').innerText();
     expect(body).toMatch(/ranking is decided by total cost alone/i);
-    expect(body).toMatch(/pay us nothing/i);
+    expect(body).toMatch(/pays us nothing/i);
   });
 
   // ─────────────────────────────────────────────────────────────────────────

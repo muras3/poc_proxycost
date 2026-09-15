@@ -79,9 +79,6 @@ const priced = (rows: RankRow[]): (RankRow & { total: number })[] =>
 /** 順位が付いている行のうち1位。額の無い行を1位と読まない。 */
 const first = (rows: RankRow[]) => priced(rows)[0]!;
 
-/** 行の開示文から報酬の有無を読む。'pays us nothing' 以外は我々に報酬を払う社。 */
-const paysUs = (r: RankRow) => !/pays us nothing/.test(r.text);
-
 /**
  * 社名（と variant）で順位を引く。`findRow`（helpers.ts）が、そもそも variant を
  * 持たない社に variant を渡す**書き間違い**をその場で例外にする。見つからない
@@ -162,28 +159,28 @@ test('1b. ZenMarket is never misdetected as variant "default" by its own Surface
   await expect(zenRow.getByTestId('surface-alternative')).toContainText(/not used as the default/);
 });
 
-test('2. rank is decided by the total alone — paying us buys neither the top spot nor safety from the bottom', async ({ page }) => {
+test('2. rank is decided by the total alone — no company pays us, and the disclosure says so', async ({ page }) => {
   await gotoCompare(page);
-  // **2026-09-12、courier-ui で宛先を英国に差し替えた。**Buyee に実測宅配便運賃を
-  // 配線した結果（P2）、既定の宛先（米国）では最下位が Jauce（報酬を払わない社）に
-  // 替わってしまい、「払っていても最下位に落ちる」を実演する行が既定カートに
-  // 居なくなった（実測 `src/lib/pricing`）。英国（他の宛先も同様）では、いまも
-  // 最上位・最下位とも我々に報酬を払う社（ZenMarket・Buyee）なので、こちらに揃える。
+  // 2026-09-15、代行5社いずれとも契約が無いことが確定した。以前は「払う社と
+  // 払わない社が混在」を検査していたが、その前提が虚偽だったので書き換えた。
   await page.getByLabel('Ship to').selectOption('GB');
 
   // 順位の根拠を画面が名乗っていること。**「1位が誰か」ではなく「何で並べたか」**が主張の中身。
   await expect(page.getByText(/ranked by the total that reaches your door/i)).toBeVisible();
-  await expect(page.getByText(/pay us and some do not — that never moves a row/i)).toBeVisible();
+  // ヒーロー文とフッターの開示文、両方に「No company pays us」が出るので contentinfo に絞る。
+  await expect(page.getByRole('contentinfo').getByText(/No company pays us/i)).toBeVisible();
 
   const all = await readRanking(page);
   const rows = all.filter((r) => r.comparable);
   expect(rows.length).toBeGreaterThanOrEqual(4);
 
-  // 報酬の有無は全行が名乗る（比べられない行も含む）。名乗らない行があると混在を
-  // 確かめようがない。
-  for (const r of all) expect(r.text, `${r.name} does not disclose the referral`).toMatch(/pays us/);
+  // 報酬の有無は全行が名乗る（比べられない行も含む）。全社契約が無いので一様に
+  // 「pays us nothing」を名乗る。
+  for (const r of all) {
+    expect(r.text, `${r.name} does not disclose the referral`).toMatch(/pays us nothing/);
+  }
 
-  // 並びは総額の昇順そのもの。報酬で並べ替えられていないことを、画面の並びで見る。
+  // 並びは総額の昇順そのもの。
   const key = (r: RankRow) => `${r.name}${r.variant ? `/${r.variant}` : ''}`;
   expect(rows.map(key)).toEqual([...rows].sort((a, b) => a.total! - b.total!).map(key));
 
@@ -192,23 +189,7 @@ test('2. rank is decided by the total alone — paying us buys neither the top s
   expect(rows[0]!.cheapest).toBe(true);
   expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
 
-  const paying = rows.filter(paysUs);
-  const free = rows.filter((r) => !paysUs(r));
-  expect(paying.length).toBeGreaterThan(0);
-  expect(free.length).toBeGreaterThan(0);
-
-  // **払う社と払わない社が混ざって並ぶ。**払う社が上に固まっていたら、この順に
-  // 報酬が効いていることになる。上下どちらの向きの並びも実在することで否定する。
-  expect(free.some((f) => paying.some((p) => p.rank > f.rank)), 'every paying row sits above every free row').toBe(true);
-  expect(paying.some((p) => free.some((f) => f.rank > p.rank)), 'every free row sits above every paying row').toBe(true);
-
-  // 既定の2点では1位も最下位も我々に報酬を払う社（2026-09-06 の実測）。
-  // **これは「払う社が勝つ」という主張ではない。**払っていても最安なら1位に出るし、
-  // 払っていても高ければ最下位に落ちる、という同じ規則の両端である。
-  expect(paysUs(rows[0]!), 'the top row does not pay us — the interesting case is not exercised').toBe(true);
-  expect(paysUs(rows[rows.length - 1]!), 'paying us kept a row off the bottom').toBe(true);
-
-  // 1点に減らすと最下位は報酬を払わない社に替わる。最下位も報酬では決まっていない。
+  // 1点に減らしても、並びは総額の昇順のまま。
   const rowsBefore = await rankButtons(page).count();
   await openCart(page);
   await cart(page).getByRole('button', { name: /^Remove / }).last().click();
@@ -218,7 +199,6 @@ test('2. rank is decided by the total alone — paying us buys neither the top s
   // **最下位は順位が付いた行の最下位。**比べられない行はその下に置かれるが、
   // それは「いちばん高い」ではなく「値段が付いていない」なので数えない。
   const single = (await readRanking(page)).filter((r) => r.comparable);
-  expect(paysUs(single[single.length - 1]!), 'the bottom row still pays us — both sides must be able to land there').toBe(false);
   expect(isNonDecreasing(single.map((r) => r.total!))).toBe(true);
   expect(single[0]!.total).toBe(Math.min(...single.map((r) => r.total!)));
   expect(single[0]!.cheapest).toBe(true);
@@ -707,12 +687,13 @@ test('9. no ad before consent; an ad only after Accept', async ({ page }) => {
   await expect(ad).toBeVisible();
 });
 
-test('10. only the links that actually pay us are marked sponsored', async ({ page }) => {
+test('10. no outbound link is marked sponsored — nobody pays us today', async ({ page }) => {
+  // 2026-09-15、代行5社いずれとも契約が無いことが確定した。以前は「報酬を払う社
+  // だけ sponsored」の混在を検査していたが、いまは払う社が実在しない。
   await gotoCompare(page);
   const rows = await readRanking(page);
+  expect(rows.length).toBeGreaterThan(0);
 
-  let paying = 0;
-  let free = 0;
   for (let i = 0; i < rows.length; i++) {
     const li = await openRankRow(page, i);
     const link = li.getByRole('link', { name: /^Open / });
@@ -722,19 +703,10 @@ test('10. only the links that actually pay us are marked sponsored', async ({ pa
     expect(rel).toContain('noopener');
     expect(rel).toContain('nofollow');
 
-    // 報酬を払う社だけが sponsored。払わない社に付けると虚偽の開示になる。
-    if (/pays us nothing/.test(rows[i]!.text)) {
-      expect(rel).not.toContain('sponsored');
-      free++;
-    } else {
-      expect(rel).toContain('sponsored');
-      paying++;
-    }
+    expect(rows[i]!.text, `${rows[i]!.name} should disclose "pays us nothing"`).toMatch(/pays us nothing/);
+    expect(rel, `${rows[i]!.name}'s outbound link must not be sponsored`).not.toContain('sponsored');
     await openRankRow(page, i); // 閉じる
   }
-  // 両方が実在しないと、この区別を検証したことにならない。
-  expect(paying).toBeGreaterThan(0);
-  expect(free).toBeGreaterThan(0);
 });
 
 

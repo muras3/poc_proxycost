@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SERVICES } from '@/lib/pricing/services';
 
 export const metadata: Metadata = {
   title: 'Privacy — proxycost',
@@ -9,18 +8,16 @@ export const metadata: Metadata = {
     + 'are involved, and how referral fees work.',
 };
 
-const UPDATED = '2026-09-06';
+const UPDATED = '2026-09-15';
 const ISSUES = 'https://github.com/muras3/poc_proxycost/issues';
 const REPO = 'https://github.com/muras3/poc_proxycost';
+const CONTACT_EMAIL = 'contact@japanproxyguide.com';
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="mt-10 text-lg font-semibold tracking-tight">{children}</h2>;
 }
 
 export default function PrivacyPage() {
-  const pays = SERVICES.filter((s) => s.paysUs).map((s) => s.name);
-  const free = SERVICES.filter((s) => !s.paysUs).map((s) => s.name);
-
   return (
     <article className="max-w-3xl py-8 text-sm text-neutral-700 dark:text-neutral-300">
       <header>
@@ -137,15 +134,21 @@ export default function PrivacyPage() {
 
       <H2>Referral fees</H2>
       <p className="mt-2">
-        When you open a proxy service from a result row, some of those links are referral links and
-        pay us if you sign up or order. {pays.join(', ')} pay us.{' '}
-        {free.join(' and ')} pay us nothing, and {free[0]} is often the cheapest option we show.
-        Outbound links carry <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">rel=&quot;sponsored&quot;</code>.
+        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+          No proxy service pays us anything today.
+        </span>{' '}
+        As of {UPDATED} we have no affiliate contract with any of the five companies this
+        calculator compares, so no outbound link earns us a referral fee, and none is marked{' '}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">rel=&quot;sponsored&quot;</code>{' '}
+        — every outbound link on the site currently carries plain{' '}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">rel=&quot;nofollow noopener noreferrer&quot;</code>.
+        If that ever changes for a company, this page will say so, by name, with the date it
+        started.
       </p>
       <p className="mt-2 font-medium text-neutral-900 dark:text-neutral-100">
         The ranking is decided by total cost alone. Whether a company pays us is displayed on its
-        row, and it is never an input to the sort. The code that does the sorting is public — read
-        it in the{' '}
+        row, and it is never an input to the sort — the code never reads that field when it orders
+        rows. The code that does the sorting is public — read it in the{' '}
         <a className="underline" href={REPO} target="_blank" rel="noopener noreferrer">repository</a>{' '}
         and check for yourself, or read{' '}
         <Link href="/sources" className="underline">how every number is sourced</Link>.
@@ -166,11 +169,15 @@ export default function PrivacyPage() {
 
       <H2>Contact</H2>
       <p className="mt-2">
-        Ask anything about this page, or about the numbers, on our{' '}
+        Write to{' '}
+        <a className="underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>{' '}
+        for anything private — a data question, a correction you would rather not post publicly, or
+        anything else about this page. For a public correction to a number on the site, use our{' '}
         <a className="underline" href={ISSUES} target="_blank" rel="noopener noreferrer">
           GitHub issue tracker
-        </a>. It is public, so please do not post anything private there. We have no other contact
-        channel at the moment, and saying so is more useful than printing an address nobody reads.
+        </a>{' '}
+        instead, so the fix and its source are visible to everyone. See also{' '}
+        <Link href="/about" className="underline">who runs this site</Link>.
       </p>
     </article>
   );
