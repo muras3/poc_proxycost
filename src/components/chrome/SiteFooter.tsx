@@ -1,36 +1,36 @@
 import Link from 'next/link';
+import { RATES_AS_OF, RATES_FETCHED_ON } from '@/lib/pricing/rates';
 import { SERVICES, SERVICES_CHECKED_ON } from '@/lib/pricing/services';
+import { andList } from '@/lib/pricing/compare';
 
 const REPO = 'https://github.com/muras3/poc_proxycost';
 
+/** フッター。Mock v3 の `footer`（2段落 ＋ ナビ）。社名と日付はマスタから。 */
 export function SiteFooter() {
   const pays = SERVICES.filter((s) => s.paysUs).map((s) => s.name);
   const free = SERVICES.filter((s) => !s.paysUs).map((s) => s.name);
 
   return (
-    <footer className="mt-16 border-t border-rule">
-      <div className="mx-auto w-full max-w-6xl space-y-3 px-4 py-8 font-mono text-xs text-ink-2">
+    <footer>
+      <div>
         <p>
-          <strong className="font-sans font-semibold text-ink">
-            The ranking is decided by total cost alone.
-          </strong>{' '}
-          It never looks at what a company pays us. {pays.join(', ')} pay us a referral fee.{' '}
-          {free.join(' and ')} pay us nothing — and {free[0]} is often the cheapest.
-          Outbound links are marked <code>rel=&quot;sponsored&quot;</code>.
+          Rows are ordered by total only. {andList(pays)} pay us for referrals; {andList(free)}{' '}
+          don&rsquo;t. Payment never moves a row.
         </p>
         <p>
-          Fees checked on {SERVICES_CHECKED_ON}. Found a number that is wrong?{' '}
-          <a className="underline" href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">
-            Tell us on GitHub
-          </a>.
+          Fees checked {SERVICES_CHECKED_ON} · rates read {RATES_FETCHED_ON} · currency: ECB
+          reference rate for {RATES_AS_OF} · all totals in yen.{' '}
+          <a href={`${REPO}/issues`} target="_blank" rel="noopener noreferrer">
+            Found a number that is wrong?
+          </a>
         </p>
-        <nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-1">
-          <Link href="/weights" className="underline">Shipping weights</Link>
-          <Link href="/sources" className="underline">Sources and method</Link>
-          <Link href="/privacy" className="underline">Privacy</Link>
-          <a className="underline" href={REPO} target="_blank" rel="noopener noreferrer">Source code</a>
-        </nav>
       </div>
+      <nav aria-label="Footer">
+        <Link href="/weights">Weights</Link>
+        <Link href="/sources">Sources</Link>
+        <Link href="/privacy">Privacy</Link>
+        <a href={REPO} target="_blank" rel="noopener noreferrer">Source code</a>
+      </nav>
     </footer>
   );
 }
