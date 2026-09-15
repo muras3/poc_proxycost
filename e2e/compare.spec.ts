@@ -678,7 +678,7 @@ test('8. editing a price marks that number as ours, not theirs', async ({ page }
 
 test('9. no ad before consent; an ad only after Accept', async ({ page }) => {
   await gotoCompare(page, { consent: 'leave' });
-  const ad = page.getByText('Ad · unrelated to the ranking');
+  const ad = page.getByRole('complementary', { name: 'Advertisement' });
   const banner = page.getByRole('dialog', { name: 'Cookie consent' });
 
   await expect(ad).toHaveCount(0);
