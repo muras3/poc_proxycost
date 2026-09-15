@@ -1289,7 +1289,8 @@ test.describe('desktop layout', () => {
     // 列順＝順位順。
     const rows = await readRanking(page);
     for (let i = 0; i < rows.length; i++) {
-      expect(headers[i + 1]).toContain(rows[i]!.name);
+      // 見出しは CSS で大文字化されるので、大文字小文字を無視して比べる。
+      expect(headers[i + 1]!.toLowerCase()).toContain(rows[i]!.name.toLowerCase());
     }
   });
 
@@ -1358,7 +1359,7 @@ test.describe('desktop layout', () => {
     expect(fromJapan, 'FROM JAPAN missing from ranking').toBeDefined();
 
     const headers = await headerCells(table);
-    const fjColumn = headers.findIndex((h) => h.includes('FROM JAPAN'));
+    const fjColumn = headers.findIndex((h) => h.toLowerCase().includes('from japan'));
     expect(fjColumn, 'FROM JAPAN column not found in breakdown table').toBeGreaterThan(0);
 
     const footerRow = table.getByRole('row').filter({
@@ -1370,15 +1371,17 @@ test.describe('desktop layout', () => {
     await expect(fjCell.locator('[aria-label]')).toHaveAttribute('aria-label', /or more/);
     expect(await fjCell.innerText()).not.toMatch(/–/); // 偽の上端（「¥X – Y」）を書かない
 
-    // **重量を EMS 公表表（30 kg）の外まで重くすると、EMS を売れない社が
-    // 比較不能になる。**その社の Ranking 側 'NOT COMPARABLE' と、内訳表の
-    // footer の '—' が一致すること（`total.low` を出して最安に見せない）。
+    // **重量を実測の宅配便レンジ（20 kg）の外・EMS 公表表（30 kg）の内まで重くすると、
+    // 日本郵便を売れない社が比較不能になる。**その社の Ranking 側 'NOT RANKED' と、
+    // 内訳表の footer の '—' が一致すること（`total.low` を出して最安に見せない）。
+    // 以前は 25 kg/点（計 50 kg）だったが、それだと全社が比較不能になって
+    // 順位表ごと消える（表も出ない）ので、混在が残る 15 kg/点（計 30 kg）にする。
     await openCart(page);
-    await weightBox(page, FIGURE).fill('25000');
-    await weightBox(page, NENDOROID).fill('25000');
+    await weightBox(page, FIGURE).fill('15000');
+    await weightBox(page, NENDOROID).fill('15000');
     const heavyRows = await readRanking(page);
     const notComparable = heavyRows.filter((r) => !r.comparable);
-    expect(notComparable.length, 'expected at least one not-comparable row at 25 kg/item').toBeGreaterThan(0);
+    expect(notComparable.length, 'expected at least one not-comparable row at 15 kg/item').toBeGreaterThan(0);
 
     const heavyHeaders = await headerCells(table);
     const heavyFooterRow = table.getByRole('row').filter({
@@ -1386,8 +1389,9 @@ test.describe('desktop layout', () => {
     });
     const heavyFooterCells = await rowCells(heavyFooterRow);
     for (const r of notComparable) {
-      const col = heavyHeaders.findIndex((h) => h.includes(r.name)
-        && (r.variant == null || h.includes(r.variant)));
+      // 見出しは CSS で大文字化されるので、大文字小文字を無視して引く。
+      const col = heavyHeaders.findIndex((h) => h.toLowerCase().includes(r.name.toLowerCase())
+        && (r.variant == null || h.toLowerCase().includes(r.variant.toLowerCase())));
       expect(col, `${r.name} ${r.variant ?? ''} column not found`).toBeGreaterThan(0);
       expect(heavyFooterCells[col], `${r.name} ${r.variant ?? ''} should show — like the ranking`).toBe('—');
     }
