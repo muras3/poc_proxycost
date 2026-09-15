@@ -144,26 +144,34 @@ describe('schema check actually reads the data', () => {
     expect(validateEligibilityRows(ELIGIBILITY_ROWS)).toEqual([]);
   });
 
-  test('every listed/unsupported/suspended row has a source, a quote, and checkedOn', () => {
+  test('every listed/unsupported/suspended row has a source, evidence, and checkedOn', () => {
     for (const r of ELIGIBILITY_ROWS) {
       if (r.status === 'not_listed') continue;
       expect(r.sourceUrl, `${r.proxy}/${r.site}`).toBeTruthy();
-      expect(r.quote, `${r.proxy}/${r.site}`).toBeTruthy();
+      expect(r.evidence, `${r.proxy}/${r.site}`).toBeTruthy();
       expect(r.checkedOn, `${r.proxy}/${r.site}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
 
-  test('a mutated row (quote removed) is caught, proving the check reads real data', () => {
+  test('every unsupported/suspended row additionally has a verbatim quote', () => {
+    for (const r of ELIGIBILITY_ROWS) {
+      if (r.status !== 'unsupported' && r.status !== 'suspended') continue;
+      expect(r.quote, `${r.proxy}/${r.site}`).toBeTruthy();
+    }
+  });
+
+  test('a mutated row (evidence removed) is caught, proving the check reads real data', () => {
     const good = ELIGIBILITY_ROWS.find(
-      (r) => r.status === 'listed' && r.quote,
+      (r) => r.status === 'listed' && r.evidence,
     );
     expect(good).toBeDefined();
     const mutated: EligibilityRow[] = ELIGIBILITY_ROWS.map((r) => (
-      r === good ? { ...r, quote: undefined } : r
+      r === good ? { ...r, evidence: undefined } : r
     ));
     const errors = validateEligibilityRows(mutated);
-    expect(errors.some((e) => e.includes(`${good!.proxy}/${good!.site}`) && e.includes('quote')))
-      .toBe(true);
+    expect(
+      errors.some((e) => e.includes(`${good!.proxy}/${good!.site}`) && e.includes('evidence')),
+    ).toBe(true);
   });
 
   test('a mutated row (sourceUrl removed) is caught too', () => {
@@ -177,6 +185,42 @@ describe('schema check actually reads the data', () => {
     const errors = validateEligibilityRows(mutated);
     expect(
       errors.some((e) => e.includes(`${good!.proxy}/${good!.site}`) && e.includes('sourceUrl')),
+    ).toBe(true);
+  });
+
+  test('an unsupported row with its verbatim quote removed is caught (evidence alone is not enough)', () => {
+    const good = ELIGIBILITY_ROWS.find(
+      (r) => r.status === 'unsupported' && r.quote,
+    );
+    expect(good).toBeDefined();
+    const mutated: EligibilityRow[] = ELIGIBILITY_ROWS.map((r) => (
+      r === good ? { ...r, quote: undefined } : r
+    ));
+    const errors = validateEligibilityRows(mutated);
+    expect(
+      errors.some((e) => e.includes(`${good!.proxy}/${good!.site}`) && e.includes('quote')),
+    ).toBe(true);
+    // Sanity: removing quote from a merely-listed row must NOT trigger this same error,
+    // since listed rows are allowed to rely on evidence alone when no verbatim text is known.
+    const listedGood = ELIGIBILITY_ROWS.find((r) => r.status === 'listed' && r.quote);
+    expect(listedGood).toBeDefined();
+    const mutatedListed: EligibilityRow[] = ELIGIBILITY_ROWS.map((r) => (
+      r === listedGood ? { ...r, quote: undefined } : r
+    ));
+    expect(validateEligibilityRows(mutatedListed)).toEqual([]);
+  });
+
+  test('a suspended row without a verbatim quote is caught too', () => {
+    const good = ELIGIBILITY_ROWS.find(
+      (r) => r.status === 'suspended' && r.quote,
+    );
+    expect(good).toBeDefined();
+    const mutated: EligibilityRow[] = ELIGIBILITY_ROWS.map((r) => (
+      r === good ? { ...r, quote: undefined } : r
+    ));
+    const errors = validateEligibilityRows(mutated);
+    expect(
+      errors.some((e) => e.includes(`${good!.proxy}/${good!.site}`) && e.includes('quote')),
     ).toBe(true);
   });
 

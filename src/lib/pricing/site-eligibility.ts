@@ -22,6 +22,17 @@ import type { SiteId } from './types';
  * ノンジャッジな TS データモジュール）の方が形として一致するので、そちらに合わせた。
  * スキーマの検証は Python ではなく同じ vitest スイート内の `validateEligibilityRows` で行う
  * （`site-eligibility.test.ts`）。
+ *
+ * **`quote` と `evidence` を分けている理由（PRレビューで指摘）**: 最初の版は `quote`
+ * フィールドに「原文の引用」のつもりで**我々の説明文**（例: "Store list entry with a href to
+ * Suruga-ya."）を入れてしまっていた。`quote` という名前のフィールドが我々の言い換えを
+ * 持っていたら、それは「検査が検査になっていない」——`master/validate.py` の冒頭コメントが
+ * 警告している型の欠陥そのもの。したがって:
+ *   - `quote?: string` … **原文にそのまま出ている文字列だけ。** 表示テキスト・ラベル・
+ *     リンク先ホスト名・JSON の断片など、我々が言い換えていないもの限定。
+ *   - `evidence: string` … どこで・何を見たかの、我々の英語の説明。
+ * 元の調査結果に原文の文字列が無い行は、`quote` を空のままにし `evidence` だけで説明する
+ * （**存在しない引用を作らない**）。
  */
 
 /** 代行5社。 */
@@ -38,7 +49,7 @@ export interface ProxyInfo {
   id: ProxyId;
   name: string;
   policy: ProxyPolicy;
-  /** 方針そのものの出典（自由文の引用）。 */
+  /** 方針そのものの出典（原文の引用）。 */
   policyQuote: string;
   policySourceUrl: string;
 }
@@ -46,15 +57,14 @@ export interface ProxyInfo {
 export const PROXIES: Record<ProxyId, ProxyInfo> = {
   buyee: {
     id: 'buyee', name: 'Buyee', policy: 'any_japanese_url',
-    policyQuote: 'Buyee supports ordering from a broad set of named Japanese shopping and'
-      + ' auction sites, plus most other Japanese shops via its universal proxy purchase form.',
-    policySourceUrl: 'https://buyee.jp/',
+    policyQuote: 'Shop at Mercari from Japan, and Buyee will ship your items worldwide!',
+    policySourceUrl: 'https://media.buyee.jp/pr/about_mercari/en/',
   },
   zenmarket: {
     id: 'zenmarket', name: 'ZenMarket', policy: 'any_japanese_url',
-    policyQuote: 'ZenMarket lists dozens of partner and recommended Japanese shops and also'
-      + ' accepts purchase requests from other Japanese shopping sites.',
-    policySourceUrl: 'https://zenmarket.jp/en/othershops.aspx',
+    policyQuote: 'ZenMarket collaborates with two popular marketplace apps: Mercari and'
+      + ' Rakuma.',
+    policySourceUrl: 'https://zenmarket.jp/en/quickguide.aspx',
   },
   neokyo: {
     id: 'neokyo', name: 'Neokyo', policy: 'any_japanese_url',
@@ -181,8 +191,15 @@ export interface EligibilityRow {
   method: EvidenceMethod;
   /** listed/unsupported/suspended は必須。not_listed は無くてよい。 */
   sourceUrl?: string;
-  /** 原文の引用（英語）。member_area は掲載されていた店名（ラベル）。 */
+  /**
+   * **原文にそのまま出ている文字列だけ。** 表示テキスト・ラベル・リンク先ホスト名・
+   * JSON の断片など。我々の言い換えは絶対に入れない。分からなければ書かない
+   * （`evidence` だけで説明する）。`unsupported` / `suspended` は必須
+   * （`blocked` を出す根拠になるので、言い換えでは足りない）。
+   */
   quote?: string;
+  /** どこで・何を見たかの、我々の英語の説明。listed/unsupported/suspended は必須。 */
+  evidence?: string;
   checkedOn: string;
   /** 判断ではなく、データを読む上での注意書き（例: 表記ゆれ、リンク先の食い違い）。 */
   note?: string;
@@ -207,78 +224,86 @@ const BUYEE_ROWS: EligibilityRow[] = [
     proxy: 'buyee', site: 'mercari', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_ABOUT,
     quote: 'Shop at Mercari from Japan, and Buyee will ship your items worldwide!',
+    evidence: 'Sentence on the Buyee x Mercari about page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'yahoo-auctions', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_AUCTION,
-    quote: 'Buyee brands Yahoo! Japan Auctions as "JDirectItems Auction".',
+    quote: 'JDirectItems Auction',
+    evidence: "Buyee's about_auction page brands Yahoo! Japan Auctions with this name.",
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'yahoo-shopping', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_SHOPPING,
-    quote: 'Buyee brands Yahoo! Shopping as "JDirectItems Shopping".',
+    quote: 'JDirectItems Shopping',
+    evidence: "Buyee's buyee05_jdirectitems guide page brands Yahoo! Shopping with this name.",
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'paypay-fleamarket', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_PAYPAY,
-    quote: 'Buyee brands PayPay Fleamarket as "JDirectItems Fleamarket" and links to'
-      + ' buyee.jp/paypayfleamarket/.',
+    quote: 'JDirectItems Fleamarket',
+    evidence: "Buyee's about_paypay page brands PayPay Fleamarket with this name; the link"
+      + ' labeled with it has an href of buyee.jp/paypayfleamarket/.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'rakuten', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_RAKUTEN,
     quote: "order items from Japan's largest online shopping mall, Rakuten",
+    evidence: 'Sentence on the Buyee x Rakuten guide page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'rakuma', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_SHOP_NAV,
-    quote: 'shop.buyee.jp\'s navigation carries a "楽天ラクマ" (Rakuma) tab.',
+    quote: '楽天ラクマ',
+    evidence: "shop.buyee.jp's navigation carries this tab (Rakuma).",
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'amazon-jp', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_AMAZON,
     quote: 'Buy from Amazon Japan - Buyee',
+    evidence: 'Page title/heading on the Buyee x Amazon Japan guide page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'zozo', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_ZOZO,
     quote: "order items from Japan's largest fashion shopping site, ZOZOTOWN.",
+    evidence: 'Sentence on the Buyee x ZOZOTOWN guide page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'animate', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_OTHER_SHOPPING,
-    quote: 'Must-see shop list: "animate pokemoncenter-online melonbooks OFFMALL digimart'
-      + ' 2ndstreet towerrecords".',
+    quote: 'animate pokemoncenter-online melonbooks OFFMALL digimart 2ndstreet towerrecords',
+    evidence: 'Must-see shop list on the "other shopping sites" guide page names this site.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: 'melonbooks', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_OTHER_SHOPPING,
-    quote: 'Must-see shop list: "animate pokemoncenter-online melonbooks OFFMALL digimart'
-      + ' 2ndstreet towerrecords".',
+    quote: 'animate pokemoncenter-online melonbooks OFFMALL digimart 2ndstreet towerrecords',
+    evidence: 'Must-see shop list on the "other shopping sites" guide page names this site.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'buyee', site: '2ndstreet', status: 'listed', method: 'raw_html',
     sourceUrl: BUYEE_OTHER_SHOPPING,
-    quote: 'Must-see shop list: "animate pokemoncenter-online melonbooks OFFMALL digimart'
-      + ' 2ndstreet towerrecords".',
+    quote: 'animate pokemoncenter-online melonbooks OFFMALL digimart 2ndstreet towerrecords',
+    evidence: 'Must-see shop list on the "other shopping sites" guide page names this site.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
-    // 汎用の告知文は undated だが、証拠は P-Bandai 専用の /p-bandai → /closed へのリダイレクト。
     proxy: 'buyee', site: 'p-bandai', status: 'unsupported', method: 'raw_html',
     sourceUrl: BUYEE_PBANDAI,
-    quote: 'こちらのサイトは諸般の都合により、購入サポートサービスを終了させていただくこととなりました。'
-      + ' (shop.buyee.jp/p-bandai redirects to /closed.)',
+    quote: 'こちらのサイトは諸般の都合により、購入サポートサービスを終了させていただくこととなりました。',
+    evidence: 'shop.buyee.jp/p-bandai redirects to /closed, which carries this generic,'
+      + ' undated notice; the evidence is the P-Bandai-specific redirect itself.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   { proxy: 'buyee', site: 'suruga-ya', status: 'not_listed', method: 'raw_html', checkedOn: ELIGIBILITY_CHECKED_ON },
@@ -301,80 +326,107 @@ const ZENMARKET_ROWS: EligibilityRow[] = [
     proxy: 'zenmarket', site: 'mercari', status: 'listed', method: 'raw_html',
     sourceUrl: ZM_QUICKGUIDE,
     quote: 'ZenMarket collaborates with two popular marketplace apps: Mercari and Rakuma.',
+    evidence: 'Sentence on the ZenMarket quickguide page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'rakuma', status: 'listed', method: 'raw_html',
     sourceUrl: ZM_QUICKGUIDE,
     quote: 'ZenMarket collaborates with two popular marketplace apps: Mercari and Rakuma.',
+    evidence: 'Sentence on the ZenMarket quickguide page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'yahoo-auctions', status: 'listed', method: 'raw_html',
     sourceUrl: ZM_OTHERSHOPS,
-    quote: 'Inline JSON entry {"code":"YahooAuction","name":"JDirectItems Auction"}.',
+    quote: '{"code":"YahooAuction","name":"JDirectItems Auction"}',
+    evidence: 'Inline JSON entry embedded in othershops.aspx.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'yahoo-shopping', status: 'listed', method: 'raw_html',
     sourceUrl: ZM_OTHERSHOPS,
-    quote: 'Inline JSON entry {"code":"YahooShopping","name":"JDirectItems Shopping"}.',
+    quote: '{"code":"YahooShopping","name":"JDirectItems Shopping"}',
+    evidence: 'Inline JSON entry embedded in othershops.aspx.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'rakuten', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list footer names "Rakuten.co.jp".',
+    sourceUrl: ZM_OTHERSHOPS,
+    quote: 'Rakuten.co.jp',
+    evidence: 'Store list footer on othershops.aspx names this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'amazon-jp', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list footer names "Amazon.co.jp".',
+    sourceUrl: ZM_OTHERSHOPS,
+    quote: 'Amazon.co.jp',
+    evidence: 'Store list footer on othershops.aspx names this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
+    // 原文の具体的な href / ラベル文字列は確認できていない（「store list with hrefs」としか
+    // 分かっていない）。**存在しない引用を作らない**ので quote は空。
     proxy: 'zenmarket', site: 'suruga-ya', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list entry with a href to Suruga-ya.',
+    sourceUrl: ZM_OTHERSHOPS,
+    evidence: 'Store list entry on othershops.aspx with a href to Suruga-ya (exact label text'
+      + ' not captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'mandarake', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list entry with a href to Mandarake.',
+    sourceUrl: ZM_OTHERSHOPS,
+    evidence: 'Store list entry on othershops.aspx with a href to Mandarake (exact label text'
+      + ' not captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'animate', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list entry with a href to Animate.',
+    sourceUrl: ZM_OTHERSHOPS,
+    evidence: 'Store list entry on othershops.aspx with a href to Animate (exact label text'
+      + ' not captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'amiami', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list entry with a href to AmiAmi.',
+    sourceUrl: ZM_OTHERSHOPS,
+    evidence: 'Store list entry on othershops.aspx with a href to AmiAmi (exact label text'
+      + ' not captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: '2ndstreet', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list entry with a href to 2nd STREET.',
+    sourceUrl: ZM_OTHERSHOPS,
+    evidence: 'Store list entry on othershops.aspx with a href to 2nd STREET (exact label'
+      + ' text not captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'toranoana', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_OTHERSHOPS, quote: 'Store list entry with a href to Toranoana.',
+    sourceUrl: ZM_OTHERSHOPS,
+    evidence: 'Store list entry on othershops.aspx with a href to Toranoana (exact label text'
+      + ' not captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'bookoff', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_RECOMMENDED, quote: '"BOOKOFF" listed among recommended shops.',
+    sourceUrl: ZM_RECOMMENDED,
+    quote: 'BOOKOFF',
+    evidence: 'Listed among recommended shops on recommendedshops.aspx.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'melonbooks', status: 'listed', method: 'raw_html',
-    sourceUrl: ZM_RECOMMENDED, quote: '"8% OFF on Melonbooks" listed among recommended shops.',
+    sourceUrl: ZM_RECOMMENDED,
+    quote: '8% OFF on Melonbooks',
+    evidence: 'Listed among recommended shops on recommendedshops.aspx.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'zenmarket', site: 'zozo', status: 'listed', method: 'browser',
     sourceUrl: ZM_DISCOVER_ZOZO,
     quote: 'Buy ZOZOTOWN directly from Japan with ZenMarket',
+    evidence: 'Heading on the ZenMarket "discover" ZOZOTOWN store page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
@@ -382,6 +434,7 @@ const ZENMARKET_ROWS: EligibilityRow[] = [
     sourceUrl: ZM_PBANDAI_BLOG,
     quote: 'As of July 2023, Premium Bandai have banned purchasing from overseas through use'
       + ' of proxy services including ZenMarket.',
+    evidence: "Sentence in ZenMarket's own blog post about buying from Premium Bandai.",
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   { proxy: 'zenmarket', site: 'paypay-fleamarket', status: 'not_listed', method: 'raw_html', checkedOn: ELIGIBILITY_CHECKED_ON },
@@ -400,19 +453,25 @@ const NK_ANIME_GOODIES = 'https://neokyo.com/en/anime-goodies';
 
 const NEOKYO_ROWS: EligibilityRow[] = [
   {
+    // ページの存在自体が証拠。原文の具体的な引用文は確認できていないので quote は空。
     proxy: 'neokyo', site: 'mercari', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_MERCARI, quote: 'Dedicated Mercari introduction page.',
+    sourceUrl: NK_MERCARI,
+    evidence: 'Neokyo publishes a dedicated Mercari introduction page (exact wording not'
+      + ' captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'rakuma', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_RAKUMA, quote: 'Dedicated Rakuma introduction page.',
+    sourceUrl: NK_RAKUMA,
+    evidence: 'Neokyo publishes a dedicated Rakuma introduction page (exact wording not'
+      + ' captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'yahoo-auctions', status: 'listed', method: 'raw_html',
     sourceUrl: NK_JDI_AUCTION,
     quote: 'JDirectItems Auction known as Yahoo! Japan Auction domestically',
+    evidence: 'Sentence on the JDirectItems Auction introduction page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
@@ -420,48 +479,63 @@ const NEOKYO_ROWS: EligibilityRow[] = [
     sourceUrl: NK_JDI_SHOPPING,
     quote: 'JDirectItems Shopping is an online shopping website known as Yahoo! Shopping in'
       + ' Japan',
+    evidence: 'Sentence on the JDirectItems Shopping introduction page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'paypay-fleamarket', status: 'listed', method: 'raw_html',
     sourceUrl: NK_MARKETPLACE_LIST,
-    quote: 'Card linking to paypayfleamarket.yahoo.co.jp: "Paypay offers a hassle-free and'
-      + ' secure way to purchase".',
+    quote: 'Paypay offers a hassle-free and secure way to purchase',
+    evidence: 'Card on the marketplace list page linking to paypayfleamarket.yahoo.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'rakuten', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_MARKETPLACE_LIST, quote: 'Card linking to rakuten.co.jp.',
+    sourceUrl: NK_MARKETPLACE_LIST,
+    quote: 'rakuten.co.jp',
+    evidence: 'Card on the marketplace list page links to this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'amazon-jp', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_MARKETPLACE_LIST, quote: 'Card linking to amazon.jp.',
+    sourceUrl: NK_MARKETPLACE_LIST,
+    quote: 'amazon.jp',
+    evidence: 'Card on the marketplace list page links to this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'suruga-ya', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_SHOP_LIST, quote: 'Shop card "Surugaya".',
+    sourceUrl: NK_SHOP_LIST,
+    quote: 'Surugaya',
+    evidence: 'Shop card on the shop-list page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'zozo', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_SHOP_LIST, quote: 'Shop card "ZOZOTOWN".',
+    sourceUrl: NK_SHOP_LIST,
+    quote: 'ZOZOTOWN',
+    evidence: 'Shop card on the shop-list page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'bookoff', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_HOBBY_SHOP_LIST, quote: 'Card linking to bookoffonline.co.jp.',
+    sourceUrl: NK_HOBBY_SHOP_LIST,
+    quote: 'bookoffonline.co.jp',
+    evidence: 'Card on the hobby-shop-list page links to this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'animate', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_HOBBY_SHOP_LIST, quote: 'Card linking to animate-onlineshop.jp.',
+    sourceUrl: NK_HOBBY_SHOP_LIST,
+    quote: 'animate-onlineshop.jp',
+    evidence: 'Card on the hobby-shop-list page links to this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'neokyo', site: 'melonbooks', status: 'listed', method: 'raw_html',
-    sourceUrl: NK_HOBBY_SHOP_LIST, quote: 'Card linking to melonbooks.co.jp.',
+    sourceUrl: NK_HOBBY_SHOP_LIST,
+    quote: 'melonbooks.co.jp',
+    evidence: 'Card on the hobby-shop-list page links to this host.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
@@ -471,6 +545,7 @@ const NEOKYO_ROWS: EligibilityRow[] = [
     proxy: 'neokyo', site: 'p-bandai', status: 'listed', method: 'raw_html',
     sourceUrl: NK_ANIME_GOODIES,
     quote: '...or to order Premium Bandai or any other anime goodies.',
+    evidence: 'Marketing copy on the anime-goodies page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
     note: 'Marketing copy only; Premium Bandai itself banned proxy purchases as of July 2023'
       + " per ZenMarket's blog. The site-level p-bandai rule overrides this to blocked.",
@@ -489,39 +564,52 @@ const FJ_YAHOO_AUCTIONS = 'https://www.fromjapan.co.jp/japan/jp/yahoo-auctions/'
 const FROMJAPAN_ROWS: EligibilityRow[] = [
   {
     proxy: 'fromjapan', site: 'mercari', status: 'listed', method: 'browser',
-    sourceUrl: FJ_NAV, quote: 'ショッピングサイトリスト nav entry "メルカリ JP".',
+    sourceUrl: FJ_NAV,
+    quote: 'メルカリ JP',
+    evidence: 'ショッピングサイトリスト nav entry on fromjapan.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'fromjapan', site: 'yahoo-auctions', status: 'listed', method: 'browser',
-    sourceUrl: FJ_YAHOO_AUCTIONS, quote: 'ショッピングサイトリスト nav entry "JDirectItems Auction".',
+    sourceUrl: FJ_YAHOO_AUCTIONS,
+    quote: 'JDirectItems Auction',
+    evidence: 'ショッピングサイトリスト nav entry, resolving to /japan/jp/yahoo-auctions/.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'fromjapan', site: 'paypay-fleamarket', status: 'listed', method: 'browser',
     sourceUrl: FJ_NAV,
-    quote: 'ショッピングサイトリスト nav entry "JDirectItems Fleamarket" (item hrefs resolve to'
-      + ' paypayfleamarket.yahoo.co.jp).',
+    quote: 'JDirectItems Fleamarket',
+    evidence: 'ショッピングサイトリスト nav entry; its item hrefs resolve to'
+      + ' paypayfleamarket.yahoo.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'fromjapan', site: 'rakuten', status: 'listed', method: 'browser',
-    sourceUrl: FJ_NAV, quote: 'ショッピングサイトリスト nav entry "楽天市場".',
+    sourceUrl: FJ_NAV,
+    quote: '楽天市場',
+    evidence: 'ショッピングサイトリスト nav entry on fromjapan.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'fromjapan', site: 'rakuma', status: 'listed', method: 'browser',
-    sourceUrl: FJ_NAV, quote: 'ショッピングサイトリスト nav entry "楽天ラクマ".',
+    sourceUrl: FJ_NAV,
+    quote: '楽天ラクマ',
+    evidence: 'ショッピングサイトリスト nav entry on fromjapan.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'fromjapan', site: 'amazon-jp', status: 'listed', method: 'browser',
-    sourceUrl: FJ_NAV, quote: 'ショッピングサイトリスト nav entry "Amazon".',
+    sourceUrl: FJ_NAV,
+    quote: 'Amazon',
+    evidence: 'ショッピングサイトリスト nav entry on fromjapan.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'fromjapan', site: 'suruga-ya', status: 'listed', method: 'browser',
-    sourceUrl: FJ_NAV, quote: 'ショッピングサイトリスト nav entry "駿河屋".',
+    sourceUrl: FJ_NAV,
+    quote: '駿河屋',
+    evidence: 'ショッピングサイトリスト nav entry on fromjapan.co.jp.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
@@ -552,6 +640,7 @@ const JAUCE_ROWS: EligibilityRow[] = [
     proxy: 'jauce', site: 'yahoo-auctions', status: 'listed', method: 'raw_html',
     sourceUrl: JC_AUCTION_DETAIL,
     quote: 'With JAUCE, you can bid on Yahoo Japan Auctions in real-time',
+    evidence: 'Sentence on the japan_auction_detail page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
@@ -559,11 +648,14 @@ const JAUCE_ROWS: EligibilityRow[] = [
     sourceUrl: JC_AUCTION_DETAIL,
     quote: 'Japanese shopping malls such as Rakuten or Amazon Japan are also available with'
       + ' JAUCE.',
+    evidence: 'Sentence on the japan_auction_detail page.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
     proxy: 'jauce', site: 'yahoo-shopping', status: 'listed', method: 'raw_html',
-    sourceUrl: JC_YAHOO_SHOPPING, quote: 'Dedicated Yahoo! Japan Shopping page.',
+    sourceUrl: JC_YAHOO_SHOPPING,
+    evidence: 'Jauce publishes a dedicated Yahoo! Japan Shopping page (exact wording not'
+      + ' captured).',
     checkedOn: ELIGIBILITY_CHECKED_ON,
   },
   {
@@ -571,8 +663,9 @@ const JAUCE_ROWS: EligibilityRow[] = [
     sourceUrl: JC_AUCTION_DETAIL,
     quote: 'Our Amazon Japan service is currently under maintenance and so is temporarily'
       + ' unavailable.',
+    evidence: 'Sentence on the japan_auction_detail page; the Amazon item page also shows'
+      + ' "This page is under maintenance."',
     checkedOn: ELIGIBILITY_CHECKED_ON,
-    note: 'The item page also shows "This page is under maintenance."',
   },
   // member_area: https://www.jauce.com/auctions/shop_order.php のカテゴリ一覧。
   // quote = 一覧に出ていた店名そのもの。7/16カテゴリのみ確認済み
@@ -580,47 +673,65 @@ const JAUCE_ROWS: EligibilityRow[] = [
   //  Dolls, Car parts, Books, Toys）。
   {
     proxy: 'jauce', site: 'zozo', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'ZOZOTOWN',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'ZOZOTOWN',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Online shopping malls.',
   },
   {
     proxy: 'jauce', site: 'yodobashi', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'Yodobashi',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'Yodobashi',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Camera & Consumer Electronics.',
   },
   {
     proxy: 'jauce', site: 'suruga-ya', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'suruga-ya',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'suruga-ya',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Books.',
   },
   {
     proxy: 'jauce', site: 'bookoff', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'Bookoffonline',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'Bookoffonline',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Books.',
   },
   {
     proxy: 'jauce', site: 'mandarake', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'MANDARAKE',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'MANDARAKE',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Books.',
   },
   {
     proxy: 'jauce', site: 'toranoana', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'Toranoana',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'Toranoana',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Books.',
   },
   {
     proxy: 'jauce', site: 'animate', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'animate-onlineshop',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'animate-onlineshop',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Toys.',
   },
   {
     proxy: 'jauce', site: 'amiami', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'amiami',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'amiami',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON, note: 'Category: Toys.',
   },
   {
     proxy: 'jauce', site: 'p-bandai', status: 'listed', method: 'member_area',
-    sourceUrl: JC_SHOP_ORDER, quote: 'Premium Bandai',
+    sourceUrl: JC_SHOP_ORDER,
+    quote: 'Premium Bandai',
+    evidence: 'Store label in the shop_order.php category list.',
     checkedOn: ELIGIBILITY_CHECKED_ON,
     note: 'Category: Toys. This list is likely stale given the July 2023 P-Bandai proxy ban;'
       + ' the site-level p-bandai rule overrides this to blocked.',
@@ -745,9 +856,10 @@ export function eligibilityForAllProxies(url: string): Record<ProxyId, Eligibili
 }
 
 /**
- * スキーマ検証。`listed` / `unsupported` / `suspended` の行は
- * source・quote（`member_area` を除く……というより、実データは member_area でも
- * 店名を quote に入れているので一律で必須にしている）・checkedOn を持たねばならない。
+ * スキーマ検証。
+ *   - `listed` / `unsupported` / `suspended` の行は source・evidence・checkedOn を持たねばならない。
+ *   - `unsupported` / `suspended` は、加えて**原文そのままの `quote`** を持たねばならない
+ *     （`blocked` を出す根拠になる行なので、我々の言い換え＝`evidence` だけでは足りない）。
  * `master/validate.py` と同じ理由でここに置く: **データを実際に読む検証**であることを
  * `site-eligibility.test.ts` の変異テストで証明する。
  */
@@ -757,10 +869,13 @@ export function validateEligibilityRows(rows: EligibilityRow[]): string[] {
     const tag = `${r.proxy}/${r.site}`;
     if (r.status === 'listed' || r.status === 'unsupported' || r.status === 'suspended') {
       if (!r.sourceUrl) errors.push(`${tag}: missing sourceUrl for status '${r.status}'`);
-      if (!r.quote) errors.push(`${tag}: missing quote for status '${r.status}'`);
+      if (!r.evidence) errors.push(`${tag}: missing evidence for status '${r.status}'`);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(r.checkedOn)) {
         errors.push(`${tag}: checkedOn '${r.checkedOn}' is not YYYY-MM-DD`);
       }
+    }
+    if (r.status === 'unsupported' || r.status === 'suspended') {
+      if (!r.quote) errors.push(`${tag}: missing verbatim quote for status '${r.status}'`);
     }
   }
   return errors;
