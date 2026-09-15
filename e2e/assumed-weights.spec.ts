@@ -64,14 +64,14 @@ test('three items with no weight data are counted in one place, not one row at a
   await expect(n).toHaveCount(1);
   await expect(n).toHaveAttribute('data-count', '3');
   await expect(n).toHaveAttribute('data-total', '3');
-  await expect(n).toContainText('None of the 3 items in your cart have weight data');
+  await expect(n).toContainText('All 3 items use a placeholder weight');
 
   // 総額と順位への影響を言う。仮置きが多いほど順位は当てにならない。
   await expect(n).toContainText(/totals/);
   await expect(n).toContainText(/ranking/);
 
   // 仮置きの値そのものも出す（画面の重量欄と同じ数字）。
-  await expect(n).toContainText(/~1 kg/);
+  await expect(n).toContainText(/1 kg/);
 
   // 行の側にも印が立つ。**色以外の記号**を1つ持たせる約束（docs/UI-DESIGN.md §6）。
   await expect(rowMarks(page)).toHaveCount(3);
@@ -86,9 +86,8 @@ test('a placeholder among looked-up items says which fraction of the parcel it i
   const n = note(page);
   await expect(n).toHaveAttribute('data-count', '1');
   await expect(n).toHaveAttribute('data-total', '3');
-  await expect(n).toContainText('1 of the 3 items in your cart has no weight data');
-  // 全部が仮置きではないので、割合を言う（「箱ぜんぶ」ではない）。
-  await expect(n).toContainText(/%/);
+  // 全部が仮置きではないので、何点中何点かを言う（「箱ぜんぶ」ではない）。
+  await expect(n).toContainText('1 of 3 items use a placeholder weight');
 
   // 印が立つのは当たらなかった行だけ。
   await expect(rowMarks(page)).toHaveCount(1);
@@ -103,7 +102,7 @@ test('the count follows the cart, and goes silent once every weight is filled in
   // 1点入れる → 残り1点。**入れた品は仮置きではなくなる。**
   await weightBox(page, OFF_TABLE[0]).fill('600');
   await expect(note(page)).toHaveAttribute('data-count', '1');
-  await expect(note(page)).toContainText('1 of the 2 items in your cart has no weight data');
+  await expect(note(page)).toContainText('1 of 2 items use a placeholder weight');
   await expect(rowMarks(page)).toHaveCount(1);
 
   // 全部入れる → 注記も印も消える。直したのに警告が残るのは嘘。
@@ -126,9 +125,8 @@ test('the note is readable without opening the cart', async ({ page }) => {
   await gotoCompare(page);
   await cartOfUnknowns(page, 2);
 
-  // モバイルではカートは畳める。畳んだ中に入れたら、開いた人にしか言っていない。
-  const toggle = cart(page).getByRole('button', { name: /^Cart \(/ });
-  if (await toggle.isVisible()) await toggle.click();
+  // カートは畳める。畳んだ中に入れたら、開いた人にしか言っていない。
+  if (await cart(page).getByRole('listitem').first().isVisible()) await page.getByTestId('cart-line').click();
 
   await expect(note(page)).toBeVisible();
   expect(await isCollapsed(note(page)), '注記が畳まれたカートの中に入っている').toBe(false);

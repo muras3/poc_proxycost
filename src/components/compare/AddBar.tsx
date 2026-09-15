@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { isListingUrl, SITES } from '@/lib/search/sites';
 import type { SiteId } from '@/lib/pricing/types';
-import type { Candidate, SearchResponse } from '@/components/search/types';
-import { CandidateDialog } from '@/components/search/CandidateDialog';
+import type { Candidate, SearchResponse } from '@/lib/search/types';
+import { CandidateDialog } from './CandidateDialog';
 import type { Draft } from './useCompare';
 
 /**
@@ -26,7 +26,8 @@ export function AddBar({
 }) {
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
-  const [candidates, setCandidates] = useState<Candidate[] | null>(null);
+  // 候補ダイアログ。見出しに検索語を出すので、結果と一緒に語も持つ。
+  const [candidates, setCandidates] = useState<{ query: string; results: Candidate[] } | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const titleRef = useRef<HTMLInputElement | null>(null);
 
@@ -90,7 +91,7 @@ export function AddBar({
         } else if (!body.results.length) {
           setNotice({ head: 'No listings found.', rest: 'Paste a listing URL instead, or add it by hand.' });
         } else {
-          setCandidates(body.results);
+          setCandidates({ query: text, results: body.results });
         }
       }
     } catch {
@@ -137,10 +138,10 @@ export function AddBar({
         </p>
       )}
       <ManualForm hidden={!manualOpen} titleRef={titleRef} onAdd={(d) => { onAdd(d); onManualOpen(false); }} />
-      {/* TODO(cart 担当): Mock の `.scrim > .dlg`（検索語を見出しに、`.cand` の候補行）へ置き換える。 */}
       {candidates && (
         <CandidateDialog
-          candidates={candidates}
+          query={candidates.query}
+          candidates={candidates.results}
           onClose={() => setCandidates(null)}
           onPick={(c) => {
             onAdd({
