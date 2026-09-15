@@ -387,7 +387,7 @@ function ItemRow({
       </div>
       <button type="button" className="rm" aria-label={`Remove ${item.title}`} onClick={() => onRemove(item.id)}>Remove</button>
       {hot && sensitivity && (
-        <p className="decisive">
+        <p className="decisive" data-testid="decisive-note">
           <span className="bang" aria-hidden="true">!</span>
           <span>
             <b>This weight decides 1st place.</b> Within {grams(sensitivity.lowG)}–{grams(sensitivity.highG)}: {winnersText(sensitivity)}.

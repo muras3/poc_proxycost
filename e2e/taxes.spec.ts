@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   addByHand, costRow, emptyCart, gotoCompare, openRankRow, parseYen, rankButtons, readRanking,
-  rowCells, setMethod, shipTo, setProvince,
+  rowCells, setMethod, shipTo, setProvince, provincePicker,
 } from './helpers';
 import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE } from '../src/lib/pricing/countries';
 import {
@@ -168,8 +168,8 @@ test('Canada without a province still shows a provincial tax — as an estimate,
   await gotoCompare(page);
   await goTo(page, 'CA');
 
-  // 既定は未選択。欄はその中身（我々が当てている率）を名乗る。
-  const picker = page.getByLabel('Province');
+  // 既定は未選択。欄はその中身（我々が当てている率）を名乗る（送り先を開くと出る）。
+  const picker = await provincePicker(page);
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue('');
   const avg = `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%`;
@@ -259,14 +259,15 @@ test('the province picker only exists for Canada, and choosing another country f
 
   await goTo(page, 'CA');
   await setProvince(page, 'QC');
-  await expect(page.getByLabel('Province')).toHaveValue('QC');
+  await expect(await provincePicker(page)).toHaveValue('QC');
+  await page.locator('#wPlaceDone').click();
 
   // 別の国へ移すと欄ごと消え、戻ってきたときに選択は残っていない。
   // 残っていたら、選んだ覚えの無い率が確定値の顔で出ることになる。
   await goTo(page, 'GB');
   await expect(page.getByLabel('Province')).toHaveCount(0);
   await goTo(page, 'CA');
-  await expect(page.getByLabel('Province')).toHaveValue('');
+  await expect(await provincePicker(page)).toHaveValue('');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

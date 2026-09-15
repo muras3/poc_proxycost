@@ -116,7 +116,7 @@ export function Waybill({
             id="wPlace"
             aria-expanded={false}
             aria-describedby="wPlaceL"
-            aria-label={`Destination: ${countryName}${country === 'CA' ? (province ? `, ${CA_PROVINCES[province].name}` : ', province not chosen') : ''}`}
+            aria-label={`Destination: ${countryName}${country === 'CA' ? (province ? `, ${CA_PROVINCES[province].name}` : ' (average tax rate until you pick)') : ''}`}
             onClick={() => { setPlaceOpen(true); setFocusId('wCountry'); }}
           >
             {countryName}

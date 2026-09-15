@@ -60,3 +60,11 @@ cart 担当:
 ## 5. 比較画像
 
 `/private/tmp/mock-port-compare/` に `<state>-<desktop|mobile>-{mock,app,side}.png`（state = initial / editing / method / tied / indet / norate / empty）、`anim/` に秤の連続フレーム。撮り直しは `shot-mock.mjs` / `shot-app.mjs` / `side.mjs`（ui-mock-port のスクラッチ）。本体側は Mock と同じ商品・国・方式を UI 操作で入れている（Mock のデータは埋め込んでいない）。
+
+## 6. e2e の現状（ui-mock-port 側、desktop＋mobile）
+
+通過: `a11y` `api` `pages` `conditions-bar` 全件、`compare.spec` のページ枠に関わるもの（19・20・21・25・26・27 の開示系、17・18 の秤の針、通貨行、mobile 14 の折りたたみ、scope disclosure on a phone）、`taxes.spec` の州ピッカー系。
+
+board / cart 側で更新が要るまま残しているもの（§4 の一覧と同じ原因）: `compare.spec` 1b・2・3・3b・4・5・7・8・10・16・18b・18c・22・23・28、mobile 13c・15、`taxes.spec` の配達ログのセルを読むもの（`amountOf` が `.a` ではなく `.t` を拾う）、`assumed-weights.spec`（文言は §4 のとおり）、`parcel.spec` / `parcel-split.spec`（箱）、`rank-board-v2.spec`。
+
+補足: `getByLabel('Province')` は部分一致なので、送り先ボタンの aria-label に "province" を含めると衝突する（`Destination: Canada (average tax rate until you pick)` にしてある）。`cartItem(...).getByTestId('decisive-note')` が「This weight decides 1st place」の段落（`.decisive`）。

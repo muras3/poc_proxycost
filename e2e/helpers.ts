@@ -284,6 +284,23 @@ export async function setProvince(page: Page, code: string): Promise<void> {
   await page.getByLabel('Province').selectOption(code);
 }
 
+/** 州の select を（送り先を開いて）返す。読むだけのときに使う。 */
+export async function provincePicker(page: Page): Promise<Locator> {
+  if (!(await page.getByLabel('Province').count()) && (await page.locator('#wPlace').count())) {
+    await page.locator('#wPlace').click();
+  }
+  return page.getByLabel('Province');
+}
+
+/** 決め手の重量の注釈（秤の針）を開いて、その本文（`#pop`）を返す。 */
+export async function openNeedleNote(page: Page): Promise<Locator> {
+  const needle = page.getByTestId('weight-needle').first();
+  if ((await needle.getAttribute('aria-expanded')) !== 'true') await needle.click();
+  const pop = page.locator('#pop');
+  await expect(pop).toBeVisible();
+  return pop;
+}
+
 /** 条件欄の送り先ボタン（閉じた状態の表示）。 */
 export function destination(page: Page): Locator {
   return page.locator('#wPlace');
