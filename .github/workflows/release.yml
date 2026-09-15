@@ -1,0 +1,169 @@
+# 本番（japanproxyguide.com / Worker `proxycost-production`）への明示的デプロイ。
+#
+# 開発環境（Worker `proxycost`、deploy.yml）は main への push で自動デプロイされ続ける。
+# これは変えない。本番はそれとは別に、**`vX.Y.Z` タグを打ったときだけ**動く。
+# job に `environment: production` を宣言しているので、GitHub 側で
+# Settings → Environments → production に Required reviewers を設定すれば、
+# ここでオーナーの承認待ちで止まる（設定は TODO-USER.md 参照。このワークフロー自体は
+# 承認 UI を作らない — GitHub Environments の機能に乗る）。
+#
+# タグを打つのは `scripts/release.sh` 経由のみを想定する（手で `git tag` しない）。
+#
+# ロールバックは workflow_dispatch で行うが、**入力でタグ名を受け取って checkout する方式は
+# 使わない**。GitHub Environment `production` の deployment branch policy を
+# 「タグ `v*` のみ」に絞ってあるため（オーナー側で設定済み）、mainブランチを ref にして
+# workflow_dispatch を起動すると environment の保護そのものに弾かれて動かない。
+# 代わりに、Actions の「Run workflow」画面で **Use workflow from** に対象のタグ自身を選んで
+# 実行する（ブランチではなくタグを選ぶ）。これなら github.ref が最初から
+# refs/tags/vX.Y.Z になるので、push トリガーと全く同じ経路で処理できる。
+# 入力は無い。ref がタグでない workflow_dispatch は冒頭のチェックで失敗させる。
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {}
+
+# 本番デプロイは1本ずつ直列に。取り消して最新を優先する必要はない
+# （むしろ古い実行を殺すと「本番が何もデプロイされないまま終わる」事故になる。
+#  deploy.yml の cancel-in-progress: false と同じ理由）。
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: ref がタグであることを確認する
+        run: |
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            echo "::error::この実行の ref はタグではない（ref=${{ github.ref }}, ref_type=${{ github.ref_type }}）。"
+            echo "::error::workflow_dispatch で本番デプロイ/ロールバックするときは、Actions の"
+            echo "::error::'Run workflow' 画面で **Use workflow from** に対象のタグ自身を選ぶこと"
+            echo "::error::（ブランチを選んで実行しない）。production 環境の deployment branch policy が"
+            echo "::error::タグ以外を弾く設定になっているので、通常はここに来る前に環境の保護で止まるはずだが、"
+            echo "::error::念のためここでも検査する。"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          # main の祖先チェックに使うため、タグだけでなく main の履歴も要る。
+          fetch-depth: 0
+
+      - name: タグの名前を確定する
+        id: tag
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          if [ -z "$tag" ]; then
+            echo "::error::タグ名を決められなかった（refs/tags/ が無い）"
+            exit 1
+          fi
+          echo "name=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: タグが存在し、そのコミットが origin/main の祖先であることを確認する
+        run: |
+          tag="${{ steps.tag.outputs.name }}"
+          if ! git rev-parse -q --verify "refs/tags/$tag^{commit}" >/dev/null; then
+            echo "::error::タグ $tag が見つからない"
+            exit 1
+          fi
+          tag_sha="$(git rev-parse "refs/tags/$tag^{commit}")"
+          # workflow_dispatch でも push でも、リモートの main を明示的に取ってきて基準にする
+          # （checkout の ref が main のときそのものが対象コミットなので、fetch は無害）。
+          git fetch origin main --quiet
+          if ! git merge-base --is-ancestor "$tag_sha" origin/main; then
+            echo "::error::タグ $tag ($tag_sha) は origin/main の祖先ではない。main 以外のコミットを本番に出そうとしている可能性がある"
+            exit 1
+          fi
+          echo "OK: $tag ($tag_sha) は origin/main の祖先"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # deploy.yml の fast ジョブ相当（lint / types / unit / master）をここでも流す。
+      # タグを打つ前に scripts/release.sh が main 上の CI success を確認する設計だが、
+      # 「確認した後にもう一度取り違えていないか」をこのジョブ自身でも検査する
+      # （承認までの時間差でタグの中身が変わることはない前提だが、二重チェックのコストは低い）。
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: python3 master/validate.py
+      - run: python3 master/render-docs.py --check
+
+      # e2e はここでは走らせない。理由:
+      # タグは「main 上で CI が success だったコミット」からしか作れない
+      # （scripts/release.sh が gh 経由で ci.yml / deploy.yml の success を確認してから
+      #  git tag する）。つまり e2e は main の時点で既に緑を確認済みで、
+      # タグを打ってから中身が変わることもない（release.yml 側でも祖先チェック済み）。
+      # 15分かかる e2e をもう一度ここで回しても、承認待ちの時間を延ばすだけで
+      # 追加で検出できるものが無い。
+
+      - run: npx opennextjs-cloudflare build
+
+      # `environment: production` を宣言したジョブは、そのジョブ名の Environment secret
+      # だけでなく Repository secrets（deploy.yml が使っているもの）も読める。
+      # 同名の Environment secret があればそちらが優先される。
+      #
+      # オーナーの判断: 本番も開発と同じ Repository secrets（CLOUDFLARE_API_TOKEN /
+      # CLOUDFLARE_ACCOUNT_ID）を共用する。分けたくなったら、Settings → Environments →
+      # production → Environment secrets に同名で登録すれば、そちらが Repository secrets を
+      # 上書きする（このワークフロー側の変更は不要）。
+      # そのため「未設定」はほぼ起こらない前提だが、将来 Repository secrets が
+      # 削除・失効された場合に「デプロイが黙って失敗した」にしないため検査は残す。
+      - name: 本番用 Secrets が揃っているか確認する
+        env:
+          HAS_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+          HAS_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          ok=true
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN が見えない（Repository secrets にも production の Environment secrets にも無い）"
+            ok=false
+          fi
+          if [ "$HAS_ACCOUNT" != "true" ]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID が見えない（Repository secrets にも production の Environment secrets にも無い）"
+            ok=false
+          fi
+          if [ "$ok" != "true" ]; then
+            {
+              echo "### デプロイできなかった — Secrets が見えない"
+              echo
+              echo "通常は deploy.yml と同じ Repository secrets を共用しているので、ここには来ないはず。"
+              echo "Settings → Secrets and variables → Actions → Repository secrets を確認すること。"
+              echo "本番だけ別のトークンにしたい場合は、Settings → Environments → production →"
+              echo "Environment secrets に同名で登録すれば Repository secrets を上書きできる。"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      # 既存トークン（開発と共用）に japanproxyguide.com ゾーンの権限（Custom Domain 割り当てに
+      # 要る）が足りていないと、この deploy がここで権限エラーで落ちる。落ちたら
+      # TODO-USER.md の「本番デプロイ」節を見て、既存トークンに Zone 権限を足すこと
+      # （このワークフロー自体はトークンを作り直さない — 権限追加は Cloudflare ダッシュボード側の作業）。
+      - name: Deploy (production)
+        run: npx wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Summary
+        run: |
+          {
+            echo "### 本番にデプロイした"
+            echo
+            echo "- タグ: \`${{ steps.tag.outputs.name }}\`"
+            echo "- コミット: \`${GITHUB_SHA}\`"
+            echo "- 実行: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } >> "$GITHUB_STEP_SUMMARY"
