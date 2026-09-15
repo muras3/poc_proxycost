@@ -1,11 +1,33 @@
 @import "tailwindcss";
 
+/*
+ * デザイントークン契約（PR-A/B/C 共通）。詳細は docs/design/ui-tokens.md。
+ * B（順位ボード）・C（条件欄・カート・要約）はこの名前を前提に並行作業している。
+ * ここで定義した名前を変えるとマージ前提が崩れる。
+ */
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", "Noto Sans JP", sans-serif;
+  --color-paper: #f2ede3;
+  --color-paper-2: #e9e2d3;
+  --color-ink: #1b1a17;
+  --color-ink-2: #5b574e;
+  --color-rule: rgba(27, 26, 23, 0.28);
+  --color-post-red: #d7261e;
+  --color-post-blue: #2b3a8c;
+  --color-ad-bg: #dedede;
 }
 
-/* 淡い紙色。数字を読ませる画面なので彩度を持たせない。 */
+/* next/font が <html>/<body> に置く CSS 変数を Tailwind のフォントトークンに接続する。
+   `inline` はこのブロック専用 ── 通常の @theme だとスコープ変数の解決が一段遅れる。 */
+@theme inline {
+  --font-display: var(--font-big-shoulders), "Arial Narrow", Impact, sans-serif;
+  --font-sans: var(--font-public-sans), "Hiragino Sans", "Noto Sans JP", ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: var(--font-spline-mono), ui-monospace, Menlo, monospace;
+}
+
+/* 淡い紙色。数字を読ませる画面なので彩度を持たせない。
+   `--bg` / `--panel` / `--line` は既存コンポーネント（glyphs 等）が var() で直接参照しているので残す。
+   body 自体は paper トークンを使う（下）。 */
 :root {
   --bg: #fafaf9;
   --panel: #ffffff;
@@ -20,7 +42,6 @@
 }
 
 body {
-  background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
