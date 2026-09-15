@@ -59,17 +59,45 @@ test.describe('rank board v2 — closed row shape', () => {
         const box = await totalBar.boundingBox();
         expect(box, `row ${i}: total-bar has no box`).not.toBeNull();
         totalBarWidths.push(box!.width);
+        // **必ず棒が描かれる。**方式が公表/未公表/完全未知のどれでも
+        // `arrival-bar` は常に1つ存在する（台帳、Fable レビュー: 以前はここが
+        // テキストのみのフォールバックに落ちて棒が0本になっていた）。
+        await expect(arrivalBar).toHaveCount(1);
+        await expect(arrivalBar.getByText('Ships by')).toBeVisible();
       } else {
+        // **比べられない行には総額バーも到着バーも出さない**——その方式では
+        // そもそも送れないので、出すと「送れる」かのように見える。
         await expect(totalBar).toHaveCount(0);
+        await expect(arrivalBar).toHaveCount(0);
       }
-      // 到着バーは数字が取れない行ではテキストのみのフォールバックになるので
-      // 常に data-testid="arrival-bar" 自体は存在する（数値バーか文字だけか）。
-      await expect(arrivalBar).toHaveCount(1);
     }
     // 共通スケールのコンテナ自体は全行同じ最大幅（max-w-[160px]）を使っている
     // ——描画された実幅がすべて同じであること（コンテナのCSSが行ごとに違わない）。
     const distinct = new Set(totalBarWidths.map((w) => Math.round(w)));
     expect(distinct.size, `total-bar widths differ across rows: ${[...distinct]}`).toBe(1);
+  });
+
+  test('a not-comparable row shows neither a total bar nor an arrival bar', async ({ page }) => {
+    // 上の「①not-comparable な行は順位番号なし」と同じ確実な手法で全行を
+    // non-comparable にし、バーが1本も出ないことを直接確認する。
+    await gotoCompare(page);
+    await addByHand(page, 'Heavy box for no-bars check', 8000);
+    const heavy = weightBox(page, 'Heavy box for no-bars check');
+    await heavy.fill('5000');
+    await heavy.blur();
+    await page.getByLabel('Ship by').selectOption('small-packet-air');
+
+    const rows = ranking(page).locator('li[data-row-id]');
+    await expect.poll(async () => {
+      const list = await readRanking(page);
+      return list.length > 0 && list.every((r) => !r.comparable);
+    }).toBe(true);
+
+    const n = await rows.count();
+    for (let i = 0; i < n; i++) {
+      await expect(rows.nth(i).getByTestId('total-bar')).toHaveCount(0);
+      await expect(rows.nth(i).getByTestId('arrival-bar')).toHaveCount(0);
+    }
   });
 
   test('upper-bound-unknown total bar fades at the right edge instead of drawing a false ceiling', async ({ page }) => {
@@ -89,40 +117,70 @@ test.describe('rank board v2 — closed row shape', () => {
       .toBe(true);
   });
 
-  test('arrival bar line style encodes published vs. unpublished, tracked vs. untracked', async ({ page }) => {
-    // **既定カートの方式の顔ぶれには依存しない**——`method: 'cheapest'` は行ごとに
-    // 宅配便/郵便のどちらが実際に選ばれるか実測データ次第で動く（未公表の宅配便
-    // ばかりだと数字に変換できる `days` が1行も無いこともありうる）。
-    // 「International parcel (airmail)」（`parcel-air`、`POSTAL_METHODS` の
-    // `days: '12–26 days'`, `daysTier: 'fixed'`, `tracked: true`）を明示的に選び、
-    // **数字の棒が実線で出ること**を確実に検証する。
+  /**
+   * 台帳（Fable レビュー）: 「到着の棒が EMS・小形包装物・宅配便でそれぞれ
+   * 描画される」。3方式それぞれを「Ship by」で明示的に選び、毎回すべての
+   * comparable 行に `arrival-bar` が出て、線種が期待どおりであることを確認する。
+   * 既定カート（`method: 'cheapest'`）の実測データの顔ぶれには依存しない。
+   */
+  for (const [methodId, expectSolid, label] of [
+    ['ems', true, 'EMS ("a week or less" — UI 側の週→日換算で棒になる)'],
+    ['small-packet-air', true, 'Small packet (airmail) ("10 days or less")'],
+  ] as const) {
+    test(`arrival bar draws a numeric segment for ${label}`, async ({ page }) => {
+      await gotoCompare(page);
+      await page.getByLabel('Ship by').selectOption(methodId);
+
+      const rows = ranking(page).locator('li[data-row-id]');
+      await expect.poll(async () => {
+        const list = await readRanking(page);
+        return list.some((r) => r.comparable);
+      }, `expected at least one comparable row after forcing ${methodId}`).toBe(true);
+
+      const n = await rows.count();
+      let sawSegment = false;
+      for (let i = 0; i < n; i++) {
+        const list = await readRanking(page);
+        if (!list[i]?.comparable) continue;
+        const bar = rows.nth(i).getByTestId('arrival-bar');
+        await expect(bar).toHaveCount(1);
+        await expect(bar).toHaveAttribute('data-published', expectSolid ? 'true' : 'false');
+        const segment = rows.nth(i).getByTestId('arrival-bar-segment');
+        const cls = (await segment.getAttribute('class')) ?? '';
+        expect(cls).toContain(expectSolid ? 'border-solid' : 'border-dotted');
+        sawSegment = true;
+      }
+      expect(sawSegment, `expected at least one comparable row to check for ${methodId}`).toBe(true);
+    });
+  }
+
+  test('arrival bar draws a dotted, un-lengthed segment for an unpublished courier day estimate', async ({ page }) => {
+    // 宅配便（`CourierMethod`）は `Row.days.tier` が常に `'none'`（`buildRow` が
+    // 明示的にそう組む）——未公表として点線で描かれることを検証する。米国は
+    // 宅配便が価格化されている唯一の宛先（`courierMethodAvailable`）なので、
+    // ここで courier-ups を明示的に選ぶ。
     await gotoCompare(page);
-    await page.getByLabel('Ship by').selectOption('parcel-air');
+    await page.getByLabel('Ship by').selectOption('courier-ups');
 
     const rows = ranking(page).locator('li[data-row-id]');
     await expect.poll(async () => {
-      const n = await rows.count();
-      for (let i = 0; i < n; i++) {
-        const bar = rows.nth(i).getByTestId('arrival-bar');
-        if ((await bar.count()) === 0) continue;
-        if ((await bar.getAttribute('data-mode')) === 'numeric') return true;
-      }
-      return false;
-    }, 'expected at least one numeric arrival bar after forcing parcel-air').toBe(true);
+      const list = await readRanking(page);
+      return list.some((r) => r.comparable);
+    }, 'expected at least one comparable row after forcing courier-ups').toBe(true);
 
-    let sawSolid = false;
-    const n = await rows.count();
-    for (let i = 0; i < n; i++) {
+    const list = await readRanking(page);
+    let checked = false;
+    for (let i = 0; i < list.length; i++) {
+      if (!list[i]?.comparable) continue;
       const bar = rows.nth(i).getByTestId('arrival-bar');
-      if ((await bar.count()) === 0) continue;
-      if ((await bar.getAttribute('data-mode')) !== 'numeric') continue;
+      await expect(bar).toHaveAttribute('data-published', 'false');
       const segment = rows.nth(i).getByTestId('arrival-bar-segment');
-      const cls = (await segment.getAttribute('class')) ?? '';
-      if (cls.includes('border-solid')) sawSolid = true;
-      expect(cls, 'parcel-air is a published (fixed-tier) rate — must not render dotted')
-        .not.toContain('border-dotted');
+      expect(await segment.getAttribute('class')).toContain('border-dotted');
+      // **生の "not yet modeled" は行に出ない**——方式名だけ見せる。
+      await expect(rows.nth(i)).not.toContainText('not yet modeled');
+      checked = true;
     }
-    expect(sawSolid, 'expected parcel-air rows to render a solid (published) segment').toBe(true);
+    expect(checked, 'expected at least one comparable row for courier-ups').toBe(true);
   });
 
   test('Buyee shows the 1⇄5 paired box count on both its default and consolidated rows', async ({ page }) => {

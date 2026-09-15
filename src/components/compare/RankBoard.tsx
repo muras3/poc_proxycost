@@ -81,6 +81,27 @@ function diffText(row: Row, result: CompareResult): string {
 }
 
 /**
+ * **閉じた行専用の差額表示。**「at least」の言い回しを落とす（台帳 #22/#30、
+ * Fable レビュー）——確度は `TotalBar` のフェードが形で伝えるので、閉じた行の
+ * 文言は数字を二重に弱めない。全文（"at least +¥X" とその根拠）は
+ * `RowBreakdown` の footer に残る（開いた中）。
+ */
+function diffTextClosed(row: Row, result: CompareResult): string {
+  return diffText(row, result).replace(/^at least /, '');
+}
+
+/**
+ * **閉じた行専用の総額表示。**「or more」「(upper bound unknown)」を落とす
+ * （台帳 #22/#30）——`TotalBar` の右端フェードが同じ情報を形で伝えている。
+ * 全文は `RowBreakdown` の footer に残る。
+ */
+function totalTextClosed(row: Row, result: CompareResult): string {
+  return totalText(row, result)
+    .replace(/\s*\(upper bound unknown\)/, '')
+    .replace(/\s*or more$/, '');
+}
+
+/**
  * 同順位の行を名指しする。**縦の並びに意味が無いことを、その場で言う。**
  * 同額なら rank は同じ数字になる（compare.ts の `rank()`）が、数字が並んでいるだけでは
  * 「上が勝っている」と読まれる。誰と並んでいるのかまで書いて初めて打ち消せる。
@@ -178,15 +199,10 @@ export function RankBoard({
     0,
     ...rows.filter((r) => r.comparable).map((r) => r.total.high ?? r.total.low),
   );
-  // **到着日数の対数スケールも全行共通。**数字に変換できている行（`minDays`/
-  // `maxDays` が両方 non-null）だけを domain の材料にする——変換できない行が
-  // domain を歪めない。
-  const daysWithNumbers = rows
-    .map((r) => r.days)
-    .filter((d): d is Row['days'] & { minDays: number; maxDays: number } =>
-      d.minDays != null && d.maxDays != null);
-  const daysMin = daysWithNumbers.length ? Math.min(...daysWithNumbers.map((d) => d.minDays)) : 1;
-  const daysMax = daysWithNumbers.length ? Math.max(...daysWithNumbers.map((d) => d.maxDays)) : 1;
+  // **到着日数のドメインは固定**（`ArrivalBar` が `ARRIVAL_DOMAIN_MIN_DAYS`〜
+  // `ARRIVAL_DOMAIN_MAX_DAYS` を使う）。行の実測 min/max から作ると、全行が
+  // 同じ方式のときに棒が常に全幅へ張り付き、対数スケールの意味が消える
+  // （Fable レビュー指摘）。
   // **判定不能のときはバッジを出さない。**比較可能な全社がおすすめ枠＋同等に
   // 収まっている状態でそれぞれに「Recommended」「Equivalent」を付けると、
   // すぐ上の StabilityNote が「どこを選んでも大差ない・判別できない」と言っている
@@ -349,7 +365,7 @@ export function RankBoard({
                           : 'text-lg'
                     }`}
                   >
-                    {diffText(row, result)}
+                    {diffTextClosed(row, result)}
                   </span>
                   {row.comparable && (
                     <span className="mt-1 block">
@@ -357,7 +373,7 @@ export function RankBoard({
                     </span>
                   )}
                   <span className="mt-1 block text-xs text-neutral-500 num">
-                    approx. total {totalText(row, result)}
+                    approx. total {totalTextClosed(row, result)}
                   </span>
                   {/* 総額＋不確かさの棒。全行共通スケール（`totalDomainMax`）。
                       比べられない行は総額そのものを名乗らないので棒も出さない。 */}
@@ -366,10 +382,15 @@ export function RankBoard({
                       <TotalBar total={row.total} domainMax={totalDomainMax} />
                     </span>
                   )}
-                  {/* Ships by ＋到着の棒。全行共通の対数スケール。 */}
-                  <span className="mt-1.5 flex justify-end">
-                    <ArrivalBar days={row.days} minDomain={daysMin} maxDomain={daysMax} />
-                  </span>
+                  {/* Ships by ＋到着の棒。全行共通の固定対数スケール。
+                      **比べられない行には出さない**（台帳、Fable レビュー）——
+                      その方式ではそもそも送れないので、到着日数を出すと
+                      「この方式で送れる」かのように見える。 */}
+                  {row.comparable && (
+                    <span className="mt-1.5 flex justify-end">
+                      <ArrivalBar days={row.days} method={row.method} />
+                    </span>
+                  )}
                   {/* 箱数。Buyee の default/consolidated は 1⇄5 の対比で見せ、
                       左罫線（`inIndeterminateGroup`/`inBracket` と同じ場所を使わず、
                       専用の testid で対にする）で2行を結ぶ。 */}

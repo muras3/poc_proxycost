@@ -1461,9 +1461,19 @@ test.describe('mobile layout', () => {
     // 「or more (upper bound unknown)」のような長い文字列が右列の内容幅を
     // 押し広げ、`min-w-0 flex-1` の左列（社名・内訳）が単語ごとに折り返される
     // ところまで潰れていた。既定カート（米国）は `rankIndeterminate` で
-    // 全行がこの文言を持つので、ここで直接そのレイアウトを縛る。
+    // 全行がこの文言を持っていた。
+    //
+    // **PR-B（順位ボード作り替え）で「or more (upper bound unknown)」の文言
+    // 自体を閉じた行から外した**（台帳 #22/#30、Fable レビュー）——`TotalBar`
+    // の右端フェードだけで同じ情報を伝える。ここでの崩れの再現条件は消えた
+    // （むしろ右列は以前より短くなった）が、**この崩れ自体の検出手段として
+    // レイアウトの縛りは残す価値がある**——右列が今後また長い文言を持てば
+    // 同じ形で崩れうる。前提条件（上限不明の行が存在すること）は、文言では
+    // なく `TotalBar` の `data-upper-unknown` 属性で確認する。
     await gotoCompare(page);
-    await expect(page.getByText(/upper bound unknown/).first()).toBeVisible();
+    await expect(
+      ranking(page).locator('[data-testid="total-bar"][data-upper-unknown="true"]').first(),
+    ).toBeAttached();
 
     const rows = ranking(page).locator('li[data-row-id]');
     const n = await rows.count();

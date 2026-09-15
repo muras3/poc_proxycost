@@ -1,51 +1,44 @@
-import { arrivalBarStops } from '@/lib/ui/scales';
-import type { Row } from '@/lib/pricing/types';
+import {
+  ARRIVAL_DOMAIN_MAX_DAYS, ARRIVAL_DOMAIN_MIN_DAYS, arrivalBarStops, parseDaysDisplay,
+} from '@/lib/ui/scales';
+import { methodLabel } from '@/lib/ui/methodLabel';
+import type { CourierMethod, PostalMethod, Row } from '@/lib/pricing/types';
 
 /**
- * 「Ships by」＋到着日数の棒。**全行共通の対数スケール**
- * （`minDomain`/`maxDomain` は呼び出し側が全行の `days.minDays`/`maxDays` の
- * min/max から一度だけ計算して渡す）。
+ * 「Ships by」＋到着日数の棒。**必ず方式名＋棒を出す**（台帳 #15/#56
+ * 「方式名が無い」「到着の棒がどこにも出ていない」への対応、Fable レビュー）。
+ * 全行共通の固定ドメイン（`ARRIVAL_DOMAIN_MIN_DAYS`〜`ARRIVAL_DOMAIN_MAX_DAYS`、
+ * 対数）。
  *
- * 線種で確度を分ける（小さな日数文字だけに頼らない、というPR-Bの要件）:
+ * 線種・端の形で確度を分ける（小さな日数文字だけに頼らない）:
  *   - 公表（`tier === 'fixed'`）… 実線
- *   - 未公表（それ以外の tier）… 点線、**途切れて見えるように**
- *   - 追跡なし（`tracked === false`）… 終端を開いた形（右端に矢印を出さず、
- *     フェードで切る）
- *
- * `minDays`/`maxDays` のどちらかが無い（数字に変換できない表記）ときは、
- * 数字の棒を描かない——`arrivalBarStops` が `null` を返すので、テキストだけの
- * フォールバック（`days.text` をそのまま出す控えめな行）にする。
+ *   - 未公表（それ以外）… 点線。**生の `days.text`（"not yet modeled" 等）は
+ *     行に出さない**——方式名だけ見せ、棒の点線で「未公表」を示す。
+ *   - 上限だけ分かる／未知の下端 … 開始側をぼかす（`fadeLow`）
+ *   - 追跡なし（`tracked === false`）／未知の上端 … 終端を開いた形にする
+ *     （`fadeHigh`）
  */
 export function ArrivalBar({
   days,
-  minDomain,
-  maxDomain,
+  method,
 }: {
   days: Row['days'];
-  minDomain: number;
-  maxDomain: number;
+  method: PostalMethod | CourierMethod;
 }) {
-  const stops = arrivalBarStops(days, minDomain, maxDomain);
   const published = days.tier === 'fixed';
-  const untracked = !days.tracked;
-
-  if (!stops) {
-    return (
-      <div data-testid="arrival-bar" data-mode="text-only" className="text-xs text-neutral-500">
-        Ships by {days.text}
-      </div>
-    );
-  }
-
+  const numeric = parseDaysDisplay(days);
+  const stops = arrivalBarStops(numeric, ARRIVAL_DOMAIN_MIN_DAYS, ARRIVAL_DOMAIN_MAX_DAYS);
+  const fadeHigh = stops.fadeHigh || !days.tracked;
   const width = Math.max(2, stops.highPct - stops.lowPct);
+  const label = methodLabel(method);
+
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-neutral-500">Ships by {days.text}</span>
+      <span className="text-xs text-neutral-500">Ships by {label}</span>
       <div
         data-testid="arrival-bar"
-        data-mode="numeric"
         data-published={published ? 'true' : 'false'}
-        data-untracked={untracked ? 'true' : 'false'}
+        data-tracked={days.tracked ? 'true' : 'false'}
         className="relative h-1.5 w-full max-w-[160px] rounded-full bg-neutral-200 dark:bg-neutral-800"
       >
         <div
@@ -55,14 +48,28 @@ export function ArrivalBar({
           } border-post-blue`}
           style={{ left: `${stops.lowPct}%`, width: `${width}%`, top: '50%', marginTop: -1 }}
         />
-        {untracked && (
-          // 追跡なし: 終端を開いた形にする——閉じた矢印・端点を描かず、フェードで切る。
+        {stops.fadeLow && (
+          // 下端が未知（"X or less" の下限、または完全未知）: 開始側をぼかす。
+          // 「これより速い」という主張を作らない。
+          <div
+            data-testid="arrival-bar-fade-low"
+            className="absolute inset-y-0"
+            style={{
+              left: `${stops.lowPct}%`,
+              width: `${Math.min(10, width)}%`,
+              background: 'linear-gradient(to left, currentColor, transparent)',
+              opacity: 0.4,
+            }}
+          />
+        )}
+        {fadeHigh && (
+          // 追跡なし／上端が未知: 終端を開いた形にする——閉じた端点を描かない。
           <div
             data-testid="arrival-bar-open-end"
             className="absolute inset-y-0"
             style={{
-              left: `${stops.lowPct + width}%`,
-              width: '10%',
+              left: `${Math.max(0, stops.lowPct + width - Math.min(10, width))}%`,
+              width: `${Math.min(10, width) + 2}%`,
               background: 'linear-gradient(to right, currentColor, transparent)',
               opacity: 0.4,
             }}
