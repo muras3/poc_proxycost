@@ -8,6 +8,8 @@ import { rateLabel } from '@/lib/pricing/rates';
 import type { CompareResult, Row } from '@/lib/pricing/types';
 import { DiffBar } from './DiffBar';
 import { RowBreakdown } from './RowBreakdown';
+import { TotalBar } from './TotalBar';
+import { ArrivalBar } from './ArrivalBar';
 
 /** 報酬を払う社だけ sponsored。払わない社に付けると虚偽の開示になる。 */
 const rel = (paysUs: boolean) =>
@@ -76,6 +78,27 @@ function diffText(row: Row, result: CompareResult): string {
   // 総額はこの下端より高くなりうる——下端どうしの差はその分だけ縮む・逆転しうる。
   // 「ちょうどこれだけ高い」とは言えないので、そう断言しない。
   return diffCertainFor(row, result) ? `+${yen(row.diff)}` : `at least +${yen(row.diff)}`;
+}
+
+/**
+ * **閉じた行専用の差額表示。**「at least」の言い回しを落とす（台帳 #22/#30、
+ * Fable レビュー）——確度は `TotalBar` のフェードが形で伝えるので、閉じた行の
+ * 文言は数字を二重に弱めない。全文（"at least +¥X" とその根拠）は
+ * `RowBreakdown` の footer に残る（開いた中）。
+ */
+function diffTextClosed(row: Row, result: CompareResult): string {
+  return diffText(row, result).replace(/^at least /, '');
+}
+
+/**
+ * **閉じた行専用の総額表示。**「or more」「(upper bound unknown)」を落とす
+ * （台帳 #22/#30）——`TotalBar` の右端フェードが同じ情報を形で伝えている。
+ * 全文は `RowBreakdown` の footer に残る。
+ */
+function totalTextClosed(row: Row, result: CompareResult): string {
+  return totalText(row, result)
+    .replace(/\s*\(upper bound unknown\)/, '')
+    .replace(/\s*or more$/, '');
 }
 
 /**
@@ -168,6 +191,18 @@ export function RankBoard({
   if (!rows.length) return null;
   const cheapest = rows[0]!;
   const maxDiff = Math.max(0, ...rows.filter((r) => r.comparable).map((r) => r.diff));
+  // **総額＋不確かさの棒は全行共通のスケール。**行ごとに最大を取ると、行間で
+  // 棒の長さを比べられなくなる（scales.ts の TotalBar 参照）。上限不明の行は
+  // `total.high` が無いので `total.low` で domain に参加する（実際の絵は
+  // フェードで「その先」を示す——偽の上限を domain にも作らない）。
+  const totalDomainMax = Math.max(
+    0,
+    ...rows.filter((r) => r.comparable).map((r) => r.total.high ?? r.total.low),
+  );
+  // **到着日数のドメインは固定**（`ArrivalBar` が `ARRIVAL_DOMAIN_MIN_DAYS`〜
+  // `ARRIVAL_DOMAIN_MAX_DAYS` を使う）。行の実測 min/max から作ると、全行が
+  // 同じ方式のときに棒が常に全幅へ張り付き、対数スケールの意味が消える
+  // （Fable レビュー指摘）。
   // **判定不能のときはバッジを出さない。**比較可能な全社がおすすめ枠＋同等に
   // 収まっている状態でそれぞれに「Recommended」「Equivalent」を付けると、
   // すぐ上の StabilityNote が「どこを選んでも大差ない・判別できない」と言っている
@@ -214,11 +249,35 @@ export function RankBoard({
         {rows.map((row) => {
           const isOpen = open === row.id;
           const inBracket = showBracket && row.recommended;
+          // **判定不能のグループ化。**`showBracket` が false の間は緑の「おすすめ」枠を
+          // 出さない代わりに、「1位と誤差で重なっている」という事実そのものは
+          // 藍（indigo）の罫線で見せる——`recommended`/`equivalent` は
+          // `rankIndeterminate` に関わらず同じ重なり判定（`computeBracket()`）から
+          // 来ているので、バッジ（断定色の緑）だけを隠して、罫線（グルーピングの
+          // 事実）は残す。
+          const inIndeterminateGroup =
+            result.rankIndeterminate && (row.recommended || row.equivalent);
+          const boxCount = row.boxes.length;
+          // **Buyee の 1⇄5**: 同じ社の default/consolidated の2行を、箱数の対比として
+          // 見せる（P-B担当範囲）。相方の行を探し、両方の箱数を並べて出す。
+          const sibling =
+            row.variant && (row.variant === 'default' || row.variant === 'consolidated')
+              ? rows.find((r) => r.serviceId === row.serviceId && r.id !== row.id)
+              : null;
           return (
             <li
               key={row.id}
               data-row-id={row.id}
-              className={inBracket ? 'border-l-2 border-emerald-500 dark:border-emerald-400' : ''}
+              data-indeterminate-group={inIndeterminateGroup ? 'true' : undefined}
+              className={
+                // **全行で左罫線の幅を予約する**（透明）——グループ行だけ 2px+pl-2 ずれると、
+                // モバイルで棒の左端が行ごとにずれて共通スケールが崩れる。
+                inBracket
+                  ? 'border-l-2 border-emerald-500 dark:border-emerald-400'
+                  : inIndeterminateGroup
+                    ? 'border-l-2 border-indigo-500 dark:border-indigo-400'
+                    : 'border-l-2 border-transparent'
+              }
             >
               {/* **412px で右列（差額・総額）の長い文字列が左列を1語幅まで潰していた**
                   （コーディネーター指摘、P1-3 追修正）。上限不明の
@@ -232,10 +291,16 @@ export function RankBoard({
                 type="button"
                 onClick={() => setOpen(isOpen ? null : row.id)}
                 aria-expanded={isOpen}
-                className={`flex w-full flex-col gap-1 py-3 text-left sm:flex-row sm:items-start sm:gap-3 ${inBracket ? 'pl-2' : ''}`}
+                className={`flex w-full flex-col gap-1 py-3 text-left sm:flex-row sm:items-start sm:gap-3 pl-2`}
               >
                 <span className="flex w-full items-start gap-3 sm:contents">
-                <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-500 dark:text-neutral-400 num">{row.rank}</span>
+                {/* **比べられない行は順位の列から外す。**`row.comparable === false` の
+                    行は総額を持たず並び替えにも参加していない（compare.ts の
+                    `ok`/`notOk` で末尾に固定）ので、順位の数字を出すと
+                    「この位置に順位がある」という嘘になる。 */}
+                <span className="w-5 shrink-0 pt-0.5 text-sm text-neutral-500 dark:text-neutral-400 num">
+                  {row.comparable ? row.rank : ''}
+                </span>
 
                 <span className="min-w-0 flex-1" data-testid="row-info">
                   <span className="flex flex-wrap items-baseline gap-x-2">
@@ -282,26 +347,15 @@ export function RankBoard({
                       excl. {row.excluded.join(', ').toLowerCase()}
                     </span>
                   )}
-                  {/* **P2 4（オーナー確定 2026-09-12）: Surface は隠さず、別行も作らない。**
-                      待てる利用者のための代替として、この社の行の中に副次行で出す
-                      ——別 Row にすると1社が2回現れて5社比較が壊れる（オーナー明示）。
-                      額は Surface 便**単体の送料**（`Row.surface.shipYen` のコメント）。 */}
-                  {row.surface && (
-                    <span
-                      data-testid="surface-alternative"
-                      className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400"
-                    >
-                      Surface option — {row.surface.label}: {totalIntervalText(row.surface.shipYen)}
-                      {' shipping, '}{row.surface.days}. {row.surface.note}.
-                    </span>
-                  )}
+                  {/* **船便の代案は開いた中へ**（PR-B、担当範囲の指示）。文章の段落を
+                      閉じた行に残さない——中身は下の `isOpen` ブロックに移した。 */}
                 </span>
                 </span>
 
                 {/* 差額が主役。総額はその下に小さく添える。
                     **412px 未満は横幅いっぱい・左寄せで折り返す。**`shrink-0` のまま
                     幅を持たせなかったのが崩れの原因だった（上のコメント）。 */}
-                <span className="w-full text-left sm:w-auto sm:shrink-0 sm:text-right">
+                <span className="w-full text-left sm:w-48 sm:shrink-0 sm:text-right" data-testid="row-figures">
                   <span
                     className={`block font-semibold num ${
                       !row.comparable
@@ -313,7 +367,7 @@ export function RankBoard({
                           : 'text-lg'
                     }`}
                   >
-                    {diffText(row, result)}
+                    {diffTextClosed(row, result)}
                   </span>
                   {row.comparable && (
                     <span className="mt-1 block">
@@ -321,7 +375,37 @@ export function RankBoard({
                     </span>
                   )}
                   <span className="mt-1 block text-xs text-neutral-500 num">
-                    approx. total {totalText(row, result)}
+                    approx. total {totalTextClosed(row, result)}
+                  </span>
+                  {/* 総額＋不確かさの棒。全行共通スケール（`totalDomainMax`）。
+                      比べられない行は総額そのものを名乗らないので棒も出さない。 */}
+                  {row.comparable && (
+                    <span className="mt-1 flex justify-start">
+                      <TotalBar total={row.total} domainMax={totalDomainMax} />
+                    </span>
+                  )}
+                  {/* Ships by ＋到着の棒。全行共通の固定対数スケール。
+                      **比べられない行には出さない**（台帳、Fable レビュー）——
+                      その方式ではそもそも送れないので、到着日数を出すと
+                      「この方式で送れる」かのように見える。 */}
+                  {row.comparable && (
+                    <span className="mt-1.5 flex justify-start">
+                      <ArrivalBar days={row.days} method={row.method} />
+                    </span>
+                  )}
+                  {/* 箱数。Buyee の default/consolidated は 1⇄5 の対比で見せ、
+                      左罫線（`inIndeterminateGroup`/`inBracket` と同じ場所を使わず、
+                      専用の testid で対にする）で2行を結ぶ。 */}
+                  <span
+                    data-testid="box-count"
+                    data-pair={sibling ? 'true' : 'false'}
+                    className="mt-1 block text-xs text-neutral-500 num"
+                  >
+                    {sibling
+                      ? `${boxCount} ⇄ ${sibling.boxes.length} box${
+                          Math.max(boxCount, sibling.boxes.length) === 1 ? '' : 'es'
+                        }`
+                      : `${boxCount} box${boxCount === 1 ? '' : 'es'}`}
                   </span>
                 </span>
               </button>
@@ -329,6 +413,21 @@ export function RankBoard({
               {isOpen && (
                 <div className="pb-4">
                   <RowBreakdown row={row} cheapest={cheapest} />
+                  {/* **P2 4（オーナー確定 2026-09-12）: Surface は隠さず、別行も作らない。**
+                      待てる利用者のための代替として、この社の行の中に副次行で出す
+                      ——別 Row にすると1社が2回現れて5社比較が壊れる（オーナー明示）。
+                      額は Surface 便**単体の送料**（`Row.surface.shipYen` のコメント）。
+                      **PR-B: 閉じた行には文章の段落を置かないので、ここ（開いた中）に
+                      移した。** */}
+                  {row.surface && (
+                    <p
+                      data-testid="surface-alternative"
+                      className="mt-2 text-xs text-neutral-500 dark:text-neutral-400"
+                    >
+                      Surface option — {row.surface.label}: {totalIntervalText(row.surface.shipYen)}
+                      {' shipping, '}{row.surface.days}. {row.surface.note}.
+                    </p>
+                  )}
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <a
                       href={row.outboundUrl}
