@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { singleParcelGrossG } from '@/lib/pricing/compare';
 import { EMS_SOURCE_URL, EMS_ZONE, emsFor } from '@/lib/pricing/ems';
 import {
@@ -171,10 +171,38 @@ function packedItems(items: readonly Item[]): PackedItem[] {
   return out;
 }
 
+/** 縮小表示（`compact`）で場面の上から切り落とす割合（何も入らない奥の壁の上側）。 */
+const COMPACT_CROP = 0.5;
+
+/**
+ * 縮小表示の説明文。狭い画面では2行で畳み、押すと全文を出す。**文言は削らない**
+ * （`innerText` にも残る）——最初の画面で順位表を押し出さないためだけの見せ方。
+ */
+function Clamp({ compact, children, className = '', ...rest }: {
+  compact: boolean; children: ReactNode; className?: string; 'data-testid'?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  if (!compact) return <p className={className} {...rest}>{children}</p>;
+  return (
+    <div className={`${open ? '' : 'flex items-baseline gap-2 lg:block'} ${className}`}>
+      <p {...rest} className={open ? '' : 'min-w-0 flex-1 line-clamp-1 lg:line-clamp-none'}>{children}</p>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="shrink-0 underline lg:hidden"
+      >
+        {open ? 'Less' : 'More'}
+      </button>
+    </div>
+  );
+}
+
 export function ParcelView({
   items,
   country,
   row = null,
+  compact = false,
   className = '',
 }: {
   items: readonly Item[];
@@ -186,6 +214,8 @@ export function ParcelView({
    * **ここでは箱の内訳を再計算しない**——上のモジュール doc comment 参照。
    */
   row?: Row | null;
+  /** 最初の画面向けの縮小表示（場面の高さを頭打ち・説明文を狭い幅で畳む）。 */
+  compact?: boolean;
   className?: string;
 }) {
   const target = useMemo(() => parcelStateFor(items, country), [items, country]);
@@ -282,7 +312,7 @@ export function ParcelView({
   // カートが空。**箱そのものは出しておく。**箱は入力のすぐ隣に置いてあり、
   // 足した品がここに落ちる。空のあいだ箱ごと消すと、落ちる先が画面に無い状態から
   // 始まって「どこに落ちたのか」が見えなくなる。数字は1つも出さない（持っていない）。
-  if (items.length === 0) return <EmptyParcel className={className} />;
+  if (items.length === 0) return <EmptyParcel className={className} compact={compact} />;
   // **宅配便・単箱は EMS の段判定アニメーションを一切使わない。**`shown`/`target`
   // は EMS 前提の状態機械なので、ここでは見ない——`row.boxes[0]` を直接描く。
   // ただし「点線の輪郭が何か」「薄い品が何か」は**方式に関係なく我々のデータに
@@ -291,12 +321,13 @@ export function ParcelView({
   if (singleCourierBox) {
     return (
       <section aria-label="Parcel" data-testid="parcel" data-phase="idle" data-step="courier" className={className}>
-        <ParcelHeading />
+        <ParcelHeading compact={compact} />
         <CourierSingleBoxView
           box={singleCourierBox}
           items={items}
           method={row!.method as CourierMethod}
           placeholders={placeholderCount(items)}
+          compact={compact}
         />
       </section>
     );
@@ -319,7 +350,7 @@ export function ParcelView({
       data-step={shown.overMax ? 'over' : String(shown.stepIndex)}
       className={className}
     >
-      <ParcelHeading split={!!multiBox} />
+      <ParcelHeading split={!!multiBox} compact={compact} />
 
       {multiBox && <MultiBoxView boxes={multiBox} items={items} />}
 
@@ -329,9 +360,10 @@ export function ParcelView({
           （strict mode violation、CI で発覚）。「隠す」ではなく「描かない」。 */}
       {!multiBox && (
       <>
-      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="min-w-0 flex-1">
+      <div className={`${compact ? 'mt-1' : 'mt-3 sm:flex-row sm:items-start'} flex flex-col gap-4`}>
+        <div className={'min-w-0 flex-1'}>
           <PackingBox
+            cropTop={compact ? COMPACT_CROP : 0}
             stepIndex={shown.stepIndex}
             overMax={shown.overMax}
             items={packed}
@@ -353,7 +385,8 @@ export function ParcelView({
             )}
           />
 
-          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+          <div className="min-w-0">
+          <dl className={`mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 ${compact ? 'text-xs' : 'text-sm'}`}>
             <dt className="text-neutral-600 dark:text-neutral-400">Weight</dt>
             <dd data-testid="parcel-weight" className="num">
               ~{gramsText(shown.grams)}{' '}
@@ -407,6 +440,7 @@ export function ParcelView({
               </span>
             </p>
           )}
+          </div>
 
         </div>
 
@@ -420,21 +454,21 @@ export function ParcelView({
           overMax={shown.overMax}
           zone={zone}
           grams={shown.grams}
-          className="w-full shrink-0 sm:w-56 lg:w-36"
+          className={compact ? 'w-full' : 'w-full shrink-0 sm:w-56 lg:w-36'}
         />
       </div>
 
       {/* 但し書きは箱と目盛りの両方に掛かるので、2つの下に幅いっぱいで置く。
           箱の側の列に入れておくと、縦積み（モバイル）で数字と目盛りのあいだに
           3行の散文が挟まり、**段が最初の視界から押し出される。** */}
-      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <Clamp compact={compact} className="mt-1 lg:mt-3 text-xs text-neutral-600 dark:text-neutral-400">
         EMS is priced by weight alone — volume never enters the price, so this box is not a packing
         simulation.{' '}
         <EstimatedDataDisclosure placeholders={placeholders} />
         <a className="underline" href={EMS_SOURCE_URL} target="_blank" rel="noreferrer">
           Japan Post EMS rates ↗
         </a>
-      </p>
+      </Clamp>
       </>
       )}
     </section>
@@ -688,12 +722,14 @@ function CourierSingleBoxView({
   items,
   method,
   placeholders,
+  compact = false,
 }: {
   box: ParcelBox;
   items: readonly Item[];
   method: CourierMethod;
   /** 重量表に当たらなかった品の数。方式に関係ない開示（`EstimatedDataDisclosure`）に渡す。 */
   placeholders: number;
+  compact?: boolean;
 }) {
   const boxItems = packedItemsForBox(items, box);
   const methodLabel = COURIER_METHODS.find((m) => m.id === method)?.label ?? method;
@@ -714,10 +750,11 @@ function CourierSingleBoxView({
   // 実測値は PR 本文参照）。
   const visualNotch = Math.min(41, Math.max(0, Math.floor(box.weightG / 200)));
   return (
-    <div data-testid="parcel-courier" className="mt-3 min-w-0">
+    <div data-testid="parcel-courier" className={`${compact ? 'mt-1' : 'mt-3'} min-w-0`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="min-w-0 flex-1">
+        <div className={'min-w-0 flex-1'}>
           <PackingBox
+            cropTop={compact ? COMPACT_CROP : 0}
             stepIndex={visualNotch}
             items={boxItems}
             label={`Parcel box holding ${boxItems.length} item${boxItems.length === 1 ? '' : 's'}`
@@ -731,7 +768,7 @@ function CourierSingleBoxView({
             renderGlyph={(p) => <Glyph lineId={p.id} label={p.label} estimated={p.estimated} size={56} />}
           />
 
-          <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+          <dl className={`mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 ${compact ? 'text-xs' : 'text-sm'}`}>
             <dt className="text-neutral-600 dark:text-neutral-400">Weight</dt>
             <dd data-testid="parcel-weight" className="num">
               ~{gramsText(box.weightG)}{' '}
@@ -749,7 +786,7 @@ function CourierSingleBoxView({
           押される——過去に prose の長さだけで desktop の900px折り返しアサーションを
           壊したことがある（#77、e2e/parcel.spec.ts の fold テスト）。EMS 側の
           段落（`EMS is priced by weight alone…`）と同程度の長さに抑える。 */}
-      <p className="mt-3 text-xs text-neutral-600 dark:text-neutral-400" data-testid="parcel-courier-explainer">
+      <Clamp compact={compact} className="mt-1 lg:mt-3 text-xs text-neutral-600 dark:text-neutral-400" data-testid="parcel-courier-explainer">
         {/* **方式に関係ない開示を先に言う。**旧来の説明段落を丸ごと入れ替えたときに
             ここが消える回帰を一度作った——重量の出どころは郵便でも宅配便でも
             同じ意味を持つデータの話であって、方式ごとの説明ではない。 */}
@@ -760,7 +797,7 @@ function CourierSingleBoxView({
         The box shown ({DEFAULT_PARCEL_DIMENSIONS_CM.lengthCm}×{DEFAULT_PARCEL_DIMENSIONS_CM.widthCm}×
         {DEFAULT_PARCEL_DIMENSIONS_CM.heightCm} cm) is our assumption, not a measurement — the courier decides the
         real one.
-      </p>
+      </Clamp>
     </div>
   );
 }
@@ -793,9 +830,11 @@ function SplitDisclosure() {
  * 出品ごとの1注文・店舗不明など）は箱ごとに `REASON_TEXT` が既に言っている
  * ので、見出し側で新しく理由を作らない。分かれているときは中立な見出しにする。
  */
-function ParcelHeading({ split = false }: { split?: boolean }) {
+function ParcelHeading({ split = false, compact = false }: { split?: boolean; compact?: boolean }) {
   return (
-    <h2 className="font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400">
+    // 縮小表示の狭い幅では、見出しは読み上げにだけ残す（すぐ上の秤が
+    // 「On the scale · 1st place」と同じ箱を名指ししている）。
+    <h2 className={`${compact ? 'max-lg:sr-only ' : ''}font-mono text-[11px] uppercase tracking-[0.12em] text-neutral-600 dark:text-neutral-400`}>
       {split ? 'Parcel — split into separate boxes' : 'Parcel — if everything ships together'}
     </h2>
   );
@@ -806,7 +845,7 @@ function ParcelHeading({ split = false }: { split?: boolean }) {
  * 空の箱に段（大きさ）の意味は無いので、目盛りも出さず、いちばん小さい箱を
  * 「落ちてくる先」として置くだけ。ここに数字を出すと、無い数字を出すことになる。
  */
-function EmptyParcel({ className = '' }: { className?: string }) {
+function EmptyParcel({ className = '', compact = false }: { className?: string; compact?: boolean }) {
   return (
     <section
       aria-label="Parcel"
@@ -817,7 +856,7 @@ function EmptyParcel({ className = '' }: { className?: string }) {
     >
       <ParcelHeading />
       <div className="mt-3">
-        <PackingBox stepIndex={0} items={[]} label="Empty parcel box" />
+        <PackingBox stepIndex={0} items={[]} label="Empty parcel box" cropTop={compact ? COMPACT_CROP : 0} />
         <p className="mt-2 text-xs text-neutral-600 dark:text-neutral-400">
           Nothing to ship yet — add a listing above and it lands in this box.
         </p>

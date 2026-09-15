@@ -52,13 +52,15 @@ export function Scale({
   return (
     <div
       data-testid="scale"
-      className={`mt-3 flex items-center gap-4 border-t border-neutral-200 pt-3 dark:border-neutral-800 ${className}`}
+      className={`mt-2 flex items-center gap-4 border-t border-neutral-200 pt-2 dark:border-neutral-800 ${className}`}
     >
       {/* ローカルな keyframe だけをこのコンポーネントに閉じて持つ（globals.css は
           PR-A の管轄なので触らない）。針の揺れ幅そのものに数値上の意味は無く、
           「不確かだ」という事実だけを示す（mock の `wneedle`/`wobble` と同じ）。 */}
-      <style>{'@keyframes scale-needle-wobble{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}'}</style>
-      <div className="relative h-[62px] w-[130px] shrink-0" aria-hidden="true">
+      <style>{'@keyframes scale-needle-wobble{0%,100%{transform:rotate(-14deg)}50%{transform:rotate(14deg)}}@keyframes scale-box-slide{from{transform:translateX(var(--slide-from))}to{transform:none}}'}</style>
+      {/* 狭い幅では台ごと 3/4 に縮めて縦の高さを削る（器の高さも合わせて詰める）。 */}
+      <div className="h-[47px] w-[98px] shrink-0 lg:h-[62px] lg:w-[130px]" aria-hidden="true">
+      <div className="relative h-[62px] w-[130px] origin-top-left scale-75 lg:scale-100">
         {/* 台。重量ぶんだけ translateY で沈む。 */}
         <div
           data-testid="scale-platform"
@@ -70,12 +72,18 @@ export function Scale({
               <span
                 key={i}
                 data-testid="scale-box"
+                // 分割で2箱目以降が増えたときは、1箱目の位置から横へ滑り出る
+                // （mock-v3 `renderHeft` と同じ動き）。reduced-motion では動かない。
                 className={
                   i > 0
-                    ? 'motion-safe:animate-[parcel-drop_410ms_cubic-bezier(.3,.9,.4,1)_both] block rounded-[1px] border border-[#8f6537] bg-[#d8ae7c] dark:border-[#543918] dark:bg-[#a5773f]'
+                    ? 'motion-safe:animate-[scale-box-slide_560ms_cubic-bezier(.2,.8,.2,1)_420ms_backwards] block rounded-[1px] border border-[#8f6537] bg-[#d8ae7c] dark:border-[#543918] dark:bg-[#a5773f]'
                     : 'block rounded-[1px] border border-[#8f6537] bg-[#d8ae7c] dark:border-[#543918] dark:bg-[#a5773f]'
                 }
-                style={{ width: 14 + Math.min(30, b.weightG / 500), height: 10 + Math.min(20, b.weightG / 800) }}
+                style={{
+                  width: 14 + Math.min(30, b.weightG / 500),
+                  height: 10 + Math.min(20, b.weightG / 800),
+                  ['--slide-from' as string]: `-${i * 24}px`,
+                }}
               />
             ))}
           </div>
@@ -110,14 +118,14 @@ export function Scale({
         {/* 台座（固定）。 */}
         <i className="absolute bottom-0 left-[9px] right-8 h-2 border border-t-0 border-neutral-900 dark:border-neutral-100" />
         {/* 右の目盛り。 */}
-        <div className="absolute bottom-0 right-0 top-0 w-[30px] border-l border-neutral-900 text-[8.5px] leading-none text-neutral-500 dark:border-neutral-100">
+        <div className="absolute bottom-0 right-0 top-0 w-[34px] whitespace-nowrap border-l border-neutral-900 text-[8.5px] leading-none text-neutral-500 dark:border-neutral-100">
           {ticks.map((v, k) => (
-            <span key={k} className="absolute left-1" style={{ top: `${100 - (k / 4) * 100}%` }}>
-              {k === 0 || k === 4 ? `${v}` : ''}
+            <span key={k} className="absolute left-1" style={{ top: `${100 - (k / 4) * 100}%`, transform: 'translateY(-50%)' }}>
+              {k === 4 ? `${v} kg` : k === 0 ? '0' : ''}
             </span>
           ))}
-          <span className="absolute bottom-0 left-1 translate-y-full">kg</span>
         </div>
+      </div>
       </div>
       <div className="min-w-0">
         <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500">

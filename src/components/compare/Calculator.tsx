@@ -81,120 +81,110 @@ export function Calculator() {
         <ManualAdd onAdd={onAdd} />
       </div>
 
-      {/* 条件欄 ＋ 秤。**desktop（lg 以上）では秤を条件欄の右に並べる**
-          （2026-09-15、コーディネーター指摘: 秤を縦に足した分だけ順位表が
-          最初の画面から押し出された実測 976 > 900。縦に積まず、既に確保して
-          ある条件欄の高さの中に収める）。狭い幅では縦に積む——秤の器は
-          小さいので、積んでも大きくは伸びない。 */}
-      <div className="lg:flex lg:items-stretch lg:gap-4">
-        {/* **手入力フォームを開いたまま Canada を選んでも横スクロールを出さない**
-            （`min-w-0` を各セル・グリッド自身に付ける。以前の回帰の再発防止）。 */}
-        <ConditionsBar
-          country={country}
-          province={province}
-          storageDays={storageDays}
-          method={method}
-          items={items}
-          sensitivity={result.weightSensitivity}
-          onCountryChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
-          onProvinceChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
-          onStorageDaysChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
-          onMethodChange={(m) => dispatch({ type: 'method', method: m })}
-          onEditCart={() => cart.current?.openCart()}
-          className="lg:flex-1"
-        />
+      {/* **最初の画面の並び（2026-09-15、PR-C 引き継ぎで組み直し）。**
+          desktop（lg 以上）: 左の列に 条件欄 → 秤 → 要約 → 注記 → 常時アイコン、
+          右の列に箱の絵（縮小表示）。順位表は2列の下に幅いっぱいで置く——箱の絵を
+          縦に積むと場面の高さ（約250px）がそのまま順位表を押し下げた（実測 975 > 900）。
+          狭い幅: 1列で 条件欄 → 秤 → 箱（縮小）→ 要約 → 注記 → 常時アイコン → 順位表。
+          箱を要約より上に置くのは、手入力フォームを開いても入力欄と箱が同じ視界に
+          残るため（e2e/parcel.spec.ts）。注記・アイコンは順位表より上
+          （e2e/compare.spec.ts の 19・24）。並び替えは `order`（mobile）と grid の列（desktop）だけで、左の列の
+          ラッパーは狭い幅では `contents` にして子を1列の並びに参加させる。 */}
+      <div className="mt-3 flex min-w-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-x-6">
+        <div className="contents lg:col-start-1 lg:row-start-1 lg:block lg:min-w-0">
+          {/* **手入力フォームを開いたまま Canada を選んでも横スクロールを出さない**
+              （`min-w-0` を各セル・グリッド自身に付ける。以前の回帰の再発防止）。 */}
+          <ConditionsBar
+            country={country}
+            province={province}
+            storageDays={storageDays}
+            method={method}
+            items={items}
+            sensitivity={result.weightSensitivity}
+            onCountryChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
+            onProvinceChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
+            onStorageDaysChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
+            onMethodChange={(m) => dispatch({ type: 'method', method: m })}
+            onEditCart={() => cart.current?.openCart()}
+            className="order-1"
+          />
 
-        {/* 秤（mock-v3 `#heft`）。常時見える小さな部品——1位の実際の箱が
-            乗って重いほど沈み、`x kg in N boxes · SERVICE` を言う。 */}
-        <Scale
+          {/* 秤（mock-v3 `#heft`）。常時見える小さな部品——1位の実際の箱が
+              乗って重いほど沈み、`x kg in N boxes · SERVICE` を言う。 */}
+          <Scale
+            items={priced}
+            sensitivity={result.weightSensitivity}
+            row={result.rows.find((r) => r.cheapest) ?? null}
+            className="order-2"
+          />
+
+          {/* **リチウム電池の航空郵便可否（監査 #83）は常時表示。**`AlwaysOnIcons` の
+              `<details>` に隠さない——「送れるかが変わる」段1の事実は畳んだ場所に
+              置かない。`destinationFacts` は `compare()` が国だけで決めた値を読む。 */}
+          <LithiumAirmailBadge result={result} country={country} className="order-3 mt-2" />
+
+          {!empty && pricedCount > 0 && (
+            <>
+              <div className="order-5 mt-2 space-y-1 border-t border-neutral-200 pt-2 dark:border-neutral-800">
+                {/* 黙って外すと総額が安く見える。外したことを総額の隣で言う。 */}
+                {unpriced.length > 0 && (
+                  <p className={`text-xs ${tierClass.none}`}>
+                    {unpriced.length === 1
+                      ? '1 item has no price yet and is not in these totals.'
+                      : `${unpriced.length} items have no price yet and are not in these totals.`}
+                  </p>
+                )}
+                <Summary result={result} />
+                <StabilityNote result={result} onCheckWeights={checkWeights} />
+              </div>
+
+              <div className="order-6 mt-2 space-y-1 lg:mt-1">
+                {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳まない。 */}
+                <EmsOnlyNote result={result} country={country} />
+                {/* 酒がカートに入っているときだけ、強い警告を足す（T27）。 */}
+                <AlcoholInCartNote result={result} items={items} />
+                {/* 長さで方式が絞られうる品。寸法は入力に無いので、見ていないことだけ言う。 */}
+                <LongItemsInCartNote result={result} items={items} />
+                {/* Buyee だけの話。「送料無料」の出品が1点でもあるときだけ出す（T-F10）。 */}
+                <FreeShippingDomesticNote result={result} items={items} />
+              </div>
+
+              {/* 常時アイコン2つ（送れるか未確認／燃油込み・遠隔地料金は含まない）。
+                  文言は元のコンポーネントのまま（`AlwaysOnIcons` は薄いラッパー）。 */}
+              <div className="order-7 mt-2">
+                <AlwaysOnIcons result={result} country={country} />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* 箱の3D絵（`ParcelView`、縮小表示）。desktop では右の列。開閉は無い
+            （既存の e2e が畳まず前提で読んでいる）。中身・数値は変えていない。 */}
+        <ParcelView
           items={priced}
-          sensitivity={result.weightSensitivity}
+          country={country}
           row={result.rows.find((r) => r.cheapest) ?? null}
-          className="lg:w-[220px] lg:shrink-0 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0"
+          compact
+          className="order-4 mt-2 min-w-0 lg:col-start-2 lg:row-start-1 lg:mt-0"
         />
-      </div>
 
-      {/* **リチウム電池の航空郵便可否（監査 #83）は常時表示。**`AlwaysOnIcons` の
-          `<details>` に隠さない——「送れるかが変わる」段1の事実は畳んだ場所に
-          置かない、という T27/EmsOnlyNote と同じ規律。`destinationFacts` は
-          `compare()` が国だけで決めた値をそのまま読む（文字列判定はしない）。 */}
-      <LithiumAirmailBadge result={result} country={country} className="mt-1" />
-
-      {/* 箱の3D絵（`ParcelView`）。**秤（`Scale`）が常時の要約を持つようになった
-          ぶん、絵そのものは狭い画面で小さく描く**（2026-09-15、コーディネーター
-          指摘: [mobile] で秤・条件欄と合わせて順位表を最初の画面から押し出した
-          実測）。`PackingBox` は自分の器の `clientWidth` に合わせて自動で縮む
-          （`boxScale()`）ので、器を狭めるだけで済む——中身・文言・数値は
-          一切変えていない。開閉は無い（既存の e2e が畳まず前提で読んでいる）。 */}
-      <ParcelView
-        items={priced}
-        country={country}
-        row={result.rows.find((r) => r.cheapest) ?? null}
-        className="mt-3 mx-auto max-w-[320px] sm:mx-0 sm:max-w-none"
-      />
-
-      {empty ? (
-        <p className="mt-10 text-sm text-neutral-500">Add a listing to compare.</p>
-      ) : pricedCount === 0 ? (
-        // 全部が価格未取得。順位を出すと ¥0 の買い物の順位になる。
-        <p className="mt-10 text-sm text-neutral-500">
-          Enter a price above to compare — we could not read one from the listing.
-        </p>
-      ) : (
-        <>
-          {/* **2026-09-12、courier-ui で押し出された。**`EmsOnlyNote` が宅配便の
-              価格化状況を社名つきで言うようになった分（P2）だけこのブロックが
-              伸び、Ranking セクションの開始位置が画面外へ出た（実測
-              908 > 900、e2e/parcel.spec.ts）。文言は削れない（各文言は
-              e2e/compare.spec.ts の 19番などが一言一句で掴んでいる）ので、
-              **ここの余白を詰めて吸収する。**社名の入り方（今の米国の形）は
-              残り6か国が価格化されても変わらない——`courierCoverageFor` は
-              「価格化済み」「未価格化」「グリッド自体が無い」の3集合に振り分ける
-              だけで、価格化が進むほど集合の中身が動くだけで文の数は増えない。
-              今すでに一番埋まった形（1位に出る米国）を基準に詰めているので、
-              残り6か国が同じ形に育っても再びここが壊れることはない。 */}
-          <div className="mt-6 space-y-1 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-            {/* **2026-09-13、`RemoteAreaSurchargeNote` を足した分だけ、また余白を詰めた。**
-                `EmsOnlyNote` を足した2026-09-12のときと同じ理由・同じ対処
-                （`e2e/parcel.spec.ts` の「順位表が最初の画面から押し出されている」、
-                実測 904 > 900）。文言は削れない（オーナー指定・言い換え禁止）ので
-                ここの `space-y` を 1.5 → 1 に詰めて吸収する。 */}
-            {/* 黙って外すと総額が安く見える。外したことを総額の隣で言う。 */}
-            {unpriced.length > 0 && (
-              <p className={`text-xs ${tierClass.none}`}>
-                {unpriced.length === 1
-                  ? '1 item has no price yet and is not in these totals.'
-                  : `${unpriced.length} items have no price yet and are not in these totals.`}
-              </p>
-            )}
-            <Summary result={result} />
-            <StabilityNote result={result} onCheckWeights={checkWeights} />
-            {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
-                「読んでいない人には言っていない」のと同じになる。 */}
-            <EmsOnlyNote result={result} country={country} />
-            {/* 酒がカートに入っているときだけ、強い警告を足す（T27）。「送れるかは
-                一度も見ていない」の常時1文は `AlwaysOnIcons` のアイコンへ移した
-                （mock-v3 §5：文章の帯ではなく常時アイコン2つ、文言はポップオーバーの中）。 */}
-            <AlcoholInCartNote result={result} items={items} />
-            {/* 長さで方式が絞られうる品。**寸法は入力にすら無い**ので、
-                どの方式が落ちるかは書けない——見ていないことだけ言う。 */}
-            <LongItemsInCartNote result={result} items={items} />
-            {/* Buyee だけの話（他4社は材料が無い）。「送料無料」の出品が1点でも
-                あるときだけ、金額は動かさず出す（T-F10、docs/FEE-ITEMS.md §5 R1）。 */}
-            <FreeShippingDomesticNote result={result} items={items} />
-          </div>
-
-          {/* 常時アイコン2つ（送れるか未確認／燃油込み・遠隔地料金は含まない）。
-              文章の帯ではなく条件欄の隣の小さなアイコン、押すと（タップ・
-              キーボードとも）中身が開く。文言は元のコンポーネントのまま
-              （`AlwaysOnIcons` は薄いラッパー）。 */}
-          <AlwaysOnIcons result={result} country={country} />
-
-          <div className="mt-3">
+        {empty ? (
+          <p className="order-8 mt-10 text-sm text-neutral-500 lg:col-span-2">Add a listing to compare.</p>
+        ) : pricedCount === 0 ? (
+          // 全部が価格未取得。順位を出すと ¥0 の買い物の順位になる。
+          <p className="order-8 mt-10 text-sm text-neutral-500 lg:col-span-2">
+            Enter a price above to compare — we could not read one from the listing.
+          </p>
+        ) : (
+          <div className="order-8 mt-2 min-w-0 lg:mt-4 lg:col-span-2 lg:row-start-2">
             <RankBoard result={result} onFocusMethod={focusMethod} />
             <TierLegend className="mt-3" />
           </div>
+        )}
+      </div>
 
+      {!empty && pricedCount > 0 && (
+        <>
           <div className="mt-4 empty:mt-0">
             <ConsolidationCallout result={result} />
           </div>
