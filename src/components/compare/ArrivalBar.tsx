@@ -42,7 +42,9 @@ export function ArrivalBar({
       <span className="text-xs text-neutral-500">Ships by {label}</span>
       <div
         data-testid="arrival-bar-track"
-        className="relative h-1.5 w-full max-w-[160px] rounded-full bg-neutral-200 dark:bg-neutral-800"
+        // **固定幅（`TotalBar` と同じ理由）。**`w-full` は縮んだ親幅を指すので
+        // 行ごとに実測幅が割れる——`w-40`（160px）で共通スケールの前提を保つ。
+        className="relative h-1.5 w-40 rounded-full bg-neutral-200 dark:bg-neutral-800"
       >
         <div
           data-testid="arrival-bar-segment"

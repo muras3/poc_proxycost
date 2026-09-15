@@ -22,7 +22,13 @@ export function TotalBar({
     <div
       data-testid="total-bar"
       data-upper-unknown={upperUnknown ? 'true' : 'false'}
-      className="relative h-1.5 w-full max-w-[160px] overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
+      // **`w-full` ではなく固定幅にする。**右列の親（`sm:w-auto sm:shrink-0`）は
+      // デスクトップで内容にあわせて縮む幅だけを持つので、`w-full` は「その行の
+      // 中身の幅」を指すことになり、行ごとに違う値になる（実測: 行によって
+      // 160px/135px と割れた——「全行共通スケール」という前提そのものが
+      // 見た目で壊れていた、ローカル e2e で検出）。`w-40`（160px）で固定し、
+      // どの親幅の下でも同じ実測幅になるようにする。
+      className="relative h-1.5 w-40 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
     >
       {/* 下限まで濃く。 */}
       <div
