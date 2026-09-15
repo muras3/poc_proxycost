@@ -2,6 +2,17 @@
 
 最終更新 2026-09-07。Claude 側の作業は含まない。
 
+## 2026-09-15 決定・状況
+
+- `contact@japanproxyguide.com` 作成済み（Cloudflare Email Routing、受信・転送のみ）
+- ドメイン `japanproxyguide.com` 取得済み
+- Twitter/X は窓口として載せない
+- Buyee は Indoleads、FROM JAPAN は Rakuten LinkShare、ZenMarket は公式フォームで申請（本番公開後）
+- Neokyo / Jauce は導線を確認できず、素のリンク
+- EU/UK の広告同意は AdSense 承認後に Google 認定 CMP に置き換える
+- 5社とも現時点で契約なし
+- 申請時に「価格比較サイト可否」「出品ページ直リンクで計測されるか」を確認する
+
 ## 今すぐ（審査待ちが長いので、着手が遅れるほど公開が遅れる）
 
 - [ ] **Skimlinks に登録** — https://hub.skimlinks.com/signup
