@@ -20,13 +20,15 @@ import { grams } from '@/lib/ui/format';
  * 切り替え——JS で `matchMedia` を読まない）。
  */
 export function Scale({
-  items, sensitivity, row,
+  items, sensitivity, row, className = '',
 }: {
   /** 価格が付いている品だけ（`Calculator` の `priced`）。 */
   items: readonly Item[];
   sensitivity: Record<string, WeightSensitivity>;
   /** 1位の実際の行。`row.boxes` が空、または存在しなければ何も描かない。 */
   row: Row | null;
+  /** 置き場所は親（`Calculator`）が決める——desktop では条件欄の横に並ぶ。 */
+  className?: string;
 }) {
   if (!row || !row.boxes.length || items.length === 0) return null;
 
@@ -48,7 +50,10 @@ export function Scale({
   const ticks = [0, 1, 2, 3, 4].map((k) => (scaleKg * k) / 4);
 
   return (
-    <div data-testid="scale" className="mt-3 flex items-center gap-4 border-t border-neutral-200 pt-3 dark:border-neutral-800">
+    <div
+      data-testid="scale"
+      className={`mt-3 flex items-center gap-4 border-t border-neutral-200 pt-3 dark:border-neutral-800 ${className}`}
+    >
       {/* ローカルな keyframe だけをこのコンポーネントに閉じて持つ（globals.css は
           PR-A の管轄なので触らない）。針の揺れ幅そのものに数値上の意味は無く、
           「不確かだ」という事実だけを示す（mock の `wneedle`/`wobble` と同じ）。 */}

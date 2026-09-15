@@ -28,6 +28,7 @@ import { StorageDaysInput } from './StorageDaysInput';
 export function ConditionsBar({
   country, province, storageDays, method, items, sensitivity,
   onCountryChange, onProvinceChange, onStorageDaysChange, onMethodChange, onEditCart,
+  className = '',
 }: {
   country: CountryCode;
   province: ProvinceCode | null;
@@ -40,6 +41,8 @@ export function ConditionsBar({
   onStorageDaysChange: (d: number) => void;
   onMethodChange: (m: PostalMethod | CourierMethod | 'cheapest') => void;
   onEditCart: () => void;
+  /** 置き場所は親（`Calculator`）が決める——desktop では秤と横に並ぶ。 */
+  className?: string;
 }) {
   const count = items.length;
   const totalG = items.reduce((sum, i) => sum + (i.weightG ?? 0) * Math.max(1, i.qty), 0);
@@ -56,7 +59,7 @@ export function ConditionsBar({
       // `toBeInViewport` が ratio 0 で検出）。各欄はコンパクトな `<select>`/
       // 数字入力なので、最狭幅でも2列で崩れない——縦の高さを削るほうを優先し、
       // 「縦積み」の段を無くした。
-      className="grid min-w-0 grid-cols-2 gap-2 border border-neutral-200 bg-paper-2 p-2 text-xs lg:grid-cols-4 dark:border-neutral-800"
+      className={`grid min-w-0 grid-cols-2 gap-2 border border-neutral-200 bg-paper-2 p-2 text-xs lg:grid-cols-4 dark:border-neutral-800 ${className}`}
     >
       {/* 1. 送り先 ＋ 州（統合）。 */}
       <div className="min-w-0" data-testid="destination-cell">

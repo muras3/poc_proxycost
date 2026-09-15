@@ -81,35 +81,44 @@ export function Calculator() {
         <ManualAdd onAdd={onAdd} />
       </div>
 
-      {/* 条件欄。**手入力フォームを開いたまま Canada を選んでも横スクロールを出さない**
-          （`min-w-0` を各セル・グリッド自身に付ける。以前の回帰の再発防止）。 */}
-      <ConditionsBar
-        country={country}
-        province={province}
-        storageDays={storageDays}
-        method={method}
-        items={items}
-        sensitivity={result.weightSensitivity}
-        onCountryChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
-        onProvinceChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
-        onStorageDaysChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
-        onMethodChange={(m) => dispatch({ type: 'method', method: m })}
-        onEditCart={() => cart.current?.openCart()}
-      />
+      {/* 条件欄 ＋ 秤。**desktop（lg 以上）では秤を条件欄の右に並べる**
+          （2026-09-15、コーディネーター指摘: 秤を縦に足した分だけ順位表が
+          最初の画面から押し出された実測 976 > 900。縦に積まず、既に確保して
+          ある条件欄の高さの中に収める）。狭い幅では縦に積む——秤の器は
+          小さいので、積んでも大きくは伸びない。 */}
+      <div className="lg:flex lg:items-stretch lg:gap-4">
+        {/* **手入力フォームを開いたまま Canada を選んでも横スクロールを出さない**
+            （`min-w-0` を各セル・グリッド自身に付ける。以前の回帰の再発防止）。 */}
+        <ConditionsBar
+          country={country}
+          province={province}
+          storageDays={storageDays}
+          method={method}
+          items={items}
+          sensitivity={result.weightSensitivity}
+          onCountryChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
+          onProvinceChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
+          onStorageDaysChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
+          onMethodChange={(m) => dispatch({ type: 'method', method: m })}
+          onEditCart={() => cart.current?.openCart()}
+          className="lg:flex-1"
+        />
+
+        {/* 秤（mock-v3 `#heft`）。常時見える小さな部品——1位の実際の箱が
+            乗って重いほど沈み、`x kg in N boxes · SERVICE` を言う。 */}
+        <Scale
+          items={priced}
+          sensitivity={result.weightSensitivity}
+          row={result.rows.find((r) => r.cheapest) ?? null}
+          className="lg:w-[220px] lg:shrink-0 lg:border-l lg:border-t-0 lg:pl-4 lg:pt-0"
+        />
+      </div>
 
       {/* **リチウム電池の航空郵便可否（監査 #83）は常時表示。**`AlwaysOnIcons` の
           `<details>` に隠さない——「送れるかが変わる」段1の事実は畳んだ場所に
           置かない、という T27/EmsOnlyNote と同じ規律。`destinationFacts` は
           `compare()` が国だけで決めた値をそのまま読む（文字列判定はしない）。 */}
-      <LithiumAirmailBadge result={result} country={country} className="mt-2" />
-
-      {/* 秤（mock-v3 `#heft`）。常時見える小さな部品——1位の実際の箱が
-          乗って重いほど沈み、`x kg in N boxes · SERVICE` を言う。 */}
-      <Scale
-        items={priced}
-        sensitivity={result.weightSensitivity}
-        row={result.rows.find((r) => r.cheapest) ?? null}
-      />
+      <LithiumAirmailBadge result={result} country={country} className="mt-1" />
 
       {/* 箱の3D絵（`ParcelView`）。**秤（`Scale`）が常時の要約を持つようになった
           ぶん、絵そのものは狭い画面で小さく描く**（2026-09-15、コーディネーター
