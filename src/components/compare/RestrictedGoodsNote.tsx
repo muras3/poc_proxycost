@@ -30,7 +30,7 @@ export function RestrictedGoodsNote({
   const listed = LITHIUM_AIRMAIL_LISTED[country];
 
   return (
-    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+    <p>
       {restrictedList()} may not be shippable at all — Japan Post bars some of them
       worldwide and leaves the rest to your destination.{' '}
       <strong className="font-medium">We do not check</strong>, so a total here is not a
@@ -79,7 +79,7 @@ export function AlcoholInCartNote({
   )];
 
   return (
-    <p className="text-xs text-amber-700 dark:text-amber-400">
+    <p>
       {/* 記号は色だけに頼らないため（docs/UI-DESIGN.md §6）。 */}
       <span aria-hidden>⚠ </span>
       Your basket holds {hits.length === 1 ? 'a drink' : 'drinks'} we read as alcohol
@@ -121,7 +121,7 @@ export function LongItemsInCartNote({
   )];
 
   return (
-    <p className="text-xs text-neutral-600 dark:text-neutral-400">
+    <p>
       {/* 記号は色だけに頼らないため（docs/UI-DESIGN.md §6）。 */}
       <span aria-hidden>↔ </span>
       Your basket holds {hits.length === 1 ? 'an item' : 'items'} that are long rather than

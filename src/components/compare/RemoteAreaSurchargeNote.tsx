@@ -41,7 +41,7 @@ export function RemoteAreaSurchargeNote({ result }: { result: CompareResult }) {
   if (!result.rows.length) return null;
 
   return (
-    <p data-testid="remote-area-surcharge-note" className="text-xs text-neutral-600 dark:text-neutral-400">
+    <p data-testid="remote-area-surcharge-note">
       {REMOTE_AREA_SURCHARGE_NOTE_TEXT}
     </p>
   );

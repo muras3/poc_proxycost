@@ -13,6 +13,7 @@ import { totalParts } from './mockFormat';
 import { RemoteAreaSurchargeNote } from './RemoteAreaSurchargeNote';
 import { AlcoholInCartNote, LongItemsInCartNote, RestrictedGoodsNote } from './RestrictedGoodsNote';
 import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
+import { alcoholItems, longItems } from '@/lib/pricing/restricted-goods';
 import type { MethodChoice } from './Waybill';
 
 /**
@@ -118,12 +119,16 @@ export function Results({
     );
   }
   // カートの中身に依る段1の注意（Mock にはこの条件が無いので、同じ `.cond` の形で載せる）。
-  for (const [key, node] of [
-    ['alc', <AlcoholInCartNote key="alc" result={result} items={[...items]} />],
-    ['long', <LongItemsInCartNote key="long" result={result} items={[...items]} />],
-    ['free', <FreeShippingDomesticNote key="free" result={result} items={[...items]} />],
-  ] as const) {
-    conds.push(<CondWrap key={key}>{node}</CondWrap>);
+  // 出す・出さないの判定は各注記と同じ純関数で先に行い、空の `.cond` を作らない。
+  const all = [...items];
+  if (rows.length && alcoholItems(all).length) {
+    conds.push(<CondWrap key="alc"><AlcoholInCartNote result={result} items={all} /></CondWrap>);
+  }
+  if (rows.length && longItems(all).length) {
+    conds.push(<CondWrap key="long"><LongItemsInCartNote result={result} items={all} /></CondWrap>);
+  }
+  if (rows.length && all.some((i) => i.freeShipping)) {
+    conds.push(<CondWrap key="free"><FreeShippingDomesticNote result={result} items={all} /></CondWrap>);
   }
 
   /* --- the two always-on notes as icons; the wording lives in the popover --- */
@@ -185,7 +190,7 @@ export function Results({
 /** 既存の注記コンポーネント（`<p class="text-xs …">` を返す）を Mock の `.cond` の形に載せる。中身が無ければ何も出さない。 */
 function CondWrap({ children }: { children: ReactNode }) {
   return (
-    <div className="condwrap">
+    <div className="cond">
       <span className="bang" aria-hidden="true">!</span>
       {children}
     </div>

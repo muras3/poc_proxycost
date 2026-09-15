@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addByHand, emptyCart, gotoCompare, openCart, weightBox } from './helpers';
+import { addByHand, emptyCart, gotoCompare, openCart, weightBox, shipTo,
+} from './helpers';
 
 /**
  * 箱が分かれるカートの E2E。
@@ -44,10 +45,6 @@ import { addByHand, emptyCart, gotoCompare, openCart, weightBox } from './helper
 
 function parcel(page: Page) {
   return page.getByRole('region', { name: 'Parcel' });
-}
-
-async function shipTo(page: Page, cc: string): Promise<void> {
-  await page.getByLabel('Ship to').selectOption(cc);
 }
 
 /** US・5点×5000g・price 1,000〜5,000円。最安 = buyee:default、5箱、per-listing。 */
