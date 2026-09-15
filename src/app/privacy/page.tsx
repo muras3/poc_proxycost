@@ -140,10 +140,10 @@ export default function PrivacyPage() {
         As of {UPDATED} we have no affiliate contract with any of the five companies this
         calculator compares, so no outbound link earns us a referral fee, and none is marked{' '}
         <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">rel=&quot;sponsored&quot;</code>{' '}
-        — every outbound link on the site currently carries plain{' '}
-        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">rel=&quot;nofollow noopener noreferrer&quot;</code>.
-        If that ever changes for a company, this page will say so, by name, with the date it
-        started.
+        — links to the five proxy services carry plain{' '}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">rel=&quot;nofollow noopener noreferrer&quot;</code>{' '}
+        and none is marked sponsored. If that ever changes for a company, this page will say so,
+        by name, with the date it started.
       </p>
       <p className="mt-2 font-medium text-neutral-900 dark:text-neutral-100">
         The ranking is decided by total cost alone. Whether a company pays us is displayed on its
