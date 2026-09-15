@@ -68,3 +68,7 @@ cart 担当:
 board / cart 側で更新が要るまま残しているもの（§4 の一覧と同じ原因）: `compare.spec` 1b・2・3・3b・4・5・7・8・10・16・18b・18c・22・23・28、mobile 13c・15、`taxes.spec` の配達ログのセルを読むもの（`amountOf` が `.a` ではなく `.t` を拾う）、`assumed-weights.spec`（文言は §4 のとおり）、`parcel.spec` / `parcel-split.spec`（箱）、`rank-board-v2.spec`。
 
 補足: `getByLabel('Province')` は部分一致なので、送り先ボタンの aria-label に "province" を含めると衝突する（`Destination: Canada (average tax rate until you pick)` にしてある）。`cartItem(...).getByTestId('decisive-note')` が「This weight decides 1st place」の段落（`.decisive`）。
+
+## 7. 統合（`claude/ui-mock-v3`、2026-09-15）で決めたこと・残したこと
+
+- Neokyo の到着の副文「(3-5 days)」は出ない。到着の棒（`RankRow.tsx` の `DayBar`）は `Row.days.minDays/maxDays` の構造化フィールドだけで描く方針で、Mock のように便名の括弧書きを正規表現で読まない。宅配便の自称の日数は確度が無いので、今回は直さず記録だけ残す。

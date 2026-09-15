@@ -132,19 +132,32 @@ test('the note is readable without opening the cart', async ({ page }) => {
   expect(await isCollapsed(note(page)), '注記が畳まれたカートの中に入っている').toBe(false);
 });
 
-test('the box explains its dashed shapes only when a placeholder is standing in it', async ({ page }) => {
+test('the box draws a placeholder as a dashed shape, and says so in words too', async ({ page }) => {
+  // Mock v3 では箱は秤（`data-testid="scale"`）の上。中身は `BoxArt` の `.it` で、利用者が
+  // 入れていない重量（表の中央値・仮置き）は破線（`data-estimated="true"`）、入れた重量は
+  // 実線で描く。旧 `ParcelView` の「dashed outline」の但し書きと `aria-label` の数え上げは
+  // 無くなったので、**形（破線の数）と言葉（`assumed-weights` の注記の数）が一致する**
+  // ことで同じ意図を固定する。
   await gotoCompare(page);
-  const parcel = page.getByRole('region', { name: 'Parcel' });
+  const scale = page.getByTestId('scale');
+  const dashed = scale.locator('[data-testid="packed-item"][data-estimated="true"]');
+  await expect(scale).toBeVisible();
 
-  // 既定のカートは2点とも重量表に当たる。**画面に無い形を説明しない。**
-  await expect(parcel).toBeVisible();
-  await expect(parcel).not.toContainText(/dashed outline/);
+  // 既定のカートは2点とも重量表に当たる。表の値は推定なので破線だが、仮置きでは
+  // ないので注記は出ない。
+  await expect(scale.getByTestId('packed-item')).toHaveCount(2);
+  await expect(dashed).toHaveCount(2);
+  await expect(note(page)).toHaveCount(0);
 
+  // 仮置きの1点が入ると破線が1つ増え、注記が「3点中1点」と言葉で数える。
   await addByHand(page, OFF_TABLE[0], 4000);
+  await expect(dashed).toHaveCount(3);
+  await expect(note(page)).toHaveAttribute('data-count', '1');
+  await expect(note(page)).toHaveAttribute('data-total', '3');
 
-  // 入った瞬間から、点線が何なのかを箱の但し書きが名指しする。
-  await expect(parcel).toContainText(/dashed outline/);
-  // 形の違いは目で見た人にしか届かない。読み上げでも数えて言う。
-  await expect(page.getByTestId('packing-box-scene'))
-    .toHaveAttribute('aria-label', /placeholder weight we chose/);
+  // 重量を入れた品は実線に変わる。形の違いは「あなたの数字か、我々の数字か」。
+  await weightBox(page, OFF_TABLE[0]).fill('600');
+  await expect(dashed).toHaveCount(2);
+  await expect(scale.locator('[data-testid="packed-item"][data-estimated="false"]')).toHaveCount(1);
+  await expect(note(page)).toHaveCount(0);
 });

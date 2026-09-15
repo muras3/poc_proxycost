@@ -282,6 +282,25 @@ test('the province picker only exists for Canada, and choosing another country f
   await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveValue('');
 });
 
+test('the province picker fits a 390px phone — opening the 1st row never scrolls the page sideways', async ({ page }) => {
+  // 2026-09-15、統合チェックで再現: CA のカートで1位の行を開くと、配達ログの州の
+  // select（選択肢の文言が長い）が 416px に広がり、scrollWidth 542 > 390 で横スクロールが
+  // 出た。`compare.css` の `.provpick select` に幅の上限を置いたので、ここで固定する。
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoCompare(page);
+  await goTo(page, 'CA');
+  const li = await openRankRow(page, 0);
+  const picker = li.getByLabel('Province');
+  await expect(picker).toBeVisible();
+  const r = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(r.scrollWidth, `scrollWidth ${r.scrollWidth} > ${r.clientWidth} with the province picker open`).toBeLessThanOrEqual(r.clientWidth);
+  const box = (await picker.boundingBox())!;
+  expect(box.x + box.width, '州の select が画面の右からはみ出している').toBeLessThanOrEqual(390 + 1);
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // T24: 米国の品目別関税・AU の輸入処理手数料・GB の酒税。
 // **額を変えられるのは AU だけ。**米国は「12.5% が税率なのか下限なのか」を言い分け、
