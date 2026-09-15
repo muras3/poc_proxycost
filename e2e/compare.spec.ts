@@ -344,7 +344,8 @@ test('5. an item with no weight data gets an assumed weight, says so, and is cor
   // **この品の重量が1位を決める**（カート1点、カナダ。2026-09-12 六か国拡張後の実測:
   // 500 g で FROM JAPAN、10 kg で Buyee）。仮置きの数字を信じるなと、その場で言う。
   await expect(li.getByText(DECIDES)).toBeVisible();
-  const flag = (await li.getByText(DECIDES).innerText()).replace(/\s+/g, ' ');
+  // 名指しは太字の見出しの後ろ、同じ段落の中（Mock v3 `.decisive`）。段落ごと読む。
+  const flag = (await li.getByText(DECIDES).locator('xpath=ancestor::p[1]').innerText()).replace(/\s+/g, ' ');
   expect(flag).toMatch(/at 500 g/);
   expect(flag).toMatch(/at 10 kg/);
   // 名指しされた2社は違う社であること（同じ社なら「決める」は嘘）。
@@ -1500,8 +1501,8 @@ test.describe('mobile layout', () => {
 
   test('14. no cost×company table on a phone until the fold is opened', async ({ page }) => {
     await gotoCompare(page);
-    // 全社費目表は折りたたみの中（Mock v3 `#all-fees`）。開くまで表は無い。
-    await expect(breakdownTable(page)).toBeHidden();
+    // 全社費目表は折りたたみの中（Mock v3 `#all-fees`）。開くまで表は見えない。
+    await expect(breakdownTable(page).getByRole('table')).toBeHidden();
     // 順位リストの中の表も、開くまでは出ていない。
     await expect(ranking(page).getByRole('table')).toHaveCount(0);
   });

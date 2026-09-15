@@ -4,7 +4,8 @@ import { TotalText } from './RankRow';
 import { lineAmount, STAGES, stageOf } from './mockFormat';
 
 /**
- * 全社費目表（Mock v3 `costTableHTML`）: 折りたたみ `details.fold#all-fees`。
+ * 全社費目表（Mock v3 `costTableHTML`）の中身。器の折りたたみ `details.fold#all-fees`
+ * （見出しと件数）は `Calculator` の `Folds` が持つ。
  * 費目=行・会社=列、列順は順位。行は配達ログと同じ段（Bought / Warehouse / …）で区切る。
  * 狭い幅では表が横にはみ出すので、`.tscroll` の中だけ横スクロールさせる（本文は動かさない）。
  */
@@ -25,11 +26,7 @@ export function CostTable({ result }: { result: CompareResult }) {
   };
 
   return (
-    <details className="fold" id="all-fees">
-      <summary data-testid="breakdown-toggle">
-        <h2>All fees, side by side</h2>
-        <span className="lbl">{keys.length} fees × {rows.length} rows</span>
-      </summary>
+    <>
       <div className="tscroll" tabIndex={0} role="region" aria-label="All fees table, scrolls sideways">
         <table className="ct">
           <thead>
@@ -96,6 +93,6 @@ export function CostTable({ result }: { result: CompareResult }) {
         Column underline: solid = fee table from the company&rsquo;s own page · dashed = second-hand.
         Blue = our estimate · red = not published.
       </p>
-    </details>
+    </>
   );
 }
