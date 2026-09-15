@@ -12,5 +12,39 @@
   "kv_namespaces": [
     // 検索結果・商品ページのキャッシュ。`proxycost-CACHE` を Cloudflare 上に作成して割り当てた（2026-09-06）。
     { "binding": "CACHE", "id": "dafb528f9e39400ea4c9d1e6f61cf589" }
-  ]
+  ],
+
+  // 本番環境。トップレベル（開発環境、Worker名 `proxycost`）とは別の Worker として
+  // `proxycost-production` にデプロイする。デプロイは CI の push 契機では行わず、
+  // `scripts/release.sh` が打つ `v*` タグ + GitHub Environment `production` の承認を経てのみ
+  // 実行する（.github/workflows/release.yml）。
+  //
+  // 注意: wrangler の `env.<name>` は一部のキー（name・routes・kv_namespaces・vars・
+  // durable_objects 等の bindings 系）を**トップレベルから継承しない**
+  // （node_modules/wrangler/config-schema.json の RawConfig.env の説明と
+  // https://developers.cloudflare.com/workers/wrangler/configuration/#environments を参照）。
+  // そのため下記は名前・ルート・KV・vars を明示的に書き直している。
+  "env": {
+    "production": {
+      "name": "proxycost-production",
+      "routes": [
+        // Custom Domain として japanproxyguide.com を割り当てる。
+        // ゾーン側は Cloudflare Registrar で取得済み・同一アカウント配下（オーナー確認済み）。
+        { "pattern": "japanproxyguide.com", "custom_domain": true }
+      ],
+      // 本番を <name>.<subdomain>.workers.dev に出さない。
+      "workers_dev": false,
+      "compatibility_date": "2026-09-06",
+      "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+      "assets": {
+        "directory": ".open-next/assets",
+        "binding": "ASSETS"
+      },
+      "observability": { "enabled": true },
+      "kv_namespaces": [
+        // 本番専用の別 namespace（`proxycost-production-CACHE`）。開発環境の CACHE と共有しない。
+        { "binding": "CACHE", "id": "a019d3d85dd349bfa033ae16980d7fcc" }
+      ]
+    }
+  }
 }

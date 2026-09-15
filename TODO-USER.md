@@ -138,6 +138,50 @@ GitHub の Actions タブで `deploy` が緑になり、Cloudflare の Workers &
 - [ ] KV を作り `wrangler.jsonc` の id を差し替えた
 - [ ] `wrangler secret put BRAVE_API_KEY` を入れた
 
+## 本番デプロイ（japanproxyguide.com / タグ + 承認）
+
+開発環境（Worker `proxycost`）は今まで通り main への push で自動デプロイされる。これは変わらない。
+本番（Worker `proxycost-production`、ドメイン `japanproxyguide.com`）は `vX.Y.Z` タグを打ったときだけ
+`.github/workflows/release.yml` が動き、GitHub Environment `production` の承認待ちで止まる。
+KV namespace（`proxycost-production-CACHE`）と GitHub の `production` 環境（Required reviewers=muras3、
+deployment branch policy をタグ `v*` のみに限定）は作成済み。
+
+**Secrets はトークンを分けず、開発と同じ Repository secrets
+（`CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`）を共用する方針にした。**
+`environment: production` を宣言したジョブは Repository secrets も読めるので、release.yml 側に
+追加の登録作業は要らない。分けたくなったら、Settings → Environments → production →
+Environment secrets に同名で登録すれば、そちらが Repository secrets を上書きする。
+
+- [ ] **既存の API トークンに `japanproxyguide.com` ゾーンの権限を追加する**
+      開発用と共用するトークンに、Custom Domain 割り当てに要る Zone 権限が無い
+      （今の権限は Account: Workers Scripts Edit / Workers KV Storage Edit / Account Settings Read のみ）。
+      https://dash.cloudflare.com/profile/api-tokens → 対象トークンを編集 → 次を追加:
+
+      | 種別 | 対象 | 権限 |
+      |---|---|---|
+      | Zone（`japanproxyguide.com` に限定） | Workers Routes | **Edit** |
+
+      **この Zone 権限は Cloudflare ドキュメント（`/dns/zone-setups/full-setup/setup/`）にある
+      「Workers Routes Write / Read」が権限一覧に含まれているのを確認した根拠。ただし Custom
+      Domains 専用の権限一覧ページは見つけられず、Workers Routes Edit だけで Custom Domain の
+      作成まで足りるかは未確認。**`v0.1.0` のようなタグで実際にリリースしてみて、権限不足の
+      エラーが出たら Zone 権限に `SSL and Certificates: Edit` と `DNS: Edit` を足してみること
+      （Custom Domains はゾーンに DNS レコードと証明書を自動作成するため、必要になる可能性がある）。
+      もう1点、Cloudflare のドキュメントに「既存の CNAME レコードがあるホスト名には
+      Custom Domain を作成できない」とある。初回デプロイが失敗したら、
+      `japanproxyguide.com`（apex）に既存の DNS レコードが無いかも確認すること。
+
+**ロールバックのやり方（覚えておくこと）**: 新しいタグを打ち直すのではなく、Actions の
+release ワークフロー → **Run workflow** → **Use workflow from** で、ブランチではなく
+過去の緑だったタグ自身を選んで実行する。`production` 環境の deployment branch policy を
+「タグ `v*` のみ」に絞ってあるので、ブランチを選んで動かそうとすると環境の保護そのもので
+弾かれて動かない（release.yml 側でも ref がタグでなければ冒頭で失敗するようにしてある）。
+
+- [ ] **リリースしてみる** — `scripts/release.sh v0.1.0` のような形で実行する
+      （semver 形式・作業ツリーがクリーン・HEAD が origin/main と一致・main 上の CI が
+      成功していることをスクリプト側で確認してからタグを打つ）。Actions タブで `release` が
+      `production` 環境の承認待ちで止まっていることを確認し、承認する。
+
 ## 公開の直前・直後
 
 - [ ] **ドメインを取得**
