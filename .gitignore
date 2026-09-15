@@ -21,3 +21,6 @@ docs/design/benchmarks/*/shots/
 # indeterminacy-ledger.ts と indeterminacy-summary.ts の間の中間データ。
 # CSV/summary md/xlsx が成果物で、これは再生成のたびに作られる一時ファイル。
 docs/ledger/.indeterminacy-*.rows.json
+
+# 収益化・法務の内部検討メモ。リモートに上げない。
+docs/internal/
