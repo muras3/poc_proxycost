@@ -15,10 +15,12 @@ export function weightInputId(itemId: string): string {
   return `weight-${itemId}`;
 }
 
-/** 親（StabilityNote の「Check the weights」）から呼ぶ命令。 */
+/** 親（StabilityNote の「Check the weights」、条件欄のカート1行）から呼ぶ命令。 */
 export interface ItemListHandle {
   /** その品の重量入力へフォーカスを飛ばす。カートが畳まれていれば開いてから。 */
   focusWeight(itemId: string): void;
+  /** カートを開く（条件欄の「Edit cart」から）。中身の特定の品は指定しない。 */
+  openCart(): void;
 }
 
 /** サイト名はロゴでなくドメイン表記のテキスト（docs/UI-DESIGN.md §2）。 */
@@ -60,7 +62,9 @@ export interface ItemListProps {
 export function ItemList({
   items, readOn, unpriced, sensitivity, onPatch, onRemove, className = '', ref,
 }: ItemListProps) {
-  // モバイルではカートを畳む（docs/UI-DESIGN.md §7.2）。lg 以上では常に開く。
+  // **既定はたたんだ1行。**幅に関係なく畳む（PR-C、mock-v3 §cart）。展開は
+  // 「Edit cart」／追加・削除の直後だけ。lg でも常に開いたままにはしない——
+  // 開きっぱなしだと折りたたみの意味（総額の下の一覧を隠して1行の要約にする）が消える。
   const [open, setOpen] = useState(false);
   const count = items.length;
   const seen = useRef(count);
@@ -83,30 +87,61 @@ export function ItemList({
       el.select();
     }
   }
-  // focusWeight は毎描画で作り直されるが、閉じ込めているのは setOpen（不変）だけなので
-  // 初回のものを握り続けて構わない。
-  useImperativeHandle(ref, () => ({ focusWeight }), []);
+  function openCart() {
+    setOpen(true);
+  }
+  // focusWeight/openCart は毎描画で作り直されるが、閉じ込めているのは setOpen（不変）
+  // だけなので初回のものを握り続けて構わない。
+  useImperativeHandle(ref, () => ({ focusWeight, openCart }), []);
 
   // 重量表に当たらなかった品の集計。**当たっている品しか無ければ null**（＝黙る）。
   const assumed = assumedWeightsSummary(items, sensitivity);
 
   if (!count) return null;
 
+  const decisiveItem = items.find((i) => sensitivity[i.id]?.decisive);
+  const totalG = items.reduce(
+    (sum, i) => sum + (i.weightG ?? 0) * Math.max(1, i.qty),
+    0,
+  );
+  const anyEstimated = items.some((i) => i.weightOrigin !== 'user');
+
   return (
-    <section className={className} aria-label="Cart">
-      {/* lg 以上ではカートは常に開いている。押せないボタンを残すと
-          キーボード利用者には反応しない操作子に見えるので、見出しに変える。 */}
-      <h2 className="hidden text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:block">
-        Cart ({count})
-      </h2>
+    <section id="cart" className={className} aria-label="Cart">
+      {/* **既定はたたんだ1行。**総額を左右する重量の品があれば、この行に赤い印を出す
+          （PR-C、mock-v3 §cart「red mark on the decisive cart item, visible even when
+          the cart line is folded to one row」）。 */}
       <button
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 lg:hidden"
+        aria-controls="cart-body"
+        data-testid="cart-line"
+        className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 border-t border-b border-neutral-300 py-2 text-left text-xs dark:border-neutral-700"
       >
-        Cart ({count})
-        <span aria-hidden>{open ? '▾' : '▸'}</span>
+        {/* **アクセシブルネームは `Cart (n)` で始める。**既存の e2e ヘルパー
+            （`e2e/a11y.spec.ts`／`e2e/api.spec.ts`／`e2e/assumed-weights.spec.ts`／
+            `e2e/compare.spec.ts`）が `/^Cart \(/` でこのボタンを掴んでいる——
+            見た目をたたんだ1行に変えても、この命名だけは変えずに互換を保つ。 */}
+        <span className="font-semibold uppercase tracking-wide text-neutral-500">
+          Cart ({count})
+        </span>
+        <span className="num text-sm text-neutral-900 dark:text-neutral-100">
+          {anyEstimated ? '≈' : ''}{grams(totalG)}
+        </span>
+        {decisiveItem && (
+          <span
+            data-testid="cart-decisive-mark"
+            className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400"
+            title={`${decisiveItem.title} — this weight decides 1st place`}
+          >
+            <span aria-hidden className="inline-block h-2 w-2 rounded-full bg-red-600" />
+            <span className="max-w-[10rem] truncate">{decisiveItem.title}</span>
+          </span>
+        )}
+        <span className="ml-auto text-neutral-500">
+          {open ? 'Done' : 'Edit cart'}
+        </span>
       </button>
 
       {/* **畳まれる `ul` の外に置く。**中に入れたら、開いた人にしか言っていないことになる。
@@ -120,7 +155,8 @@ export function ItemList({
       </div>
 
       <ul
-        className={`${open ? 'block' : 'hidden lg:block'} divide-y divide-neutral-200 dark:divide-neutral-800`}
+        id="cart-body"
+        className={`${open ? 'block' : 'hidden'} divide-y divide-neutral-200 dark:divide-neutral-800`}
       >
         {items.map((item) => (
           <ItemRow

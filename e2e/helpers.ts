@@ -120,6 +120,20 @@ export function breakdownTable(page: Page): Locator {
   return page.getByRole('region', { name: 'Cost breakdown' });
 }
 
+/**
+ * **PR-C（2026-09-15）で全社費目表・What could be off が折りたたみになった。**
+ * `<details data-testid="breakdown-toggle">` の中に入っている——閉じたままでは
+ * `breakdownTable`/`WhatCouldBeOff` の中身は `toBeVisible()` に落ちる（`hidden`
+ * になるのは `<details>` の既定挙動）。中身を見るテストは先にこれを開く。
+ * 既に開いていれば何もしない。
+ */
+export async function openBreakdown(page: Page): Promise<void> {
+  const summary = page.getByTestId('breakdown-toggle');
+  const details = summary.locator('xpath=..');
+  const isOpen = await details.evaluate((el) => (el as HTMLDetailsElement).open);
+  if (!isOpen) await summary.click();
+}
+
 /** '¥33,500' / '~¥33,500' / '¥1,000 – 2,000' から最初の数字を取る。 */
 export function parseYen(text: string): number {
   const m = text.replace(/[−–—]/g, '-').match(/-?[\d,]+/);
@@ -226,15 +240,16 @@ export async function gotoCompare(
 }
 
 /**
- * カートはモバイルで畳まれている。中身が見えていなければ開く。
- * lg 以上では見出しの `Cart (n)` が `pointer-events-none` になっていて押せないので、
- * aria-expanded ではなく**中身が見えているか**で判断する。
+ * カートは**既定でどの幅でも畳まれている**（PR-C、mock-v3 §cart——以前は lg 以上で
+ * 常に開いていたが、その版は「たたんだ1行」という mock の形を lg で捨てていた）。
+ * 中身が見えていなければ、たたんだ1行（`data-testid="cart-line"`、条件欄の
+ * `data-testid="conditions-cart-summary"` からも開ける）を押して開く。
  */
 export async function openCart(page: Page): Promise<Locator> {
   const c = cart(page);
   const first = c.getByRole('listitem').first();
   if (!(await first.isVisible())) {
-    await c.getByRole('button', { name: /^Cart \(/ }).click();
+    await page.getByTestId('cart-line').click();
   }
   await expect(first).toBeVisible();
   return c;

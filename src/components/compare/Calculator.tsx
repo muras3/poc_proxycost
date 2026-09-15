@@ -6,21 +6,16 @@ import { ManualAdd } from '@/components/search/ManualAdd';
 import { SearchBox } from '@/components/search/SearchBox';
 import { TierLegend, tierClass } from '@/lib/ui/tiers';
 import type { CountryCode, Item, ProvinceCode } from '@/lib/pricing/types';
+import { AlwaysOnIcons } from './AlwaysOnIcons';
+import { ConditionsBar } from './ConditionsBar';
 import { ConsolidationCallout } from './ConsolidationCallout';
 import { CostTable } from './CostTable';
-import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
 import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
-import { RemoteAreaSurchargeNote } from './RemoteAreaSurchargeNote';
 import { ItemList, type ItemListHandle } from './ItemList';
-import { MethodPicker } from './MethodPicker';
 import { ParcelView } from './ParcelView';
-import { ProvincePicker } from './ProvincePicker';
 import { RankBoard, Summary } from './RankBoard';
-import { StorageDaysInput } from './StorageDaysInput';
-import {
-  AlcoholInCartNote, LongItemsInCartNote, RestrictedGoodsNote,
-} from './RestrictedGoodsNote';
+import { AlcoholInCartNote, LongItemsInCartNote } from './RestrictedGoodsNote';
 import { StabilityNote } from './StabilityNote';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
 import { useCompare, type Draft } from './useCompare';
@@ -73,86 +68,41 @@ export function Calculator() {
   // 価格を貰えていない項目は総額に入っていない（useCompare が compare() から外す）。
   const pricedCount = items.length - unpriced.length;
 
+  // ページの並び（PR-C 確定、2026-09-15）: 商品追加 → 条件欄 → 秤 → 要約 →
+  // 常時アイコン2つ → 順位表（PR-B）→ カート（たたんだ1行）→ 全社費目表・
+  // What could be off（折りたたみ）→ 広告。並びを変えただけで、各区画自身の
+  // 計算・文言は一切変えていない（`src/lib/pricing` 不可侵、CLAUDE.md §8）。
   return (
     <div className="mt-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* モバイルでは行き先を先に決めさせる（幅が狭いので入力欄と並べない）。 */}
-        <div className="order-first flex flex-wrap items-center gap-x-4 gap-y-2 sm:order-last sm:shrink-0">
-          <CountryPicker
-            value={country}
-            onChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
-          />
-          {/* **保管日数も行き先・方式と同じ格の入力**（F21、0d）。既定45日は我々の仮定
-              なので、`tier: estimate` と同じ琥珀色で示す（`StorageDaysInput` のコメント）。
-              **`MethodPicker` より前に置く。**`MethodPicker` の `<select>` は選択肢の文言が
-              長く、モバイル幅ではそれだけで1行を使い切る（`Ship to` の隣には並ばない）。
-              コンパクトな `StorageDaysInput` を先に置くことで `Ship to` と同じ行に収まり、
-              モバイルで折り返す行数が増えない（`e2e/parcel.spec.ts` の「箱がビューポートに
-              収まる」を保つ。並び順を変えただけで、新しいデザインは発明していない）。 */}
-          <StorageDaysInput
-            value={storageDays}
-            onChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
-          />
-          {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
-              （Neokyo 原文「please select ... as the shipment method」）。
-              既定は `cheapest`（運べる中で最安、Surface を除く）（`compare()` の
-              `DEFAULT_METHOD`、P2 オーナー確定 2026-09-12）。 */}
-          <MethodPicker
-            value={method}
-            onChange={(m) => dispatch({ type: 'method', method: m })}
-            country={country}
-          />
-          {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
-              他国で常に出しておくと、選べない欄が画面に残る。 */}
-          {country === 'CA' && (
-            <ProvincePicker
-              value={province}
-              onChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
-            />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <SearchBox onAdd={onAdd} />
-          <ManualAdd onAdd={onAdd} />
-        </div>
+      <div className="min-w-0">
+        <SearchBox onAdd={onAdd} />
+        <ManualAdd onAdd={onAdd} />
       </div>
 
-      {/**
-        * **箱は入力とカートと同じ視界に置く。**
-        * 足した品が箱に落ちるのを見せるための絵なので、順位表の下に置いたら
-        * （前の配置）誰も見ない位置で動くことになり、動きが何も伝えない。
-        *
-        * 縦積み（モバイル）では箱をカートの**上**に置く。カートは足すたびに開き、
-        * 1点で 300px 以上あるので、カートの下に置くと2点目からは画面の外に出る。
-        * **勝手にスクロールさせて解決しない**（scrollIntoView が祖先ごと動かして
-        * 常時開示を画面外に押し出した前科がある）。位置で解決する。
-        *
-        * lg 以上では横に2つ。**DOM の順＝画面の順＝フォーカスの順**にしたいので、
-        * モバイルで先に来る箱がそのまま左の列になる（order-* で入れ替えると、
-        * どちらかの幅で読み上げ順とタブ順が画面と食い違う）。
-        * 横に並べるぶん順位表は押し下がらない。
-        */}
-      <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
-        {/* **どの Row の箱を見せるか。**最安（`cheapest`）行——利用者が実際に選ぶ
-            可能性が最も高い行の、実際に計算された個口を見せる。他の行は方式や
-            グルーピングが違いうるので、複数の行を混ぜて1つの箱の絵にはしない。 */}
-        <ParcelView
-          items={priced}
-          country={country}
-          row={result.rows.find((r) => r.cheapest) ?? null}
-          className="lg:w-[32rem] lg:shrink-0"
-        />
-        <ItemList
-          items={items}
-          readOn={readOn}
-          unpriced={unpriced}
-          sensitivity={result.weightSensitivity}
-          ref={cart}
-          className="min-w-0 flex-1"
-          onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
-          onRemove={(id: string) => dispatch({ type: 'remove', id })}
-        />
-      </div>
+      {/* 条件欄。**手入力フォームを開いたまま Canada を選んでも横スクロールを出さない**
+          （`min-w-0` を各セル・グリッド自身に付ける。以前の回帰の再発防止）。 */}
+      <ConditionsBar
+        country={country}
+        province={province}
+        storageDays={storageDays}
+        method={method}
+        items={items}
+        sensitivity={result.weightSensitivity}
+        onCountryChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
+        onProvinceChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
+        onStorageDaysChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
+        onMethodChange={(m) => dispatch({ type: 'method', method: m })}
+        onEditCart={() => cart.current?.openCart()}
+      />
+
+      {/* 秤（`ParcelView`）。1位の箱が実際に計算された個口をそのまま描く
+          ——複数の行を混ぜて1つの絵にはしない。 */}
+      <ParcelView
+        items={priced}
+        country={country}
+        row={result.rows.find((r) => r.cheapest) ?? null}
+        className="mt-4"
+      />
 
       {empty ? (
         <p className="mt-10 text-sm text-neutral-500">Add a listing to compare.</p>
@@ -193,9 +143,9 @@ export function Calculator() {
             {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
                 「読んでいない人には言っていない」のと同じになる。 */}
             <EmsOnlyNote result={result} country={country} />
-            {/* **送れるかは一度も見ていない。**同じ理由で同じ場所に、常に出す。
-                酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
-            <RestrictedGoodsNote result={result} country={country} />
+            {/* 酒がカートに入っているときだけ、強い警告を足す（T27）。「送れるかは
+                一度も見ていない」の常時1文は `AlwaysOnIcons` のアイコンへ移した
+                （mock-v3 §5：文章の帯ではなく常時アイコン2つ、文言はポップオーバーの中）。 */}
             <AlcoholInCartNote result={result} items={items} />
             {/* 長さで方式が絞られうる品。**寸法は入力にすら無い**ので、
                 どの方式が落ちるかは書けない——見ていないことだけ言う。 */}
@@ -203,33 +153,54 @@ export function Calculator() {
             {/* Buyee だけの話（他4社は材料が無い）。「送料無料」の出品が1点でも
                 あるときだけ、金額は動かさず出す（T-F10、docs/FEE-ITEMS.md §5 R1）。 */}
             <FreeShippingDomesticNote result={result} items={items} />
-            {/* 燃油は表示送料込みの前提、遠隔地は総額に入れない住所依存の未知——
-                2026-09-13 オーナー決定。宅配便の行が1つでもあれば共通で出す。 */}
-            <RemoteAreaSurchargeNote result={result} />
           </div>
+
+          {/* 常時アイコン2つ（送れるか未確認／燃油込み・遠隔地料金は含まない）。
+              文章の帯ではなく条件欄の隣の小さなアイコン、押すと（タップ・
+              キーボードとも）中身が開く。文言は元のコンポーネントのまま
+              （`AlwaysOnIcons` は薄いラッパー）。 */}
+          <AlwaysOnIcons result={result} country={country} />
 
           <div className="mt-3">
             <RankBoard result={result} onFocusMethod={focusMethod} />
             <TierLegend className="mt-3" />
           </div>
 
-          {/* 箱はここに居た（順位の下・内訳の上）。読み順としては筋が通っていたが、
-              **足した瞬間に動く絵が、入力から1画面以上下に居た。**動きは見られなければ
-              何も伝えないので、入力とカートの隣（上）へ移した。 */}
-
           <div className="mt-4 empty:mt-0">
             <ConsolidationCallout result={result} />
           </div>
 
-          {/* 段ごとの総額の表（WeightStepTable）はここに居たが外した。カートの全点に
-              重量が入って直せる今、「重量が X なら総額は」に答えるのは重量欄そのもの。
-              全点を同じ重量に置く表は、全点が不明だったときにしか意味が無かった。 */}
+          {/* カート（たたんだ1行）。**順位表の下に置く**——条件欄の1行は要約への
+              リンクで、実際に編集する場はここ。数量・重量・国内送料はここで直す。
+              段ごとの総額の表（WeightStepTable）はここに居たが外した。カートの全点に
+              重量が入って直せる今、「重量が X なら総額は」に答えるのは重量欄そのもの。 */}
+          <ItemList
+            items={items}
+            readOn={readOn}
+            unpriced={unpriced}
+            sensitivity={result.weightSensitivity}
+            ref={cart}
+            className="mt-6"
+            onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
+            onRemove={(id: string) => dispatch({ type: 'remove', id })}
+          />
 
-          <CostTable result={result} />
+          {/* 全社費目表・What could be off は折りたたみで実在させる
+              （PR-C: 常時は畳んで、開けば全部読める。中身の文言・数値は変えない）。 */}
+          <details className="mt-8 group">
+            <summary
+              data-testid="breakdown-toggle"
+              className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-neutral-500"
+            >
+              Full cost breakdown &amp; what could be off
+            </summary>
+            <div className="mt-2">
+              <CostTable result={result} />
+              <WhatCouldBeOff result={result} />
+            </div>
+          </details>
 
-          <WhatCouldBeOff result={result} />
-
-          {/* 広告はここだけ。比較の中・横には置かない。 */}
+          {/* 広告はここだけ。比較の中・横には置かない。結果の後・フッターの上。 */}
           <AdSlot />
         </>
       )}
