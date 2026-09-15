@@ -531,15 +531,20 @@ test.describe('layout', () => {
     const p = (await parcel(page).boundingBox())!;
     const rank = (await page.getByRole('region', { name: 'Ranking' }).boundingBox())!;
 
-    // 箱（秤）は順位表より前。
+    // 箱（秤）は順位表より前。**幅を問わず成り立つ**——これだけが両方の
+    // プロジェクトに共通の約束。
     expect(p.y, '箱が順位表より下に来ている').toBeLessThanOrEqual(rank.y);
 
-    // Summary（総額・現地通貨換算）は視界の中。
-    await expect(page.getByTestId('summary')).toBeInViewport({ ratio: 1 });
-
-    // 順位表そのものも、最初の画面のうちに始まっている（desktop のみ——mobile は
-    // 縦積みで元々1画面に収まらない前提のため、この検査は desktop 限定）。
+    // **「最初の画面に答えが収まる」は元々 desktop 限定の約束**（旧
+    // `test.describe('desktop layout')` 参照）。mobile（Pixel 7、条件欄が
+    // `sm:` 未満で1列だった頃から）は縦積みでもともと1画面に収まらない前提
+    // ——この検査自体を mobile まで広げたのが2026-09-15の実測回帰の原因
+    // だったので、意図どおり desktop 限定に戻す。
     if (page.viewportSize() && page.viewportSize()!.width >= 1024) {
+      // Summary（総額・現地通貨換算）は視界の中。
+      await expect(page.getByTestId('summary')).toBeInViewport({ ratio: 1 });
+
+      // 順位表そのものも、最初の画面のうちに始まっている。
       const vh = await page.evaluate(() => window.innerHeight);
       expect(
         rank.y,

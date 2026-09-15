@@ -16,7 +16,9 @@ import { StorageDaysInput } from './StorageDaysInput';
  * 挙動・出典・計算は一切変えずに並べ直すだけの薄いレイアウト。**数値・順位は
  * 一切動かさない**（このコンポーネントは `src/lib/pricing` を触らない）。
  *
- * 幅で 4列 → 2×2 → 縦積みに折り返す（`grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`）。
+ * 幅で 4列 → 2×2 に折り返す（`grid-cols-2 lg:grid-cols-4`）。**最狭幅でも1列への
+ * 縦積みはしない**——[mobile] e2e で縦積みの高さが順位表を最初の画面から
+ * 押し出した実測を踏まえた修正（2026-09-15、下の className コメント参照）。
  * どの幅でも `min-w-0` を各セルに付け、手入力フォーム（`ManualAdd`）を開いたまま
  * カナダを選んでも横スクロールが出ない（以前の回帰、PR-C 準備メモ参照）。
  *
@@ -47,7 +49,14 @@ export function ConditionsBar({
   return (
     <div
       data-testid="conditions-bar"
-      className="grid min-w-0 grid-cols-1 gap-2 border border-neutral-200 bg-paper-2 p-2 text-xs sm:grid-cols-2 lg:grid-cols-4 dark:border-neutral-800"
+      // **PR-C 修正（2026-09-15）: 最狭幅でも2×2、1列への縦積みはしない。**
+      // 4列 → 2×2 → 縦積みという当初の並び（コメント参照）は、[mobile]
+      // （Pixel 7、412×915）で条件欄が4段の縦積みになり、秤・要約と合わせて
+      // 順位表を最初の画面から完全に押し出した（e2e/parcel.spec.ts の
+      // `toBeInViewport` が ratio 0 で検出）。各欄はコンパクトな `<select>`/
+      // 数字入力なので、最狭幅でも2列で崩れない——縦の高さを削るほうを優先し、
+      // 「縦積み」の段を無くした。
+      className="grid min-w-0 grid-cols-2 gap-2 border border-neutral-200 bg-paper-2 p-2 text-xs lg:grid-cols-4 dark:border-neutral-800"
     >
       {/* 1. 送り先 ＋ 州（統合）。 */}
       <div className="min-w-0" data-testid="destination-cell">
