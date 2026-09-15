@@ -103,6 +103,7 @@ export function PackingBox({
   items,
   renderGlyph,
   label,
+  cropTop = 0,
   className = '',
 }: {
   /** `emsFor()` が返す段の添字。 */
@@ -114,6 +115,13 @@ export function PackingBox({
   renderGlyph?: (item: PackedItem) => ReactNode;
   /** スクリーンリーダー向けの説明。 */
   label?: string;
+  /**
+   * 場面の上から切り落とす割合（投影高さに対する 0〜1）。**最初の画面で順位表を
+   * 押し出さないための縮小表示**（2026-09-15、オーナー許可）。箱は床を下端に
+   * 揃えたまま、何も入らない奥の壁の上側だけを場面の外へ出す。縮尺は変えない
+   * ——縮めると中身が線画のにじみに沈み、コントラスト（WCAG 1.4.11）を割る。
+   */
+  cropTop?: number;
   className?: string;
 }) {
   const dims = boxDims(stepIndex, overMax);
@@ -126,7 +134,10 @@ export function PackingBox({
   useLayoutEffect(() => {
     const el = sceneRef.current;
     if (!el) return;
-    const fit = () => setScale(boxScale(el.clientWidth, dims));
+    const fit = () => {
+      const byWidth = boxScale(el.clientWidth, dims);
+      setScale(byWidth);
+    };
     fit();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(fit);
@@ -173,7 +184,7 @@ export function PackingBox({
       ref={sceneRef}
       data-testid="packing-box-scene"
       className={`relative w-full overflow-hidden ${className}`}
-      style={{ height: Math.max(140, proj.h * scale + 24) }}
+      style={{ height: Math.max(cropTop ? 80 : 140, proj.h * scale * (1 - cropTop) + 24) }}
       role="img"
       aria-label={
         label ??
@@ -184,9 +195,11 @@ export function PackingBox({
     >
       <div
         data-testid="packing-box"
-        className="absolute left-1/2 top-1/2 transition-transform duration-500 motion-reduce:transition-none"
+        className="absolute left-1/2 transition-transform duration-500 motion-reduce:transition-none"
         style={{
           ...style,
+          // 場面の高さの半分。切り落とした分だけ箱の中心を上へずらし、床を下端に残す。
+          top: cropTop ? (proj.h * scale + 24) / 2 - proj.h * scale * cropTop : '50%',
           transformStyle: 'preserve-3d',
           transform: `translate(-50%, -50%) scale(${scale}) rotateX(${CAMERA_X_DEG}deg) rotateY(${CAMERA_Y_DEG}deg)`,
         }}

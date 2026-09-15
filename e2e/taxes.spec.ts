@@ -84,7 +84,10 @@ test('the US board admits the Zonos prepayment fee on postal rows; courier rows 
   await expect(costRow(courierLi, PREPAY)).toHaveCount(0);
 
   // 共通注記は画面に常時1つ出る（2026-09-13、訂正3でオーナーが「宅配便の行が
-  // あるときだけ」から「常時」に変えた）。
+  // あるときだけ」から「常時」に変えた）。**PR-C（mock-v3 §5, owner review）で
+  // 文章の帯から常時アイコンに変わった**——アイコン自体は常に見え、開けば読める
+  // （T27 と同じ「隠れた場所に置かない」約束は保ったまま、見せ方だけを変えた）。
+  await page.getByTestId('icon-fuel-remote').click();
   await expect(page.getByTestId('remote-area-surcharge-note')).toBeVisible();
 });
 

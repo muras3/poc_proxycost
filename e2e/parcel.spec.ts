@@ -519,48 +519,59 @@ test.describe('method sensitivity — courier vs postal (#88 follow-up)', () => 
   });
 });
 
-test.describe('desktop layout', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop', 'lg 以上の2列なので desktop でだけ見る');
-  });
-
-  test('the box stands beside the cart, and the ranking is still on the first screen', async ({ page }) => {
+// PR-C（2026-09-15）でページの並びが変わった: 箱（秤・`ParcelView`）は条件欄の
+// すぐ下、順位表より前に単独で置く（もう入力・カートと横並びではない）。カートは
+// 順位表の下の「たたんだ1行」になった（`ConditionsBar` の要約行から開く）。
+// 以前の「箱とカートが横に並ぶ／箱がカートの上に来る」検査はこの並びの前提が
+// 無くなったので、その意図（**答え・箱が最初の画面から押し出されない**）だけを
+// 引き継いで書き直す——数値・順位は変えていない。
+test.describe('layout', () => {
+  test('the scale sits above the ranking, and the ranking is still on the first screen', async ({ page }) => {
     await gotoCompare(page);
     const p = (await parcel(page).boundingBox())!;
-    const c = (await cartRegion(page).boundingBox())!;
-
-    // 横に並んでいる（カートの下ではない）。同じ行なので順位表は押し下がらない。
-    expect(p.x + p.width, '箱がカートに重なっている').toBeLessThanOrEqual(c.x + 1);
-    expect(Math.abs(p.y - c.y), '箱とカートの上端が揃っていない').toBeLessThan(2);
-
-    // **答えが画面の外に出ていない。**箱を上へ持ってきた代償はここに出る。
-    // Summary（総額・現地通貨換算）は丸ごと視界の中。**文言ではなく要素で掴む**
-    // ——判定不能では「is cheapest」と言い切らなくなる（P1-3 追修正）ので、
-    // その状態の文言を当てにできない（既定カートは P1-4 で判定不能ではなく
-    // なったが、要素で掴むこの検査自体はどちらの状態でも成り立つ）。
-    await expect(page.getByTestId('summary')).toBeInViewport({ ratio: 1 });
-    // 順位表そのものも、最初の画面のうちに始まっている。
     const rank = (await page.getByRole('region', { name: 'Ranking' }).boundingBox())!;
-    const vh = await page.evaluate(() => window.innerHeight);
-    expect(
-      rank.y,
-      `順位表が最初の画面から押し出されている（${Math.round(rank.y)} > ${vh}）`,
-    ).toBeLessThan(vh);
-  });
-});
 
-test.describe('mobile layout', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile', '縦積みの順なので mobile でだけ見る');
+    // 箱（秤）は順位表より前。**幅を問わず成り立つ**——これだけが両方の
+    // プロジェクトに共通の約束。
+    expect(p.y, '箱が順位表より下に来ている').toBeLessThanOrEqual(rank.y);
+
+    // **「最初の画面に答えが収まる」は元々 desktop 限定の約束**（旧
+    // `test.describe('desktop layout')` 参照）。mobile（Pixel 7、条件欄が
+    // `sm:` 未満で1列だった頃から）は縦積みでもともと1画面に収まらない前提
+    // ——この検査自体を mobile まで広げたのが2026-09-15の実測回帰の原因
+    // だったので、意図どおり desktop 限定に戻す。
+    if (page.viewportSize() && page.viewportSize()!.width >= 1024) {
+      // Summary（総額・現地通貨換算）は視界の中。
+      await expect(page.getByTestId('summary')).toBeInViewport({ ratio: 1 });
+
+      // 順位表そのものも、最初の画面のうちに始まっている。
+      const vh = await page.evaluate(() => window.innerHeight);
+      expect(
+        rank.y,
+        `順位表が最初の画面から押し出されている（${Math.round(rank.y)} > ${vh}）`,
+      ).toBeLessThan(vh);
+    }
   });
 
-  test('the box comes before the cart, so a long cart cannot push it off screen', async ({ page }) => {
+  test('the cart (folded line) comes after the ranking, and opening it does not move the scale', async ({ page }) => {
     await gotoCompare(page);
-    // カートを開く（足した直後の状態）。それでも箱は上に残る。
-    await openCart(page);
     const p = (await parcel(page).boundingBox())!;
+    const rank = (await page.getByRole('region', { name: 'Ranking' }).boundingBox())!;
     const c = (await cartRegion(page).boundingBox())!;
-    expect(p.y + p.height, '箱がカートの下に落ちている').toBeLessThanOrEqual(c.y + 1);
-    await expect(boxScene(page)).toBeInViewport({ ratio: 1 });
+
+    expect(p.y, '箱が順位表より下に来ている').toBeLessThanOrEqual(rank.y);
+    expect(rank.y, 'カートが順位表より上に来ている').toBeLessThanOrEqual(c.y);
+
+    // **文書内の絶対位置で比べる。**`openCart` はカートの行（画面外にありうる）を
+    // クリックするので、Playwright がそこへスクロールする——`boundingBox()` は
+    // ビューポート相対なので、箱自体は動いていなくてもスクロール量だけ数値が
+    // ずれる。scrollY を足して文書内の絶対位置に直してから比べる。
+    const scrollBefore = await page.evaluate(() => window.scrollY);
+    await openCart(page);
+    const scrollAfter = await page.evaluate(() => window.scrollY);
+    const pAfter = (await parcel(page).boundingBox())!;
+    const before = p.y + scrollBefore;
+    const after = pAfter.y + scrollAfter;
+    expect(Math.abs(after - before), 'カートを開くと箱の位置が動いた').toBeLessThan(2);
   });
 });

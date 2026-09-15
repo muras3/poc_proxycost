@@ -16,6 +16,7 @@ import {
   headerCells,
   isCollapsed,
   isNonDecreasing,
+  openBreakdown,
   openCart,
   openRankRow,
   parseYen,
@@ -1131,12 +1132,24 @@ const SAKE = 'Dassai junmai daiginjo sake 720ml';
 
 test('24. the ranking says out loud that some goods may not be shippable, and that we never checked', async ({ page }) => {
   await gotoCompare(page);
-  const note = restrictedNote(page);
 
-  // 何も押していない状態で、もう読める。
+  // **PR-C（mock-v3 §5, owner review）: 文章の帯ではなく常時アイコンになった。**
+  // 押さなくても読めた旧仕様（テスト24の元コメント「何も押していない状態で、
+  // もう読める」）は、この設計変更でそのままは成り立たなくなった——ただし
+  // 「隠れた場所に置かない・開示自体は無くならない」という T27 の約束は保つ:
+  // アイコン自体は常に見え、押せばすぐに（タップ・キーボードとも）読める。
+  const icon = page.getByTestId('icon-shippability');
+  await expect(icon).toBeVisible();
+  // アイコンは順位表より前（条件欄の中）に居る——総額を読む前に目に入る位置。
+  const iconBox = (await icon.boundingBox())!;
+  const rankBox = (await ranking(page).boundingBox())!;
+  expect(iconBox.y).toBeLessThanOrEqual(rankBox.y);
+
+  await icon.click();
+  const note = restrictedNote(page);
   await expect(note).toHaveCount(1);
   await expect(note).toBeVisible();
-  expect(await isCollapsed(note), '開示が「開かないと読めない」場所に居る').toBe(false);
+  expect(await isCollapsed(note), '開いたのに開示が読めない').toBe(false);
 
   const text = (await note.innerText()).replace(/\s+/g, ' ');
   // (1) 何が制限されているか。**表（RESTRICTED_GOODS）と同じ語**が出ていること。
@@ -1147,15 +1160,12 @@ test('24. the ranking says out loud that some goods may not be shippable, and th
   // (2) 我々が見ていないこと、そして総額が「送れる」の保証ではないこと。
   expect(text).toMatch(/We do not check/);
   expect(text).toMatch(/not a promise that the parcel can be sent/);
-
-  // 総額を読む前に目に入る位置（順位表の上）に居ること。
-  const noteBox = (await note.boundingBox())!;
-  const rankBox = (await ranking(page).boundingBox())!;
-  expect(noteBox.y + noteBox.height).toBeLessThanOrEqual(rankBox.y + 1);
 });
 
 test('25. the shippability disclosure stays through real use, and comes and goes with the ranking', async ({ page }) => {
   await gotoCompare(page);
+  // PR-C: 常時アイコン（`icon-shippability`）を開いてから読む（mock-v3 §5）。
+  await page.getByTestId('icon-shippability').click();
   const note = restrictedNote(page);
   await expect(note).toBeVisible();
 
@@ -1182,16 +1192,22 @@ test('25. the shippability disclosure stays through real use, and comes and goes
   // カートを空にすれば順位と一緒に消える。開示だけ宙に浮かない。
   await emptyCart(page);
   await expect(ranking(page)).toHaveCount(0);
+  await expect(page.getByTestId('icon-shippability')).toHaveCount(0);
   await expect(note).toHaveCount(0);
 
-  // 戻せば両方戻る。
+  // 戻せば両方戻る。アイコンは既定（畳んだ状態）で戻るので、もう一度開く。
   await addByHand(page, 'mystery lot Z', 4000);
   await expect(ranking(page)).toHaveCount(1);
+  await page.getByTestId('icon-shippability').click();
   await expect(note).toBeVisible();
 });
 
 test('26. a bottle of sake in the cart raises a stronger warning, and removing it takes the warning away', async ({ page }) => {
   await gotoCompare(page);
+  // PR-C: 常時アイコンを開いてから読む（mock-v3 §5）。強い警告（`AlcoholInCartNote`）
+  // 自体は以前どおり帯のまま——酒がカートに入っているときだけの一時的な警告なので、
+  // アイコン化の対象（「常時」の2つ）には含めていない。
+  await page.getByTestId('icon-shippability').click();
   // 酒が無いあいだは強い警告は出ない。常時の1行だけ。
   await expect(alcoholNote(page)).toHaveCount(0);
   await expect(restrictedNote(page)).toBeVisible();
@@ -1222,6 +1238,8 @@ test('26. a bottle of sake in the cart raises a stronger warning, and removing i
 
 test('27. both disclosures link to the rules, quoted with their source and date', async ({ page }) => {
   await gotoCompare(page);
+  // PR-C: 常時アイコンを開いてから読む（mock-v3 §5）。
+  await page.getByTestId('icon-shippability').click();
   await restrictedNote(page).getByRole('link', { name: 'What the rules say' }).click();
   await expect(page).toHaveURL(/\/sources#restricted$/);
   await expect(page.getByRole('heading', { name: 'Goods that may not be shippable at all' }))
@@ -1284,6 +1302,7 @@ test.describe('desktop layout', () => {
 
   test('11. the breakdown table has one column per ranked row', async ({ page }) => {
     await gotoCompare(page);
+    await openBreakdown(page);
     const table = breakdownTable(page);
     await expect(table).toBeVisible();
 
@@ -1312,6 +1331,7 @@ test.describe('desktop layout', () => {
 
   test('12. confidence is actually drawn: ~ for estimates, dotted for second-hand, — for missing', async ({ page }) => {
     await gotoCompare(page);
+    await openBreakdown(page);
     const table = breakdownTable(page);
     await expect(table).toBeVisible();
 
@@ -1352,6 +1372,7 @@ test.describe('desktop layout', () => {
    */
   test('the breakdown footer follows the same interval rules as the ranking (② regression)', async ({ page }) => {
     await gotoCompare(page);
+    await openBreakdown(page);
     const table = breakdownTable(page);
     await expect(table).toBeVisible();
 
