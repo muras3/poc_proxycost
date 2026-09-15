@@ -31,24 +31,20 @@ export function totBarPcts(row: Row, hiMax: number): { lowPct: number; hiPct: nu
 
 /** 到着日数バー（Mock `dayBarHTML`）。対数スケール 1〜90 日。 */
 export const DAY_SCALE_MAX = 90;
-export const NP = 'transit time not published';
 export function dayPct(v: number): number {
   return Math.max(3, Math.min(100, (Math.log(Math.max(v, 1) + 1) / Math.log(DAY_SCALE_MAX + 1)) * 100));
 }
 /**
- * 日数の文字列から両端を拾う。**「a week」だけは 7 日に読む**——週は日数が可変でない
- * 単位なので換算であって推測ではない（`src/lib/ui/scales.ts` の `parseDaysDisplay` と
- * 同じ判断）。月表記は換算しない（Mock と同じく数字が無ければ「未公表」の形）。
+ * 日数の棒の両端。**`Row.days.text` を正規表現で読まない**——エンジンが一次情報
+ * （`daysTier === 'fixed'`）のときだけ数値化した `minDays`/`maxDays` をそのまま使う。
+ * 「N days or less」は `minDays: null` なので物差しの起点（1日）から `maxDays` まで。
+ * 両方 `null`（宅配便の自称、"a week or less"、月表記）は「未公表」の形（点線）。
+ * Mock は "a week or less" も数字が無いので同じく未公表の形に描いていた。
  */
-export function dayBounds(days: string): { lo: number; hi: number } | null {
-  if (days === NP) return null;
-  const nums = (days.match(/\d+(\.\d+)?/g) ?? []).map(Number);
-  if (!nums.length) {
-    if (/\ba week\b/i.test(days) && !/month/i.test(days)) return { lo: 7, hi: 7 };
-    return null;
-  }
-  if (/month/i.test(days)) return null;
-  return { lo: nums[0]!, hi: nums.length > 1 ? nums[nums.length - 1]! : nums[0]! };
+export function dayBounds(d: Row['days']): { lo: number; hi: number } | null {
+  if (d.minDays == null && d.maxDays == null) return null;
+  const hi = d.maxDays ?? d.minDays!;
+  return { lo: d.minDays ?? 1, hi };
 }
 
 /** 費目の金額表示（Mock `lineAmount`）。 */

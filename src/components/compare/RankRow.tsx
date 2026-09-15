@@ -56,15 +56,21 @@ export function TotBar({ row, hiMax, className = 'totbar' }: { row: Row; hiMax: 
   );
 }
 
-/** 到着日数の棒（Mock `dayBarHTML`）。実線＝公表、破線＝宅配便の自称、点線のみ＝未公表、赤い輪＝追跡なし。 */
+/**
+ * 到着日数の棒（Mock `dayBarHTML`）。実線＝公表された日数、点線（長さ無し）＝日数が
+ * 一次情報で数値化できていない（宅配便の自称・"a week or less"・月表記）、赤い輪＝追跡なし。
+ * 両端は `Row.days.minDays/maxDays`（構造化フィールド）だけから決める——Mock が便名の
+ * 括弧書きを正規表現で読んで破線にしていた宅配便の日数は、確度の無い数字なので描かない。
+ */
 function DayBar({ row }: { row: Row }) {
   const d = row.days;
-  const bounds = dayBounds(d.text);
-  const published = d.tier === 'fixed';
+  const bounds = dayBounds(d);
   if (!bounds) {
     return (
       <span className="daybar np" aria-hidden="true" data-testid="arrival-bar-track-wrap">
         <span className="track" data-testid="arrival-bar-track" />
+        <span className="fill" data-testid="arrival-bar-segment" data-style="dotted" style={{ left: 0, width: '100%' }} />
+        {!d.tracked && <span className="oring" data-testid="arrival-bar-end" data-end="untracked" style={{ left: '100%' }} />}
       </span>
     );
   }
@@ -72,15 +78,15 @@ function DayBar({ row }: { row: Row }) {
   const hiPct = Math.max(loPct + 3, dayPct(bounds.hi));
   return (
     <>
-      <span className={`daybar ${published ? '' : 'est'}`} aria-hidden="true">
+      <span className="daybar" aria-hidden="true">
         <span className="track" data-testid="arrival-bar-track" />
         <span
           className="fill"
           data-testid="arrival-bar-segment"
-          data-style={published ? 'solid' : 'dashed'}
+          data-style="solid"
           style={{ left: `${loPct}%`, width: `${hiPct - loPct}%` }}
         />
-        {!d.tracked && <span className="ring" data-testid="arrival-bar-end" data-end="untracked" style={{ left: `${hiPct}%` }} />}
+        {!d.tracked && <span className="oring" data-testid="arrival-bar-end" data-end="untracked" style={{ left: `${hiPct}%` }} />}
       </span>
       <span className="tag" style={{ fontSize: 10 }}>{d.text}</span>
     </>
@@ -187,7 +193,7 @@ export function RankRow({
           {row.comparable ? String(row.rank).padStart(2, '0') : '—'}
           {isFirst && <span className="sr">{lw}</span>}
         </span>
-        <span className="c-svc">
+        <span className="c-svc" data-testid="row-service">
           <span className="svc">{row.serviceName}{row.variant && <small>{row.variant}</small>}</span>
         </span>
         {row.comparable ? (
@@ -197,7 +203,7 @@ export function RankRow({
             data-published={row.days.tier === 'fixed' ? 'true' : 'false'}
             data-tracked={row.days.tracked ? 'true' : 'false'}
             role="img"
-            aria-label={`Ships by ${mi.label} — ${row.days.text}${row.days.tracked ? '' : ', untracked'}${row.days.tier === 'fixed' ? '' : ' (not published)'}`}
+            aria-label={`Ships by ${mi.label} — ${row.days.text}${row.days.tracked ? '' : ', untracked'}${dayBounds(row.days) ? '' : ' (transit time not published as a figure)'}`}
           >
             <span className="m">{mi.label}</span>
             <DayBar row={row} />
@@ -206,7 +212,7 @@ export function RankRow({
           <span className="c-ship" />
         )}
         {boxCell}
-        <span className="c-diff">
+        <span className="c-diff" data-testid="row-diff">
           {diffCell}
           {row.comparable && (
             <span className={`dbar${barUnbounded ? ' unb' : ''}${barFuzzy ? ' fuzzy' : ''}`} aria-hidden="true">
@@ -214,7 +220,7 @@ export function RankRow({
             </span>
           )}
         </span>
-        <span className="c-tot">
+        <span className="c-tot" data-testid="row-total">
           <TotalText row={row} />
           <TotBar row={row} hiMax={ctx.hiMax} />
         </span>

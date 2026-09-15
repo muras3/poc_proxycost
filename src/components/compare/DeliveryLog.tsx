@@ -82,6 +82,8 @@ function Pack({ row, items }: { row: Row; items: readonly Item[] }) {
             className={`bx bxsep-${i === 0 ? 'first' : b.reason === 'weight-limit' ? 'wl' : b.reason === 'unresolved-shop' ? 'un' : 'shop'}`}
             data-testid="split-box"
             data-reason={b.reason}
+            data-duty-kind={b.tax.duty.kind}
+            data-vat-kind={b.tax.vat.kind}
           >
             <div className="bxart"><BoxArt box={b} items={items} k={k} /></div>
             <figcaption>
@@ -94,7 +96,7 @@ function Pack({ row, items }: { row: Row; items: readonly Item[] }) {
                 {b.itemIndices.length} item{b.itemIndices.length === 1 ? '' : 's'}{b.reason !== why ? ` · ${REASON[b.reason]}` : ''}
               </span>
               <br />
-              declared {yen(b.declaredYen)}
+              <span data-testid="split-box-declared">declared {yen(b.declaredYen)}</span>
               {(n > 1 || b.tax.duty.kind !== 'rate') && (
                 <> · <span data-testid="split-box-duty">{dutyText(b.tax.duty)}</span> · <span data-testid="split-box-vat">{vatText(b.tax.vat)}</span></>
               )}
@@ -126,7 +128,10 @@ export function DeliveryLog({
   const groups: Record<string, typeof row.lines> = {};
   for (const [k] of STAGES) groups[k] = [];
   for (const l of row.lines) groups[stageOf(l.key)]!.push(l);
-  const mi = { label: methodLabel(row.method), days: row.days.text, tracked: row.days.tracked };
+  // 日数の原文は一次情報（郵便）のときだけそのまま出す。宅配便の `text` はエンジンの
+  // 内部語（'not yet modeled'）なので、Mock と同じ「transit time not published」にする。
+  const daysText = row.days.tier === 'fixed' ? row.days.text : 'transit time not published';
+  const mi = { label: methodLabel(row.method), days: daysText, tracked: row.days.tracked };
   const avg = `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%`;
 
   const stages = STAGES.filter(([k]) => k !== 'other' || groups.other!.length).map(([k, name], si) => {
@@ -148,18 +153,18 @@ export function DeliveryLog({
           {notes.map((t, i) => <p key={i}>{t}</p>)}
           {uncapped && <p>No upper bound — this is what leaves the total open-ended.</p>}
           {l.key === 'intl-shipping' && (
-            <p data-testid="intl-days">Arrival: {row.days.text}{row.days.tracked ? '' : ' — untracked'}{row.days.tier === 'fixed' ? '' : ' (transit time not published)'}</p>
+            <p data-testid="intl-days">Arrival: {daysText}{row.days.tracked ? '' : ' — untracked'}</p>
           )}
           {l.sourceUrl && <p><a href={l.sourceUrl} target="_blank" rel="noopener noreferrer">Source →</a></p>}
         </>
       );
       return (
         <div key={l.key}>
-          {/* `fixed` は Tailwind の `position:fixed` と衝突するので、確定値にはクラスを付けない（Mock の CSS に `.ln.fixed` の規則は無い）。 */}
-          <div className={`ln ${a.cls === 'fixed' ? '' : a.cls}`} role="row" data-cost-key={l.key}>
+          {/* `fixed` は Tailwind の `position:fixed` と衝突するので class には出さない（Mock に `.ln.fixed` の規則は無い）。 */}
+          <div className={`ln${a.cls === 'fixed' ? '' : ` ${a.cls}`}`} role="row" data-cost-key={l.key} data-tier={l.tier}>
             <span className="l" role="cell">{l.label}</span>
             <span className="lead" aria-hidden="true" />
-            <span className="t" role="cell">{a.tag} <Mark title={l.label} body={note} /></span>
+            <span className="t">{a.tag} <Mark title={l.label} body={note} /></span>
             <span className="a" role="cell">{a.txt}</span>
             <span className="v1" role="cell">{v1}</span>
           </div>
@@ -187,7 +192,7 @@ export function DeliveryLog({
         <div className="ln surf" role="row" key="surf" data-testid="surface-alternative">
           <span className="l" role="cell">Can wait {row.surface.days}? {row.surface.label}</span>
           <span className="lead" aria-hidden="true" />
-          <span className="t" role="cell">not ranked <Mark title="Surface option" body={<><p>{row.surface.note}.</p><p>Shipping alone, not a full total.</p></>} /></span>
+          <span className="t">not ranked <Mark title="Surface option" body={<><p>{row.surface.note}.</p><p>Shipping alone, not a full total.</p></>} /></span>
           <span className="a" role="cell">{sy.high === null ? `${yen(sy.low)}+` : sy.high === sy.low ? yen(sy.low) : `${yen(sy.low)} – ${yen(sy.high).slice(1)}`}</span>
           <span className="v1" role="cell" />
         </div>,

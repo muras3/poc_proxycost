@@ -481,6 +481,21 @@ export async function setMethod(page: Page, method: string): Promise<void> {
   await page.locator('#ship-by-select').selectOption(method);
 }
 
+/**
+ * 開いた行の配達ログで、費目の1行に付いた注釈（§）を開き、ポップオーバーの本文を返す。
+ * 費目の説明文・出典は行の中ではなくここに居る（Mock v3 `mk(l.label, note)`）。
+ */
+export async function lineNote(row: Locator): Promise<string> {
+  const page = row.page();
+  await row.getByRole('button', { name: /^About: / }).click();
+  const pop = page.locator('#pop');
+  await expect(pop).toBeVisible();
+  const text = (await pop.innerText()).replace(/\s+/g, ' ').trim();
+  await page.keyboard.press('Escape');
+  await expect(pop).toBeHidden();
+  return text;
+}
+
 export async function addByHand(
   page: Page, title: string, priceYen: number, site?: string,
 ): Promise<void> {
