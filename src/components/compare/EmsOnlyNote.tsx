@@ -88,7 +88,7 @@ export function EmsOnlyNote({ result, country }: { result: CompareResult; countr
   const text = courierScopeText(coverage, COUNTRIES[country].name);
 
   return (
-    <p data-testid="scope-disclosure" className="text-xs text-neutral-600 dark:text-neutral-400">
+    <p data-testid="scope-disclosure">
       Priced across {priced} Japan Post methods — pick one above, or let each service use
       the cheapest that fits{' '}
       <span className="font-medium">by weight; a parcel&rsquo;s size is never checked</span>,

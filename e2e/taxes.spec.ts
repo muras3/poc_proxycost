@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
-  addByHand, costRow, emptyCart, gotoCompare, openRankRow, parseYen, rankButtons, readRanking,
-  rowCells, setMethod,
+  addByHand, costRow, emptyCart, gotoCompare, lineNote, openRankRow, parseYen, rankButtons,
+  readRanking, rowCells, setMethod, shipTo,
 } from './helpers';
 import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE } from '../src/lib/pricing/countries';
 import {
@@ -17,10 +17,10 @@ import {
 const PREPAY = 'US import prepayment (Zonos) fee — not published';
 const CHECKOUT_GST = 'GST collected at checkout';
 
-async function shipTo(page: Page, code: string): Promise<void> {
+async function goTo(page: Page, code: string): Promise<void> {
   const first = (await readRanking(page))[0]!;
   const before = { total: first.total, name: first.name, variant: first.variant };
-  await page.getByLabel('Ship to').selectOption(code);
+  await shipTo(page, code);
   // 行き先が変われば EMS の地帯も税も変わる。総額が動くまで待つ。
   // **総額だけでは見ない。**画面の総額は ¥100 丸めなので、別の国の別の社の
   // 総額と偶然同じ丸め値になることがある（実測: 米国既定の ZenMarket
@@ -55,9 +55,11 @@ test('the US board admits the Zonos prepayment fee on postal rows; courier rows 
   const rows = await readRanking(page);
   let sawPostalZonos = 0;
   let sawCourierRow = 0;
-  for (const row of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]!;
+    // 総額から抜けている費目は閉じた行の下に「+ <費目>」で名乗る（Mock `.exline`）。
     const lower = row.text.toLowerCase();
-    const hasZonos = lower.includes(PREPAY.toLowerCase());
+    const hasZonos = lower.includes(PREPAY.toLowerCase()) || /\+\d+ unpriced/.test(row.text);
     if (hasZonos) sawPostalZonos++;
     if (row.name !== 'Jauce') sawCourierRow++;
   }
@@ -72,8 +74,9 @@ test('the US board admits the Zonos prepayment fee on postal rows; courier rows 
   const fee = costRow(jauceLi, PREPAY);
   await expect(fee).toHaveCount(1);
   const cells = await rowCells(fee);
-  expect(cells[1]).toBe('—');
+  expect(cells[1]).toBe('not published');
   expect(cells.slice(1)).not.toContain('¥0');
+  await expect(fee).toHaveAttribute('data-tier', 'none');
 
   // 宅配便の行（Jauce 以外）を開くと、Zonos は出ず、目的地側の未知の費用の
   // 個別行も出ない——共通注記（`RemoteAreaSurchargeNote`）に置き換わったので、
@@ -93,7 +96,7 @@ test('the US board admits the Zonos prepayment fee on postal rows; courier rows 
 
 test('Australia shows the checkout GST every service publishes', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'AU');
+  await goTo(page, 'AU');
 
   // 5社とも自社ページで徴収を明記しているので、どの行にも金額が出る。
   const n = await rankButtons(page).count();
@@ -110,12 +113,12 @@ test('Australia shows the checkout GST every service publishes', async ({ page }
   // 二重取りしていないこと: 国境側の GST は 0 で、理由が書いてある。
   const li = await openRankRow(page, 0);
   const border = costRow(li, 'GST').first();
-  expect((await rowCells(border))[0]).toContain('collected at checkout by the service');
+  expect(await lineNote(border)).toContain('collected at checkout by the service');
 });
 
 test('Singapore: every service carries a number — confirmed as published, the rest as an estimate', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'SG');
+  await goTo(page, 'SG');
 
   // **以前ここは「確認できない社は —」だった。それは誤りだった。**
   // 確認できていないのは「**誰が**集めるか」であって「いくら払うか」ではない。
@@ -131,17 +134,19 @@ test('Singapore: every service carries a number — confirmed as published, the 
     // 明記していない社は `GST — estimated: we could not confirm who collects it`。
     // 片方だけで探すと、もう片方が「行が無い」＝undefined になって
     // 「— だった」と誤診する（このテストが実際にそう壊れていた）。
-    const cells = await rowCells(costRow(li, /^GST (collected at checkout|— estimated)/));
-    expect(cells[1], `${row.name}: 額が「—」になっている`).not.toBe('—');
+    const gstRow = costRow(li, /^GST (collected at checkout|— estimated)/);
+    const cells = await rowCells(gstRow);
+    expect(cells[1], `${row.name}: 額が「—」になっている`).not.toMatch(/^(—|not published)$/);
     if (confirmed.includes(row.name)) {
-      // 自社ページで徴収を明記している社。公表値なので `~` は付かない。
-      expect(cells[1], row.name).not.toMatch(/^~/);
+      // 自社ページで徴収を明記している社。公表値なので `≈` は付かない。
+      expect(cells[1], row.name).not.toMatch(/^≈/);
       expect(parseYen(cells[1]!), row.name).toBeGreaterThan(0);
-      expect(row.text, row.name).not.toContain('could not confirm');
+      expect(cells[0], row.name).not.toContain('could not confirm');
     } else {
-      // 額は出すが、**推定と分かる形で**出す（`~` と琥珀）。
-      expect(cells[1], row.name).toMatch(/^~¥/);
-      expect(parseYen(cells[1]!.replace('~', '')), row.name).toBeGreaterThan(0);
+      // 額は出すが、**推定と分かる形で**出す（`≈` と破線、Mock `.ln.estimate`）。
+      expect(cells[1], row.name).toMatch(/^≈¥/);
+      expect(parseYen(cells[1]!.replace('≈', '')), row.name).toBeGreaterThan(0);
+      await expect(gstRow).toHaveAttribute('data-tier', 'estimate');
       // **何が確定していないのかを、行そのものが名乗る。**
       expect(cells[0], row.name).toContain('could not confirm');
       estimated++;
@@ -166,26 +171,29 @@ async function amountOf(page: Page, label: string | RegExp): Promise<string> {
 
 test('Canada without a province still shows a provincial tax — as an estimate, never a dash', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
 
-  // 既定は未選択。欄はその中身（我々が当てている率）を名乗る。
-  const picker = page.getByLabel('Province');
+  // 既定は未選択。州の欄は配達ログの州税の行の下に居て（Mock `.provpick`）、
+  // 未選択の選択肢が我々の当てている率を名乗る。
+  const li = await openRankRow(page, 0);
+  const picker = li.getByLabel('Province');
   await expect(picker).toBeVisible();
   await expect(picker).toHaveValue('');
   const avg = `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%`;
-  await expect(picker).toContainText(`we estimate ${avg}`);
+  await expect(picker).toContainText(avg);
 
-  // **未選択でも数字。** `—` でも ¥0 でもない。
+  // **未選択でも数字。** `—` でも ¥0 でもない。推定なので `≈`（破線）。
   const amount = await amountOf(page, 'Provincial tax');
-  expect(amount).not.toBe('—');
+  expect(amount).not.toMatch(/^(—|not published)$/);
   expect(parseYen(amount)).toBeGreaterThan(0);
+  const provRow = costRow(li, 'Provincial tax').first();
+  await expect(provRow).toHaveAttribute('data-tier', 'estimate');
 
-  // 推定だと名乗り、確定させる道をその場で示す。
-  const li = await openRankRow(page, 0);
-  const note = (await rowCells(costRow(li, 'Provincial tax').first()))[0]!;
+  // 推定だと名乗り（注釈）、確定させる道をその場で示す（州の欄）。
+  const note = await lineNote(provRow);
   expect(note).toContain(avg);
   expect(note).toContain('weighted by population');
-  expect(note).toContain('Pick your province');
+  await expect(li.locator('.provpick')).toContainText('Pick your province');
 
   // 総額から抜けている費目の一覧に州税は載らない（抜けていないので）。
   for (const row of await readRanking(page)) {
@@ -195,19 +203,20 @@ test('Canada without a province still shows a provincial tax — as an estimate,
 
 test('picking Ontario turns the estimate into HST 13%, and Alberta into a real zero', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
   const before = (await readRanking(page))[0]!.total;
 
-  await page.getByLabel('Province').selectOption('ON');
+  await (await openRankRow(page, 0)).getByLabel('Province').selectOption('ON');
   await expect.poll(async () => (await readRanking(page))[0]!.total).not.toBe(before);
 
   const li = await openRankRow(page, 0);
   const prov = await rowCells(costRow(li, 'Provincial tax').first());
-  expect(prov[0]).toContain('Ontario');
-  // 原文の合計（HST 13%）をその場に書く。州の取り分 8% と連邦 5% の関係が読めないと、
-  // 二重に取られているように見える。
-  expect(prov[0]).toContain('13% together');
-  expect(prov[1]).not.toBe('—');
+  const provNote = await lineNote(costRow(li, 'Provincial tax').first());
+  expect(`${prov[0]} ${provNote}`).toContain('Ontario');
+  // 原文の合計（HST 13%）をその場（行の注釈）に書く。州の取り分 8% と連邦 5% の
+  // 関係が読めないと、二重に取られているように見える。
+  expect(provNote).toContain('13% together');
+  expect(prov[1]).not.toMatch(/^(—|not published)$/);
   const ontario = parseYen(prov[1]!);
   expect(ontario).toBeGreaterThan(0);
 
@@ -220,22 +229,22 @@ test('picking Ontario turns the estimate into HST 13%, and Alberta into a real z
   const cheapestTotal = async () =>
     (await readRanking(page)).find((r) => r.total != null)!.total!;
   const onTotal = await cheapestTotal();
-  await page.getByLabel('Province').selectOption('AB');
+  await (await openRankRow(page, 0)).getByLabel('Province').selectOption('AB');
   await expect.poll(cheapestTotal).toBeLessThan(onTotal);
-  const ab = await rowCells(costRow(await openRankRow(page, 0), 'Provincial tax').first());
-  expect(ab[1]).toBe('¥0');
-  expect(ab[0]).toContain('no provincial tax at the border');
+  const abRow = costRow(await openRankRow(page, 0), 'Provincial tax').first();
+  expect((await rowCells(abRow))[1]).toBe('¥0');
+  expect(await lineNote(abRow)).toContain('no provincial tax at the border');
 
   // ケベックは一番高い（QST 9.975%）。
-  await page.getByLabel('Province').selectOption('QC');
+  await (await openRankRow(page, 0)).getByLabel('Province').selectOption('QC');
   await expect.poll(cheapestTotal).toBeGreaterThan(onTotal);
-  const qc = await rowCells(costRow(await openRankRow(page, 0), 'Provincial tax').first());
-  expect(qc[0]).toContain(`${+(CA_PROVINCES.QC.rate * 100).toFixed(3)}%`);
+  const qcRow = costRow(await openRankRow(page, 0), 'Provincial tax').first();
+  expect(`${(await rowCells(qcRow))[0]} ${await lineNote(qcRow)}`).toContain(`${+(CA_PROVINCES.QC.rate * 100).toFixed(3)}%`);
 });
 
 test('the Canada Post handling fee is on the bill, per parcel, with its own figure', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
   // **F3是正（2026-09-12）で `'ems'` に固定した。**この手数料は Canada Post
   // 自身の窓口手数料で、宅配便（FedEx/UPS/DHL/ECMS）の荷物には構造的に立たない
   // （`src/lib/pricing/countries.ts` の `COUNTRIES.CA.clearanceCarrierScope`）。
@@ -245,28 +254,51 @@ test('the Canada Post handling fee is on the bill, per parcel, with its own figu
   await setMethod(page, 'ems');
 
   const li = await openRankRow(page, 0);
-  const fee = await rowCells(costRow(li, 'Customs clearance fee').first());
-  expect(fee[1]).not.toBe('—');
+  const feeRow = costRow(li, 'Customs clearance fee').first();
+  const fee = await rowCells(feeRow);
+  expect(fee[1]).not.toMatch(/^(—|not published)$/);
   expect(parseYen(fee[1]!)).toBeGreaterThan(0);
-  expect(fee[0]).toContain('CAD 9.95');
-  expect(fee[0]).toContain('Canada Post handling fee');
+  const note = `${fee[0]} ${await lineNote(feeRow)}`;
+  expect(note).toContain('CAD 9.95');
+  expect(note).toContain('Canada Post handling fee');
 });
 
 test('the province picker only exists for Canada, and choosing another country forgets it', async ({ page }) => {
   await gotoCompare(page);
-  // 米国では出ない。選べない欄を画面に残さない。
+  // 米国では出ない。選べない欄を画面に残さない（配達ログの中にも）。
   await expect(page.getByLabel('Province')).toHaveCount(0);
+  await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveCount(0);
+  await openRankRow(page, 0);
 
-  await shipTo(page, 'CA');
-  await page.getByLabel('Province').selectOption('QC');
-  await expect(page.getByLabel('Province')).toHaveValue('QC');
+  await goTo(page, 'CA');
+  await (await openRankRow(page, 0)).getByLabel('Province').selectOption('QC');
+  await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveValue('QC');
 
   // 別の国へ移すと欄ごと消え、戻ってきたときに選択は残っていない。
   // 残っていたら、選んだ覚えの無い率が確定値の顔で出ることになる。
-  await shipTo(page, 'GB');
+  await goTo(page, 'GB');
   await expect(page.getByLabel('Province')).toHaveCount(0);
-  await shipTo(page, 'CA');
-  await expect(page.getByLabel('Province')).toHaveValue('');
+  await goTo(page, 'CA');
+  await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveValue('');
+});
+
+test('the province picker fits a 390px phone — opening the 1st row never scrolls the page sideways', async ({ page }) => {
+  // 2026-09-15、統合チェックで再現: CA のカートで1位の行を開くと、配達ログの州の
+  // select（選択肢の文言が長い）が 416px に広がり、scrollWidth 542 > 390 で横スクロールが
+  // 出た。`compare.css` の `.provpick select` に幅の上限を置いたので、ここで固定する。
+  await page.setViewportSize({ width: 390, height: 844 });
+  await gotoCompare(page);
+  await goTo(page, 'CA');
+  const li = await openRankRow(page, 0);
+  const picker = li.getByLabel('Province');
+  await expect(picker).toBeVisible();
+  const r = await page.evaluate(() => ({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth,
+  }));
+  expect(r.scrollWidth, `scrollWidth ${r.scrollWidth} > ${r.clientWidth} with the province picker open`).toBeLessThanOrEqual(r.clientWidth);
+  const box = (await picker.boundingBox())!;
+  expect(box.x + box.width, '州の select が画面の右からはみ出している').toBeLessThanOrEqual(390 + 1);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -280,28 +312,31 @@ test('the US duty line says whether 12.5% is the rate or only a floor, and which
   // 既定のカートはフィギュア2点。重量表が figures と分類できるので、HTS 9503 を引いて
   // 「これが税率であって下限ではない」と言える。
   const li = await openRankRow(page, 0);
-  const duty = await rowCells(costRow(li, 'Duty').first());
-  expect(duty[0]).toContain('9503.00.00');
-  expect(duty[0]).toContain('not a floor');
+  const dutyRow = costRow(li, 'Duty').first();
+  const duty = await rowCells(dutyRow);
+  const note = await lineNote(dutyRow);
+  expect(note).toContain('9503.00.00');
+  expect(note).toContain('not a floor');
   expect(parseYen(duty[1]!)).toBeGreaterThan(0);
 
   // 靴を足すと、同じ 12.5% が「下限」に変わる。**額は変えない**——見出しを1つに
   // 決めるのは推測なので、変えられるのは言い方と確度だけ。
   await addByHand(page, 'sneaker casual', 12000);
-  const after = await rowCells(costRow(await openRankRow(page, 0), 'Duty').first());
-  expect(after[0]).toContain('only the floor');
-  expect(after[0]).toContain('chapter 64');
-  expect(after[0]).toContain('Your bill can be higher');
+  const afterRow = costRow(await openRankRow(page, 0), 'Duty').first();
+  const after = `${(await rowCells(afterRow))[0]} ${await lineNote(afterRow)}`;
+  expect(after).toContain('only the floor');
+  expect(after).toContain('chapter 64');
+  expect(after).toContain('Your bill can be higher');
 });
 
 test('Australia shows a published zero below A$1,000 and a real charge above it', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'AU');
+  await goTo(page, 'AU');
 
   // 既定の籠（¥17,000）は A$1,000 の下。**「—」ではなく ¥0**、理由つき。
-  const low = await rowCells(costRow(await openRankRow(page, 0), 'Customs clearance fee').first());
-  expect(low[1]).toBe('¥0');
-  expect(low[0]).toContain('no import declaration is required');
+  const lowRow = costRow(await openRankRow(page, 0), 'Customs clearance fee').first();
+  expect((await rowCells(lowRow))[1]).toBe('¥0');
+  expect(await lineNote(lowRow)).toContain('no import declaration is required');
 
   // A$1,000 を越える1点だけにすると、手数料が数字になる。
   // **1点にするのは意味がある**: 帯は郵便物1個ごとに決まるので、注文ごとに個口を割る行は
@@ -313,29 +348,33 @@ test('Australia shows a published zero below A$1,000 and a real charge above it'
     const c = await rowCells(costRow(await openRankRow(page, 0), 'Customs clearance fee').first());
     return c[1];
   }).not.toBe('¥0');
-  const high = await rowCells(costRow(await openRankRow(page, 0), 'Customs clearance fee').first());
-  expect(parseYen(high[1]!)).toBeGreaterThan(0);
-  expect(high[0]).toContain('AUD 98');
-  expect(high[0]).toContain('biosecurity');
+  const highRow = costRow(await openRankRow(page, 0), 'Customs clearance fee').first();
+  expect(parseYen((await rowCells(highRow))[1]!)).toBeGreaterThan(0);
+  const highNote = await lineNote(highRow);
+  expect(highNote).toContain('AUD 98');
+  expect(highNote).toContain('biosecurity');
 });
 
 test('a bottle bound for the UK puts the excise duty on the board as a dash, not silence', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'GB');
+  await goTo(page, 'GB');
   const EXCISE = /UK excise duty on alcohol/;
   // 酒が無いあいだはこの費目自体が無い。
   await expect(page.getByText(EXCISE)).toHaveCount(0);
 
   await addByHand(page, 'junmai sake 720ml', 5000);
-  // 順位のどの行にも「総額から抜けている費目」として名前が出る。
+  // 順位のどの行にも「総額から抜けている費目」として名前が出る（Mock `.exline`:
+  // 2件までは名前、3件以上は「+N unpriced」と注釈）。
   for (const row of await readRanking(page)) {
-    expect(row.text.toLowerCase(), row.name).toContain('uk excise duty on alcohol');
+    expect(row.text.toLowerCase(), row.name).toMatch(/uk excise duty on alcohol|\+\d+ unpriced/);
   }
-  // 内訳では「—」。**¥0 ではない。**
+  // 内訳では「not published」。**¥0 ではない。**
   const li = await openRankRow(page, 0);
-  const cells = await rowCells(costRow(li, EXCISE).first());
-  expect(cells[1]).toBe('—');
-  expect(cells[0]).toContain('at any value');
+  const exRow = costRow(li, EXCISE).first();
+  const cells = await rowCells(exRow);
+  expect(cells[1]).toBe('not published');
+  await expect(exRow).toHaveAttribute('data-tier', 'none');
+  expect(await lineNote(exRow)).toContain('at any value');
 });
 
 test('/sources publishes the tariff headings behind the 12.5%, category by category', async ({ page }) => {

@@ -128,8 +128,11 @@ test.describe('/sources — the fee, postage and tax tables', () => {
   test('it discloses that the ranking never looks at referrals', async ({ page }) => {
     await open(page, '/sources');
     const body = await page.locator('body').innerText();
-    expect(body).toMatch(/ranking is decided by total cost alone/i);
+    // /sources 本文（「decided by the total alone」）と FeeTable（「pays us nothing」）、
+    // フッターの開示（「No company pays us」）の3か所。2026-09-15 以降、全社契約なし。
+    expect(body).toMatch(/decided by the total alone/i);
     expect(body).toMatch(/pays us nothing/i);
+    expect(body).toMatch(/No company pays us/i);
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -187,7 +190,7 @@ test.describe('navigation between the calculator and its evidence', () => {
   test('the footer reaches every public page from anywhere', async ({ page }) => {
     for (const from of ['/', '/weights', '/sources', '/privacy']) {
       await open(page, from);
-      for (const name of [/Shipping weights/i, /Sources and method/i, /Privacy/i]) {
+      for (const name of [/^Weights$/i, /^Sources$/i, /^Privacy$/i]) {
         await expect(
           page.getByRole('contentinfo').getByRole('link', { name }),
           `${from} footer is missing a link`,

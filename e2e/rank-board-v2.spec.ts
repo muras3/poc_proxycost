@@ -22,27 +22,54 @@ test.describe('rank board v2 — closed row shape', () => {
   });
 
   test('a not-comparable row has no rank number and sits out of the rank column', async ({ page }) => {
-    // **既定カートの non-comparable 状態には依存しない**——実測で既定カート
-    // (US) は Neokyo も含めて全行 comparable になりうる（データ次第で動く）。
+    // **既定カートの non-comparable 状態には依存しない**——方式を DHL（`courier-dhl`）に
+    // 固定すると、米国ではその便を売る社だけが比べられ、他の社は「売っていない」
+    // として順位の外に置かれる（Mock v3 状態5「Method fixed」と同じ形）。
+    // **全行**を比べられなくすると盤そのものが「Can't compare」の枠に替わる
+    // （下のテスト）ので、ここでは混在する状態を作る。
+    await gotoCompare(page);
+    await page.getByLabel('Ship by').selectOption('courier-dhl');
+
+    await expect.poll(async () => {
+      const rows = await readRanking(page);
+      return rows.some((r) => r.comparable) && rows.some((r) => !r.comparable);
+    }).toBe(true);
+
+    const all = await readRanking(page);
+    for (const r of all) {
+      if (r.comparable) expect(r.shownRank, `${r.name}: comparable row must show a rank`).toBeGreaterThan(0);
+      else expect(r.shownRank, `${r.name}: not-comparable row must not show a rank number`).toBe(0);
+    }
+    // 比べられない行は比べられる行の後ろに並ぶ。
+    const firstNot = all.findIndex((r) => !r.comparable);
+    expect(all.slice(firstNot).every((r) => !r.comparable)).toBe(true);
+    // 理由は行の下の注記として出る（閉じた見出しの中ではなく）。
+    const rows = ranking(page).locator('li[data-row-id]');
+    for (let i = firstNot; i < all.length; i++) {
+      await expect(rows.nth(i).locator('.cav')).toContainText(/Not ranked:/);
+    }
+  });
+
+  test('when no row can be compared, the board gives way to a "Can\'t compare" panel that names each reason', async ({ page }) => {
     // e2e/compare.spec.ts のテスト18cと同じ手法で、方式の上限を超える重さの
-    // 品を足し、方式を「小形包装物」に固定して**確実に**全行 non-comparable
-    // にする。
+    // 品を足し、方式を「小形包装物」に固定して**確実に**全行 non-comparable にする。
     await gotoCompare(page);
     await addByHand(page, 'Heavy box for rank-column check', 8000);
+    await openCart(page);
     const heavy = weightBox(page, 'Heavy box for rank-column check');
     await heavy.fill('5000');
     await heavy.blur();
     await page.getByLabel('Ship by').selectOption('small-packet-air');
 
-    await expect.poll(async () => {
-      const rows = await readRanking(page);
-      return rows.length > 0 && rows.every((r) => !r.comparable);
-    }).toBe(true);
-
-    const all = await readRanking(page);
-    for (const r of all) {
-      expect(r.shownRank, `${r.name}: not-comparable row must not show a rank number`).toBe(0);
-    }
+    const panel = page.getByTestId('norank');
+    await expect(panel).toBeVisible();
+    await expect(panel).toContainText(/Can.t compare/);
+    // 盤は出ない——総額の無い行に順位・棒を描かない（Mock v3 状態7c）。
+    await expect(ranking(page)).toHaveCount(0);
+    await expect(page.getByTestId('total-bar')).toHaveCount(0);
+    await expect(page.getByTestId('arrival-bar')).toHaveCount(0);
+    // 社ごとの理由が1行ずつ並ぶ。
+    expect(await panel.locator('li[data-row-id]').count()).toBeGreaterThan(1);
   });
 
   test('total bar and arrival bar render for every comparable row, on a shared scale', async ({ page }) => {
@@ -53,7 +80,7 @@ test.describe('rank board v2 — closed row shape', () => {
     for (let i = 0; i < n; i++) {
       const row = rows.nth(i);
       const text = (await row.innerText()).replace(/\s+/g, ' ');
-      const comparable = !/NOT COMPARABLE/.test(text);
+      const comparable = !/NOT RANKED/.test(text);
       const totalBar = row.getByTestId('total-bar');
       const arrivalBar = row.getByTestId('arrival-bar');
       if (comparable) {
@@ -65,7 +92,8 @@ test.describe('rank board v2 — closed row shape', () => {
         // `arrival-bar` は常に1つ存在する（台帳、Fable レビュー: 以前はここが
         // テキストのみのフォールバックに落ちて棒が0本になっていた）。
         await expect(arrivalBar).toHaveCount(1);
-        await expect(arrivalBar.getByText('Ships by')).toBeVisible();
+        // 方式名は列の中に見える文字で（見出しは列頭の "Ships by / arrives"）。
+        await expect(arrivalBar).toHaveAttribute('aria-label', /^Ships by /);
       } else {
         // **比べられない行には総額バーも到着バーも出さない**——その方式では
         // そもそも送れないので、出すと「送れる」かのように見える。
@@ -73,30 +101,29 @@ test.describe('rank board v2 — closed row shape', () => {
         await expect(arrivalBar).toHaveCount(0);
       }
     }
-    // 共通スケールのコンテナ自体は全行同じ最大幅（max-w-[160px]）を使っている
+    // 共通スケールのコンテナ自体は全行同じ幅（Mock `.totbar` 112px）を使っている
     // ——描画された実幅がすべて同じであること（コンテナのCSSが行ごとに違わない）。
     const distinct = new Set(totalBarWidths.map((w) => Math.round(w)));
     expect(distinct.size, `total-bar widths differ across rows: ${[...distinct]}`).toBe(1);
   });
 
   test('a not-comparable row shows neither a total bar nor an arrival bar', async ({ page }) => {
-    // 上の「①not-comparable な行は順位番号なし」と同じ確実な手法で全行を
-    // non-comparable にし、バーが1本も出ないことを直接確認する。
+    // 上の「順位番号なし」と同じ混在状態（DHL 固定）で、比べられない行にだけ
+    // 棒が1本も出ないことを直接確認する。
     await gotoCompare(page);
-    await addByHand(page, 'Heavy box for no-bars check', 8000);
-    const heavy = weightBox(page, 'Heavy box for no-bars check');
-    await heavy.fill('5000');
-    await heavy.blur();
-    await page.getByLabel('Ship by').selectOption('small-packet-air');
+    await page.getByLabel('Ship by').selectOption('courier-dhl');
 
     const rows = ranking(page).locator('li[data-row-id]');
     await expect.poll(async () => {
       const list = await readRanking(page);
-      return list.length > 0 && list.every((r) => !r.comparable);
+      return list.some((r) => r.comparable) && list.some((r) => !r.comparable);
     }).toBe(true);
 
-    const n = await rows.count();
-    for (let i = 0; i < n; i++) {
+    const list = await readRanking(page);
+    for (let i = 0; i < list.length; i++) {
+      if (list[i]!.comparable) continue;
+      // **比べられない行には総額バーも到着バーも出さない**——その方式では
+      // そもそも送れないので、出すと「送れる」かのように見える。
       await expect(rows.nth(i).getByTestId('total-bar')).toHaveCount(0);
       await expect(rows.nth(i).getByTestId('arrival-bar')).toHaveCount(0);
     }
@@ -116,7 +143,9 @@ test.describe('rank board v2 — closed row shape', () => {
         await expect(openEnd).toBeVisible();
         const ob = await openEnd.boundingBox();
         expect(ob!.width, `row ${i}: open end must have a visible fixed length`).toBeGreaterThanOrEqual(12);
-        await expect(bar).toHaveAttribute('aria-label', /no upper bound/);
+        // 「以上」は総額の文字自身が言う（棒は aria-hidden の絵）。
+        await expect(rows.nth(i).getByTestId('row-total').locator('.tot'))
+          .toHaveAttribute('aria-label', /upper bound unknown/);
       }
     }
     expect(sawUnknown, 'expected at least one row with an unknown upper bound in the default cart')
@@ -125,28 +154,32 @@ test.describe('rank board v2 — closed row shape', () => {
 
   /**
    * 台帳（Fable レビュー）: 「到着の棒が EMS・小形包装物・宅配便でそれぞれ
-   * 描画される」。3方式それぞれを「Ship by」で明示的に選び、毎回すべての
-   * comparable 行に `arrival-bar` が出て、線種が期待どおりであることを確認する。
-   * 既定カート（`method: 'cheapest'`）の実測データの顔ぶれには依存しない。
+   * 描画される」。方式を「Ship by」で明示的に選び、毎回すべての comparable 行に
+   * `arrival-bar` が出て、線種が期待どおりであることを確認する。
+   *
+   * 線種は **`Row.days.minDays/maxDays`（構造化フィールド）だけ**で決まる——
+   * 文字列を正規表現で読まない。EMS の "a week or less" は一次情報だが日数の数字を
+   * 持たない（エンジンは週→日を換算しない）ので、棒は「数字が無い」点線になり、
+   * 公表された数字を持つ小形包装物（"10 days or less"）と航空小包（"12–26 days"）
+   * だけが実線の区間を持つ。既定カート（`method: 'cheapest'`）の実測データの
+   * 顔ぶれには依存しない。
    */
-  for (const [methodId, expectSolid, label, lightenCart] of [
-    ['ems', true, 'EMS ("a week or less" — UI 側の週→日換算で棒になる)', false],
-    // **小形包装物は2kg上限**（`postage.ts`）。既定カートの合計重量はこの上限
-    // ギリギリ／超え得るため（e2e/compare.spec.ts のテスト18cが8000gの品を
-    // わざわざ足して超過させているのと同じマスタ）、この方式だけはカートを
-    // 空にして軽い1点に絞り、上限とは無関係に comparable であることを保証する。
-    ['small-packet-air', true, 'Small packet (airmail) ("10 days or less")', true],
+  for (const [methodId, style, label] of [
+    ['ems', 'dotted', 'EMS ("a week or less" — no day figure, so no segment length)'],
+    ['small-packet-air', 'solid', 'Small packet (airmail) ("10 days or less")'],
+    ['parcel-air', 'solid', 'International parcel (air) ("12–26 days")'],
   ] as const) {
-    test(`arrival bar draws a numeric segment for ${label}`, async ({ page }) => {
+    test(`arrival bar draws the right line style for ${label}`, async ({ page }) => {
       await gotoCompare(page);
-      if (lightenCart) {
-        await emptyCart(page);
-        await addByHand(page, 'Light item for small-packet-air check', 1000);
-        // PR-C でカートは既定で畳まれる。重量欄に触る前に開く。
-        await openCart(page);
-        await weightBox(page, 'Light item for small-packet-air check').fill('300');
-        await weightBox(page, 'Light item for small-packet-air check').blur();
-      }
+      // **小形包装物は2kg上限**（`postage.ts`）。既定カートの合計重量はこの上限
+      // ギリギリ／超え得るため、カートを空にして軽い1点に絞り、上限とは無関係に
+      // comparable であることを保証する（他の2方式にも同じカートで揃える）。
+      await emptyCart(page);
+      await addByHand(page, 'Light item for arrival-bar check', 1000);
+      // PR-C でカートは既定で畳まれる。重量欄に触る前に開く。
+      await openCart(page);
+      await weightBox(page, 'Light item for arrival-bar check').fill('300');
+      await weightBox(page, 'Light item for arrival-bar check').blur();
       await page.getByLabel('Ship by').selectOption(methodId);
 
       const rows = ranking(page).locator('li[data-row-id]');
@@ -162,10 +195,20 @@ test.describe('rank board v2 — closed row shape', () => {
         if (!list[i]?.comparable) continue;
         const bar = rows.nth(i).getByTestId('arrival-bar');
         await expect(bar).toHaveCount(1);
-        await expect(bar).toHaveAttribute('data-published', expectSolid ? 'true' : 'false');
+        // **方式を固定すると全行が同じ方式なので、Ships by の列は畳まれる**（Mock v3
+        // `.board.uniform .c-ship{display:none}`——全行に同じ字を6回書かない）。棒の
+        // 中身（線種）は属性で読む。実際に描かれることは、方式が混ざる既定カートの
+        // テスト（上の「on a shared scale」）が見ている。
+        await expect(bar).toBeHidden();
+        // 日本郵便の日数は一次情報（`tier: 'fixed'`）——線種とは別の事実。
+        await expect(bar).toHaveAttribute('data-published', 'true');
         const segment = rows.nth(i).getByTestId('arrival-bar-segment');
-        const cls = (await segment.getAttribute('class')) ?? '';
-        expect(cls).toContain(expectSolid ? 'border-solid' : 'border-dotted');
+        await expect(segment).toHaveAttribute('data-style', style);
+        if (style === 'solid') {
+          // 実線の区間は物差しの一部分——全幅ではない（left/width は % で入る）。
+          const w = await segment.evaluate((e) => parseFloat((e as HTMLElement).style.width));
+          expect(w).toBeLessThan(100);
+        }
         sawSegment = true;
       }
       expect(sawSegment, `expected at least one comparable row to check for ${methodId}`).toBe(true);
@@ -193,7 +236,7 @@ test.describe('rank board v2 — closed row shape', () => {
       const bar = rows.nth(i).getByTestId('arrival-bar');
       await expect(bar).toHaveAttribute('data-published', 'false');
       const segment = rows.nth(i).getByTestId('arrival-bar-segment');
-      expect(await segment.getAttribute('class')).toContain('border-dotted');
+      await expect(segment).toHaveAttribute('data-style', 'dotted');
       // **生の "not yet modeled" は行に出ない**——方式名だけ見せる。
       await expect(rows.nth(i)).not.toContainText('not yet modeled');
       checked = true;
@@ -219,7 +262,7 @@ test.describe('rank board v2 — closed row shape', () => {
     }
   });
 
-  test('opening a row with a surface alternative shows its paragraph only inside the opened panel', async ({ page }) => {
+  test('opening a row with a surface alternative shows its line only inside the opened log', async ({ page }) => {
     await gotoCompare(page);
     const rows = ranking(page).locator('li[data-row-id]');
     const n = await rows.count();
@@ -233,7 +276,8 @@ test.describe('rank board v2 — closed row shape', () => {
       if ((await opened.count()) > 0) {
         checked = true;
         await expect(opened).toBeVisible();
-        expect(await opened.evaluate((el) => el.tagName)).toBe('P');
+        // 配達ログの中の1行（Export の段）——閉じた行の見出しには居ない。
+        await expect(opened).toHaveRole('row');
       }
       await openRankRow(page, i); // 閉じ直す（次の行のチェックを独立させる）
     }
@@ -267,13 +311,16 @@ test.describe('rank board v2 — Fable review shapes', () => {
     let sawFull = false;
     for (let i = 0; i < n; i++) {
       const bar = bars.nth(i);
-      const track = await bar.getByTestId('total-bar-track').boundingBox();
+      const whole = (await bar.boundingBox())!;
+      const track = (await bar.getByTestId('total-bar-track').boundingBox())!;
       const openEnd = bar.getByTestId('total-bar-open-end');
       await expect(openEnd).toBeVisible();
       const ob = (await openEnd.boundingBox())!;
       expect(ob.width).toBeGreaterThanOrEqual(12);
-      // 下限の位置に関係なく、点線は棒の右端より右まで途切れず見えている。
-      if (ob.x >= track!.x + track!.width - 1) sawFull = true;
+      // 下限の位置に関係なく、開いた終端は棒の右端まで途切れず届いている（右へ消える）。
+      expect(ob.x + ob.width).toBeGreaterThanOrEqual(whole.x + whole.width - 1);
+      // 下限が物差しの 100% に居る行でも、開いた終端は同じ長さで見えている。
+      if (track.width >= whole.width - 1) sawFull = true;
     }
     expect(sawFull, 'expected a low=100% upper-unknown row (US EMS Jauce)').toBe(true);
   });
@@ -290,7 +337,9 @@ test.describe('rank board v2 — Fable review shapes', () => {
       const labels = await ranking(page).getByTestId('arrival-bar').allInnerTexts();
       expect(labels.some((l) => l.length > 30), `expected a long method name: ${labels}`).toBe(true);
       expect(new Set(xs).size, `total-bar left x differs: ${xs}`).toBe(1);
-      expect(new Set(arrivals).size, `arrival-bar left x differs: ${arrivals}`).toBe(1);
+      // 到着の棒は desktop では自分の列を持つので左端が揃う。狭い幅では Mock v3 の
+      // とおり方式名の右に並ぶ（`.c-ship{flex-direction:row}`）ので、行ごとに位置が違う。
+      if (width >= 760) expect(new Set(arrivals).size, `arrival-bar left x differs: ${arrivals}`).toBe(1);
     });
   }
 
@@ -304,30 +353,30 @@ test.describe('rank board v2 — Fable review shapes', () => {
     await weightBox(page, 'Light item for end-shape check').blur();
     const shipBy = page.getByLabel('Ship by');
 
+    // 方式を固定すると Ships by の列は畳まれる（Mock `.board.uniform`）ので、形は属性で読む。
+    // 追跡なし ＝ 棒の終端に開いた赤い輪（Mock `.daybar .ring`）。
     await shipBy.selectOption('small-packet-air');
     const untracked = ranking(page).locator('[data-testid="arrival-bar"][data-tracked="false"]').first();
-    await expect(untracked).toBeVisible();
+    await expect(untracked).toHaveCount(1);
     const ring = untracked.locator('[data-testid="arrival-bar-end"]');
     await expect(ring).toHaveAttribute('data-end', 'untracked');
-    await expect(ring).toBeVisible();
-    const ringRadius = await ring.evaluate((e) => getComputedStyle(e).borderRadius);
-    await expect(untracked.getByRole('img')).toHaveAttribute('aria-label', /untracked/);
+    expect(await ring.evaluate((e) => getComputedStyle(e).borderRadius)).toBe('50%');
+    await expect(untracked).toHaveAttribute('aria-label', /untracked/);
 
+    // 未公表 ＝ 長さの無い点線。輪は付かない（追跡の有無とは別の事実）。
     await shipBy.selectOption('courier-ups');
     const unpub = ranking(page).locator('[data-testid="arrival-bar"][data-published="false"]').first();
-    await expect(unpub).toBeVisible();
-    const end = unpub.locator('[data-testid="arrival-bar-end"]');
-    await expect(end).toHaveAttribute('data-end', 'unpublished');
-    expect(await unpub.getByTestId('arrival-bar-segment').getAttribute('class')).toContain('border-dotted');
-    await expect(unpub.getByRole('img')).toHaveAttribute('aria-label', /not published/);
-    const endRadius = await end.evaluate((e) => getComputedStyle(e).borderRadius);
-    expect(endRadius).not.toBe(ringRadius);
+    await expect(unpub).toHaveCount(1);
+    await expect(unpub.locator('[data-testid="arrival-bar-end"]')).toHaveCount(0);
+    await expect(unpub.getByTestId('arrival-bar-segment')).toHaveAttribute('data-style', 'dotted');
+    await expect(unpub).toHaveAttribute('aria-label', /not published/);
   });
 
   test('opened row shows the raw arrival text in the international shipping line', async ({ page }) => {
     await gotoCompare(page);
     await page.getByLabel('Ship by').selectOption('ems');
     await openRankRow(page, 0);
-    await expect(ranking(page).getByTestId('intl-days').first()).toContainText('a week or less');
+    // 配達ログの国際送料の行の下に、方式名・日数の原文・追跡の有無が1行で出る。
+    await expect(ranking(page).getByTestId('intl-line-note').first()).toContainText('a week or less');
   });
 });
