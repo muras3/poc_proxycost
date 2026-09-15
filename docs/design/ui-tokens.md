@@ -13,13 +13,17 @@ PR-A（このPR）が `src/app/globals.css` に定義した。PR-B（順位ボ�
 | `--color-ink` | `#1B1A17` | 本文の文字色 |
 | `--color-ink-2` | `#5B574E` | 補助文字（Mock の `--ink2`。注記・ラベル・薄い罫線寄りの文字） |
 | `--color-rule` | `rgba(27, 26, 23, 0.28)` | 罫線（Mock の `--hair`）。`rgba` なのでそのまま `border-rule` 等で使う。Tailwind の不透明度修飾子（`border-rule/50` 等）とは合成できない前提で扱うこと |
-| `--color-post-red` | `#D7261E` | アクセント（警告・ロゴの一部・注意喚起） |
+| `--color-post-red` | `#B9201A` | アクセント（警告・1位の順位番号・「1ST」・ゴム印・`!`）。Mock の `#D7261E` は紙の上で 4.1:1 しかなく、11〜16px の文字（ゴム印・順位番号）で AA を割る（axe 実測）ので1段暗くした（5.5:1）。`src/app/compare.css` の `--red` も同じ値 |
 | `--color-post-blue` | `#2B3A8C` | アクセント（リンク・強調数値。Mock の `--indigo`） |
 | `--color-ad-bg` | `#DEDEDE` | 広告枠のフラットな灰。紙（paper/paper-2）と明確に区別するための専用トークン |
 
 Tailwind のユーティリティは `bg-paper` / `text-ink` / `border-rule` のように使える（`@theme` の `--color-*` は自動的に `bg-*`/`text-*`/`border-*` などを生成する）。
 
 **既存のトークン（emerald/amber 等、tier の色。`src/lib/ui/tiers.tsx` 等が Tailwind デフォルトパレットを直接使っている）は消していない。** B・C がそれぞれ自分の担当箇所で置き換える。
+
+## Mock v3 の CSS 変数（`src/app/compare.css` の `:root`）
+
+比較画面は Mock v3 の CSS を丸ごと `src/app/compare.css` に移しており、そこでは Mock と同じ名前の変数を使う: `--paper` `--paper2` `--ink` `--ink2` `--hair` `--red` `--indigo` `--kraft` `--ad-bg` `--ad-line` `--ad-ink` `--serif` `--mono` `--sans` `--jp`。値は上の `--color-*` と同じ（`--red` だけ上記のとおり暗い）。**compare.css の各部品の節（board / cart / log …）はその部品の担当が持つ。**ページ枠（`.app` `.mast` `footer` `.waybill` `.heft` `.summary` `.cond` `.iconband` `.adzone` `.empty` `.norank` `details.fold`）は ui-mock-port が持つ。
 
 ## フォント（`@theme inline` の `--font-*`）
 

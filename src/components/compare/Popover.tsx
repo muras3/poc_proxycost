@@ -129,10 +129,10 @@ export function NoteButton({
 
 /** `.mk`（§）の短縮形。Mock の `mk(title, body, text, cls)`。 */
 export function Mark({
-  title, body, text = '§', q = false, testId,
-}: { title: string; body: ReactNode; text?: string; q?: boolean; testId?: string }) {
+  title, body, text = '§', q = false, testId, label,
+}: { title: string; body: ReactNode; text?: string; q?: boolean; testId?: string; label?: string }) {
   return (
-    <NoteButton title={title} body={body} className={q ? 'mk q' : 'mk'} testId={testId}>
+    <NoteButton title={title} body={body} label={label} className={q ? 'mk q' : 'mk'} testId={testId}>
       {text}
     </NoteButton>
   );

@@ -5,10 +5,11 @@ import { flushSync } from 'react-dom';
 import { AdSlot } from '@/components/chrome/AdSlot';
 import { courierMethodAvailable } from '@/lib/pricing/postage';
 import { COUNTRIES } from '@/lib/pricing/countries';
-import type { CountryCode, Item, ProvinceCode } from '@/lib/pricing/types';
+import type { CompareResult, CountryCode, Item, Line, ProvinceCode } from '@/lib/pricing/types';
 import { AddBar } from './AddBar';
 import { Cart, weightInputId } from './Cart';
 import { CostTable } from './CostTable';
+import { EmsOnlyNote } from './EmsOnlyNote';
 import { Heft } from './Heft';
 import { PopoverProvider } from './Popover';
 import { Results } from './Results';
@@ -88,6 +89,7 @@ export function Calculator() {
         items={items}
         cartOpen={cartOpen}
         provinceLine={provinceLine}
+        scopeNote={priced.length > 0 ? <EmsOnlyNote result={result} country={country} /> : null}
         onCountry={setCountry}
         onProvince={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
         onStorageDays={(d) => dispatch({ type: 'storageDays', storageDays: d })}
@@ -127,19 +129,50 @@ export function Calculator() {
         open={cartOpen}
         onToggle={toggleCart}
         onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
-        onRemove={(id: string) => dispatch({ type: 'remove', id })}
+        onRemove={(id: string) => {
+          dispatch({ type: 'remove', id });
+          if (items.length <= 1) setCartOpen(false); // 空になったら「編集中」を残さない
+        }}
         onFocusWeight={focusWeight}
       />
 
       {priced.length > 0 && result.rows.some((r) => r.comparable) && (
-        <div id="folds">
-          <CostTable result={result} />
-          <WhatCouldBeOff result={result} />
-        </div>
+        <Folds result={result} />
       )}
 
       {priced.length > 0 && result.rows.some((r) => r.comparable) && <AdSlot />}
     </PopoverProvider>
+  );
+}
+
+/**
+ * 折りたたみ2つ（Mock v3 `details.fold`）。既定は閉じていて、見出しと件数だけが見える。
+ * 中身（表・一覧）は `CostTable` / `WhatCouldBeOff` のもの。件数は行の費目から数える。
+ */
+function Folds({ result }: { result: CompareResult }) {
+  const rows = result.rows;
+  const keys = new Set<string>();
+  for (const r of rows) for (const l of r.lines) keys.add(l.key);
+  const comparable = rows.filter((r) => r.comparable).flatMap((r) => r.lines);
+  const uniq = (f: (l: Line) => boolean) => new Set(comparable.filter(f).map((l) => l.label)).size;
+  const offCount = uniq((l) => l.tier === 'estimate') + uniq((l) => l.tier === 'unverified') + uniq((l) => l.amount == null);
+  return (
+    <div id="folds">
+      <details className="fold" id="all-fees">
+        <summary data-testid="breakdown-toggle">
+          <h2>All fees, side by side</h2>
+          <span className="lbl">{keys.size} fees × {rows.length} rows</span>
+        </summary>
+        <CostTable result={result} />
+      </details>
+      <details className="fold" id="what-could-be-off">
+        <summary>
+          <h2>What could be off</h2>
+          <span className="lbl">{offCount} fees</span>
+        </summary>
+        <WhatCouldBeOff result={result} />
+      </details>
+    </div>
   );
 }
 

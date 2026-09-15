@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { COUNTRIES, CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE, PROVINCE_CODES } from '@/lib/pricing/countries';
 import { COURIER_METHODS, POSTAL_METHODS, courierMethodAvailable } from '@/lib/pricing/postage';
 import type {
@@ -18,7 +18,7 @@ const COUNTRY_ORDER: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
  * **数値・順位は一切動かさない**——値を親へ返すだけ。
  */
 export function Waybill({
-  country, province, storageDays, method, items, cartOpen, provinceLine,
+  country, province, storageDays, method, items, cartOpen, provinceLine, scopeNote,
   onCountry, onProvince, onStorageDays, onMethod, onCartToggle,
 }: {
   country: CountryCode;
@@ -29,6 +29,8 @@ export function Waybill({
   cartOpen: boolean;
   /** 1位の行の `province-tax` の費目（州未選択の注釈に、今入っている額を出す）。 */
   provinceLine: Line | null;
+  /** 「Ship by §」の注釈に足す、比べている範囲の開示（`EmsOnlyNote`）。 */
+  scopeNote?: ReactNode;
   onCountry: (c: CountryCode) => void;
   onProvince: (p: ProvinceCode | null) => void;
   onStorageDays: (d: number) => void;
@@ -51,12 +53,6 @@ export function Waybill({
   const countryName = COUNTRIES[country].name;
   const avg = `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%`;
   const courierCount = COURIER_METHODS.filter((m) => courierMethodAvailable(m.id, country)).length;
-  const methodLabel = (id: MethodChoice) => {
-    if (id === 'cheapest') return 'Cheapest that fits — per service';
-    const m = POSTAL_METHODS.find((x) => x.id === id) ?? COURIER_METHODS.find((x) => x.id === id);
-    return m?.label ?? id;
-  };
-  void methodLabel;
 
   return (
     <section className="waybill" id="waybill" aria-label="Conditions" data-testid="conditions-bar">
@@ -66,6 +62,7 @@ export function Waybill({
           {country === 'CA' && !province && (
             <Mark
               title="Province not chosen"
+              label="About: the tax used until you pick one"
               body={(
                 <>
                   <p>Canada charges a different provincial tax by province. Until you pick one we use a population-weighted average ({avg}), marked as our estimate.</p>
@@ -119,7 +116,7 @@ export function Waybill({
             id="wPlace"
             aria-expanded={false}
             aria-describedby="wPlaceL"
-            aria-label={`Ship to: ${countryName}${country === 'CA' ? (province ? `, ${CA_PROVINCES[province].name}` : ', province not chosen') : ''}`}
+            aria-label={`Destination: ${countryName}${country === 'CA' ? (province ? `, ${CA_PROVINCES[province].name}` : ', province not chosen') : ''}`}
             onClick={() => { setPlaceOpen(true); setFocusId('wCountry'); }}
           >
             {countryName}
@@ -168,6 +165,7 @@ export function Waybill({
               <>
                 <p>&ldquo;Cheapest that fits&rdquo; picks, for each service, the cheapest method that can carry this parcel — so rows may use different methods. Surface mail (1–3 months) is never picked; it&rsquo;s shown inside each row instead.</p>
                 <p>Priced here: {POSTAL_METHODS.length} Japan Post methods and {courierCount} courier services for {countryName}. We never check a parcel&rsquo;s size, and an oversize one is refused however light.</p>
+                {scopeNote}
               </>
             )}
           />

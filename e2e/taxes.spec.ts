@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   addByHand, costRow, emptyCart, gotoCompare, lineNote, openRankRow, parseYen, rankButtons,
-  readRanking, rowCells, setCountry, setMethod,
+  readRanking, rowCells, setMethod, shipTo,
 } from './helpers';
 import { CA_PROVINCES, CA_PROVINCE_AVERAGE_RATE } from '../src/lib/pricing/countries';
 import {
@@ -17,10 +17,10 @@ import {
 const PREPAY = 'US import prepayment (Zonos) fee — not published';
 const CHECKOUT_GST = 'GST collected at checkout';
 
-async function shipTo(page: Page, code: string): Promise<void> {
+async function goTo(page: Page, code: string): Promise<void> {
   const first = (await readRanking(page))[0]!;
   const before = { total: first.total, name: first.name, variant: first.variant };
-  await setCountry(page, code);
+  await shipTo(page, code);
   // 行き先が変われば EMS の地帯も税も変わる。総額が動くまで待つ。
   // **総額だけでは見ない。**画面の総額は ¥100 丸めなので、別の国の別の社の
   // 総額と偶然同じ丸め値になることがある（実測: 米国既定の ZenMarket
@@ -96,7 +96,7 @@ test('the US board admits the Zonos prepayment fee on postal rows; courier rows 
 
 test('Australia shows the checkout GST every service publishes', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'AU');
+  await goTo(page, 'AU');
 
   // 5社とも自社ページで徴収を明記しているので、どの行にも金額が出る。
   const n = await rankButtons(page).count();
@@ -118,7 +118,7 @@ test('Australia shows the checkout GST every service publishes', async ({ page }
 
 test('Singapore: every service carries a number — confirmed as published, the rest as an estimate', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'SG');
+  await goTo(page, 'SG');
 
   // **以前ここは「確認できない社は —」だった。それは誤りだった。**
   // 確認できていないのは「**誰が**集めるか」であって「いくら払うか」ではない。
@@ -171,7 +171,7 @@ async function amountOf(page: Page, label: string | RegExp): Promise<string> {
 
 test('Canada without a province still shows a provincial tax — as an estimate, never a dash', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
 
   // 既定は未選択。州の欄は配達ログの州税の行の下に居て（Mock `.provpick`）、
   // 未選択の選択肢が我々の当てている率を名乗る。
@@ -203,7 +203,7 @@ test('Canada without a province still shows a provincial tax — as an estimate,
 
 test('picking Ontario turns the estimate into HST 13%, and Alberta into a real zero', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
   const before = (await readRanking(page))[0]!.total;
 
   await (await openRankRow(page, 0)).getByLabel('Province').selectOption('ON');
@@ -244,7 +244,7 @@ test('picking Ontario turns the estimate into HST 13%, and Alberta into a real z
 
 test('the Canada Post handling fee is on the bill, per parcel, with its own figure', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
   // **F3是正（2026-09-12）で `'ems'` に固定した。**この手数料は Canada Post
   // 自身の窓口手数料で、宅配便（FedEx/UPS/DHL/ECMS）の荷物には構造的に立たない
   // （`src/lib/pricing/countries.ts` の `COUNTRIES.CA.clearanceCarrierScope`）。
@@ -270,15 +270,15 @@ test('the province picker only exists for Canada, and choosing another country f
   await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveCount(0);
   await openRankRow(page, 0);
 
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
   await (await openRankRow(page, 0)).getByLabel('Province').selectOption('QC');
   await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveValue('QC');
 
   // 別の国へ移すと欄ごと消え、戻ってきたときに選択は残っていない。
   // 残っていたら、選んだ覚えの無い率が確定値の顔で出ることになる。
-  await shipTo(page, 'GB');
+  await goTo(page, 'GB');
   await expect(page.getByLabel('Province')).toHaveCount(0);
-  await shipTo(page, 'CA');
+  await goTo(page, 'CA');
   await expect((await openRankRow(page, 0)).getByLabel('Province')).toHaveValue('');
 });
 
@@ -312,7 +312,7 @@ test('the US duty line says whether 12.5% is the rate or only a floor, and which
 
 test('Australia shows a published zero below A$1,000 and a real charge above it', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'AU');
+  await goTo(page, 'AU');
 
   // 既定の籠（¥17,000）は A$1,000 の下。**「—」ではなく ¥0**、理由つき。
   const lowRow = costRow(await openRankRow(page, 0), 'Customs clearance fee').first();
@@ -338,7 +338,7 @@ test('Australia shows a published zero below A$1,000 and a real charge above it'
 
 test('a bottle bound for the UK puts the excise duty on the board as a dash, not silence', async ({ page }) => {
   await gotoCompare(page);
-  await shipTo(page, 'GB');
+  await goTo(page, 'GB');
   const EXCISE = /UK excise duty on alcohol/;
   // 酒が無いあいだはこの費目自体が無い。
   await expect(page.getByText(EXCISE)).toHaveCount(0);

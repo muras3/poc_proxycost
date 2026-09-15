@@ -14,7 +14,7 @@ export function SiteHeader() {
           proxy<i>cost</i>
         </Link>
       </h1>
-      <nav aria-label="Site">
+      <nav aria-label="Primary">
         <Link href="/weights">Weights</Link>
         <Link href="/sources">Sources</Link>
       </nav>

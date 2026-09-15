@@ -96,8 +96,7 @@ export function Cart({
     </div>
   );
 
-  // **仮置き重量の開示は畳んでいても出す。**Mock は開いたときだけ出していたが、
-  // 「開かないと読めない開示は開示ではない」（e2e/assumed-weights.spec.ts の約束）を優先する。
+  // 仮置き重量の1行（Mock v3 と同じく、カートを開いたときだけ。畳んだ行には決め手の品の赤い点が出る）。
   const assumedCond = assumed.length > 0 && (
     <p
       className="cond"
@@ -125,7 +124,6 @@ export function Cart({
     return (
       <section id="cart" aria-label="Cart">
         {line}
-        {assumedCond}
         {d && s && (
           <p className="cond" style={{ borderTop: 0, paddingTop: 2 }} data-testid="cart-decisive-mark">
             <span className="hotdot" aria-hidden="true" />

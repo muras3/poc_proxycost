@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
-  addByHand, emptyCart, gotoCompare, openCart, openRankRow, readRanking, setCountry, weightBox,
+  addByHand, emptyCart, gotoCompare, openCart, openRankRow, readRanking, shipTo, weightBox,
 } from './helpers';
 
 /**
@@ -63,7 +63,7 @@ async function perListingCart(page: Page): Promise<void> {
 /** DE・2点×15,000g・price 1,000/2,000円。最安 = zenmarket、2箱、weight-limit。 */
 async function weightLimitCart(page: Page): Promise<void> {
   await gotoCompare(page);
-  await setCountry(page, 'DE');
+  await shipTo(page, 'DE');
   await emptyCart(page);
   await addByHand(page, 'Heavy A', 1000);
   await openCart(page);
