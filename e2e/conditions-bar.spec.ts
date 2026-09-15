@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
-  addByHand, cart, gotoCompare, openCart,
+  addByHand, cart, gotoCompare, isCollapsed, openCart,
 } from './helpers';
 
 /**
@@ -103,4 +103,38 @@ test('the two always-on icons open with a click and with the keyboard', async ({
   await expect(fuelRemote).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('remote-area-surcharge-note')).toBeVisible();
+});
+
+test('the scale shows a weight/box/service summary and sinks with weight', async ({ page }) => {
+  await gotoCompare(page);
+  const scale = page.getByTestId('scale');
+  await expect(scale).toBeVisible();
+  await expect(page.getByTestId('scale-summary')).toContainText(/in \d+ box/);
+
+  const before = await page.getByTestId('scale-platform').evaluate(
+    (el) => getComputedStyle(el).transform,
+  );
+  // 重量を大きく増やすと台の沈み（translateY）が変わる。
+  await openCart(page);
+  const w = page.locator('input[aria-label^="Weight in grams of"]').first();
+  await w.fill('18000');
+  await w.blur();
+  await expect
+    .poll(async () => page.getByTestId('scale-platform').evaluate((el) => getComputedStyle(el).transform))
+    .not.toBe(before);
+});
+
+test('the lithium-airmail badge is always visible for GB/DE and absent elsewhere', async ({ page }) => {
+  await gotoCompare(page);
+  await expect(page.getByTestId('lithium-airmail-badge')).toHaveCount(0);
+
+  await page.getByLabel('Ship to').selectOption('GB');
+  const badge = page.getByTestId('lithium-airmail-badge');
+  await expect(badge).toBeVisible();
+  await expect(badge).toContainText('Li-ion: no airmail');
+  // 常時表示——アイコンを何も押さなくても読める。
+  expect(await isCollapsed(badge)).toBe(false);
+
+  await page.getByLabel('Ship to').selectOption('US');
+  await expect(page.getByTestId('lithium-airmail-badge')).toHaveCount(0);
 });

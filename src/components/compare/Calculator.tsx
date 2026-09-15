@@ -13,8 +13,10 @@ import { CostTable } from './CostTable';
 import { EmsOnlyNote } from './EmsOnlyNote';
 import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
 import { ItemList, type ItemListHandle } from './ItemList';
+import { LithiumAirmailBadge } from './LithiumAirmailBadge';
 import { ParcelView } from './ParcelView';
 import { RankBoard, Summary } from './RankBoard';
+import { Scale } from './Scale';
 import { AlcoholInCartNote, LongItemsInCartNote } from './RestrictedGoodsNote';
 import { StabilityNote } from './StabilityNote';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
@@ -95,13 +97,31 @@ export function Calculator() {
         onEditCart={() => cart.current?.openCart()}
       />
 
-      {/* 秤（`ParcelView`）。1位の箱が実際に計算された個口をそのまま描く
-          ——複数の行を混ぜて1つの絵にはしない。 */}
+      {/* **リチウム電池の航空郵便可否（監査 #83）は常時表示。**`AlwaysOnIcons` の
+          `<details>` に隠さない——「送れるかが変わる」段1の事実は畳んだ場所に
+          置かない、という T27/EmsOnlyNote と同じ規律。`destinationFacts` は
+          `compare()` が国だけで決めた値をそのまま読む（文字列判定はしない）。 */}
+      <LithiumAirmailBadge result={result} country={country} className="mt-2" />
+
+      {/* 秤（mock-v3 `#heft`）。常時見える小さな部品——1位の実際の箱が
+          乗って重いほど沈み、`x kg in N boxes · SERVICE` を言う。 */}
+      <Scale
+        items={priced}
+        sensitivity={result.weightSensitivity}
+        row={result.rows.find((r) => r.cheapest) ?? null}
+      />
+
+      {/* 箱の3D絵（`ParcelView`）。**秤（`Scale`）が常時の要約を持つようになった
+          ぶん、絵そのものは狭い画面で小さく描く**（2026-09-15、コーディネーター
+          指摘: [mobile] で秤・条件欄と合わせて順位表を最初の画面から押し出した
+          実測）。`PackingBox` は自分の器の `clientWidth` に合わせて自動で縮む
+          （`boxScale()`）ので、器を狭めるだけで済む——中身・文言・数値は
+          一切変えていない。開閉は無い（既存の e2e が畳まず前提で読んでいる）。 */}
       <ParcelView
         items={priced}
         country={country}
         row={result.rows.find((r) => r.cheapest) ?? null}
-        className="mt-3"
+        className="mt-3 mx-auto max-w-[320px] sm:mx-0 sm:max-w-none"
       />
 
       {empty ? (
