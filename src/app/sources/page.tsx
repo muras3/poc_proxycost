@@ -309,7 +309,7 @@ export default function SourcesPage() {
           heading per item would need the material, the construction and the price per pair, and we
           have none of those.
         </p>
-        <div className="mt-3 max-w-3xl overflow-x-auto">
+        <div className="mt-3 max-w-3xl overflow-x-auto" tabIndex={0} role="region" aria-label="US tariff headings checked for each category">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">US tariff headings checked for each category</caption>
             <thead>
@@ -369,7 +369,7 @@ export default function SourcesPage() {
           by population, drawn as an estimate — because a provincial tax certainly happens, and
           dropping a line that certainly happens is a bigger error than estimating it.
         </p>
-        <div className="mt-3 max-w-3xl overflow-x-auto">
+        <div className="mt-3 max-w-3xl overflow-x-auto" tabIndex={0} role="region" aria-label="Provincial tax collected by the CBSA on imports">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">Provincial tax collected by the CBSA on imports</caption>
             <thead>

@@ -15,7 +15,12 @@ function countriesInZone(zone: number): string[] {
 export function EmsTable() {
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div
+        className="overflow-x-auto"
+        tabIndex={0}
+        role="region"
+        aria-label={`EMS prices from Japan, all ${EMS_TABLE.length} weight steps by zone`}
+      >
         <table className="w-full min-w-[22rem] border-collapse text-[11px] sm:text-xs">
           <caption className="sr-only">
             EMS prices from Japan, all {EMS_TABLE.length} weight steps by zone

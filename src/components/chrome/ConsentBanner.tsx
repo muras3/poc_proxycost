@@ -57,10 +57,10 @@ export function ConsentBanner() {
     <div
       role="dialog"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-neutral-200 bg-white/95 p-4 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-paper/95 p-4 backdrop-blur"
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-neutral-700 dark:text-neutral-300">
+        <p className="text-ink-2">
           We show ads below the results. Ads may set cookies. Nothing is set until you
           choose. The calculator itself works either way and stores nothing about you.
         </p>
@@ -68,14 +68,14 @@ export function ConsentBanner() {
           <button
             type="button"
             onClick={() => setConsent('denied')}
-            className="rounded border border-neutral-300 px-3 py-1.5 dark:border-neutral-700"
+            className="rounded border border-ink-2 px-3 py-1.5 text-ink"
           >
             Reject
           </button>
           <button
             type="button"
             onClick={() => setConsent('granted')}
-            className="rounded bg-neutral-900 px-3 py-1.5 text-white dark:bg-neutral-100 dark:text-neutral-900"
+            className="rounded bg-ink px-3 py-1.5 text-paper"
           >
             Accept
           </button>
