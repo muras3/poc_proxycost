@@ -33,12 +33,15 @@ export function ArrivalBar({
   const label = methodLabel(method);
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div
+      data-testid="arrival-bar"
+      data-published={published ? 'true' : 'false'}
+      data-tracked={days.tracked ? 'true' : 'false'}
+      className="flex flex-col gap-0.5"
+    >
       <span className="text-xs text-neutral-500">Ships by {label}</span>
       <div
-        data-testid="arrival-bar"
-        data-published={published ? 'true' : 'false'}
-        data-tracked={days.tracked ? 'true' : 'false'}
+        data-testid="arrival-bar-track"
         className="relative h-1.5 w-full max-w-[160px] rounded-full bg-neutral-200 dark:bg-neutral-800"
       >
         <div

@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
-import { addByHand, gotoCompare, openRankRow, ranking, readRanking, weightBox } from './helpers';
+import {
+  addByHand, emptyCart, gotoCompare, openRankRow, ranking, readRanking, weightBox,
+} from './helpers';
 
 /**
  * PR-B（順位ボードと配達ログ）の担当範囲だけを縛る e2e。
@@ -123,12 +125,22 @@ test.describe('rank board v2 — closed row shape', () => {
    * comparable 行に `arrival-bar` が出て、線種が期待どおりであることを確認する。
    * 既定カート（`method: 'cheapest'`）の実測データの顔ぶれには依存しない。
    */
-  for (const [methodId, expectSolid, label] of [
-    ['ems', true, 'EMS ("a week or less" — UI 側の週→日換算で棒になる)'],
-    ['small-packet-air', true, 'Small packet (airmail) ("10 days or less")'],
+  for (const [methodId, expectSolid, label, lightenCart] of [
+    ['ems', true, 'EMS ("a week or less" — UI 側の週→日換算で棒になる)', false],
+    // **小形包装物は2kg上限**（`postage.ts`）。既定カートの合計重量はこの上限
+    // ギリギリ／超え得るため（e2e/compare.spec.ts のテスト18cが8000gの品を
+    // わざわざ足して超過させているのと同じマスタ）、この方式だけはカートを
+    // 空にして軽い1点に絞り、上限とは無関係に comparable であることを保証する。
+    ['small-packet-air', true, 'Small packet (airmail) ("10 days or less")', true],
   ] as const) {
     test(`arrival bar draws a numeric segment for ${label}`, async ({ page }) => {
       await gotoCompare(page);
+      if (lightenCart) {
+        await emptyCart(page);
+        await addByHand(page, 'Light item for small-packet-air check', 1000);
+        await weightBox(page, 'Light item for small-packet-air check').fill('300');
+        await weightBox(page, 'Light item for small-packet-air check').blur();
+      }
       await page.getByLabel('Ship by').selectOption(methodId);
 
       const rows = ranking(page).locator('li[data-row-id]');
