@@ -17,7 +17,7 @@ const bigShoulders = Big_Shoulders({
 // IBM Plex Sans JP はセルフホストしない ── 和文サブセットをバンドルに乗せるコストを避ける。
 const publicSans = Public_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   variable: '--font-public-sans',
   display: 'swap',
 });
@@ -43,10 +43,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       className={`${bigShoulders.variable} ${publicSans.variable} ${splineMono.variable}`}
     >
-      <body className="min-h-dvh bg-paper text-ink font-sans antialiased">
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-6xl px-4 pb-16">{children}</main>
-        <SiteFooter />
+      {/* `.app` は Mock v3 の外枠（最大幅 1120px・container query の基準）。
+          マストヘッド・本文・フッターを同じ枠に入れる。 */}
+      <body className="min-h-dvh bg-paper text-ink antialiased">
+        <div className="app">
+          <SiteHeader />
+          <main>{children}</main>
+          <SiteFooter />
+        </div>
         <ConsentBanner />
       </body>
     </html>

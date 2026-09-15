@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { addByHand } from './helpers';
+import { addByHand, cart, openCart,
+} from './helpers';
 
 // アクセシビリティは「気をつける」では守れないので機械で固定する。
 // 実際、最初にかけた時点で contrast 違反が serious 7件出た
@@ -38,12 +39,13 @@ test('the ranking is reachable and operable by keyboard alone', async ({ page },
 
   // Tab で順位の行まで到達し、Enter で内訳が開けること。
   // マウスでしか開けない内訳は、内訳が無いのと同じ。
-  const row = page.locator('li button[aria-expanded]').first();
+  const row = page.locator('li[data-row-id] > button[aria-controls^="log-"]').first();
   await row.focus();
   await expect(row).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(row).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('li table')).toHaveCount(1);
+  // 開いた中身は配達ログ（見た目は grid、`role=table`）。
+  await expect(page.locator('li [role="table"]')).toHaveCount(1);
 
   // フォーカスが見えること。輪郭が消えているとキーボードでは現在地を失う。
   const outline = await row.evaluate((el) => {
@@ -66,6 +68,7 @@ test('the placeholder-weight state has no WCAG A/AA violations either', async ({
   await page.goto('/');
   await expect(page.getByRole('contentinfo')).toBeVisible();
   await addByHand(page, 'mystery lot A, no weight data', 4000);
+  await openCart(page); // 仮置きの1行はカートを開いたときに出る（Mock v3）
   await expect(page.getByTestId('assumed-weights')).toBeVisible();
 
   const audit = async (b: AxeBuilder) =>
@@ -103,7 +106,7 @@ test('the free-shipping-domestic note has no WCAG A/AA violations either', async
 
   const box = page.getByRole('checkbox', { name: 'shipping included by seller' }).first();
   if (!(await box.isVisible())) {
-    await page.getByRole('button', { name: /^Cart \(/ }).click();
+    await cart(page).getByRole('button', { name: 'Edit cart' }).click();
   }
   await box.check();
   await expect(page.getByText(/domestic shipping fees may occur/i)).toBeVisible();
