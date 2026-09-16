@@ -368,18 +368,32 @@ export interface Row {
   notComparableKind: 'not-sold' | 'not-to-country' | 'price-cap' | 'size-limit'
     | 'weight-limit' | 'below-measured-floor' | 'no-priced-method' | null;
   /**
-   * 「おすすめ」枠に入るか（P1-2）。**下端で並べたとき1位の幅と重なる社**を、
-   * 1位自身を含めて最大3社（1位 + 重なる社2社まで）まで囲う。
-   * 重なる社が無ければ1位だけが true（単独1位）。`comparable` が false の行は常に false。
+   * 「おすすめ」枠に入るか（P1-2）。**1位自身を含めて最大2社**
+   * （`compare.ts` の `BRACKET_CAP = 2`、確定仕様2）。重なる社が無ければ
+   * 1位だけが true（単独1位）。`comparable` が false の行は常に false。
    * 判定方法は `docs/ROADMAP.md` P1「『重なる』の定義」、実装は `compare.ts` の
    * `computeBracket()` を参照。
+   *
+   * **2026-09-15 訂正。**ここには「最大3社（1位 + 重なる社2社まで）」と
+   * 書いてあったが、実装は一度もそうなっていない（`BRACKET_CAP = 2`）。
+   *
+   * **この印を「1位と判別できない社の集合」として読まないこと。**2 は画面に
+   * 囲える数の上限であって判定ではなく、重なりの判定も推移的（下の
+   * `equivalent` 参照）。その用途には `CompareResult.contestedIds` を使う。
    */
   recommended: boolean;
   /**
-   * 「同等」の印（P1-2）。おすすめ枠には入らない（3社目以降）が、
-   * 1位の幅とは重なっている社。**枠には入れない**——おすすめは最大2社という上限を
+   * 「同等」の印（P1-2）。おすすめ枠には入らない（3社目以降）が、枠の
+   * 判定を通った社。**枠には入れない**——おすすめは最大2社という上限を
    * 動かさないための印であって、資格の有無ではない。`recommended` と同時に true には
    * ならない。`comparable` が false の行は常に false。
+   *
+   * **2026-09-15 訂正。**ここには「1位の幅と重なっている社」と書いてあったが、
+   * 実際に比べている相手は1位の幅ではなく、`computeBracket()` の中で
+   * **行を通すたびに伸びる `bound`** である。つまり**1位とは直接重ならないが、
+   * 途中で通った社とは重なる社**もこの印を得る（重なり判定が推移的）。
+   * 「1位と区別が付かない」という意味で読みたいなら
+   * `CompareResult.contestedIds` を使う。
    */
   equivalent: boolean;
   /**
@@ -649,6 +663,24 @@ export interface WeightSensitivity {
    */
   bracketAtLow: string[];
   bracketAtHigh: string[];
+  /**
+   * その端で**1位と判別が付かない社**が何社になるか
+   * （`compare.ts` の `computeContested()` の要素数）。
+   *
+   * `bracketAtLow`/`bracketAtHigh` の**社数では代用できない**——枠は1位を含めて
+   * 最大2社で打ち止めなので（`BRACKET_CAP`）、「3社が判別不能」と
+   * 「2社が判別不能」がどちらも 2 になってしまう。
+   *
+   * **`decisive` の向きはこれでしか分からない。**`decisive` は枠の集合が
+   * 変わったことしか言わず、{A} → {A,B} という**広がる**変化でも真になる。
+   * そのとき「重量を確かめれば順位が決まる」と書くのは誤りで、正しくは
+   * 「確かめると決まらなくなりうる」。画面はこの2つの数を
+   * `CompareResult.contestedIds` の社数と見比べて文言を分ける。
+   *
+   * 比較可能な行が無い端では 0。
+   */
+  contestedAtLow: number;
+  contestedAtHigh: number;
 }
 
 export interface CompareResult {
@@ -707,6 +739,29 @@ export interface CompareResult {
    */
   indeterminateScope: 'leader' | null;
   leaderIds: string[];
+  /**
+   * **1位と区別が付かない社の id**（下端の昇順、1位自身を含む）。
+   * 実装は `compare.ts` の `computeContested()`。
+   *
+   * 定義: 1位グループ（`total.low` が最小の comparable な行。同着を含む）の
+   * `rankHigh` の max を上端として、その上端まで下端が届く comparable な行。
+   * **上限（CAP）を設けず、通した行で上端を伸ばさない**——`recommended` /
+   * `equivalent` との違いはその2点で、どちらもこのフィールドが在る理由:
+   *
+   *   - `recommended` の 2 は**画面に囲える数の上限**（確定仕様2）であって、
+   *     判別できた社の数ではない。3社以上が判別不能でも2社しか入らない。
+   *   - `equivalent` が通す `bound` は**行を通すたびに伸びる**ので、1位とは
+   *     直接重ならない社も入りうる（推移的）。
+   *
+   * 見出しで「誰が安いと言えるか」を決めるのは**このフィールドだけ**:
+   * 1社なら断定してよい（区間が誰とも交わっていない）。2社以上なら、
+   * その全員を並べて「判別できない」と言う（**3社以上でも黙殺しない**）。
+   *
+   * 1位グループ全員の `rankHigh` が `null`（上限不明）なら上端は Infinity に
+   * なり、比較可能な全社が入る——`rankIndeterminate` が真になる状況と整合する。
+   * 比較可能な行が無ければ空配列。
+   */
+  contestedIds: string[];
   /** 英語で1行。画面にそのまま出す。 */
   rankStabilityNote: string;
   /** bands があるときの総額全体の幅。 */

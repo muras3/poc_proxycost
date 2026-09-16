@@ -199,6 +199,12 @@ ol.rows{list-style:none;margin:0;padding:0}
 .dbar.unb i{background:linear-gradient(90deg,var(--ink) 0%,var(--ink) 70%,transparent 100%)}
 /* v3 #2-4: an indeterminate ranking draws as bars that visually overlap the leader's, not a sentence about error */
 .dbar.fuzzy i{background:linear-gradient(90deg,var(--indigo) 0%,var(--indigo) 18%,transparent 100%);opacity:.55}
+/* 区間が1位と交わっている行: 塗りを出さず破線の枠だけ。長さで差を主張しない
+   （1位の「長さ0の実線」とも見分けが付く）。RankRow の `contested` 参照。 */
+.dbar.close{background:transparent;border-top:1px dashed var(--hair);border-bottom:1px dashed var(--hair);height:4px}
+.flap.diff.close{opacity:.7;letter-spacing:.02em}
+/* 見出しと同格の1文（重量を測ると順位の判別がどう動くか）。 */
+.summary-weight{margin:2px 0 0;font-size:13px}
 .c-tot{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
 .tot{font:500 13.5px var(--mono);font-variant-numeric:tabular-nums;padding-bottom:1px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
 .tot[data-tier=estimate]{border-bottom:1.5px dashed var(--indigo)}

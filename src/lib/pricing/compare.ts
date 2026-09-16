@@ -2079,6 +2079,50 @@ function overlapsLeader(rowLow: number, leaderHigh: number): boolean {
 }
 
 /**
+ * **1位と区別が付かない社の集合**（`CompareResult.contestedIds`）。
+ *
+ * `computeBracket()` の `recommended` / `equivalent` とは**別物**で、見出しが
+ * 「誰が安いか言えるか」を判断する唯一の根拠はこちら。既存の枠の出力・順位・
+ * 総額は**一切変えない**（この関数は何も書き換えず、新しい集合を1つ返すだけ）。
+ *
+ * **なぜ枠を見出しの根拠にできないか**（レビュー指摘、2026-09-15）:
+ *
+ * 1. **`BRACKET_CAP = 2` は判定ではなく画面の囲い数の上限**（オーナー確定仕様2）。
+ *    本当に3社以上が判別不能なとき、1位＋1社だけが `recommended` になり、
+ *    残りは `equivalent` へ落ちる。`recommended` だけを読んで
+ *    「A or B — too close to call」と書けば、**3社目を黙殺した上に、CAP が
+ *    判定を打ち切っただけの結果を「判定」として見せる**ことになる。
+ * 2. **枠の重なり判定は推移的**。`computeBracket()` の `bound` は1位グループの
+ *    `rankHigh` の max で始まり、行を通すたびに伸びる。つまり**1位とは直接
+ *    重ならないが2社目とは重なる3社目**が枠や同等に入りうる。それは
+ *    「1位と区別が付かない」という見出しの主張とは違うことを言っている。
+ *
+ * したがってこの関数は、枠とは違って:
+ *   - **上限を設けない**（CAP 無し。該当する社は全部返す）
+ *   - **伸長しない**（`bound` は1位グループの `rankHigh` の max のまま固定。
+ *     通した行で伸ばさないので、判定は常に「1位と直接重なるか」）
+ *   - **1位自身を含む**（下端最小の行は定義上この集合の要素）
+ *
+ * 重なりの1本の不等式（`overlapsLeader`）と、共通の未知を無視する上端
+ * （`rankHigh`）は枠と同じものを使う——判定の材料を2つに増やさないため。
+ * 1位グループ全員の `rankHigh` が `null` なら上端は Infinity になり、
+ * 比較可能な全社が返る（`isIndeterminate` が真になる状況と整合する）。
+ */
+export function computeContested(ok: Row[]): string[] {
+  if (!ok.length) return [];
+  const leadLow = ok[0]!.total.low;
+  const leaders = ok.filter((r) => r.total.low === leadLow);
+  // **伸ばさない。**`computeBracket` はここから `bound` を通した行で伸ばすが、
+  // それをすると「1位とは重ならないが2社目と重なる社」まで入ってしまう。
+  let bound: number | null = null;
+  for (const r of leaders) {
+    if (r.rankHigh != null) bound = bound == null ? r.rankHigh : Math.max(bound, r.rankHigh);
+  }
+  const leaderHigh = bound ?? Infinity;
+  return ok.filter((r) => overlapsLeader(r.total.low, leaderHigh)).map((r) => r.id);
+}
+
+/**
  * おすすめ枠・同等の印（P1-2）。**下端の昇順に並んだ比較可能な行だけを見る。**
  *
  * **枠は1位を含めて最大2社。**「1位＋重なる社2社まで＝最大3社」ではない
@@ -2445,6 +2489,10 @@ function weightSensitivityFor(
       return {
         ids,
         bracket,
+        // **枠の社数ではなく「1位と判別が付かない社」の数**（`computeContested`）。
+        // 枠は最大2社で打ち止めなので「3社が判別不能」と「2社が判別不能」を
+        // 同じ 2 として返してしまい、「測れば決まるのか」の答えにならない。
+        contested: computeContested(rows.filter((r) => r.comparable)).length,
         bracketLabels: bracket.map((id) => rows.find((r) => r.id === id)?.label ?? id),
         // 同額なら全部並べる。1つだけ名指しすると、並びの偶然で選んだ社を
         // 「その重量での最安」と言い切ることになる。
@@ -2471,6 +2519,11 @@ function weightSensitivityFor(
       decisive: [lo, hi].some((w) => bracketChanged(baseBracket, w.bracket)),
       bracketAtLow: lo.bracketLabels,
       bracketAtHigh: hi.bracketLabels,
+      // **`decisive` は「集合が変わった」としか言っていない。**どちらへ変わったかは
+      // これで見る——{A} → {A,B} も `decisive` なので、「確かめれば決まる」と
+      // 書くと嘘になる（実際は「確かめると決まらなくなる」）。
+      contestedAtLow: lo.contested,
+      contestedAtHigh: hi.contested,
     };
   }
   return out;
@@ -2540,6 +2593,7 @@ export function compare(
   const empty: CompareResult = {
     rows: [], bands: null, rowTotalRange: null, rowDiffRange: null,
     rankStable: true, rankIndeterminate: false, indeterminateScope: null, leaderIds: [],
+    contestedIds: [],
     rankStabilityNote: '', totalRangeYen: null,
     currency, hasUnknownWeight: false, weightSensitivity: {}, destinationFacts,
   };
@@ -2595,6 +2649,9 @@ export function compare(
       rankIndeterminate: indeterminate,
       indeterminateScope: indeterminate ? 'leader' : null,
       leaderIds: indeterminate ? leaderIdsFor(base) : [],
+      // **見出しの唯一の根拠**（`computeContested`）。枠（`recommended` /
+      // `equivalent`）とは別に、CAP 無し・非推移で「1位と直接重なる社」を返す。
+      contestedIds: computeContested(base.filter((r) => r.comparable)),
       // **「1位が動くか」ではなく「おすすめ枠の集合が動くか」を言う**（P1-2、判断2）。
       // `stable` はいま枠の完全一致で決まっているので、安定なら基準の枠がそのまま
       // 両端でも枠だと言い切ってよい（`dropped` は不安定側でだけ使う）。
@@ -2716,6 +2773,8 @@ export function compare(
     rankIndeterminate: indeterminate,
     indeterminateScope: indeterminate ? 'leader' : null,
     leaderIds: indeterminate ? leaderIdsFor(mid.rows) : [],
+    // 段が割れているときも、代表段（mid）の行で測る——画面の主張の基準は代表段。
+    contestedIds: computeContested(mid.rows.filter((r) => r.comparable)),
     rankStabilityNote: indeterminate
       ? indeterminateNote(mid.rows.filter((r) => r.comparable))
       : stable

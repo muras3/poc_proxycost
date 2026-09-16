@@ -21,6 +21,7 @@ const decisive: WeightSensitivity = {
   onlyPricedAtLow: false, onlyPricedAtHigh: false,
   decisive: true,
   bracketAtLow: ['Neokyo'], bracketAtHigh: ['ZenMarket'],
+  contestedAtLow: 1, contestedAtHigh: 1,
 };
 
 describe('assumedWeightsSummary — 引き当たっているカートでは黙る', () => {

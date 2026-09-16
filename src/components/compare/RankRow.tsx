@@ -10,6 +10,7 @@ import { Flap } from './Flap';
 import { Mark } from './Popover';
 import { WeightNeedle } from './WeightNeedle';
 import { dayBounds, dayPct, leadWord, totBarPcts, totalParts } from './mockFormat';
+import { isContested } from './rankClaim';
 import type { Item, ProvinceCode } from '@/lib/pricing/types';
 
 export interface BoardCtx {
@@ -118,11 +119,19 @@ export function RankRow({
     }
   }, [isFirst, stampKey]);
 
+  // **区間が1位と交わっている行に差額の数値を出さない**（`rankClaim`、見出しと同じ規則）。
+  // `row.diff` は点推定どうしの引き算で、交わっている相手に対しては実際の総額の
+  // 並びと逆になりうる——「+¥482」と書けば、交わりを知っている engine の隣で
+  // 画面だけが確かめられていない差を主張することになる。**1位自身は除く**
+  // （1位は `contestedIds` に必ず入るが、そこは「1ST」を出す場所）。
+  const contested = isContested(row, result) && !row.cheapest;
   const diffCell = !row.comparable
     ? <Flap text="NOT RANKED" className="diff nr" />
     : row.diff === 0
       ? <Flap text={result.rankIndeterminate ? 'LEADS' : '1ST'} className="diff lead" />
-      : <Flap text={`+${yen(row.diff)}`} className="diff" />;
+      : contested
+        ? <Flap text="TOO CLOSE" className="diff close" />
+        : <Flap text={`+${yen(row.diff)}`} className="diff" />;
 
   const barUnbounded = row.comparable && row.total.high === null;
   const barFuzzy = row.comparable && result.rankIndeterminate
@@ -135,6 +144,9 @@ export function RankRow({
   if (row.tied) {
     const others = result.rows.filter((x) => x.id !== row.id && x.comparable && x.total.low === row.total.low).map((x) => x.label);
     cav.push(<p key="tied"><span className="bang" aria-hidden="true">!</span><span>Tied with {andList(others)} — the order between them means nothing.</span></p>);
+  }
+  if (contested && ctx.first) {
+    cav.push(<p key="close"><span className="bang" aria-hidden="true">!</span><span>Too close to call against {ctx.first.label} — their totals overlap, so the gap above is not established.</span></p>);
   }
   if (!row.comparable) {
     cav.push(<p key="nr"><span className="bang" aria-hidden="true">!</span><span><b>Not ranked:</b> {row.notComparableReason}.</span></p>);
@@ -215,8 +227,15 @@ export function RankRow({
         <span className="c-diff" data-testid="row-diff">
           {diffCell}
           {row.comparable && (
-            <span className={`dbar${barUnbounded ? ' unb' : ''}${barFuzzy ? ' fuzzy' : ''}`} aria-hidden="true">
-              <i style={{ width: `${barFuzzy ? 100 : Math.round((100 * row.diff) / ctx.maxDiff)}%` }} />
+            <span
+              className={`dbar${barUnbounded ? ' unb' : ''}${barFuzzy ? ' fuzzy' : ''}${contested ? ' close' : ''}`}
+              aria-hidden="true"
+              data-contested={contested ? 'true' : undefined}
+            >
+              {/* 交わっている行は長さで語らせない——長さは「これだけ高い」という
+                  主張そのもので、その主張が確かめられていない。塗りを出さず、
+                  CSS 側で破線の枠だけを見せる（1位の「長さ0」とも見分けが付く）。 */}
+              {!contested && <i style={{ width: `${barFuzzy ? 100 : Math.round((100 * row.diff) / ctx.maxDiff)}%` }} />}
             </span>
           )}
         </span>

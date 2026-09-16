@@ -105,12 +105,19 @@ test('1. the ranking is sorted by total, ascending, and so are the gaps', async 
 
   expect(rows.length).toBeGreaterThanOrEqual(4);
   expect(isNonDecreasing(rows.map((r) => r.total!))).toBe(true);
-  expect(isNonDecreasing(rows.map((r) => r.diff))).toBe(true);
+  // **差額を名乗る行だけを並びの対象にする。**1位と区間が交わっている行は
+  // 差額を数値で出さない（画面は 'TOO CLOSE'、`readRanking` は diff=null）——
+  // 点推定どうしの引き算は、交わっている相手に対しては実際の総額の並びと
+  // 逆になりうるため（`src/components/compare/rankClaim.ts`）。
+  const withGap = rows.filter((r) => r.diff !== null);
+  expect(isNonDecreasing(withGap.map((r) => r.diff!))).toBe(true);
 
   // 1位だけが CHEAPEST で、差額は 0。
   expect(rows[0]!.cheapest).toBe(true);
   expect(rows.filter((r) => r.cheapest)).toHaveLength(1);
   expect(rows[0]!.diff).toBe(0);
+  // 1位自身は差額欄に '1ST'/'LEADS' を出すので、'TOO CLOSE' にはならない。
+  expect(rows[0]!.contested).toBe(false);
 
   // 比べられない行は総額も差額も名乗らず、なぜ比べられないのかを書く。
   for (const r of all.filter((x) => !x.comparable)) {
@@ -120,9 +127,15 @@ test('1. the ranking is sorted by total, ascending, and so are the gaps', async 
   }
 
   // 差額と総額が同じ順位付けを指していること。総額は ¥100 丸めなので誤差を許す。
-  for (const r of rows.slice(1)) {
-    expect(r.diff).toBeGreaterThan(0);
-    expect(Math.abs(r.total! - rows[0]!.total! - r.diff)).toBeLessThanOrEqual(100);
+  // **数値を名乗っている行だけ**——交わっている行は数値そのものを出していない。
+  for (const r of rows.slice(1).filter((x) => x.diff !== null)) {
+    expect(r.diff!).toBeGreaterThan(0);
+    expect(Math.abs(r.total! - rows[0]!.total! - r.diff!)).toBeLessThanOrEqual(100);
+  }
+  // 交わっている行は、数値の代わりに「なぜ数値を出さないか」をその場に書く。
+  for (const r of rows.filter((x) => x.contested)) {
+    expect(r.diff, `${r.name} prints a gap although it overlaps the leader`).toBeNull();
+    expect(r.text).toMatch(/Too close to call against/);
   }
 });
 
