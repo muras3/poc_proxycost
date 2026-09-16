@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 import { compare, computeContested } from '@/lib/pricing/compare';
 import type { CompareResult, CountryCode, Item, Row } from '@/lib/pricing/types';
 import {
@@ -44,6 +44,29 @@ function sweep(): Case[] {
   return out;
 }
 
+/**
+ * **掃引は1回だけ回して、全ての `test()` で使い回す。**
+ *
+ * 理由（2026-09-16、run 35040076963 / job 104617751999）: この掃引は
+ * 7カ国 × 7重量 × 4価格 × fragile2通り = **392条件** で `compare()` を
+ * 呼ぶ。engine の1回の呼び出しは軽いが、392回ぶんとなるとアイドルな
+ * ローカルでも1条件あたりの合計が 0.8〜1.7 秒に達する。#176 はこれを
+ * `sweep()` として**各 `test()` の中から呼んで**いたため、同じ392条件を
+ * 5回（= 約5.4秒ぶん）回していた。最初の `test()` は加えて engine 側の
+ * モジュール初期化とJITのウォームアップを丸ごと負担するので最も遅く、
+ * vitest の既定 `testTimeout: 5000ms` に対する余裕が実測 1712ms ＝ 約2.9倍
+ * しか無かった。CI は複数ワーカーが並列に走るぶん遅いので、#177（docs
+ * のみの変更）の CI でこの最初の `test()` が 5000ms を超えて落ちた。
+ *
+ * `beforeAll` に移すと掃引は1回（約1.2〜1.7秒）で済み、しかも `beforeAll`
+ * は `testTimeout` ではなく `hookTimeout`（既定 10000ms）で測られる。
+ * 各 `test()` 側は掃引済みの配列を舐めるだけになり数ミリ秒で終わる。
+ * **条件を1つも減らしていない**ので、#176 が捕まえたかった CAP による
+ * 打ち切りと推移的重なりは、これまでと同じ実データで踏み続ける。
+ */
+let CASES: Case[] = [];
+beforeAll(() => { CASES = sweep(); });
+
 const labelsOf = (result: CompareResult, ids: string[]): string[] => {
   const by = new Map(result.rows.map((r) => [r.id, r]));
   return ids.map((id) => by.get(id)?.label ?? id);
@@ -56,7 +79,7 @@ describe('computeContested: the primary value the headline rests on', () => {
     // 両者が食い違う条件が実在することを、掃引から数えて示す。
     let capBites = 0;      // 判別できない社が3社以上＝枠の2社では表せない
     let transitive = 0;    // 枠／同等に居るのに1位とは直接重ならない社が居る
-    for (const { result } of sweep()) {
+    for (const { result } of CASES) {
       const comp = result.rows.filter((r) => r.comparable);
       if (comp.length < 2) continue;
       const contested = new Set(result.contestedIds);
@@ -70,7 +93,7 @@ describe('computeContested: the primary value the headline rests on', () => {
   });
 
   test('the leader is always in it, and it is exactly the rows whose low reaches the leader group’s rankHigh', () => {
-    for (const { label, result } of sweep()) {
+    for (const { label, result } of CASES) {
       const comp = result.rows.filter((r) => r.comparable);
       if (!comp.length) continue;
       expect(result.contestedIds, `${label}: leader missing`).toContain(comp[0]!.id);
@@ -102,7 +125,7 @@ describe('computeContested: the primary value the headline rests on', () => {
 describe('headlineFor: the names it prints are exactly the engine’s contested set', () => {
   test('across the sweep, every headline agrees with contestedIds — and both branches occur', () => {
     let clear = 0; let tooClose = 0; let tie = 0; let indet = 0; let none = 0;
-    for (const { label, result } of sweep()) {
+    for (const { label, result } of CASES) {
       const h = headlineFor(result);
       const comp = result.rows.filter((r) => r.comparable);
       const contestedLabels = labelsOf(result, result.contestedIds);
@@ -138,7 +161,7 @@ describe('headlineFor: the names it prints are exactly the engine’s contested 
   test('a clear winner is only ever claimed when nobody else overlaps the leader', () => {
     // 肯定側。`contestedIds` が1社の条件を実データから拾って、その条件では
     // 見出しが断定し、2位の差額が数値で出せる状態であることまで見る。
-    const clears = sweep().filter(({ result }) => {
+    const clears = CASES.filter(({ result }) => {
       const comp = result.rows.filter((r) => r.comparable);
       return comp.length >= 2 && !result.rankIndeterminate && result.contestedIds.length === 1;
     });
@@ -159,7 +182,7 @@ describe('headlineFor: the names it prints are exactly the engine’s contested 
   test('when the intervals overlap, no non-leader row is allowed to print a gap', () => {
     // 「断定できるのは区間が交わらないときだけ」という規則の、行側での言い換え。
     let checked = 0;
-    for (const { label, result } of sweep()) {
+    for (const { label, result } of CASES) {
       for (const r of result.rows.filter((x) => x.comparable && !x.cheapest)) {
         if (isContested(r, result)) {
           expect(diffIsEstablished(r, result), `${label}/${r.id}`).toBe(false);
