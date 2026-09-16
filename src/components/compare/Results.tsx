@@ -1,6 +1,7 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { track } from '@/lib/analytics/events';
 import { andList } from '@/lib/pricing/compare';
 import { COUNTRIES } from '@/lib/pricing/countries';
 import { methodLabel } from '@/lib/ui/methodLabel';
@@ -37,6 +38,14 @@ export function Results({
   const rows = result.rows;
   const comp = rows.filter((r) => r.comparable);
   const countryName = COUNTRIES[country].name;
+
+  // ファネル2段目（比較結果の表示）。**比べられる行が実際に出たときだけ**数える——
+  // 「Can't compare」の枠は結果を見たことにならない。`track` は1回の読み込みにつき
+  // 1回しか送らないので、条件を変えて再描画しても分母は増えない。
+  const sawResults = comp.length > 0;
+  useEffect(() => {
+    if (sawResults) track('results');
+  }, [sawResults]);
   const first = comp[0];
   const leaders = comp.filter((r) => r.cheapest);
   const uniform = new Set(comp.map((r) => r.method)).size <= 1;

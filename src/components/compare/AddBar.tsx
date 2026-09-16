@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { track } from '@/lib/analytics/events';
 import { isListingUrl, SITES } from '@/lib/search/sites';
 import type { SiteId } from '@/lib/pricing/types';
 import type { Candidate, SearchResponse } from '@/lib/search/types';
@@ -40,6 +41,9 @@ export function AddBar({
     const text = q.trim();
     if (!text || busy) return;
     setNotice(null);
+    // ファネル1段目（検索 or URL 投入）。**入力そのものは送らない**——`track` が送るのは
+    // 'entry' という語だけで、`text` は計測に渡さない（`src/lib/analytics/events.ts`）。
+    track('entry');
     try {
       if (/^https?:\/\//i.test(text)) {
         // 一覧ページを貼られたら取りに行かない。**取っても値段は付かない**
@@ -178,6 +182,9 @@ function ManualForm({
     e.preventDefault();
     const t = title.trim();
     if (!t) return;
+    // 手入力もファネル1段目。**品名も価格も送らない**——'entry' の1語だけで、
+    // URL/検索と同じ1件に丸める（`track` は1読み込みにつき1回しか送らない）。
+    track('entry');
     const p = price.trim() === '' ? null : Number(price.replace(/[^\d]/g, ''));
     onAdd({
       title: t,
