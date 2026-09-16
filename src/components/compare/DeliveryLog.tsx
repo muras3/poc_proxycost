@@ -210,7 +210,13 @@ export function DeliveryLog({
         <div className="door" key="door">
           <span className="lbl">
             {row.comparable
-              ? (row.total.high === null ? 'Total at the door · no upper bound' : 'Total at the door')
+              // **2026-09-15、着地総額の断定をやめた（文言のみ）。**`Results.tsx` の
+              // 「1st, known and estimated charges」と揃える。未取得の費目（Zonos 利用料・
+              // `not published` の売上税）がある以上、着地総額だとは言い切れない。
+              // 上限が無い分岐も同じ言い方に揃える。
+              ? (row.total.high === null
+                ? 'Known and estimated charges · no upper bound'
+                : 'Known and estimated charges · your destination may add more')
               : 'No comparable total — the largest cost is missing'}
           </span>
           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>

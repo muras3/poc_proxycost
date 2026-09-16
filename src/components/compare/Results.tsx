@@ -67,7 +67,13 @@ export function Results({
       <div data-testid="summary">
         {head}
         <p className="sumtot">
-          <span className="lbl">1st, at the door</span>
+          {/*
+            **2026-09-15、着地総額の断定をやめた（文言のみ）。**以前は「1st, at the door」。
+            同じ画面に売上税・VAT が `not published` の国があり、Jauce の Zonos 利用料も
+            未算入で、`total.high` が閉じない行もある以上、「着いたときに払い終わる額」は
+            言い切れない。既知＋推定だと分かる言い方にする。金額そのものは変えていない。
+          */}
+          <span className="lbl">1st, known and estimated charges</span>
           <span className="v num" aria-label={tp.aria}>{tp.vis}</span>
           <TotBar row={first} hiMax={hiMax} />
           <span>{foreign(first.total.low, result.currency.code, result.currency.rate)} at ECB rate of {result.currency.asOf}</span>

@@ -110,7 +110,7 @@ export function EmsOnlyNote({ result, country }: { result: CompareResult; countr
       way can land away from the totals below in either direction — the postage is often
       lower, the customs handling higher (
       <Link href="/sources#ems" className="underline">
-        why we leave couriers out
+        what we price and what we leave out
       </Link>
       ).
     </p>

@@ -169,7 +169,12 @@ test('2. rank is decided by the total alone — no company pays us, and the disc
   await shipTo(page, 'GB');
 
   // 順位の根拠を画面が名乗っていること。**「1位が誰か」ではなく「何で並べたか」**が主張の中身。
-  await expect(page.getByText(/landed at your door/i)).toBeVisible();
+  // **2026-09-15、文言のみの修正。**以前は「landed at your door」を掴んでいた。同じ画面に
+  // 売上税・VAT が `not published` の国があり、Jauce の Zonos 利用料も未算入である以上、
+  // 着地総額を断定する文言は事実に反するので、根拠つきの言い方に替えた。主張の中身
+  //（「1位が誰か」ではなく「何で並べたか」）は変えていない。
+  await expect(page.getByText(/every charge we could find or estimate/i)).toBeVisible();
+  await expect(page.getByText(/your destination can still add to these totals/i)).toBeVisible();
   // ヒーロー文（lede）とフッターの開示文、両方に「No company pays us」が出る。
   // 順位に効かないという主張はどちらも「never move a row」で締める。
   await expect(page.locator('.lede').getByText(/No company pays us.*never move a row/i)).toBeVisible();
@@ -1260,9 +1265,10 @@ test('27. both disclosures link to the rules, quoted with their source and date'
   await expect(page.getByText(/What we could not get:/)).toBeVisible();
 });
 
-test('21. the disclosure links to why couriers are left out, named company by company', async ({ page }) => {
+test('21. the disclosure links to what we price and leave out, named company by company', async ({ page }) => {
   await gotoCompare(page);
-  await (await openScopeNote(page)).getByRole('link', { name: /why we leave couriers out/ }).click();
+  await (await openScopeNote(page))
+    .getByRole('link', { name: /what we price and what we leave out/ }).click();
   await expect(page).toHaveURL(/\/sources#ems$/);
   await expect(page.getByRole('heading', { name: 'EMS postage from Japan' })).toBeVisible();
 
