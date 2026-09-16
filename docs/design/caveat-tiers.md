@@ -1,5 +1,7 @@
 # 比較画面の注意書き — 3段階の仕分け
 
+> **置き換え済み（2026-09-15）**: 本書は `docs/design/caveat-ui-grammar.md`（視覚の文法と設計判断）と `docs/design/caveat-coverage-audit.md`（コードから数え直した 100 件の網羅性監査と Mock v2 の判定）に置き換えた。以下は 2026-09-13 時点の記録として残す。main の進行で古くなった箇所がある（例: `RemoteAreaSurchargeNote`・`closedByAssumption`・宅配便の着地通関手数料は本書に無い）。
+
 調べた範囲: `src/components/compare/*`（`Calculator.tsx` から辿った）、`src/lib/pricing/compare.ts`・`services.ts`・`restricted-goods.ts`、`src/lib/ui/tiers.tsx`。コードは 2026-09-13 時点の main と同じ。
 
 仕分けの基準は「その注意を知るとユーザーの選択が変わるか」。

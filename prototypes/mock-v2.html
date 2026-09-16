@@ -1,0 +1,1442 @@
+<title>Ledger Manifest Mock</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders:opsz,wght@10..72,500..900&family=Spline+Sans+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+JP:wght@400;500;600&display=swap">
+<!--
+  Ledger Manifest &#x2014; pre-migration design Mock v2.
+  - Every number on this page comes from ProxyCost.compare() (prototypes/engine.js = main's compare() bundled).
+  - Inputs (cart items, example candidates, weights of example titles) are MOCK DATA. Outputs are never hand-written.
+  - State decisions read structured Row / CompareResult fields only. No English note is regex-parsed.
+    Where a decision needs a field the engine does not have, it is marked "NEEDS FIELD" below.
+-->
+<style>
+:root{
+  --paper:#F2EDE3;--paper2:#E9E2D3;--ink:#1B1A17;--ink2:#5B574E;--hair:rgba(27,26,23,.28);
+  --red:#D7261E;--indigo:#2B3A8C;--kraft:#A98B5E;
+  --ad-bg:#DEDEDC;--ad-line:#8C8C8A;--ad-ink:#3A3A3A;
+  --serif:'Big Shoulders','Arial Narrow',Impact,sans-serif;
+  --mono:'Spline Sans Mono',ui-monospace,Menlo,monospace;
+  --sans:'Public Sans','IBM Plex Sans JP','Hiragino Sans','Noto Sans JP',system-ui,sans-serif;
+  --jp:'IBM Plex Sans JP','Public Sans','Hiragino Sans','Noto Sans JP',sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--paper);color:var(--ink);margin:0}
+body{font-family:var(--sans);font-size:15px;line-height:1.5;overflow-x:hidden;
+background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .09  0 0 0 0 .07  0 0 0 .07 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.078em;text-transform:uppercase;color:var(--ink2)}
+.jp{font-family:var(--jp)}
+:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+a{color:var(--indigo);text-underline-offset:3px}
+button,input,select{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app{container-type:inline-size;max-width:1120px;margin:0 auto;padding:0 32px 40px}
+.app.phone{max-width:390px;padding:0 14px 40px;outline:1.5px solid var(--ink);outline-offset:0;margin-top:8px}
+
+/* ---------- mock states bar (not part of the product) ---------- */
+.mockbar{position:sticky;top:0;z-index:40;background:var(--ink);color:var(--paper);font:11px/1.3 var(--mono);padding:6px 16px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.mockbar b{letter-spacing:.1em;color:#F5C84B}
+.mockbar select,.mockbar button{all:unset;cursor:pointer;border:1px solid rgba(242,237,227,.5);padding:2px 6px;font:11px var(--mono)}
+.mockbar select option{color:#000}
+.mockbar button[aria-pressed=true]{background:var(--paper);color:var(--ink)}
+.mockbar :focus-visible{outline:2px solid #F5C84B;outline-offset:2px}
+.mockbar .why{opacity:.75}
+
+/* ---------- masthead ---------- */
+.mast{display:flex;justify-content:space-between;align-items:baseline;gap:12px 20px;flex-wrap:wrap;border-bottom:3px double var(--ink);padding:26px 0 10px}
+.mast h1{font:800 38px/1 var(--serif);margin:0;letter-spacing:.01em;text-transform:uppercase}
+.mast h1 i{font-style:normal;color:var(--red)}
+.mast nav{display:flex;gap:16px;align-items:center;font:12px var(--mono)}
+.mast nav a{color:var(--ink)}
+.kbtn{all:unset;cursor:pointer;font:11px var(--mono);letter-spacing:.05em;color:var(--ink2);border:1px solid var(--ink2);padding:2px 8px}
+.kbtn:hover{color:var(--ink);border-color:var(--ink)}
+.kbtn:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.lede{margin:10px 0 0;font-size:14px;color:var(--ink2);max-width:72ch}
+.lede b{color:var(--ink);font-weight:600}
+
+/* ---------- add bar ---------- */
+.add{margin:22px 0 0;display:grid;grid-template-columns:1fr auto;gap:0;border:1.5px solid var(--ink)}
+.add input{border:0;border-radius:0;background:rgba(255,255,255,.35);padding:12px 14px;font:15px var(--sans);min-width:0}
+.add input:focus{outline:none;box-shadow:inset 0 -2px 0 var(--indigo)}
+.btn{all:unset;cursor:pointer;background:var(--ink);color:var(--paper);font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:0 18px;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.btn[aria-busy=true]{background:var(--ink2);cursor:progress}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);padding:6px 12px}
+.addsub{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;margin-top:6px;font:12px var(--mono);color:var(--ink2)}
+.link{all:unset;cursor:pointer;color:var(--indigo);text-decoration:underline;text-underline-offset:3px}
+.link:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+.spin{display:inline-block;width:10px;height:10px;border:1.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notice{display:flex;gap:10px;align-items:baseline;margin-top:8px;padding:8px 12px;border-top:2px solid var(--red);font-size:14px}
+.notice .act{white-space:nowrap}
+.manual{margin-top:10px;border:1px dashed var(--ink);padding:12px 14px;display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end}
+.fld{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fld input,.fld select{border:0;border-bottom:1.5px solid var(--ink);background:transparent;border-radius:0;padding:4px 0;font:14px var(--sans);min-width:0}
+.fld input:focus,.fld select:focus{outline:none;border-bottom-color:var(--indigo)}
+
+/* ---------- waybill = condition line ---------- */
+/* 4 fields on a grid: the 1px gap on an ink ground draws the rules, so fields can never overlap at any width */
+.waybill{position:relative;margin:18px 0 0;border:1.5px solid var(--ink);display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.75fr) minmax(0,1.6fr) minmax(0,1fr);gap:1px;background:var(--ink)}
+.wb{padding:8px 16px 9px;background:var(--paper);display:flex;flex-direction:column;gap:1px;min-width:0}
+.wsel{width:100%;text-overflow:ellipsis}
+.wplacebtn{overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:left}
+.wplacebtn .est{color:var(--indigo);border-bottom:1.5px dashed var(--indigo)}
+.wpick{display:flex;flex-direction:column;gap:6px;min-width:0}
+.wpick .link{font:11px var(--mono);align-self:flex-start}
+.wcart{overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@container (max-width:900px){.waybill{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container (max-width:420px){.waybill{grid-template-columns:minmax(0,1fr)}}
+.wb .lbl{font-size:9.5px;display:flex;gap:6px;align-items:center}
+.wsel{appearance:none;-webkit-appearance:none;border:0;border-radius:0;background:transparent;font:500 16px var(--mono);padding:0 18px 1px 0;cursor:pointer;max-width:100%;
+background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);background-position:calc(100% - 8px) 55%,calc(100% - 3px) 55%;background-size:5px 5px;background-repeat:no-repeat;border-bottom:1.5px solid var(--ink)}
+.wsel:focus{outline:2px solid var(--indigo);outline-offset:3px}
+.wsel.est{border-bottom:1.5px dashed var(--indigo);color:var(--indigo)}
+.wnum{width:4.2ch;border:0;border-bottom:1.5px dashed var(--indigo);color:var(--indigo);background:transparent;font:500 16px var(--mono);border-radius:0;padding:0;text-align:right}
+.wnum:focus{outline:2px solid var(--indigo);outline-offset:3px}
+.wv{font:500 16px var(--mono);white-space:nowrap}
+.wsub{font:10.5px var(--mono);color:var(--ink2);white-space:normal}
+.wsub.est{color:var(--indigo)}
+.wcart{all:unset;cursor:pointer;font:500 16px var(--mono);border-bottom:1.5px dotted var(--ink);white-space:nowrap}
+.wcart:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.wb.grow{flex:1}
+.postmark{position:absolute;right:-22px;top:-58px;transform:rotate(-12deg);width:74px;height:74px;pointer-events:none;opacity:.5;mix-blend-mode:multiply}
+
+/* ---------- marks & popover (tier 3) ---------- */
+.mk{all:unset;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font:600 10px/1 var(--mono);color:var(--indigo);border:1px solid var(--indigo);min-width:15px;height:15px;padding:0 3px;vertical-align:middle;letter-spacing:.02em}
+.mk:hover,.mk[aria-expanded=true]{background:var(--indigo);color:var(--paper)}
+.mk:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+.mk.q{color:var(--red);border-color:var(--red)}
+.mk.q:hover,.mk.q[aria-expanded=true]{background:var(--red);color:var(--paper)}
+#pop{position:absolute;z-index:60;max-width:340px;background:var(--paper);border:1.5px solid var(--ink);outline:1px solid var(--ink);outline-offset:2px;padding:10px 12px 11px;font-size:13px;line-height:1.45}
+#pop h4{margin:0 0 4px;font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+#pop p{margin:0 0 4px}
+#pop .x{all:unset;cursor:pointer;position:absolute;right:6px;top:4px;font:12px var(--mono);color:var(--ink2);padding:2px 4px}
+#pop .x:focus-visible{outline:2px solid var(--indigo)}
+
+/* ---------- tier 1: conditional line, always-on band ---------- */
+.bang{flex:none;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:2px solid var(--red);color:var(--red);font:700 11px/1 var(--mono);transform:translateY(2px)}
+.cond{display:flex;gap:10px;align-items:baseline;margin:0;padding:9px 12px 8px;border-top:2px solid var(--red);font-size:14.5px;line-height:1.4}
+.cond+.cond{border-top-width:1px}
+.band{display:flex;gap:8px;align-items:baseline;margin:0;padding:4px 12px 5px;border-top:1px solid var(--hair);font:12px/1.45 var(--mono);color:var(--ink2)}
+.band:last-of-type{border-bottom:1px solid var(--hair)}
+.band .bang{width:13px;height:13px;font-size:9px;border-width:1.5px;transform:translateY(1px)}
+.band .tag2{flex:none;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--ink2);padding:0 4px}
+
+/* ---------- cart (manifest) ---------- */
+.sechead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:30px 0 0;padding-bottom:6px;border-bottom:1.5px solid var(--ink)}
+.sechead h2{font:700 22px/1 var(--serif);text-transform:uppercase;letter-spacing:.02em;margin:0;display:flex;gap:10px;align-items:baseline}
+.cartbody{margin:0;padding:0;list-style:none}
+.item{display:grid;grid-template-columns:56px minmax(0,1fr) auto;column-gap:14px;padding:12px 0;border-bottom:1px solid var(--hair)}
+.item.pending{opacity:.75}
+.thumb{width:56px;height:56px;border:1px solid var(--ink);background:repeating-linear-gradient(135deg,transparent 0 5px,rgba(27,26,23,.12) 5px 6px);display:flex;align-items:flex-end;justify-content:flex-start;font:9px var(--mono);color:var(--ink2);padding:2px}
+.ititle{font:500 15px/1.35 var(--jp);margin:0;overflow-wrap:anywhere}
+.imeta{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;margin-top:6px;font:12px var(--mono);color:var(--ink2)}
+.chip{border:1px solid var(--ink2);padding:0 4px;font-size:11px}
+.fin{display:inline-flex;align-items:baseline;gap:2px}
+.fin input{width:7ch;border:0;background:transparent;border-radius:0;font:500 14px var(--mono);font-variant-numeric:tabular-nums;padding:0 1px;text-align:right}
+.fin input:focus{outline:2px solid var(--indigo);outline-offset:2px}
+.fin.t-fixed input{border-bottom:1.5px solid var(--ink)}
+.fin.t-estimate input{border-bottom:1.5px dashed var(--indigo);color:var(--indigo)}
+.fin.t-assumed input{border-bottom:1.5px dotted var(--red);color:var(--indigo)}
+.fin.t-user input{border-bottom:1.5px solid var(--indigo);color:var(--ink)}
+.fin.t-none input{border-bottom:1.5px solid var(--red)}
+.fin .u{font-size:12px}
+.qty{display:inline-flex;border:1px solid var(--ink)}
+.qty button{all:unset;cursor:pointer;width:22px;text-align:center;font:13px var(--mono)}
+.qty button:focus-visible{outline:2px solid var(--indigo)}
+.qty span{min-width:22px;text-align:center;border-left:1px solid var(--ink);border-right:1px solid var(--ink);font:13px var(--mono)}
+.wsrc{font:11.5px var(--mono);color:var(--ink2)}
+.wsrc.est{color:var(--indigo)}
+.wsrc.as{color:var(--red)}
+.rm{all:unset;cursor:pointer;font:11px var(--mono);color:var(--ink2);text-decoration:underline;text-underline-offset:3px;align-self:start}
+.rm:focus-visible{outline:2px solid var(--indigo)}
+.decisive{grid-column:2/-1;margin-top:8px;display:flex;gap:8px;align-items:baseline;border-top:2px solid var(--red);padding-top:6px;font-size:13.5px}
+.item.hot{background:linear-gradient(90deg,rgba(215,38,30,.06),transparent 60%)}
+.chk{display:inline-flex;gap:5px;align-items:center}
+.chk input{accent-color:var(--ink);margin:0}
+.cartfoot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;padding:8px 0 0;font:12px var(--mono);color:var(--ink2)}
+
+/* empty state */
+.empty{margin:26px 0 0;border:1.5px solid var(--ink);display:grid;grid-template-columns:repeat(3,1fr)}
+.empty>div{padding:18px 18px 20px;border-right:1px solid var(--ink)}
+.empty>div:last-child{border-right:0}
+.empty .n{font:800 44px/1 var(--serif);color:var(--red)}
+.empty h3{font:700 20px/1.1 var(--serif);text-transform:uppercase;margin:6px 0 6px}
+.empty p{margin:0 0 8px;font-size:14px;color:var(--ink2)}
+.emptyfoot{padding:10px 0 0;font:12px var(--mono);color:var(--ink2)}
+
+/* ---------- results ---------- */
+.summary{font:600 clamp(28px,4vw,44px)/1.06 var(--serif);margin:26px 0 6px;max-width:32ch}
+.summary b{font-weight:900;color:var(--red)}
+.summary .gap{font-family:var(--mono);font-weight:700;font-size:.72em;letter-spacing:-.02em;white-space:nowrap}
+.sumtot{margin:0 0 16px;font:13px var(--mono);color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center}
+.sumtot .v{color:var(--ink);font-weight:600}
+
+.board{margin-top:14px;border-top:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink)}
+.bh,.rh{display:grid;grid-template-columns:44px minmax(0,1.7fr) 150px 58px 170px 150px 14px;column-gap:14px;align-items:center;padding:0 12px}
+.board.uniform .bh,.board.uniform .rh{grid-template-columns:44px minmax(0,1.7fr) 58px 170px 150px 14px}
+.board.uniform .c-ship{display:none}
+.bh{padding-top:9px;padding-bottom:8px;border-bottom:1px solid var(--ink)}
+.r{text-align:right;justify-self:end}
+ol.rows{list-style:none;margin:0;padding:0}
+.row{position:relative;border-bottom:1px solid var(--hair);background:var(--paper)}
+.row:last-child{border-bottom:0}
+.row.unranked .rh{color:var(--ink2)}
+.rh{all:unset;box-sizing:border-box;display:grid;width:100%;padding-top:14px;padding-bottom:14px;cursor:pointer;text-align:left}
+.board .rh{grid-template-columns:44px minmax(0,1.7fr) 150px 58px 170px 150px 14px;column-gap:14px;padding-left:12px;padding-right:12px}
+.board.uniform .rh{grid-template-columns:44px minmax(0,1.7fr) 58px 170px 150px 14px}
+.rh:hover{background:rgba(27,26,23,.035)}
+.rh:focus-visible{outline:2px solid var(--indigo);outline-offset:-2px}
+.row.first .rh{padding-top:34px}
+.c-rank{font:600 16px var(--mono)}
+.row.first .c-rank{color:var(--red)}
+.c-svc{min-width:0;display:flex;flex-direction:column;gap:3px}
+.svc{font:600 17px var(--mono);letter-spacing:.06em;text-transform:uppercase;display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline}
+.svc small{font:11px var(--mono);letter-spacing:.04em;color:var(--ink2);text-transform:lowercase}
+.tag{font:11.5px var(--mono);color:var(--ink2)}
+.ref{font:11px var(--mono);color:var(--ink2)}
+.ref.pays{color:var(--ink)}
+.badge{display:inline-block;font:600 9.5px/1.5 var(--mono);letter-spacing:.09em;text-transform:uppercase;border:1.5px solid var(--indigo);color:var(--indigo);padding:0 5px}
+.badge.eq{border-style:dashed}
+.c-ship{display:flex;flex-direction:column;gap:1px;font:12px var(--mono);min-width:0}
+.c-ship .m{font-weight:600;overflow-wrap:anywhere}
+.c-ship .d{color:var(--ink2)}
+.c-ship .d.u{border-bottom:1px dotted var(--ink2);align-self:flex-start}
+.utk{font:600 9.5px var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--red)}
+.c-box{font:12px var(--mono);color:var(--ink2);white-space:nowrap}
+.c-diff{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.dbar{width:120px;height:4px;background:var(--hair);position:relative}
+.dbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.c-tot{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.tot{font:500 13.5px var(--mono);font-variant-numeric:tabular-nums;padding-bottom:1px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+.tot[data-tier=estimate]{border-bottom:1.5px dashed var(--indigo)}
+.tot .plus{color:var(--red);font-weight:700}
+.tot.none{border-bottom:0;color:var(--ink2)}
+.fx{font:10.5px var(--mono);color:var(--ink2)}
+.chev{font:12px var(--mono);color:var(--ink2);transition:transform .15s}
+.row[data-open=true] .chev{transform:rotate(90deg)}
+.cav{margin:0;padding:0 12px 12px 70px;display:flex;flex-direction:column;gap:4px}
+.cav:empty{display:none}
+.cav p{margin:0;display:flex;gap:8px;align-items:baseline;font-size:13px;line-height:1.35}
+.cav p.soft{color:var(--ink2);font:12px var(--mono)}
+
+/* flap */
+.flap{display:inline-flex;gap:1px;font-family:var(--mono);white-space:nowrap}
+.flap .c{display:inline-block;min-width:.62em;text-align:center;position:relative;border-bottom:1px solid var(--hair)}
+.flap .c.sp{min-width:.34em}
+.flap .c.flip{animation:flip .09s linear}
+@keyframes flip{0%{transform:scaleY(1)}50%{transform:scaleY(.15);background:var(--paper2)}100%{transform:scaleY(1)}}
+.flap.diff{font-size:19px;font-weight:700}
+.flap.diff.lead{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--red)}
+.flap.diff.nr{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--ink2)}
+.flap.diff .c{border-bottom-color:transparent}
+
+/* stamp \2014  2 lines so ESTIMATED CHEAPEST fits */
+.stamp{position:absolute;left:68px;top:6px;transform:rotate(-5deg);display:flex;flex-direction:column;align-items:center;font:700 11px/1.05 var(--mono);letter-spacing:.12em;color:var(--red);border:2px solid var(--red);padding:2px 8px 1px;outline:1px solid var(--red);outline-offset:2px;pointer-events:none;mix-blend-mode:multiply;opacity:.86;z-index:3;text-transform:uppercase}
+.stamp small{font-size:7.5px;letter-spacing:.2em}
+.stamp.press{animation:pressm .22s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pressm{from{transform:rotate(-5deg) scale(1.5);opacity:0}to{transform:rotate(-5deg) scale(1);opacity:.86}}
+
+/* delivery log */
+.log{margin:0 12px 18px 58px;background:var(--paper2);position:relative;border-top:2px dashed var(--ink);animation:tear .32s ease-out both}
+.log::before,.log::after{content:"";position:absolute;top:-8px;width:14px;height:14px;border-radius:50%;background:var(--paper)}
+.log::before{left:-7px}.log::after{right:-7px}
+@keyframes tear{from{clip-path:inset(0 0 100% 0);transform:translateY(-6px)}to{clip-path:inset(0 0 0 0);transform:none}}
+.login{padding:12px 20px 18px}
+.loghead{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px;padding-bottom:6px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font:10px var(--mono);color:var(--ink2);letter-spacing:.04em;text-transform:uppercase;align-items:center}
+.legend i{display:inline-block;width:20px;height:0;vertical-align:middle;margin-right:5px;border-bottom:1.5px solid var(--ink)}
+.legend .e i{border-bottom-style:dashed;border-color:var(--indigo)}.legend .u i{border-bottom-style:dotted}.legend .n i{border:0}
+ol.stages{list-style:none;margin:0;padding:0}
+.stage{display:grid;grid-template-columns:22px 1fr;column-gap:12px}
+.rail{position:relative}
+.rail .node{position:absolute;left:5px;top:13px;width:11px;height:11px;border:1.5px solid var(--ink);background:var(--paper2);border-radius:50%}
+.rail .lk{position:absolute;left:10px;top:26px;bottom:-12px;border-left:1.5px solid var(--ink)}
+.stage:last-child .rail .lk{display:none}
+.stage:last-child .rail .node{background:var(--ink)}
+.sbody{padding:8px 0 10px;border-bottom:1px solid var(--hair);min-width:0}
+.stage:last-child .sbody{border-bottom:0}
+.sname{display:flex;justify-content:space-between;gap:12px;font:700 22px/1.1 var(--serif);text-transform:uppercase;letter-spacing:.02em}
+.sname small{font:10px var(--mono);color:var(--ink2);margin-right:8px;letter-spacing:.06em}
+.sname .num{font-size:12.5px;color:var(--ink2);align-self:center;font-weight:500}
+.lhead{display:grid;grid-template-columns:minmax(0,1fr) 96px 110px 90px;column-gap:10px;padding:2px 0 0 28px}
+.ln{display:grid;grid-template-columns:minmax(0,auto) 1fr 96px 110px 90px;column-gap:10px;align-items:baseline;padding:4px 0 2px 28px;font-size:13.5px}
+.ln .l{min-width:0}
+.ln .lead{border-bottom:1.5px solid var(--ink);transform:translateY(-4px);min-width:12px}
+.ln .t{font:9.5px var(--mono);letter-spacing:.065em;text-transform:uppercase;color:var(--ink2);white-space:nowrap;display:flex;gap:5px;align-items:center;justify-content:flex-end}
+.ln .a{font:500 13.5px var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.ln .v1{font:12px var(--mono);font-variant-numeric:tabular-nums;text-align:right;color:var(--ink2);white-space:nowrap}
+.ln.estimate .lead{border-bottom:1.5px dashed var(--indigo)}.ln.estimate .a,.ln.estimate .t{color:var(--indigo)}
+.ln.unverified .lead{border-bottom:1.5px dotted var(--ink)}
+.ln.none .lead{border-bottom:0}.ln.none .a,.ln.none .t{color:var(--red)}
+.ln.surf{color:var(--ink2)}
+.ln.surf .lead{border-bottom:1px solid var(--hair)}
+.lnote{padding:0 0 2px 28px;font:11px var(--mono);color:var(--ink2)}
+.stage.other .sname{color:var(--red)}
+.pack{padding:6px 0 4px 28px}
+.pk-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 26px;margin-top:6px}
+.bx{margin:0;display:flex;flex-direction:column;gap:4px}
+.bx svg{display:block;overflow:visible}
+.bx figcaption{font:11px/1.4 var(--mono);color:var(--ink2);max-width:210px}
+.bx figcaption b{color:var(--ink);font-weight:600}
+.it rect{fill:var(--indigo)}
+.it.est rect{fill-opacity:.26;stroke:var(--indigo);stroke-dasharray:2.5 2;stroke-width:1}
+.it.fix rect{fill-opacity:.85;stroke:var(--ink);stroke-width:1}
+.pack{position:relative}
+.pk-note{display:inline}
+.pk-over{display:inline-block;margin-left:8px;font:700 10px var(--mono);letter-spacing:.09em;color:var(--red)}
+.bxart{display:block}
+.bxw{font:500 11.5px var(--mono);color:var(--ink);white-space:nowrap}
+.gauge{position:relative;display:block;height:3px;background:var(--hair);margin:3px 0 4px;min-width:92px}
+.gauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.gauge s{position:absolute;top:-2px;width:1px;height:7px;background:var(--ink2)}
+/* scale near the conditions: 1st place's boxes on a platform that sinks with weight */
+.heft{display:flex;align-items:center;gap:16px;margin:12px 0 0}
+.hstage{position:relative;width:200px;height:62px;flex:none}
+.hplat{position:absolute;left:0;right:40px;top:0;height:62px;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.hboxes{position:absolute;left:10px;right:0;bottom:14px;display:flex;align-items:flex-end;gap:6px}
+.hboxes>span{display:block;position:relative}
+.hboxes>span:first-child{z-index:1}
+.hbar{position:absolute;left:0;right:0;bottom:11px;height:3px;background:var(--ink)}
+.hptr{position:absolute;right:-34px;bottom:12px;width:30px;height:0;border-top:1.5px solid var(--red)}
+.hbase{position:absolute;left:18px;right:58px;bottom:0;height:8px;border:1.5px solid var(--ink);border-top:0}
+.hscale{position:absolute;right:0;top:0;bottom:0;width:30px;border-left:1px solid var(--ink)}
+.hscale i{position:absolute;left:0;width:5px;border-top:1px solid var(--ink)}
+.hscale i.m{width:9px}
+.hscale span{position:absolute;left:12px;font:8.5px/1 var(--mono);color:var(--ink2);transform:translateY(-50%)}
+.htxt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.htxt .num{font:500 13px var(--mono)}
+/* folded cart */
+.cartline{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:26px 0 0;padding:8px 0;border-top:1.5px solid var(--ink);border-bottom:1px solid var(--hair)}
+.cartline .num{font:500 15px var(--mono)}
+.provpick{display:inline-flex;gap:6px;align-items:baseline;padding:2px 0 4px 28px;font:11px var(--mono);color:var(--indigo)}
+.provpick select{font:12px var(--mono);border:0;border-bottom:1.5px dashed var(--indigo);background:transparent;color:var(--ink)}
+.door{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:10px;padding:6px 0 0 28px}
+.door .v{font:700 24px var(--mono);font-variant-numeric:tabular-nums;border-bottom:4px double var(--ink);padding-bottom:1px}
+.door .v .plus{color:var(--red)}
+.out{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:14px 0 0 28px;padding-top:12px;border-top:1px solid var(--hair)}
+.out a.go{background:var(--ink);color:var(--paper);text-decoration:none;font:600 12px var(--mono);letter-spacing:.06em;padding:8px 14px}
+.out a.go:focus-visible{outline:2px solid var(--indigo);outline-offset:3px}
+.out ul{margin:6px 0 0;padding:0;list-style:none;font:12px var(--mono);width:100%}
+.out li{margin:2px 0}
+
+/* no-board state */
+.norank{margin-top:14px;border:1.5px solid var(--ink);padding:16px 18px}
+.norank h3{font:700 22px/1.1 var(--serif);text-transform:uppercase;margin:0 0 6px}
+
+/* folds */
+details.fold{margin-top:22px;border-top:1.5px solid var(--ink)}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:10px 0 8px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary h2{font:700 22px/1 var(--serif);text-transform:uppercase;margin:0}
+details.fold>summary .lbl::after{content:" +"}
+details.fold[open]>summary .lbl::after{content:" \2212 "}
+details.fold>summary:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+.tscroll{overflow-x:auto;border-bottom:1px solid var(--ink)}
+table.ct{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+.ct th,.ct td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--hair);white-space:nowrap}
+.ct th:first-child,.ct td:first-child{text-align:left;white-space:normal;position:sticky;left:0;background:var(--paper);min-width:160px}
+.ct thead th{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-bottom:1.5px solid var(--ink);vertical-align:bottom}
+.ct thead th.sec{border-bottom-style:dashed}
+.ct td{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ct td.estimate{color:var(--indigo)}
+.ct td.none{color:var(--red)}
+.ct td .u{text-decoration:underline dashed 1px;text-underline-offset:3px}
+.ct tfoot td{font-weight:700;border-top:1.5px solid var(--ink);border-bottom:0}
+.ct td.stagecell{font:600 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);background:var(--paper2)}
+.wcbo{margin:0;padding:4px 0 10px;list-style:none;font-size:14px}
+.wcbo li{padding:6px 0;border-bottom:1px solid var(--hair);display:grid;grid-template-columns:130px 1fr;gap:12px}
+.wcbo li:last-child{border-bottom:0}
+.wcbo .k{font:600 10.5px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+.wcbo .k.e{color:var(--indigo)}.wcbo .k.n{color:var(--red)}
+
+/* ad \2014  deliberately NOT paper: flat grey, system font, 1px solid frame */
+.adzone{margin:56px 0 0;padding:48px 0;border-top:1px solid var(--ink2);border-bottom:1px solid var(--ink2);display:flex;flex-direction:column;align-items:center;gap:6px}
+.adlabel{font:12px/1 system-ui,-apple-system,'Segoe UI',sans-serif;color:var(--ad-ink);align-self:center}
+.adslot{width:728px;max-width:100%;min-height:90px;background:var(--ad-bg);border:1px solid var(--ad-line);display:flex;align-items:center;justify-content:center;font:12px system-ui,-apple-system,sans-serif;color:#6A6A6A;border-radius:2px}
+.adnote{font:11px system-ui,-apple-system,sans-serif;color:#6A6A6A}
+
+/* footer */
+footer{margin-top:0;padding:18px 0 0;display:grid;grid-template-columns:1.4fr 1fr;gap:12px 32px;font:12px/1.55 var(--mono);color:var(--ink2);border-top:3px double var(--ink)}
+footer p{margin:0 0 6px}
+footer nav{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:flex-end;align-content:flex-start}
+
+/* command bar + candidate dialog */
+.scrim{position:fixed;inset:0;background:rgba(27,26,23,.35);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:10vh 16px 16px}
+.dlg{width:min(620px,100%);background:var(--paper);border:1.5px solid var(--ink);outline:1px solid var(--ink);outline-offset:3px;max-height:78vh;display:flex;flex-direction:column}
+.dlg header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:10px 14px;border-bottom:1.5px solid var(--ink)}
+.dlg header h2{font:700 20px/1 var(--serif);text-transform:uppercase;margin:0}
+.dlg .body{overflow:auto}
+.cand{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:12px;width:100%;padding:10px 14px;border-bottom:1px dashed var(--hair)}
+.cand:hover,.cand:focus-visible{background:var(--paper2);outline:none;box-shadow:inset 3px 0 0 var(--indigo)}
+.cand .p{font:500 14px var(--mono);color:var(--indigo);border-bottom:1.5px dashed var(--indigo);align-self:start;white-space:nowrap}
+.cand .p.none{color:var(--ink2);border-bottom:0;font-size:11px}
+.dlg footer{border-top:1.5px solid var(--ink);display:block;padding:8px 14px;font:11px var(--mono);color:var(--ink2);margin:0;grid-template-columns:none}
+.cmd input{width:100%;border:0;border-bottom:1.5px solid var(--ink);background:transparent;padding:12px 14px;font:500 17px var(--mono);border-radius:0}
+.cmd input:focus{outline:none;border-bottom-color:var(--indigo)}
+.cmd ul{list-style:none;margin:0;padding:0}
+.cmd li button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;gap:10px;width:100%;padding:8px 14px;border-bottom:1px dashed var(--hair);font:13px var(--mono)}
+.cmd li button:hover,.cmd li button:focus-visible,.cmd li button.hi{background:var(--paper2);box-shadow:inset 3px 0 0 var(--indigo);outline:none}
+.cmd li button span:last-child{color:var(--ink2)}
+.skel{display:block;height:10px;background:repeating-linear-gradient(90deg,var(--hair) 0 8px,transparent 8px 12px);margin:6px 0}
+
+/* ---------- narrow (container) ---------- */
+@container (max-width:760px){
+  .bh{display:none}
+  .board .rh,.board.uniform .rh{grid-template-columns:34px minmax(0,1fr) auto;grid-template-areas:"rk sv cv" "rk sh sh" "rk df tt";row-gap:8px;column-gap:10px}
+  .c-rank{grid-area:rk}.c-svc{grid-area:sv}.c-ship{grid-area:sh;flex-direction:row;flex-wrap:wrap;gap:2px 10px}.c-box{display:none}
+  .board.uniform .c-ship{display:none}
+  .c-diff{grid-area:df;align-items:flex-start}.c-tot{grid-area:tt}.chev{grid-area:cv;align-self:start}
+  .dbar{width:96px}
+  .row.first .rh{padding-top:40px}
+  .stamp{left:46px}
+  .cav{padding-left:56px}
+  .log{margin:0 0 16px 0}
+  .login{padding:10px 12px 14px}
+  .lhead{display:none}
+  .ln{grid-template-columns:minmax(0,1fr) auto;row-gap:0;padding-left:10px}
+  .ln .lead{display:none}
+  .ln .t{grid-column:1;justify-content:flex-start}
+  .ln .a{grid-column:2;grid-row:1}
+  .ln .v1{grid-column:2;grid-row:2}
+  .lnote,.pack,.door{padding-left:10px}
+  .out{margin-left:10px}
+  .stage{grid-template-columns:14px 1fr;column-gap:8px}
+  .rail .node{left:1px}.rail .lk{left:6px}
+  .empty{grid-template-columns:1fr}
+  .empty>div{border-right:0;border-bottom:1px solid var(--ink)}
+  .empty>div:last-child{border-bottom:0}
+  .manual{grid-template-columns:1fr 1fr}
+  .manual .fld:first-child{grid-column:1/-1}
+  .provpick{padding-left:10px}
+  .postmark{display:none}
+  .item{grid-template-columns:40px minmax(0,1fr) auto;column-gap:10px}
+  .thumb{width:40px;height:40px}
+  .adslot{width:320px;min-height:100px}
+  footer{grid-template-columns:1fr}
+  footer nav{justify-content:flex-start}
+  .scrim.sheet{align-items:flex-end;padding:0}
+  .scrim.sheet .dlg{width:100%;max-height:86vh;outline:0;border-width:1.5px 0 0}
+  .wcbo li{grid-template-columns:1fr;gap:2px}
+}
+/* =========================================================================
+   LIGHT MAKEUP  \2014  same markup, same data, less cosmetics.
+   Everything below is scoped to html[data-makeup=light]; the Heavy look is
+   untouched. Kept: paper ground, postal red (narrowed), rubber stamp, box +
+   scale drawings, tier line-styles (solid / dashed / dotted / none), the "!"
+   tier-1 mark. Dropped: paper grain, postmark, engraved display type,
+   decorative rules, blanket mono + uppercase, decorative red.
+   ========================================================================= */
+html[data-makeup=light]{--hair:rgba(27,26,23,.17)}
+html[data-makeup=light] body{background-image:none}
+
+/* 1. grain, postmark, hatching */
+html[data-makeup=light] .postmark{display:none}
+html[data-makeup=light] .thumb{background:var(--paper2);border-color:var(--hair)}
+
+/* 2. mono is for figures and codes only; sans for language */
+html[data-makeup=light] .svc,html[data-makeup=light] .svc small,html[data-makeup=light] .tag,
+html[data-makeup=light] .ref,html[data-makeup=light] .wsub,html[data-makeup=light] .wsrc,
+html[data-makeup=light] .ln .t,html[data-makeup=light] .lnote,html[data-makeup=light] .legend,
+html[data-makeup=light] .bx figcaption,html[data-makeup=light] .chip,html[data-makeup=light] .utk,
+html[data-makeup=light] .cartfoot,html[data-makeup=light] .addsub,html[data-makeup=light] .rm,
+html[data-makeup=light] .imeta,html[data-makeup=light] .band,html[data-makeup=light] .cav p.soft,
+html[data-makeup=light] .sumtot,html[data-makeup=light] .emptyfoot,html[data-makeup=light] footer,
+html[data-makeup=light] .out ul,html[data-makeup=light] .out a.go,html[data-makeup=light] .btn,
+html[data-makeup=light] .kbtn,html[data-makeup=light] .mast nav,html[data-makeup=light] .provpick,
+html[data-makeup=light] .wcbo .k,html[data-makeup=light] .dlg footer,html[data-makeup=light] .cmd li button,
+html[data-makeup=light] .wpick .link,html[data-makeup=light] .band .tag2,html[data-makeup=light] .pk-over,
+html[data-makeup=light] .sname small,html[data-makeup=light] .ct td.stagecell,html[data-makeup=light] #pop h4,
+html[data-makeup=light] .fx,html[data-makeup=light] .c-ship .d,html[data-makeup=light] .chev,
+html[data-makeup=light] .flap.diff.lead,html[data-makeup=light] .flap.diff.nr{font-family:var(--sans)}
+/* uppercase + wide tracking survives only on the smallest labels */
+html[data-makeup=light] .svc,html[data-makeup=light] .ln .t,html[data-makeup=light] .legend,
+html[data-makeup=light] .utk,html[data-makeup=light] .btn,html[data-makeup=light] .out a.go,
+html[data-makeup=light] .band .tag2,html[data-makeup=light] .wcbo .k,html[data-makeup=light] .pk-over,
+html[data-makeup=light] .kbtn,html[data-makeup=light] .flap.diff.lead,html[data-makeup=light] .flap.diff.nr,
+html[data-makeup=light] .ct td.stagecell,html[data-makeup=light] #pop h4,
+html[data-makeup=light] .sname small{text-transform:none;letter-spacing:normal}
+html[data-makeup=light] .svc{font-size:16px;font-weight:600}
+html[data-makeup=light] .svc small{font-size:12px;text-transform:none}
+html[data-makeup=light] .ln .t{font-size:11.5px}
+html[data-makeup=light] .legend{font-size:11px}
+html[data-makeup=light] .btn{font-size:13px;font-weight:600}
+html[data-makeup=light] .out a.go{font-size:13px}
+html[data-makeup=light] .lbl{letter-spacing:.06em}
+
+/* 3. no engraved display type \2014  hierarchy from weight and size.
+      Big Shoulders stays on the wordmark only. */
+html[data-makeup=light] .summary,html[data-makeup=light] .sechead h2,
+html[data-makeup=light] details.fold>summary h2,html[data-makeup=light] .dlg header h2,
+html[data-makeup=light] .norank h3,html[data-makeup=light] .empty h3,
+html[data-makeup=light] .empty .n,html[data-makeup=light] .sname{font-family:var(--sans);text-transform:none;letter-spacing:-.01em}
+html[data-makeup=light] .summary{font-size:clamp(21px,2.6vw,29px);font-weight:700;line-height:1.22;max-width:40ch;margin-top:24px}
+html[data-makeup=light] .summary b{font-weight:800}
+html[data-makeup=light] .summary .gap{font-size:.82em;letter-spacing:normal}
+html[data-makeup=light] .sechead h2,html[data-makeup=light] details.fold>summary h2,
+html[data-makeup=light] .norank h3{font-size:16px;font-weight:700;line-height:1.3}
+html[data-makeup=light] .dlg header h2,html[data-makeup=light] .empty h3{font-size:15px;font-weight:700}
+html[data-makeup=light] .sname{font-size:15px;font-weight:700;line-height:1.3}
+html[data-makeup=light] .sname .num{font-size:12px}
+html[data-makeup=light] .empty .n{font-size:26px;font-weight:700;color:var(--ink2)}
+
+/* 5. red is reserved for 1st place and the tier-1 "!" warning */
+html[data-makeup=light] .mast h1 i,html[data-makeup=light] .summary b{color:var(--ink)}
+html[data-makeup=light] .stage.other .sname{color:var(--ink)}
+html[data-makeup=light] .ln.none .a,html[data-makeup=light] .ln.none .t,
+html[data-makeup=light] .ct td.none,html[data-makeup=light] .wcbo .k.n,
+html[data-makeup=light] .wsrc.as{color:var(--ink2)}
+html[data-makeup=light] .tot .plus,html[data-makeup=light] .door .v .plus,
+html[data-makeup=light] .utk,html[data-makeup=light] .pk-over{color:var(--ink2);font-weight:600}
+html[data-makeup=light] .fin.t-assumed input{border-bottom:1.5px dotted var(--ink2);color:var(--ink)}
+html[data-makeup=light] .fin.t-none input{border-bottom:0;color:var(--ink2)}
+html[data-makeup=light] .item.hot{background:none}
+html[data-makeup=light] .hptr{border-top-color:var(--ink2)}
+html[data-makeup=light] .notice{border-top:1px solid var(--hair)}
+html[data-makeup=light] .decisive{border-top:1px solid var(--hair)}
+html[data-makeup=light] .cond{border-top-width:1.5px}
+
+/* 6. fewer rules, more air \2014  no double lines, no heavy frames */
+html[data-makeup=light] .mast{border-bottom:1px solid var(--ink);padding-bottom:12px}
+html[data-makeup=light] footer{border-top:1px solid var(--hair);padding-top:22px}
+html[data-makeup=light] .sechead{border-bottom:1px solid var(--hair);margin-top:34px}
+html[data-makeup=light] .board{border-top:1px solid var(--ink);border-bottom:1px solid var(--hair)}
+html[data-makeup=light] .bh{border-bottom:1px solid var(--hair)}
+html[data-makeup=light] .add,html[data-makeup=light] .empty,html[data-makeup=light] .norank,
+html[data-makeup=light] .waybill{border-width:1px}
+html[data-makeup=light] .waybill{background:var(--hair)}
+html[data-makeup=light] .wb{padding:10px 16px 11px}
+html[data-makeup=light] .empty>div{border-right-color:var(--hair)}
+html[data-makeup=light] .manual{border:1px solid var(--hair)}
+html[data-makeup=light] .cartline{border-top:1px solid var(--hair)}
+html[data-makeup=light] .door .v{border-bottom:1.5px solid var(--ink)}
+html[data-makeup=light] .dlg,html[data-makeup=light] #pop{outline:0;border-width:1px}
+html[data-makeup=light] .cand{border-bottom-style:solid}
+html[data-makeup=light] .cmd li button{border-bottom-style:solid}
+html[data-makeup=light] .ct thead th{border-bottom:1px solid var(--ink)}
+html[data-makeup=light] .ct tfoot td{border-top:1px solid var(--ink)}
+html[data-makeup=light] .tscroll{border-bottom:1px solid var(--hair)}
+html[data-makeup=light] .ct td.stagecell{background:none;color:var(--ink2);font-size:11px;font-weight:600}
+html[data-makeup=light] .row:not(.first) .rh{padding-top:16px;padding-bottom:16px}
+html[data-makeup=light] .row.first .rh{padding-bottom:16px}
+html[data-makeup=light] .item{padding:14px 0}
+html[data-makeup=light] .wcbo li{padding:9px 0}
+html[data-makeup=light] .cav{gap:6px;padding-bottom:14px}
+/* the torn perforation is decoration; the tear animation stays */
+html[data-makeup=light] .log{background:none;border-top:1px solid var(--hair)}
+html[data-makeup=light] .log::before,html[data-makeup=light] .log::after{display:none}
+html[data-makeup=light] .rail .node{background:var(--paper)}
+html[data-makeup=light] .stamp{outline:0;border-width:1.5px;opacity:.92}
+html[data-makeup=light] .flap .c{border-bottom-color:transparent}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<script>document.documentElement.setAttribute('data-makeup','light');</script>
+
+<div class="mockbar" role="region" aria-label="Mock controls (not part of the product)">
+  <b>MOCK STATES</b>
+  <label>state
+    <select id="mockState">
+      <option value="initial">1 Initial &#x2014; example cart (CA)</option>
+      <option value="empty">2 Empty cart</option>
+      <option value="adding">3 Adding &#x2014; search candidates open</option>
+      <option value="manual">3b Adding &#x2014; by hand</option>
+      <option value="editing">4 Editing &#x2014; row open, decisive weight</option>
+      <option value="method">5 Method fixed: DHL (4 not offered)</option>
+      <option value="tied">7a Tied &#x2014; CA &#xB7; EMS &#xB7; 200 g</option>
+      <option value="indet">7b Can't tell &#x2014; US &#xB7; Buyee Air &#xB7; 3&#xD7;600 g</option>
+      <option value="norate">7c No rate covers &#x2014; GB &#xB7; 40 kg</option>
+      <option value="loading">8a Loading &#x2014; reading a URL</option>
+      <option value="error">8b Error &#x2014; page couldn't be read</option>
+    </select>
+  </label>
+  <button type="button" id="phoneBtn" aria-pressed="false">390px frame</button>
+  <span id="makeup" role="group" aria-label="Makeup">Makeup
+    <button type="button" class="mkup" data-makeup="heavy" aria-pressed="false">Heavy</button>
+    <button type="button" class="mkup" data-makeup="light" aria-pressed="true">Light</button>
+  </span>
+  <span class="why" id="mockWhy"></span>
+</div>
+
+<div class="app" id="app">
+  <header class="mast">
+    <h1>proxy<i>cost</i></h1>
+    <nav aria-label="Site">
+      <a href="#weights">Weights</a><a href="#sources">Sources</a>
+      <button type="button" class="kbtn" id="cmdBtn" aria-keyshortcuts="Meta+K Control+K">&#x2318;K change</button>
+    </nav>
+  </header>
+  <p class="lede">What five Japanese proxies would charge you, landed at your door. <b>Some pay us, some don't &#x2014; that never moves a row.</b></p>
+
+  <section aria-label="Add items">
+    <form class="add" id="addForm" autocomplete="off">
+      <label class="sr" for="q">Paste a listing URL, or search by keyword</label>
+      <input id="q" placeholder="Paste a listing URL, or search by keyword (&#x4F8B;: &#x306D;&#x3093;&#x3069;&#x308D;&#x3044;&#x3069;)">
+      <button class="btn" id="addBtn" type="submit">Add</button>
+    </form>
+    <div class="addsub">
+      <span>URL = the listing's own price &#xB7; keyword = reference price</span>
+      <button type="button" class="link" id="manualBtn" aria-expanded="false" aria-controls="manual">Add by hand</button>
+    </div>
+    <div id="notice"></div>
+    <form class="manual" id="manual" hidden>
+      <div class="fld"><label class="lbl" for="mTitle">Item name</label><input id="mTitle" class="jp" required></div>
+      <div class="fld"><label class="lbl" for="mPrice">Price &#xA5;</label><input id="mPrice" inputmode="numeric" placeholder="optional"></div>
+      <div class="fld"><label class="lbl" for="mSite">Site</label><select id="mSite"></select></div>
+      <button class="btn ghost" type="submit">Add by hand</button>
+    </form>
+  </section>
+
+  <section class="waybill" id="waybill" aria-label="Conditions"></section>
+  <div class="heft" id="heft" hidden>
+    <div class="hstage" aria-hidden="true">
+      <div class="hplat" id="hplat"><div class="hboxes" id="hboxes"></div><i class="hbar"></i><i class="hptr"></i></div>
+      <i class="hbase"></i><div class="hscale" id="hscale"></div>
+    </div>
+    <div class="htxt"><span class="lbl">On the scale &middot; 1st place</span><span class="num" id="heftTxt" aria-live="polite"></span></div>
+  </div>
+
+  <div id="results" aria-live="off"></div>
+  <section id="cart" aria-label="Cart"></section>
+  <div id="folds"></div>
+  <div id="ad"></div>
+  <footer id="foot"></footer>
+</div>
+<div id="pop" role="dialog" aria-modal="false" hidden></div>
+<div id="layer"></div>
+
+<script src="engine.js"></script>
+<script>
+(()=>{
+const P = window.ProxyCost;
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)');
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ================= format (mirrors src/lib/ui/format.ts) ================= */
+const yen = n => '\u00A5' + Math.round(n).toLocaleString('en-US');
+const yenR = n => '\u00A5' + (Math.round(n/100)*100).toLocaleString('en-US');
+const grams = g => g >= 1000 ? `${(g/1000).toFixed(g%1000===0?0:1)} kg` : `${Math.round(g).toLocaleString('en-US')} g`;
+const SYM = {USD:'$',GBP:'\u00A3',EUR:'\u20AC',AUD:'A$',CAD:'C$',SGD:'S$'};
+const foreign = (y,c,r) => r ? `\u2248 ${SYM[c]??''}${Math.round(y/r).toLocaleString('en-US')}` : '';
+const certain = t => t.high !== null && t.high === t.low;
+/* Total rule (totalIntervalText, round=true): high null -> "\u00A5X or more" shown as "\u00A5X+", high==low -> point, else "\u00A5X \u2013 Y".
+   Estimate prefix: row.approximate -> "\u2248" (prod "~"; the Mock adopts the prototype glyph). */
+function totalParts(row){
+  const pre = row.approximate ? '\u2248' : '';
+  const t = row.total;
+  if (t.high === null) return {vis:`${pre}${yenR(t.low)}`, plus:true, aria:`${row.approximate?'about ':''}${yenR(t.low)} or more, upper bound unknown`};
+  if (yenR(t.high) === yenR(t.low)) return {vis:`${pre}${yenR(t.low)}`, plus:false, aria:`${row.approximate?'about ':''}${yenR(t.low)}`};
+  return {vis:`${pre}${yenR(t.low)} \u2013 ${yenR(t.high).slice(1)}`, plus:false, aria:`${row.approximate?'about ':''}${yenR(t.low)} to ${yenR(t.high)}`};
+}
+function totalHTML(row, cls='tot'){
+  if (!row.comparable) return `<span class="${cls} none" aria-label="no comparable total">\u2014</span>`;
+  const p = totalParts(row);
+  return `<span class="${cls}" data-tier="${row.approximate?'estimate':'fixed'}" aria-label="${esc(p.aria)}"><span aria-hidden="true">${esc(p.vis)}${p.plus?'<span class="plus">+</span>':''}</span></span>`;
+}
+
+/* ================= reference data ================= */
+const ALLM = [...P.POSTAL_METHODS.map(m=>({...m,group:'Japan Post'})), ...P.COURIER_METHODS.map(m=>({...m,group:'Courier'}))];
+const MBY = Object.fromEntries(ALLM.map(m=>[m.id,m]));
+const SVC = Object.fromEntries(P.SERVICES.map(s=>[s.id,s]));
+const SITES = {'yahoo-auctions':'auctions.yahoo.co.jp','mercari':'mercari.com','rakuten':'rakuten.co.jp','yahoo-shopping':'shopping.yahoo.co.jp','amazon-jp':'amazon.co.jp','suruga-ya':'suruga-ya.jp','mandarake':'mandarake.co.jp','zozo':'zozo.jp','hmv':'hmv.co.jp','toranoana':'toranoana.jp','other':'unknown site'};
+const AUCTION = new Set(['yahoo-auctions','mercari']); // mock stand-in for siteById(site).kind === 'auction'
+const COUNTRY_ORDER = ['US','GB','DE','FR','AU','CA','SG'];
+// Province names only (rates live in countries.ts, not exported by engine.js). The tax amount itself always comes from the engine's province-tax line.
+const PROVINCES = [['ON','Ontario'],['QC','Quebec'],['BC','British Columbia'],['AB','Alberta'],['MB','Manitoba'],['SK','Saskatchewan'],['NS','Nova Scotia'],['NB','New Brunswick'],['NL','Newfoundland and Labrador'],['PE','Prince Edward Island'],['YT','Yukon'],['NT','Northwest Territories'],['NU','Nunavut']];
+const ASSUMED_G = 1000; // MOCK: stand-in for weights.ts ASSUMED_WEIGHT_G (not exported by engine.js)
+
+/* Line.key -> delivery-log stage. UI-side table: Line has no stage field (NEEDS FIELD or a unit test on port).
+   Unknown keys go to "Other" \u2014 never silently into Bought. */
+const STAGES = [['bought','Bought'],['warehouse','Warehouse'],['packed','Packed'],['export','Export clearance'],['import','Import clearance'],['other','Other (unmapped fee)'],['door','Door']];
+const STAGE_OF = {
+  'items':'bought','service-fee':'bought','purchase-fee':'bought','payment-inside-jp':'bought','deposit':'bought','bank-fee':'bought','protection-plan':'bought','ad-valorem':'bought',
+  'domestic-shipping':'warehouse','storage':'warehouse',
+  'packing':'packed','consolidation-packing':'packed','outsourced-packing':'packed',
+  'intl-shipping':'export','export-clearance':'export',
+  'duty':'import','vat':'import','province-tax':'import','courier-clearance-fee':'import','clearance':'import',
+};
+const stageOf = k => STAGE_OF[k] ?? 'other';
+
+/* ================= mock inputs ================= */
+let seq = 0;
+function mkItem(d){
+  const id = 'i' + (seq++);
+  const origin = d.origin ?? 'table';
+  return {
+    id, title:d.title, priceYen:d.price ?? 0,
+    priceTier: d.price == null || AUCTION.has(d.site) ? 'estimate' : (d.priceTier ?? 'fixed'),
+    site:d.site, url:d.url ?? null, imageUrl:null, qty:d.qty ?? 1,
+    weightG: origin==='assumed' ? ASSUMED_G : d.w, weightTier:'estimate', weightOrigin:origin,
+    weightRangeG: origin==='table' ? d.range : null, weightSource: origin==='table' ? d.src : null,
+    _tableW: d.tableW ?? (origin==='table' ? d.w : null), _tableRange: d.range ?? null, _tableSrc: d.src ?? null,
+    domesticShippingYen:null, freeShipping:false,
+  };
+}
+const EXAMPLE = () => [
+  {title:'\u521D\u97F3\u30DF\u30AF 1/7 \u30B9\u30B1\u30FC\u30EB\u30D5\u30A3\u30AE\u30E5\u30A2 \u7BB1\u4ED8\u304D \u7F8E\u54C1', price:12800, site:'yahoo-auctions', w:1400, range:[980,1960], src:'1/7 scale figure \u00B7 n=647'},
+  {title:'\u306D\u3093\u3069\u308D\u3044\u3069 \u93E1\u97F3\u30EA\u30F3 \u672A\u958B\u5C01', price:4200, site:'mercari', w:380, range:[266,532], src:'Nendoroid \u00B7 n=1,204'},
+  {title:'\u53E4\u672C \u307E\u3068\u3081\u58F2\u308A 20\u518A \u6587\u5EAB', price:2500, site:'yahoo-auctions', origin:'assumed'},
+  {title:'\u30DD\u30B1\u30E2\u30F3\u30AB\u30FC\u30C9 \u65E7\u88CF \u307E\u3068\u3081 100\u679A', price:8800, site:'yahoo-auctions', w:250, origin:'user', tableW:180, range:[120,260], src:'Trading cards (bundle) \u00B7 n=312'},
+  {title:'\u30EC\u30C8\u30ED\u30B2\u30FC\u30E0 \u30BD\u30D5\u30C8 \u7BB1\u8AAC\u4ED8\u304D \u30B9\u30FC\u30D1\u30FC\u30D5\u30A1\u30DF\u30B3\u30F3', price:3980, site:'suruga-ya', w:300, range:[210,420], src:'Retro game cartridge boxed \u00B7 n=880', priceTier:'fixed'},
+].map(mkItem);
+const CANDIDATES = [
+  {title:'\u306D\u3093\u3069\u308D\u3044\u3069 \u521D\u97F3\u30DF\u30AF V4X', price:5400, site:'mercari', w:360, range:[252,504], src:'Nendoroid \u00B7 n=1,204'},
+  {title:'\u306D\u3093\u3069\u308D\u3044\u3069 \u93E1\u97F3\u30EC\u30F3 \u672A\u958B\u5C01 \u7F8E\u54C1', price:4800, site:'yahoo-auctions', w:380, range:[266,532], src:'Nendoroid \u00B7 n=1,204'},
+  {title:'\u3010\u4E2D\u53E4\u3011\u306D\u3093\u3069\u308D\u3044\u3069 \u307E\u3068\u3081 5\u4F53\u30BB\u30C3\u30C8', price:null, site:'yahoo-auctions', origin:'assumed'},
+  {title:'\u306D\u3093\u3069\u308D\u3044\u3069\u3069\u30FC\u308B \u304A\u3088\u3046\u3075\u304F\u30BB\u30C3\u30C8', price:2200, site:'amazon-jp', origin:'assumed'},
+];
+
+/* ================= state ================= */
+const S = {
+  items:[], unpriced:new Set(), country:'CA', province:null, method:'cheapest', storageDays:45,
+  open:null, busy:false, notice:null, dialog:null, pending:null, readOn:{}, hotItem:null,
+};
+const prevText = new Map();
+
+function resultFor(){
+  const priced = S.items.filter(i=>!S.unpriced.has(i.id));
+  const clean = priced.map(({_tableW,_tableRange,_tableSrc,...i})=>i);
+  return P.compare({items:clean, country:S.country, province:S.country==='CA'?S.province:null, method:S.method, storageDays:S.storageDays});
+}
+/* Method availability: MethodPicker uses courierMethodAvailable (not exported). Mock proxy: run compare() with that method
+   and see whether any row is comparable. NEEDS FIELD/export on port: availability per (method,country) independent of cart. */
+const availCache = new Map();
+function methodAvailable(mid){
+  const key = S.country+'|'+mid;
+  if (availCache.has(key)) return availCache.get(key);
+  const probe = [{id:'p',title:'probe',priceYen:3000,priceTier:'fixed',site:'amazon-jp',weightG:1000,weightTier:'estimate',weightOrigin:'user',qty:1}];
+  const ok = P.compare({items:probe,country:S.country,method:mid,storageDays:45}).rows.some(r=>r.comparable);
+  availCache.set(key, ok); return ok;
+}
+
+/* ================= popover (tier 3) ================= */
+let NOTES = new Map(), nId = 0, popBtn = null;
+function mk(title, body, text='\u00A7', cls=''){
+  const id = 'n'+(nId++); NOTES.set(id,{title,body});
+  return `<button type="button" class="mk ${cls}" data-note="${id}" aria-expanded="false" aria-controls="pop" aria-label="${esc('About: '+title)}">${esc(text)}</button>`;
+}
+function openPop(btn){
+  const n = NOTES.get(btn.dataset.note); if(!n) return;
+  const pop = $('#pop');
+  if (popBtn === btn){ closePop(true); return; }
+  closePop(false);
+  pop.innerHTML = `<button type="button" class="x" aria-label="Close">close</button><h4>${esc(n.title)}</h4>${n.body}`;
+  pop.hidden = false; popBtn = btn; btn.setAttribute('aria-expanded','true');
+  pop.setAttribute('aria-label', n.title);
+  const r = btn.getBoundingClientRect(), w = Math.min(340, document.documentElement.clientWidth - 24);
+  pop.style.width = w+'px';
+  let left = r.left + window.scrollX; left = Math.max(12, Math.min(left, document.documentElement.clientWidth - w - 12));
+  pop.style.left = left+'px'; pop.style.top = (r.bottom + window.scrollY + 8)+'px';
+  pop.querySelector('.x').focus();
+}
+function closePop(refocus){
+  const pop = $('#pop'); if (pop.hidden) return;
+  pop.hidden = true;
+  if (popBtn){ popBtn.setAttribute('aria-expanded','false'); if(refocus && document.body.contains(popBtn)) popBtn.focus(); }
+  popBtn = null;
+}
+document.addEventListener('click', e=>{
+  const b = e.target.closest('.mk'); if (b){ e.preventDefault(); e.stopPropagation(); openPop(b); return; }
+  if (e.target.closest('#pop .x')){ closePop(true); return; }
+  if (!e.target.closest('#pop')) closePop(false);
+});
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape'){ if(!$('#pop').hidden){ closePop(true); return; } if(S.dialog){ closeDialog(); } }
+  if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); openCmd(); }
+});
+window.addEventListener('resize', ()=>closePop(false));
+
+/* ================= flap ================= */
+function flapHTML(key, text, cls){
+  const prev = prevText.get(key); prevText.set(key, text);
+  const cells = [...text].map((ch,i)=>`<span class="c${ch===' '?' sp':''}" data-to="${esc(ch)}" data-ch="${prev!==undefined && prev[i]!==ch ? 1 : 0}">${esc(ch)}</span>`).join('');
+  return `<span class="flap ${cls}" aria-label="${esc(text)}"><span aria-hidden="true" style="display:inline-flex;gap:1px">${cells}</span></span>`;
+}
+const GLYPHS = '0123456789\u00A5+,-\u2013';
+function runFlaps(root){
+  if (RM.matches) return;
+  root.querySelectorAll('.flap .c[data-ch="1"]').forEach((c,i)=>{
+    const to = c.dataset.to; let n = 0; const steps = 3 + (i%4);
+    const t = setInterval(()=>{
+      c.classList.remove('flip'); void c.offsetWidth; c.classList.add('flip');
+      if (++n >= steps){ c.textContent = to; clearInterval(t); } else c.textContent = GLYPHS[(Math.random()*GLYPHS.length)|0];
+    }, 55);
+  });
+}
+
+/* ================= add flow ================= */
+function setNotice(n){ S.notice = n; renderNotice(); }
+function renderNotice(){
+  const el = $('#notice');
+  if (!S.notice){ el.innerHTML = ''; return; }
+  const N = {
+    unreadable:['We couldn\'t read that page.','It may need a login, or it hides its price from us. Add it by hand \u2014 you\'ll type the price.'],
+    listpage:['That looks like a search or category page, not one listing.','Open a single item and paste its URL.'],
+    nosearch:['Keyword search isn\'t set up on this copy.','Paste a listing URL instead, or add it by hand.'],
+    searchdown:['Search is unavailable right now.','Paste a listing URL instead, or add it by hand.'],
+  }[S.notice];
+  el.innerHTML = `<p class="notice" role="alert"><span class="bang" aria-hidden="true">!</span><span><b>${esc(N[0])}</b> ${esc(N[1])} <button type="button" class="link act" data-act="manual">Add by hand</button></span></p>`;
+}
+$('#addForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const q = $('#q').value.trim(); if(!q || S.busy) return;
+  setNotice(null);
+  if (/^https?:\/\//i.test(q)) startFetch(q); else openCandidates(q);
+});
+function startFetch(url, hold=false){
+  S.busy = true; S.pending = url; renderAddBusy(); renderCart();
+  if (hold) return;
+  setTimeout(()=>{
+    S.busy = false; S.pending = null;
+    if (/list|search|category|fail/.test(url)){ setNotice(/fail/.test(url)?'unreadable':'listpage'); }
+    else {
+      const it = mkItem({title:'\u30C9\u30E9\u30B4\u30F3\u30DC\u30FC\u30EB \u4E00\u756A\u304F\u3058 A\u8CDE \u30D5\u30A3\u30AE\u30E5\u30A2', price:9800, site:'yahoo-shopping', w:1100, range:[770,1540], src:'Prize figure (large) \u00B7 n=431', priceTier:'fixed', url});
+      S.items.push(it); S.readOn[it.id] = '2026-09-14'; $('#q').value='';
+    }
+    renderAddBusy(); renderAll();
+  }, 1100);
+}
+function renderAddBusy(){
+  const b = $('#addBtn');
+  b.setAttribute('aria-busy', S.busy?'true':'false');
+  b.innerHTML = S.busy ? '<span class="spin" aria-hidden="true"></span>Reading\u2026' : 'Add';
+}
+$('#manualBtn').addEventListener('click', ()=>toggleManual());
+function toggleManual(force){
+  const m = $('#manual'); const open = force ?? m.hidden;
+  m.hidden = !open; $('#manualBtn').setAttribute('aria-expanded', String(open));
+  if (open) $('#mTitle').focus();
+}
+$('#mSite').innerHTML = Object.entries(SITES).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('');
+$('#manual').addEventListener('submit', e=>{
+  e.preventDefault();
+  const t = $('#mTitle').value.trim(); if(!t) return;
+  const pr = $('#mPrice').value.replace(/[^\d]/g,'');
+  const it = mkItem({title:t, price: pr===''?null:+pr, site:$('#mSite').value, origin:'assumed', priceTier:'estimate'});
+  S.items.push(it); if (pr==='') S.unpriced.add(it.id);
+  $('#manual').reset(); toggleManual(false); renderAll();
+});
+
+/* candidate dialog: desktop centered, narrow = bottom sheet */
+let lastFocus = null;
+function openCandidates(q){
+  lastFocus = document.activeElement;
+  S.dialog = 'cand';
+  const narrow = $('#app').clientWidth <= 760;
+  $('#layer').innerHTML = `<div class="scrim ${narrow?'sheet':''}" data-close="1"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+    <header><h2 id="dlgT">Results for \u201C<span class="jp">${esc(q)}</span>\u201D</h2><button type="button" class="link" data-close="1">Close</button></header>
+    <div class="body">${CANDIDATES.map((c,i)=>`<button type="button" class="cand" data-cand="${i}">
+      <span class="thumb" aria-hidden="true">img</span>
+      <span style="min-width:0"><span class="ititle">${esc(c.title)}</span><span class="imeta"><span class="chip">${esc(SITES[c.site])}</span></span></span>
+      ${c.price==null?`<span class="p none">no price \u2014<br>you'll enter it</span>`:`<span class="p" aria-label="reference price about ${yen(c.price)}">\u2248${yen(c.price)}</span>`}
+    </button>`).join('')}</div>
+    <footer>Example candidates (Mock \u2014 search API not called). Prices here are reference prices; paste the listing URL for the exact one. One query, no paging.</footer>
+  </div></div>`;
+  const first = $('#layer .cand'); first && first.focus();
+}
+function closeDialog(){ S.dialog=null; $('#layer').innerHTML=''; if(lastFocus && document.body.contains(lastFocus)) lastFocus.focus(); }
+$('#layer').addEventListener('click', e=>{
+  if (e.target.dataset.close){ closeDialog(); return; }
+  const c = e.target.closest('[data-cand]');
+  if (c){ const d = CANDIDATES[+c.dataset.cand]; const it = mkItem({...d, priceTier:'estimate'}); S.items.push(it); if(d.price==null) S.unpriced.add(it.id); $('#q').value=''; closeDialog(); renderAll(); return; }
+  const cmd = e.target.closest('[data-cmd]'); if (cmd){ runCmd(CMDS[+cmd.dataset.cmd]); }
+});
+$('#layer').addEventListener('keydown', e=>{
+  if (e.key!=='Tab') return;
+  const f = [...$('#layer').querySelectorAll('button,input')]; if(!f.length) return;
+  const i = f.indexOf(document.activeElement);
+  if (e.shiftKey && i<=0){ e.preventDefault(); f[f.length-1].focus(); }
+  else if (!e.shiftKey && i===f.length-1){ e.preventDefault(); f[0].focus(); }
+});
+
+/* \u2318K command bar \u2014 accelerator only; every command also has a visible control */
+let CMDS = [];
+function buildCmds(){
+  const c = [];
+  COUNTRY_ORDER.forEach(k=>c.push({label:`Ship to ${P.COUNTRIES[k].name}`, hint:k, run:()=>setCountry(k)}));
+  c.push({label:'Ship by: cheapest that fits, per service', hint:'method', run:()=>setMethod('cheapest')});
+  ALLM.forEach(m=>{ if(methodAvailable(m.id)) c.push({label:`Ship by: ${m.label}`, hint:m.group, run:()=>setMethod(m.id)}); });
+  [0,15,30,45,60,90].forEach(d=>c.push({label:`Storage: ${d} days`, hint:'storage', run:()=>{S.storageDays=d;renderAll();}}));
+  c.push({label:'Add an item by hand', hint:'add', run:()=>toggleManual(true)});
+  return c;
+}
+function openCmd(){
+  lastFocus = document.activeElement; S.dialog='cmd'; CMDS = buildCmds();
+  $('#layer').innerHTML = `<div class="scrim" data-close="1"><div class="dlg cmd" role="dialog" aria-modal="true" aria-label="Change conditions">
+    <label class="sr" for="cmdQ">Type a country, method or storage days</label>
+    <input id="cmdQ" placeholder="ca \u00B7 ems \u00B7 storage 30" role="combobox" aria-expanded="true" aria-controls="cmdL">
+    <div class="body"><ul id="cmdL" role="listbox"></ul></div>
+    <footer>Enter runs the first match \u00B7 Esc closes \u00B7 every command is also a visible control on the page</footer></div></div>`;
+  const inp = $('#cmdQ'); const draw = ()=>{
+    const q = inp.value.trim().toLowerCase();
+    const list = CMDS.map((c,i)=>({c,i})).filter(({c})=>!q || (c.label+' '+c.hint).toLowerCase().includes(q)).slice(0,9);
+    $('#cmdL').innerHTML = list.map(({c,i},k)=>`<li><button type="button" data-cmd="${i}" class="${k===0?'hi':''}"><span>${esc(c.label)}</span><span>${esc(c.hint)}</span></button></li>`).join('') || '<li style="padding:8px 14px;font:13px var(--mono)">No match</li>';
+  };
+  inp.addEventListener('input', draw);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ const b=$('#cmdL button'); if(b) runCmd(CMDS[+b.dataset.cmd]); } });
+  draw(); inp.focus();
+}
+function runCmd(c){ closeDialog(); c.run(); }
+$('#cmdBtn').addEventListener('click', openCmd);
+
+/* ================= conditions ================= */
+function setCountry(k){ S.country=k; S.province=null; if(S.method!=='cheapest' && !methodAvailable(S.method)) S.method='cheapest'; renderAll(); }
+function setMethod(m){ S.method=m; renderAll(); }
+function renderWaybill(res){
+  const w = S.items.reduce((s,i)=>s + (i.weightG||0)*i.qty, 0);
+  const anyEst = S.items.some(i=>i.weightOrigin!=='user');
+  const provLine = res.rows[0]?.lines.find(l=>l.key==='province-tax');
+  const methodOpts = `<option value="cheapest">Cheapest that fits \u2014 per service</option>` +
+    ['Japan Post','Courier'].map(g=>`<optgroup label="${g}">${ALLM.filter(m=>m.group===g).map(m=>{
+      const ok = methodAvailable(m.id);
+      return `<option value="${m.id}" ${ok?'':'disabled'} ${S.method===m.id?'selected':''}>${esc(m.label)} \u00B7 ${ok?esc(m.days)+(m.tracked?'':' \u00B7 no tracking'):'not priced for '+esc(P.COUNTRIES[S.country].name)}</option>`;
+    }).join('')}</optgroup>`).join('');
+  const compared = `<p>\u201CCheapest that fits\u201D picks, for each service, the cheapest method that can carry this parcel \u2014 so rows may use different methods. Surface mail (1\u20133 months) is never picked; it's shown inside each row instead.</p><p>Priced here: ${P.POSTAL_METHODS.length} Japan Post methods and ${ALLM.filter(m=>m.group==='Courier'&&methodAvailable(m.id)).length} courier services for ${esc(P.COUNTRIES[S.country].name)}. We never check a parcel's size, and an oversize one is refused however light.</p>`;
+  $('#waybill').innerHTML = `
+    <div class="wb"><span class="lbl" id="wPlaceL">Ship to${S.country==='CA'?' \u00B7 province':''} ${S.country==='CA'&&!S.province?mk('Province not chosen', `<p>Canada charges a different provincial tax by province. Until you pick one we use a population-weighted average, marked as our estimate.</p>${provLine?`<p>Now in the total: ${provLine.amount==null?'not published':yen(provLine.amount)} (${esc(provLine.tier)}).</p>`:''}`):''}</span>
+      ${S.placeOpen ? `<span class="wpick"><select id="wCountry" class="wsel" aria-label="Country">${COUNTRY_ORDER.map(k=>`<option value="${k}" ${k===S.country?'selected':''}>${esc(P.COUNTRIES[k].name)}</option>`).join('')}</select>
+        ${S.country==='CA'?`<select id="wProv" class="wsel ${S.province?'':'est'}" aria-label="Province">${provOptions()}</select>`:''}
+        <button type="button" class="link" id="wPlaceDone">Done</button></span>`
+      : `<button type="button" class="wcart wplacebtn" id="wPlace" aria-expanded="false" aria-describedby="wPlaceL">${esc(P.COUNTRIES[S.country].name)}${S.country==='CA'?` \u00B7 ${S.province?esc(PROVINCES.find(p=>p[0]===S.province)[1]):'<span class="est">province \u2248 avg</span>'}`:''}</button>`}</div>
+    <div class="wb"><label class="lbl" for="wStore">Storage ${mk('Storage days', '<p>How long the forwarder holds your items before shipping. 45 days is <b>our assumption</b> (people usually collect several orders), not a published figure. Change it and the ranking recomputes.</p>')}</label>
+      <span class="wv"><input id="wStore" class="wnum" type="number" min="0" step="1" inputmode="numeric" value="${S.storageDays}"> <span class="wsub ${S.storageDays===45?'est':''}">days${S.storageDays===45?' \u00B7 our default':''}</span></span></div>
+    <div class="wb"><label class="lbl" for="wMethod">Ship by ${mk('How methods are compared', compared)}</label>
+      <select id="wMethod" class="wsel">${methodOpts}</select></div>
+    <div class="wb"><span class="lbl">Cart</span>
+      <button type="button" class="wcart" id="wCart" aria-describedby="wCartSub" aria-controls="cart" aria-expanded="${!!S.cartOpen}">${S.items.length} item${S.items.length===1?'':'s'} \u00B7 ${anyEst?'\u2248':''}${grams(w)}</button>
+      <span class="wsub" id="wCartSub">net, before packing \u00B7 ${S.cartOpen?'editing below':'Edit cart'}</span></div>
+    <svg class="postmark" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="none" stroke="#D7261E" stroke-width="2.5"/><circle cx="50" cy="50" r="32" fill="none" stroke="#D7261E" stroke-width="1.2"/><text x="50" y="47" text-anchor="middle" font-family="Spline Sans Mono" font-size="8" fill="#D7261E">RATES</text><text x="50" y="58" text-anchor="middle" font-family="Spline Sans Mono" font-size="8" fill="#D7261E">${esc(res.currency.fetchedOn)}</text></svg>`;
+  const wp = $('#wPlace'); if (wp) wp.onclick = ()=>{ S.placeOpen = true; S.placeFocus = 'wCountry'; renderAll(); };
+  const wc = $('#wCountry'); if (wc) wc.onchange = e=>{ const k = e.target.value; S.placeFocus = k==='CA' ? 'wProv' : 'wPlace'; if (k!=='CA') S.placeOpen = false; setCountry(k); };
+  const pv = $('#wProv'); if (pv) pv.onchange = e=>{ S.province = e.target.value || null; S.placeOpen = false; S.placeFocus = 'wPlace'; renderAll(); };
+  const wd = $('#wPlaceDone'); if (wd) wd.onclick = ()=>{ S.placeOpen = false; S.placeFocus = 'wPlace'; renderAll(); };
+  if (S.placeFocus){ const f = document.getElementById(S.placeFocus); S.placeFocus = null; f && f.focus(); }
+  $('#wStore').onchange = e=>{ const n = Math.trunc(+e.target.value); if(Number.isFinite(n)&&n>=0){ S.storageDays=n; renderAll(); } };
+  $('#wMethod').onchange = e=>setMethod(e.target.value);
+  $('#wMethod').id='ship-by-select'; // same id prod uses as focus target
+  $('#wCart').onclick = ()=>{ S.cartOpen = true; renderAll(); const c = $('#cart'); c.scrollIntoView({block:'start',behavior:RM.matches?'auto':'smooth'}); const f = document.querySelector('.item input[data-f="w"]'); f && f.focus({preventScroll:true}); };
+}
+function provOptions(){ return `<option value="">Not chosen \u2014 \u2248 avg rate</option>${PROVINCES.map(([k,n])=>`<option value="${k}" ${S.province===k?'selected':''}>${esc(n)}</option>`).join('')}`; }
+
+/* ================= scale (heft) ================= */
+const SINK = 16, BAR_Y = 62-12;
+let heftScale = null, heftN = null, heftSig = null;
+function renderHeft(res){
+  const el = $('#heft'); const first = res && S.items.some(i=>!S.unpriced.has(i.id)) ? res.rows.find(r=>r.comparable) : null;
+  if (!first || !first.boxes.length){ el.hidden = true; heftN = null; heftSig = null; return; }
+  el.hidden = false;
+  const bs = first.boxes, n = bs.length, total = bs.reduce((s,b)=>s+b.weightG,0);
+  const scale = [5,10,20,40,80].find(v=>v*1000>=total) ?? Math.ceil(total/20000)*20;
+  if (scale !== heftScale){
+    heftScale = scale; let s = '';
+    for (let k=0;k<=4;k++){ const v = scale*k/4, y = BAR_Y-SINK+k/4*SINK; s += `<i class="${k%2?'':'m'}" style="top:${y}px"></i>`; if(k%4===0) s += `<span style="top:${y}px">${v}</span>`; }
+    $('#hscale').innerHTML = s + `<span style="top:${BAR_Y+9}px">kg</span>`;
+  }
+  const priced = S.items.filter(i=>!S.unpriced.has(i.id));
+  const hb = $('#hboxes');
+  hb.innerHTML = bs.map(b=>`<span>${boxSVG(b,priced,.5)}</span>`).join('');
+  $('#hplat').style.transform = `translateY(${(Math.min(total/1000/scale,1)-1)*SINK}px)`;
+  $('#heftTxt').textContent = `${kg(total)} in ${boxWord(n)}${n>1?' ('+bs.map(b=>(b.weightG/1000).toFixed(1)).join(' + ')+')':''} \u00B7 ${first.label}`;
+  const sig = first.id+'|'+bs.map(b=>b.weightG+':'+b.itemIndices.join(',')).join('/');
+  const els = [...hb.children];
+  if (!RM.matches && sig !== heftSig){
+    els.forEach((e,i)=>e.animate([{transform:'translateY(-26px)',opacity:0},{opacity:1,offset:.4},{transform:'none',opacity:1}],{duration:380,delay:i*60,easing:'cubic-bezier(.5,0,.9,.6)',fill:'backwards'}));
+    if (heftN !== null && heftN < n && els.length>1){
+      const x0 = els[0].getBoundingClientRect().left;
+      els.slice(1).forEach(e=>{ const dx = x0-e.getBoundingClientRect().left;
+        e.animate([{transform:`translateX(${dx}px)`},{transform:'none'}],{duration:560,delay:420,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'}); });
+    }
+  }
+  heftN = n; heftSig = sig;
+}
+
+/* ================= cart ================= */
+function winnersText(s){
+  const end = (lab, only, g)=> lab==null ? `no published rate at ${grams(g)}` : only ? `only ${lab} can still be priced at ${grams(g)}` : `${lab} at ${grams(g)}`;
+  return `${end(s.winnerAtLow,s.onlyPricedAtLow,s.lowG)}, ${end(s.winnerAtHigh,s.onlyPricedAtHigh,s.highG)}`;
+}
+function renderCart(res){
+  const el = $('#cart');
+  const n = S.items.length;
+  if (!n && !S.busy){
+    el.innerHTML = `<div class="empty" role="group" aria-label="How to start">
+      <div><div class="n">1</div><h3>Paste a listing</h3><p>Copy the URL of one item on Yahoo! Auctions, Mercari, Rakuten, Suruga-ya\u2026 into the box above. We read its price.</p><button type="button" class="link" data-act="focusq">Go to the box</button></div>
+      <div><div class="n">2</div><h3>Or search</h3><p>Type a keyword (\u65E5\u672C\u8A9E OK). You pick from results; their prices are reference prices.</p><button type="button" class="link" data-act="try">Try \u201C\u306D\u3093\u3069\u308D\u3044\u3069\u201D</button></div>
+      <div><div class="n">3</div><h3>Or type it in</h3><p>Name and price by hand, when a page can't be read.</p><button type="button" class="link" data-act="manual">Add by hand</button></div>
+    </div>
+    <p class="emptyfoot">Then we price the same cart at Buyee, ZenMarket, Neokyo, FROM JAPAN and Jauce, landed in ${esc(P.COUNTRIES[S.country].name)}. <button type="button" class="link" data-act="example">Load the example cart</button></p>`;
+    return;
+  }
+  const sens = res ? res.weightSensitivity : {};
+  const assumed = S.items.filter(i=>i.weightOrigin==='assumed');
+  const decisive = S.items.filter(i=>sens[i.id]?.decisive);
+  const unpriced = S.items.filter(i=>S.unpriced.has(i.id));
+  const wTot = S.items.reduce((s,i)=>s + (i.weightG||0)*i.qty, 0);
+  const line = `<div class="cartline"><span class="lbl">Cart</span><span class="num">${n} item${n===1?'':'s'} \u00B7 ${S.items.some(i=>i.weightOrigin!=='user')?'\u2248':''}${grams(wTot)}</span>${unpriced.length?`<span class="wsrc as">${unpriced.length} without a price \u2014 not in totals</span>`:''}${S.pending?`<span class="wsrc"><span class="spin" aria-hidden="true"></span> Reading ${esc(S.pending.replace(/^https?:\/\//,'').slice(0,40))}\u2026</span>`:''}<button type="button" class="btn ghost" data-act="cart" aria-expanded="${!!S.cartOpen}">${S.cartOpen?'Done':'Edit cart'}</button></div>`;
+  if (!S.cartOpen){
+    const d = decisive[0], s = d && sens[d.id];
+    el.innerHTML = line + (d ? `<p class="cond"><span class="bang" aria-hidden="true">!</span><span><b>This weight decides 1st place:</b> <span class="jp">\u300C${esc(d.title.slice(0,22))}${d.title.length>22?'\u2026':''}\u300D</span> ${d.weightOrigin==='user'?'':'\u2248'}${grams(d.weightG)}. Within ${grams(s.lowG)}\u2013${grams(s.highG)}: ${esc(winnersText(s))}.${decisive.length>1?` (+${decisive.length-1} more)`:''} <button type="button" class="link" data-act="focusw" data-id="${d.id}">Check this weight</button></span></p>` : '');
+    return;
+  }
+  const conds = [];
+  if (assumed.length) conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>${assumed.length} of ${n} item${n===1?'':'s'} use a placeholder weight \u2014 the ranking rests on it${assumed.some(i=>sens[i.id]?.decisive)?', and it decides the winner':''}. <button type="button" class="link" data-act="focusw" data-id="${assumed[0].id}">Enter the real weight</button></span></p>`);
+  if (unpriced.length) conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>${unpriced.length} item${unpriced.length===1?' has':'s have'} no price yet and ${unpriced.length===1?'is':'are'} not in the totals below.</span></p>`);
+  el.innerHTML = `${line}
+  <div aria-live="polite">${conds.join('')}</div>
+  <ul class="cartbody">${S.items.map(it=>itemHTML(it, sens[it.id])).join('')}
+  ${S.pending?`<li class="item pending" aria-busy="true"><span class="thumb" aria-hidden="true"></span><div><p class="ititle"><span class="spin" aria-hidden="true"></span> Reading ${esc(S.pending.replace(/^https?:\/\//,'').slice(0,48))}\u2026</p><span class="skel" style="width:60%"></span><span class="skel" style="width:40%"></span></div><span></span></li>`:''}
+  </ul>
+  <p class="cartfoot"><span>Solid line = from the listing \u00B7 dashed = reference or table \u00B7 dotted red + ? = our placeholder</span><span>${decisive.length?`${decisive.length} weight${decisive.length===1?'':'s'} can change 1st place`:'no single weight changes 1st place'}</span></p>`;
+}
+function itemHTML(it, s){
+  const unp = S.unpriced.has(it.id);
+  const pt = unp ? 't-none' : it._edited ? 't-user' : (it.priceTier==='fixed'?'t-fixed':'t-estimate');
+  const priceSrc = unp ? `<span style="color:var(--red)">price not shown \u2014 type it. Not counted until you do</span>`
+    : it._edited ? '<span class="wsrc est">edited by you</span>'
+    : it.priceTier==='fixed' ? `<span>listing page${S.readOn[it.id]?' \u00B7 read '+esc(S.readOn[it.id]):''}</span>`
+    : AUCTION.has(it.site) && it.url==null ? '<span class="wsrc est">current bid \u2014 final price comes later</span>' : '<span class="wsrc est">reference price</span>';
+  const wt = it.weightOrigin==='assumed' ? 't-assumed' : it.weightOrigin==='user' ? 't-user' : 't-estimate';
+  const wsrc = it.weightOrigin==='assumed'
+    ? `<span class="wsrc as">placeholder \u2014 no weight data for this title</span> ${mk('Placeholder weight', `<p>We have no weight data for this title, so ${grams(ASSUMED_G)} is <b>our number, not a measurement</b>. Type the real weight if you know it.</p><p><a href="#weights">What we have \u2192</a></p>`, '?', 'q')}`
+    : it.weightOrigin==='user'
+    ? `<span class="wsrc">entered by you</span>${it._tableW?` \u00B7 <button type="button" class="link" data-act="resetw" data-id="${it.id}">reset to \u2248${grams(it._tableW)}</button>`:''}`
+    : `<span class="wsrc est">${esc(it.weightSource)}</span> ${mk('Weight from our table', `<p>Median of <a href="#weights">${esc(it.weightSource)}</a>.</p>${it.weightRangeG?`<p>Middle half of listings: ${grams(it.weightRangeG[0])}\u2013${grams(it.weightRangeG[1])}. We test whether 1st place changes inside this range.</p>`:''}`)}`;
+  const hot = s?.decisive;
+  return `<li class="item ${hot?'hot':''}" data-id="${it.id}">
+    <span class="thumb" aria-hidden="true">img</span>
+    <div style="min-width:0">
+      <p class="ititle">${it.url?`<a href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" style="color:inherit">${esc(it.title)}</a>`:esc(it.title)}</p>
+      <div class="imeta">
+        <span class="chip">${esc(SITES[it.site])}</span>
+        <label class="fin ${pt}"><span class="u">${it.priceTier==='estimate'&&!unp&&!it._edited?'\u2248\u00A5':'\u00A5'}</span><input data-f="p" data-id="${it.id}" inputmode="numeric" value="${unp?'':it.priceYen}" aria-label="Price of ${esc(it.title)}"></label>
+        <span class="qty" role="group" aria-label="Quantity"><button type="button" data-act="qty-" data-id="${it.id}" aria-label="One fewer">\u2212</button><span class="num" aria-live="polite">${it.qty}</span><button type="button" data-act="qty+" data-id="${it.id}" aria-label="One more">+</button></span>
+        ${priceSrc}
+      </div>
+      <div class="imeta">
+        <label class="fin ${wt}"><span class="u">${it.weightOrigin==='user'?'':'\u2248'}</span><input data-f="w" data-id="${it.id}" id="weight-${it.id}" inputmode="numeric" value="${it.weightG}" aria-label="Weight in grams of ${esc(it.title)}"><span class="u">g</span></label>
+        ${wsrc}
+      </div>
+      <div class="imeta">
+        <label class="chk"><input type="checkbox" data-f="free" data-id="${it.id}" ${it.freeShipping?'checked':''}> shipping included by seller</label>
+        ${it.freeShipping?'<span>domestic \u00A50</span>':`<label class="fin ${it.domesticShippingYen==null?'t-estimate':'t-user'}"><span class="u">domestic \u00A5</span><input data-f="d" data-id="${it.id}" inputmode="numeric" placeholder="800" value="${it.domesticShippingYen??''}" aria-label="Domestic shipping for ${esc(it.title)}"></label>${it.domesticShippingYen==null?'<span class="wsrc est">\u2248\u00A5800 guess</span>':''}`}
+      </div>
+    </div>
+    <button type="button" class="rm" data-act="rm" data-id="${it.id}" aria-label="Remove ${esc(it.title)}">Remove</button>
+    ${hot?`<p class="decisive"><span class="bang" aria-hidden="true">!</span><span><b>This weight decides 1st place.</b> Within ${grams(s.lowG)}\u2013${grams(s.highG)}: ${esc(winnersText(s))}.${s.winnerAtLow===s.winnerAtHigh?' <span class="wsrc">(the top-pick set changes in between)</span>':''}</span></p>`:''}
+  </li>`;
+}
+/* s.winnerAtLow===winnerAtHigh with decisive:true happens in the engine (recommended set changes, not the single winner).
+   The Mock says so instead of printing "X at a, X at b" alone. On port: ask whether decisive should mean the set or the winner. */
+
+$('#app').addEventListener('click', e=>{
+  const b = e.target.closest('[data-act]'); if(!b) return;
+  const id = b.dataset.id, it = S.items.find(i=>i.id===id);
+  switch(b.dataset.act){
+    case 'rm': S.items = S.items.filter(i=>i.id!==id); S.unpriced.delete(id); if(S.open && !S.items.length) S.open=null; renderAll(); break;
+    case 'qty-': it.qty = Math.max(1,it.qty-1); renderAll(); break;
+    case 'qty+': it.qty++; renderAll(); break;
+    case 'resetw': Object.assign(it,{weightG:it._tableW,weightOrigin:'table',weightRangeG:it._tableRange,weightSource:it._tableSrc}); renderAll(); break;
+    case 'manual': toggleManual(true); break;
+    case 'focusq': $('#q').focus(); break;
+    case 'try': $('#q').value='\u306D\u3093\u3069\u308D\u3044\u3069'; openCandidates('\u306D\u3093\u3069\u308D\u3044\u3069'); break;
+    case 'example': S.items = EXAMPLE(); renderAll(); break;
+    case 'cart': S.cartOpen = !S.cartOpen; renderAll(); document.querySelector('[data-act="cart"]')?.focus(); break;
+    case 'focusw': { if (!S.cartOpen){ S.cartOpen = true; renderAll(); } const f = document.getElementById('weight-'+id); if(f){ f.scrollIntoView({block:'center',behavior:RM.matches?'auto':'smooth'}); f.focus(); f.select(); } break; }
+    case 'method': { const m = document.getElementById('ship-by-select'); m.scrollIntoView({block:'center'}); m.focus(); break; }
+  }
+});
+$('#app').addEventListener('change', e=>{
+  const t = e.target; const id = t.dataset?.id; const it = S.items.find(i=>i.id===id); if(!it) return;
+  const digits = v => { const d = String(v).replace(/[^\d]/g,''); return d===''?null:+d; };
+  if (t.dataset.f==='p'){ const v = digits(t.value); if(v==null){ renderAll(); return; } it.priceYen=v; it.priceTier='estimate'; it._edited=true; S.unpriced.delete(id); }
+  if (t.dataset.f==='w'){ const v = digits(t.value); if(v==null||v<=0){ renderAll(); return; } Object.assign(it,{weightG:v,weightOrigin:'user',weightRangeG:null,weightSource:null}); }
+  if (t.dataset.f==='d'){ it.domesticShippingYen = digits(t.value); }
+  if (t.dataset.f==='free'){ it.freeShipping = t.checked; }
+  const keep = t.dataset.f + '|' + id;
+  renderAll();
+  const again = document.querySelector(`[data-f="${keep.split('|')[0]}"][data-id="${id}"]`); if(again && t.type!=='checkbox') again.focus();
+});
+
+/* ================= results ================= */
+function leadWord(row,res){ if(res.rankIndeterminate) return 'LEADS'; return row.closedByAssumption.length ? 'ESTIMATED CHEAPEST' : 'CHEAPEST'; }
+function diffCertain(row,res){
+  const comp = res.rows.filter(r=>r.comparable); if(!comp.length) return true;
+  const low = comp[0].total.low; return comp.filter(r=>r.total.low===low).every(r=>certain(r.total)) && certain(row.total);
+}
+function methodInfo(id){ return MBY[id] ?? {label:id, days:'transit time not published', tracked:true}; }
+const NP = 'transit time not published';
+const andList = a => a.length<=1 ? (a[0]??'') : a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+
+function renderResults(res){
+  const el = $('#results');
+  NOTES = new Map(); nId = 0;
+  const priced = S.items.filter(i=>!S.unpriced.has(i.id));
+  if (!priced.length){
+    el.innerHTML = S.items.length ? `<div class="norank"><h3>Enter a price to compare</h3><p>None of the items in your cart has a price yet. Type one in the cart above.</p></div>` : '';
+    $('#ad').innerHTML=''; $('#folds').innerHTML=''; renderFoot(res); return;
+  }
+  const rows = res.rows;
+  const comp = rows.filter(r=>r.comparable);
+  // Never show engine rank/diff/total for comparable:false rows. Put them after ranked rows (engine already does; enforced here).
+  const ordered = [...comp, ...rows.filter(r=>!r.comparable)];
+  const country = P.COUNTRIES[S.country].name;
+  const leaders = comp.filter(r=>r.cheapest);
+  const first = comp[0];
+  const methods = new Set(comp.map(r=>r.method));
+  const uniform = methods.size <= 1;
+  const um = first ? methodInfo(first.method) : null;
+  const maxDiff = Math.max(1, ...comp.map(r=>r.diff));
+  const showBracket = !res.rankIndeterminate;
+  const recCount = rows.filter(r=>r.recommended).length;
+
+  /* --- summary: winner + the gap is the headline; total is secondary --- */
+  let summary = '';
+  if (comp.length >= 2){
+    const next = comp.find(r=>!r.cheapest);
+    if (res.rankIndeterminate){
+      summary = `<h2 class="summary">Can't tell who is cheapest to ${esc(country)} \u2014 ${comp.length} services are within our error.</h2>`;
+    } else {
+      const est = leaders.some(r=>r.closedByAssumption.length);
+      const who = leaders.length>1 ? `<b>${esc(andList(leaders.map(r=>r.label)))}</b> are tied ${est?'estimated ':''}cheapest` : `<b>${esc(first.serviceName)}</b> is ${est?'the estimated cheapest':'cheapest'}`;
+      const gap = next ? `${diffCertain(next,res)?'':'at least '}<span class="gap">${yen(next.diff)}</span> below ${esc(next.label)}` : '';
+      summary = `<h2 class="summary">${who} to ${esc(country)}${gap?' \u2014 '+gap:''}.</h2>`;
+    }
+    const tp = totalParts(first);
+    summary += `<p class="sumtot"><span class="lbl">1st, at the door</span><span class="v num" aria-label="${esc(tp.aria)}">${esc(tp.vis)}${tp.plus?'<span style="color:var(--red)">+</span>':''}</span>
+      <span>${esc(foreign(first.total.low,res.currency.code,res.currency.rate))} at ECB rate of ${esc(res.currency.asOf)}</span>
+      ${res.rankStable ? mk('How firm is this order', `<p>${esc(res.rankStabilityNote)}</p>`) : ''}
+      ${uniform && um ? `<span>\u00B7 ${first.boxes.length===1?'1 box':first.boxes.length+' boxes'} by ${esc(um.label)}, ${esc(um.days===NP?'transit time not published':um.days)}${um.tracked?'':', untracked'}</span>`:''}</p>`;
+  } else if (comp.length === 1){
+    summary = `<h2 class="summary">Only <b>${esc(first.serviceName)}</b> can be priced for this parcel to ${esc(country)}.</h2>`;
+  }
+
+  /* --- tier 1 conditional lines --- */
+  const conds = [];
+  const sens = res.weightSensitivity;
+  const decisiveItems = S.items.filter(i=>sens[i.id]?.decisive);
+  if (!comp.length){
+    // #5 \u2014 board is replaced below
+  } else if (res.rankIndeterminate){
+    conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>Could go either way \u2014 these ${comp.length} are within our error; the order below is only who leads on the low end. Shipping method moves the total more than company choice does. <button type="button" class="link" data-act="method">Change method</button></span></p>`);
+  } else if (!res.rankStable){
+    const tgt = decisiveItems[0] ?? S.items.find(i=>i.weightOrigin!=='user') ?? S.items[0];
+    conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>1st place changes if weights are off${decisiveItems.length?` \u2014 mostly the weight of <span class="jp">\u300C${esc(decisiveItems[0].title.slice(0,22))}${decisiveItems[0].title.length>22?'\u2026':''}\u300D</span>${decisiveItems.length>1?` and ${decisiveItems.length-1} more`:''}`:''}. ${mk('What changes with weight', `<p>${esc(res.rankStabilityNote)}</p>`)} <button type="button" class="link" data-act="focusw" data-id="${tgt.id}">Check weights</button></span></p>`);
+  }
+  const notRanked = rows.filter(r=>!r.comparable);
+  if (comp.length && notRanked.length && S.method!=='cheapest'){
+    conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>${notRanked.length} of ${new Set(rows.map(r=>r.serviceId)).size} services can't be ranked for ${esc(methodInfo(S.method).label)} \u2014 they're listed last with the reason. <button type="button" class="link" data-act="method">Back to cheapest per service</button></span></p>`);
+  }
+  /* always-on bands (owner: never collapsed; RemoteArea text verbatim) */
+  const bands = `<p class="band"><span class="bang" aria-hidden="true">!</span><span>Not checked: whether your items can be shipped at all (banned goods, batteries, liquids). A total here is not a promise the parcel can be sent.</span></p>
+    <p class="band"><span class="tag2">Rates</span><span>Displayed shipping rates are estimated as fuel-surcharge inclusive. Remote-area surcharges are not included.</span></p>`;
+
+  /* --- board --- */
+  let board = '';
+  if (!comp.length){
+    board = `<div class="norank" role="status"><h3>Can't compare</h3><p>${esc(res.rankStabilityNote)}</p><p class="lbl">No total is shown, because every total below would be missing its largest cost.</p>
+      <ul class="wcbo">${rows.map(r=>`<li><span class="k">${esc(r.label)}</span><span>${esc(r.notComparableReason)}</span></li>`).join('')}</ul>
+      <button type="button" class="link" data-act="focusw" data-id="${S.items[0]?.id}">Check weights</button> \u00B7 <button type="button" class="link" data-act="method">Change method</button></div>`;
+  } else {
+    const consol = {};
+    for (const d of rows.filter(r=>r.variant==='default' && r.comparable)){
+      const c = rows.find(r=>r.serviceId===d.serviceId && r.variant==='consolidated' && r.comparable);
+      if (c && d.total.low - c.total.low > 0) consol[d.id] = {save:d.total.low - c.total.low, unknown:c.total.high===null, name:d.serviceName};
+    }
+    board = `<section class="board ${uniform?'uniform':''}" aria-label="Ranking">
+      <div class="bh" aria-hidden="true"><span class="lbl">Rank</span><span class="lbl">Service</span><span class="lbl c-ship">Ships by / arrives</span><span class="lbl">Boxes</span><span class="lbl r">vs 1st</span><span class="lbl r">Total ${mk('How to read a total', `<p><b>\u2248</b> part of it is our estimate. <b>\u00A5X \u2013 Y</b> the range we can stand behind. <b>\u00A5X+</b> a fee is unpublished, so there is no upper bound.</p><p>Underline: solid = published \u00B7 dashed = our estimate.</p>`)}</span><span></span></div>
+      <ol class="rows">${ordered.map((r,idx)=>rowHTML(r,res,{idx,uniform,maxDiff,showBracket,recCount,consol,first})).join('')}</ol>
+    </section>`;
+  }
+
+  /* --- folds --- */
+  const folds = comp.length ? costTableHTML(res) + wcboHTML(res) : '';
+  el.innerHTML = summary + `<div role="group" aria-label="Before you choose">${conds.join('')}${bands}</div>` + board;
+  $('#folds').innerHTML = folds;
+  runFlaps(el);
+  el.querySelectorAll('.stamp').forEach(s=>{ if(!RM.matches && s.dataset.new==='1') s.classList.add('press'); });
+  renderAd(comp.length>0);
+  renderFoot(res);
+}
+
+function rowHTML(r,res,o){
+  const open = S.open===r.id;
+  const isFirst = r.comparable && r.cheapest;
+  const mi = methodInfo(r.method);
+  const lw = leadWord(r,res);
+  const stampKey = 'stamp:'+r.id+':'+lw; const stampNew = r.comparable && r.cheapest && !prevText.has(stampKey); if (isFirst) prevText.set(stampKey,1);
+  const diffCell = !r.comparable ? flapHTML('d:'+r.id,'NOT RANKED','diff nr')
+    : r.diff===0 ? flapHTML('d:'+r.id, res.rankIndeterminate?'LEADS':'1ST','diff lead')
+    : `${diffCertain(r,res)?'':'<span class="fx">at least</span>'}${flapHTML('d:'+r.id,'+'+yen(r.diff),'diff')}`;
+  const bar = r.comparable ? `<span class="dbar" aria-hidden="true"><i style="width:${Math.round(100*r.diff/o.maxDiff)}%"></i></span>` : '';
+  const badges = [];
+  if (o.showBracket && r.recommended) badges.push(`<span class="badge">${o.recCount===1?'Top pick':'Top pick \u00B7 either of two'}</span>`);
+  if (o.showBracket && r.equivalent) badges.push(`<span class="badge eq">As cheap, within error</span>`);
+  const tagSplit = r.tag.split(' \u00B7 ');
+  const cav = [];
+  if (r.tied){
+    const others = res.rows.filter(x=>x.id!==r.id && x.comparable && x.total.low===r.total.low).map(x=>x.label);
+    cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>Tied with ${esc(andList(others))} \u2014 the order between them means nothing.</span></p>`);
+  }
+  if (!r.comparable) cav.push(`<p><span class="bang" aria-hidden="true">!</span><span><b>Not ranked:</b> ${esc(r.notComparableReason)}.</span></p>`);
+  // NEEDS FIELD: caveat #12 wants "can't ship" vs "not priced" split; Row has only the free-text reason, so the Mock prints it verbatim under one header.
+  if (r.variant==='consolidated' && r.comparable) cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>One box only if you ask ${esc(r.serviceName)} to combine your orders \u2014 it won't by default.</span></p>`);
+  if (o.consol[r.id]){ const c=o.consol[r.id]; cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>Ask ${esc(c.name)} to combine before shipping: saves about ${yen(c.save)}${c.unknown?' (their fee for combining is unpublished)':''}.</span></p>`); }
+  if (r.comparable && !o.uniform && !mi.tracked){ const f = o.first; cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>Untracked \u2014 ${esc(mi.days)}.${f && f.id!==r.id?'':' Cheapest, but you can\'t follow the parcel.'}</span></p>`); }
+  const shipCell = `<span class="c-ship"><span class="m">${esc(mi.label)}</span><span class="d ${mi.days===NP?'u':''}">${esc(mi.days===NP?'days n/p':mi.days)}</span>${mi.tracked?'':'<span class="utk">untracked</span>'}</span>`;
+  return `<li class="row ${isFirst?'first':''} ${r.comparable?'':'unranked'}" data-row-id="${r.id}" data-open="${open}">
+    ${isFirst?`<span class="stamp" data-new="${stampNew?1:0}" aria-hidden="true">${lw==='ESTIMATED CHEAPEST'?'<small>estimated</small>cheapest':esc(lw)}</span>`:''}
+    <button type="button" class="rh" aria-expanded="${open}" aria-controls="log-${r.id}" data-toggle="${r.id}">
+      <span class="c-rank">${r.comparable?String(r.rank).padStart(2,'0'):'\u2014'}${isFirst?`<span class="sr">${esc(lw)}</span>`:''}</span>
+      <span class="c-svc">
+        <span class="svc">${esc(r.serviceName)}${r.variant?`<small>${esc(r.variant)}</small>`:''}</span>
+        ${badges.length?`<span style="display:flex;flex-wrap:wrap;gap:4px">${badges.join('')}</span>`:''}
+      </span>
+      ${shipCell}
+      <span class="c-box">${r.boxes.length===1?'1 box':r.boxes.length+' boxes'}</span>
+      <span class="c-diff">${diffCell}${bar}</span>
+      <span class="c-tot">${totalHTML(r)}</span>
+      <span class="chev" aria-hidden="true">\u203A</span>
+    </button>
+    <div class="cav">${cav.join('')}</div>
+    ${open?logHTML(r,res,o.first):''}
+  </li>`;
+}
+
+function lineAmount(l){
+  if (l.amount == null){
+    if (l.unknownCapYen != null) return {txt:`\u2248 up to ${yen(l.unknownCapYen)}`, tag:'unknown', cls:'none', note:l.unknownCapNote};
+    return {txt:'not published', tag:'no upper bound', cls:'none'};
+  }
+  const pre = l.tier==='estimate' ? '\u2248' : '';
+  if (l.amountKind==='range' && l.amountHighYen!=null) return {txt:`${pre}${yen(l.amount)} \u2013 ${yen(l.amountHighYen).slice(1)}`, tag:l.tier, cls:l.tier};
+  return {txt:pre+yen(l.amount), tag:{fixed:'published',estimate:'estimate',unverified:'second-hand',none:'\u2014'}[l.tier], cls:l.tier};
+}
+const kg = g => (g/1000).toFixed(1)+' kg';
+const boxWord = n => n===1 ? '1 box' : n+' boxes';
+/* box size changes only in discrete bands. Items are Row.boxes[].itemIndices into the priced cart;
+   an item whose weight the user did not enter (table / placeholder) is drawn pale + dashed. */
+function boxSVG(bx, items, k=1){
+  const g = bx.weightG, W0 = g<=2000?64:g<=10000?84:g<=20000?104:120, H0 = g<=2000?34:g<=10000?40:g<=20000?48:54, W=W0*k, H=H0*k;
+  const ox = Math.round(W*.22), oy = Math.round(H*.3), p=2, base=p+oy+H, yb=p, yf=base-H*.45, floor=base-oy*.5, sw=k<1?.8:1.1;
+  const n = Math.max(1,bx.itemIndices.length), span=W-6*k, gap=2*k, iw=Math.max(2,(span-gap*(n-1))/n), IH=[.92,.62,.8,.7,.96];
+  const st = `stroke="#1B1A17" stroke-width="${sw}" stroke-linejoin="round"`;
+  const its = bx.itemIndices.map((ix,j)=>{ const it = items[ix]; const ih=H*IH[ix%5]; return `<g class="it ${it && it.weightOrigin==='user'?'fix':'est'}" data-i="${ix}"><rect x="${(ox*.5+3*k+j*(iw+gap)).toFixed(1)}" y="${(floor-ih).toFixed(1)}" width="${iw.toFixed(1)}" height="${ih.toFixed(1)}"/></g>`; }).join('');
+  return `<svg width="${W+ox+p*2}" height="${base+p}" viewBox="0 0 ${W+ox+p*2} ${base+p}" aria-hidden="true">
+    <g class="shell"><polygon points="${ox},${yb} ${W+ox},${yb} ${W+ox},${base-oy} ${ox},${base-oy}" fill="#A98B5E" ${st}/>
+    <polygon points="0,${yf} ${ox},${yb} ${ox},${base-oy} 0,${base}" fill="#9A7C50" ${st}/></g>${its}
+    <g class="shell"><polygon points="${W},${yf} ${W+ox},${yb} ${W+ox},${base-oy} ${W},${base}" fill="#BE9F6E" ${st}/>
+    <rect x="0" y="${yf}" width="${W}" height="${base-yf}" fill="#D3B888" ${st}/>
+    <rect x="${W*.12}" y="${yf+(base-yf)*.3}" width="${W*.3}" height="${(base-yf)*.36}" fill="#F2EDE3" stroke="#D7261E" stroke-width="${sw*.8}"/></g></svg>`;
+}
+/* Per-parcel weight LIMIT: POSTAL_METHODS / COURIER_METHODS (engine.js) carry id/label/days/tracked only, and Box.reason
+   says a split happened but not at what weight. So no "x kg / limit" is printed and the gauge is scaled to the heaviest
+   box of the row (ticks at quarters), not to the limit. NEEDS FIELD on port: method max weight. */
+function packHTML(r, items){
+  const bs = r.boxes, n = bs.length; if (!n) return '';
+  const why = bs[0].reason, k = why==='per-listing' ? .78 : 1;
+  const total = bs.reduce((s,b)=>s+b.weightG,0), big = Math.max(...bs.map(b=>b.weightG));
+  const over = bs.some(b=>b.reason==='weight-limit') && n>1;
+  const ticks = [25,50,75].map(v=>`<s style="left:${v}%"></s>`).join('');
+  return `<div class="pack" data-why="${esc(why)}" data-over="${over?1:0}"><span class="lbl pk-note">${boxWord(n)} \u00B7 ${esc(REASON[why]??why)} ${mk('Boxes are illustrative', '<p>The box is a picture, not a packing simulation. Pale dashed items = weights we estimated; solid = weights you entered. Weight shown is after our packing allowance. The bar under each box is relative to the heaviest box; the method\'s weight limit is not in our data, so it is not drawn.</p>')}</span>${over?`<span class="pk-over" aria-hidden="true">${kg(total)} \u00B7 OVER LIMIT</span>`:''}
+    <div class="pk-row">${bs.map(b=>`<figure class="bx"><div class="bxart">${boxSVG(b,items,k)}</div><figcaption><span class="bxw">${kg(b.weightG)}</span><span class="gauge" aria-hidden="true"><i style="width:${100*b.weightG/big}%"></i>${ticks}</span>${b.itemIndices.length} item${b.itemIndices.length===1?'':'s'}${b.reason!==why?' \u00B7 '+esc(REASON[b.reason]??b.reason):''}${n>1||b.tax.duty.kind!=='rate'?`<br>declared ${yen(b.declaredYen)} \u00B7 ${esc(DUTY[b.tax.duty.kind](b.tax.duty))} \u00B7 ${esc(VAT[b.tax.vat.kind](b.tax.vat))}`:`<br>declared ${yen(b.declaredYen)}`}</figcaption></figure>`).join('')}</div></div>`;
+}
+function animatePack(root){
+  const pack = root && root.querySelector('.pack'); if (!pack || RM.matches) return;
+  const figs = [...pack.querySelectorAll('.bx')];
+  const its = [...pack.querySelectorAll('.it')].sort((a,b)=>a.dataset.i-b.dataset.i);
+  const T0=250, STEP=Math.min(440, 2400/Math.max(1,its.length)), DROP=410, tEnd=T0+STEP*Math.max(0,its.length-1)+DROP;
+  its.forEach((g,i)=>{
+    const d = T0+i*STEP;
+    g.animate([{transform:'translateY(-64px)',opacity:0},{opacity:1,offset:.3},{transform:'translateY(0)',opacity:1}],{duration:DROP,delay:d,easing:'cubic-bezier(.5,0,.9,.6)',fill:'backwards'});
+    g.closest('.bxart').animate([{transform:'translateY(0)'},{transform:'translateY(2px)'},{transform:'translateY(0)'}],{duration:220,delay:d+DROP,easing:'ease-out'});
+  });
+  const split = pack.dataset.over==='1' && figs.length>1;
+  const tCap = split ? tEnd+1100 : tEnd;
+  figs.forEach(f=>f.querySelector('figcaption').animate([{opacity:0},{opacity:1}],{duration:260,delay:tCap,fill:'backwards'}));
+  if (split){
+    const x0 = figs[0].getBoundingClientRect().left;
+    figs.slice(1).forEach(f=>{
+      const dx = x0-f.getBoundingClientRect().left;
+      f.animate([{transform:`translateX(${dx}px)`},{transform:`translateX(${dx}px)`,offset:(tEnd+500)/(tEnd+1060)},{transform:'translateX(0)'}],{duration:tEnd+1060,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'});
+      f.querySelectorAll('.shell').forEach(s=>s.animate([{opacity:0},{opacity:1}],{duration:200,delay:tEnd+420,fill:'backwards'}));
+    });
+    pack.querySelector('.pk-over')?.animate([{opacity:0},{opacity:1,offset:.15},{opacity:.2,offset:.3},{opacity:1,offset:.45},{opacity:1}],{duration:900,delay:tEnd,fill:'backwards'});
+  }
+}
+let packSig = null;
+const REASON = {'single':'all items together','per-listing':'one order per listing \u2014 sent on its own','identified-shop':'a different shop','unresolved-shop':'shop unknown, so we don\'t combine \u2014 may read high','weight-limit':'split at the method\'s weight limit'};
+const DUTY = {flat:b=>`flat duty ${yen(b.yen)} (even under the limit)`,free:()=>'under the duty-free limit','no-duty':()=>'no duty on this',rate:b=>`duty ${yen(b.yen)}`,unknown:()=>'duty rate unpublished'};
+const VAT = {'no-rate':()=>'no federal VAT/GST','seller-collects':()=>'tax collected at checkout',free:()=>'under the tax-free limit',rate:b=>`tax ${yen(b.yen)}`};
+
+function logHTML(r,res,first){
+  const cmp = first && first.id!==r.id && r.comparable ? first : null;
+  const byKey = cmp ? new Map(cmp.lines.map(l=>[l.key,l])) : null;
+  const priced = S.items.filter(i=>!S.unpriced.has(i.id));
+  const groups = {}; STAGES.forEach(([k])=>groups[k]=[]);
+  r.lines.forEach(l=>groups[stageOf(l.key)].push(l));
+  const mi = methodInfo(r.method);
+  const stages = STAGES.filter(([k])=>k!=='other' || groups.other.length).map(([k,name],si)=>{
+    const ls = groups[k];
+    const sub = ls.reduce((s,l)=>s+(l.amount??0),0), open = ls.some(l=>l.amount==null && l.unknownCapYen==null);
+    let body = ls.map(l=>{
+      const a = lineAmount(l);
+      const o = byKey?.get(l.key);
+      const v1 = cmp ? (l.amount!=null && o?.amount!=null && l.amount!==o.amount ? `${l.amount>o.amount?'+':'\u2212'}${yen(Math.abs(l.amount-o.amount))}` : (!o?'only here':'')) : '';
+      const note = [l.note, l.rangeNote, l.unknownReason, a.note].filter(Boolean).map(t=>`<p>${esc(t)}</p>`).join('') + (l.sourceUrl?`<p><a href="${esc(l.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source \u2192</a></p>`:'');
+      return `<div class="ln ${a.cls}"><span class="l">${esc(l.label)}</span><span class="lead" aria-hidden="true"></span><span class="t">${esc(a.tag)} ${note?mk(l.label,note):''}</span><span class="a">${esc(a.txt)}</span><span class="v1">${esc(v1)}</span></div>`
+        + (l.key==='intl-shipping'?`<p class="lnote">${esc(mi.label)} \u00B7 ${esc(mi.days)} \u00B7 ${mi.tracked?'tracked':'untracked'}</p>`:'')
+        + (l.key==='province-tax' && S.country==='CA'?`<label class="provpick">Pick your province <select data-prov="1" aria-label="Province">${provOptions()}</select></label>`:'');
+    }).join('');
+    if (k==='packed'){
+      body = packHTML(r, priced) + body;
+      if (!ls.length && !r.boxes.length) body = '<p class="lnote">No packing fee.</p>';
+    }
+    if (k==='export' && r.surface){
+      const sy = r.surface.shipYen;
+      body += `<div class="ln surf"><span class="l">Can wait ${esc(r.surface.days)}? ${esc(r.surface.label)}</span><span class="lead" aria-hidden="true"></span><span class="t">not ranked ${mk('Surface option', `<p>${esc(r.surface.note)}</p><p>Shipping alone, not a full total.</p>`)}</span><span class="a">${esc(sy.high===null?yen(sy.low)+'+':sy.high===sy.low?yen(sy.low):yen(sy.low)+' \u2013 '+yen(sy.high).slice(1))}</span><span class="v1"></span></div>`;
+    }
+    if (k==='door'){
+      const tp = r.comparable ? totalParts(r) : null;
+      body = `<div class="door"><span class="lbl">${r.comparable?(r.total.high===null?'Total at the door \u00B7 no upper bound':'Total at the door'):'No comparable total \u2014 the largest cost is missing'}</span>
+        <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span class="v" ${tp?`aria-label="${esc(tp.aria)}"`:''}>${tp?`<span aria-hidden="true">${esc(tp.vis)}${tp.plus?'<span class="plus">+</span>':''}</span>`:'\u2014'}</span>${tp?`<span class="fx">${esc(foreign(r.total.low,res.currency.code,res.currency.rate))} at ECB rate of ${esc(res.currency.asOf)}</span>`:''}</span></div>
+        <div class="out">
+          <a class="go" href="${esc(r.outboundUrl)}" target="_blank" rel="${r.paysUs?'sponsored nofollow noopener noreferrer':'nofollow noopener noreferrer'}">${r.outboundDirect?`Open this listing at ${esc(r.serviceName)} \u2192`:`Open at ${esc(r.serviceName)} \u2192`}</a>
+          <span class="ref ${r.paysUs?'pays':''}">${esc(r.referralNote ?? 'pays us nothing')} \u00B7 never moves a row</span>
+          ${!r.outboundDirect && r.itemLinks.length===0?'<span class="wsrc">you will paste the listing URL there</span>':''}
+          ${r.itemLinks.length>1?`<ul>${r.itemLinks.map(l=>`<li><a href="${esc(l.url)}" target="_blank" rel="${r.paysUs?'sponsored nofollow noopener noreferrer':'nofollow noopener noreferrer'}">Open <span class="jp">\u201C${esc(l.title.slice(0,40))}\u201D</span> at ${esc(r.serviceName)} \u2192</a></li>`).join('')}</ul>`:''}
+        </div>`;
+    }
+    const subTxt = k==='door' ? '' : k==='packed' && !ls.length ? '' : `${yen(sub)}${open?'+':''}`;
+    return `<li class="stage ${k}"><div class="rail" aria-hidden="true"><span class="node"></span><span class="lk"></span></div><div class="sbody">
+      <h3 class="sname"><span><small>${String(si+1).padStart(2,'0')}</small>${esc(name)}</span><span class="num">${subTxt}</span></h3>
+      ${k==='bought'&&cmp?`<div class="lhead lbl" aria-hidden="true"><span></span><span></span><span class="r">${esc(r.serviceName)}</span><span class="r">vs ${esc(cmp.serviceName)}</span></div>`:''}
+      ${body || (k==='door'?'':'<p class="lnote">Nothing charged here.</p>')}</div></li>`;
+  }).join('');
+  return `<div class="log" id="log-${r.id}"><div class="login">
+    <div class="loghead"><span style="display:flex;flex-direction:column;gap:2px"><span class="lbl">Delivery log \u00B7 ${esc(r.label)} \u00B7 ${boxWord(r.boxes.length)}</span><span class="tag">${esc(r.tag.split(' \u00B7 ').filter(t=>t!=='you must request this').join(' \u00B7 '))}</span><span class="ref ${r.paysUs?'pays':''}">${esc(r.referralNote ?? 'pays us nothing')} \u00B7 never moves a row</span></span>
+    <span class="legend"><span><i></i>published</span><span class="e"><i></i>estimate</span><span class="u"><i></i>second-hand</span><span class="n" style="color:var(--red)"><i></i>not published</span></span></div>
+    <ol class="stages">${stages}</ol></div></div>`;
+}
+
+function costTableHTML(res){
+  const rows = res.rows;
+  const keys = []; rows.forEach(r=>r.lines.forEach(l=>{ if(!keys.includes(l.key)) keys.push(l.key); }));
+  const labelOf = k => { const ls = rows.flatMap(r=>r.lines).filter(l=>l.key===k); return (ls.find(l=>l.amount!=null)??ls[0])?.label ?? k; };
+  const body = STAGES.filter(([k])=>k!=='door').map(([sk,sn])=>{
+    const ks = keys.filter(k=>stageOf(k)===sk); if(!ks.length) return '';
+    return `<tr><td class="stagecell" colspan="${rows.length+1}">${esc(sn)}</td></tr>` + ks.map(k=>`<tr><th scope="row" style="font-weight:400;text-align:left">${esc(labelOf(k))}</th>${rows.map(r=>{
+      const l = r.lines.find(x=>x.key===k); if(!l) return '<td>\u2014</td>';
+      const a = lineAmount(l);
+      return `<td class="${a.cls}">${l.tier==='unverified'?`<span style="text-decoration:underline dotted 1px;text-underline-offset:3px">${esc(a.txt)}</span>`:esc(a.txt)}</td>`;
+    }).join('')}</tr>`).join('');
+  }).join('');
+  return `<details class="fold" id="all-fees"><summary><h2>All fees, side by side</h2><span class="lbl">${keys.length} fees \u00D7 ${rows.length} rows</span></summary>
+    <div class="tscroll" tabindex="0" role="region" aria-label="All fees table, scrolls sideways"><table class="ct"><thead><tr><th scope="col">Fee</th>${rows.map(r=>`<th scope="col" class="${SVC[r.serviceId]?.primarySource===false?'sec':''}">${esc(r.serviceName)}${r.variant?`<br><span class="lbl">${esc(r.variant)}</span>`:''}</th>`).join('')}</tr></thead>
+    <tbody>${body}</tbody><tfoot><tr><td>Total</td>${rows.map(r=>`<td>${totalHTML(r,'tot')}</td>`).join('')}</tr></tfoot></table></div>
+    <p class="lbl" style="margin:8px 0 0">Column underline: solid = fee table from the company's own page \u00B7 dashed = second-hand. Blue = our estimate \u00B7 red = not published.</p></details>`;
+}
+function wcboHTML(res){
+  const rows = res.rows.filter(r=>r.comparable); const all = rows.flatMap(r=>r.lines);
+  const uniq = f => [...new Set(all.filter(f).map(l=>l.label))];
+  const e = uniq(l=>l.tier==='estimate'), s = uniq(l=>l.tier==='unverified'), m = uniq(l=>l.amount==null);
+  const ca = rows.some(r=>r.closedByAssumption.length);
+  return `<details class="fold" id="what-could-be-off"><summary><h2>What could be off</h2><span class="lbl">${e.length+s.length+m.length} fees</span></summary>
+    <ul class="wcbo">
+      ${e.length?`<li><span class="k e">Estimated</span><span>${esc(e.join(', '))}. Our assumptions, not published figures.</span></li>`:''}
+      ${s.length?`<li><span class="k">Second-hand</span><span>${esc(s.join(', '))}. We have not read the original source.</span></li>`:''}
+      ${m.length?`<li><span class="k n">Not included</span><span>${esc(m.join(', '))}. Your real bill will be higher, not lower.</span></li>`:''}
+      ${ca?`<li><span class="k e">Courier rates</span><span>Rows priced by courier assume the listed rate already includes fuel surcharge; that's why 1st place can read \u201Cestimated cheapest\u201D.</span></li>`:''}
+      <li><span class="k">Order</span><span>The order is what we stand behind. Whichever method wins is priced from its published rate table, but the weight \u2014 and, for a courier, the box size \u2014 that decides it is ours. Shipping is most of a total.</span></li>
+    </ul></details>`;
+}
+function renderAd(show){
+  // ad-placement.md \u00A73: after results, before footer; one slot; hidden with no results; label above; not paper.
+  $('#ad').innerHTML = show ? `<aside class="adzone" aria-label="Advertisement"><span class="adlabel">Advertisement</span>
+    <div class="adslot">${$('#app').clientWidth<=760?'320 \u00D7 100':'728 \u00D7 90'} \u00B7 reserved \u00B7 renders only after ad consent</div>
+    <span class="adnote">Ads are served by Google and do not affect the ranking.</span></aside>` : '';
+}
+function renderFoot(res){
+  $('#foot').innerHTML = `<div><p>Rows are ordered by total only. Buyee, ZenMarket and FROM JAPAN pay us for referrals; Neokyo and Jauce don't. Payment never moves a row.</p>
+    <p>Rates read ${esc(res.currency.fetchedOn)} \u00B7 currency: ECB reference rate for ${esc(res.currency.asOf)} \u00B7 all totals in yen.</p></div>
+    <nav aria-label="Footer"><a href="#weights">Weights</a><a href="#sources">Sources</a><a href="#privacy">Privacy</a><a href="#code">Source code</a></nav>`;
+}
+
+/* ================= row toggle + FLIP ================= */
+document.getElementById('results').addEventListener('click', e=>{
+  const t = e.target.closest('[data-toggle]'); if(!t || e.target.closest('.mk')) return;
+  const id = t.dataset.toggle; S.open = S.open===id ? null : id; packSig = null;
+  renderAll(); document.querySelector(`[data-toggle="${CSS.escape(id)}"]`)?.focus();
+});
+document.getElementById('results').addEventListener('change', e=>{
+  if (!e.target.matches('[data-prov]')) return;
+  S.province = e.target.value || null; renderAll(); document.querySelector('[data-prov]')?.focus();
+});
+function renderAll(){
+  const before = new Map([...document.querySelectorAll('li[data-row-id]')].map(li=>[li.dataset.rowId, li.getBoundingClientRect().top]));
+  const res = resultFor();
+  renderWaybill(res); renderCart(res); renderResults(res); renderHeft(res);
+  const openRow = S.open && res.rows.find(r=>r.id===S.open);
+  const sig = openRow ? openRow.id+'|'+openRow.boxes.map(b=>b.weightG+':'+b.itemIndices.join(',')).join('/') : null;
+  if (sig && sig !== packSig) animatePack(document.getElementById('log-'+openRow.id));
+  packSig = sig;
+  if (!RM.matches){
+    document.querySelectorAll('li[data-row-id]').forEach(li=>{
+      const from = before.get(li.dataset.rowId); const to = li.getBoundingClientRect().top;
+      if (from==null || Math.abs(from-to)<1 || li.classList.contains('tiedmove')) return;
+      li.animate([{transform:`translateY(${from-to}px)`},{transform:'none'}],{duration:260,easing:'cubic-bezier(.2,.7,.3,1)'});
+    });
+  }
+}
+
+/* ================= mock states ================= */
+const WHY = {
+  initial:'CA \u00B7 cheapest \u00B7 example cart (mock inputs, engine output)',
+  empty:'0 items', adding:'keyword \u2192 example candidates', manual:'manual add form open',
+  editing:'1st row open; decisive weight item highlighted',
+  method:'CA \u00B7 courier-dhl: engine marks 5 rows comparable:false',
+  tied:'engine: CA \u00B7 ems \u00B7 200 g \u00D7 1 \u2192 ZenMarket = FROM JAPAN',
+  indet:'engine: US \u00B7 courier-buyee-air \u00B7 600 g \u00D7 3 \u2192 rankIndeterminate',
+  norate:'engine: GB \u00B7 40 kg \u2192 no comparable row',
+  loading:'URL fetch in progress (held)', error:'fetch failed notice (4 variants: unreadable/listpage/nosearch/searchdown)',
+};
+function one(w, title='\u30C6\u30B9\u30C8\u5546\u54C1 \u30D5\u30A3\u30AE\u30E5\u30A2', site='amazon-jp'){ return mkItem({title, price:3000, site, w, origin:'user', priceTier:'fixed'}); }
+function setState(k){
+  closePop(false); if(S.dialog) closeDialog();
+  seq = 0; prevText.clear();
+  Object.assign(S,{items:EXAMPLE(),unpriced:new Set(),country:'CA',province:null,method:'cheapest',storageDays:45,open:null,busy:false,notice:null,pending:null,readOn:{},cartOpen:false,placeOpen:false,placeFocus:null}); packSig = null; heftN = null; heftSig = null;
+  S.readOn['i4'] = '2026-09-12'; S.items[4].url = 'https://www.suruga-ya.jp/product/detail/000000000';
+  toggleManual(false); $('#q').value='';
+  if (k==='empty') S.items = [];
+  if (k==='editing'){ const r = resultFor(); S.open = r.rows.find(x=>x.comparable)?.id ?? null; S.cartOpen = true; }
+  if (k==='method') S.method = 'courier-dhl';
+  if (k==='tied'){ S.items = [one(200,'\u306D\u3093\u3069\u308D\u3044\u3069 \u93E1\u97F3\u30EA\u30F3')]; S.method='ems'; }
+  if (k==='indet'){ S.country='US'; S.method='courier-buyee-air'; S.items=[one(600,'\u306D\u3093\u3069\u308D\u3044\u3069 \u93E1\u97F3\u30EA\u30F3'),one(600,'figma \u521D\u97F3\u30DF\u30AF'),one(600,'\u4E00\u756A\u304F\u3058 \u30E9\u30D0\u30FC\u30B9\u30C8\u30E9\u30C3\u30D7')]; }
+  if (k==='norate'){ S.country='GB'; S.items=[one(40000,'\u30A2\u30FC\u30B1\u30FC\u30C9\u7B50\u4F53 \u30D1\u30FC\u30C4 \u4E00\u5F0F')]; }
+  renderAddBusy(); renderNotice(); renderAll();
+  if (k==='adding'){ $('#q').value='\u306D\u3093\u3069\u308D\u3044\u3069'; openCandidates('\u306D\u3093\u3069\u308D\u3044\u3069'); }
+  if (k==='manual') toggleManual(true);
+  if (k==='loading'){ $('#q').value='https://page.auctions.yahoo.co.jp/jp/auction/x000000000'; startFetch($('#q').value, true); }
+  if (k==='error'){ $('#q').value='https://jp.mercari.com/search?keyword=fail'; setNotice('unreadable'); }
+  if (k==='editing'){ const hot = document.querySelector('.item.hot'); hot && hot.scrollIntoView({block:'center'}); }
+  $('#mockWhy').textContent = WHY[k] ?? '';
+}
+/* Makeup toggle: attribute only. No re-render, so open rows, selection and
+   running animations survive the switch. */
+document.querySelectorAll('#makeup .mkup').forEach(b=>b.addEventListener('click', ()=>{
+  const mk = b.dataset.makeup;
+  document.documentElement.setAttribute('data-makeup', mk);
+  document.querySelectorAll('#makeup .mkup').forEach(o=>o.setAttribute('aria-pressed', String(o.dataset.makeup===mk)));
+}));
+
+$('#mockState').addEventListener('change', e=>setState(e.target.value));
+$('#phoneBtn').addEventListener('click', e=>{ const on = e.currentTarget.getAttribute('aria-pressed')!=='true'; e.currentTarget.setAttribute('aria-pressed', String(on)); $('#app').classList.toggle('phone', on); renderAll(); });
+const initialState = new URLSearchParams(location.search).get('state') || 'initial';
+$('#mockState').value = initialState; setState(initialState);
+})();
+</script>
