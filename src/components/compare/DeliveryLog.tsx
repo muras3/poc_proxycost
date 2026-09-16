@@ -1,6 +1,7 @@
 'use client';
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { track } from '@/lib/analytics/events';
 import { CA_PROVINCE_AVERAGE_RATE } from '@/lib/pricing/countries';
 import { methodLabel } from '@/lib/ui/methodLabel';
 import { TRACKED, UNTRACKED, methodDisplay, methodRawNote } from '@/lib/ui/methodDisplay';
@@ -227,7 +228,16 @@ export function DeliveryLog({
           </span>
         </div>,
         <div className="out" key="out">
-          <a className="go" href={row.outboundUrl} target="_blank" rel={rel(row.paysUs)}>
+          {/* ファネル3段目・**最重要**。押されたことだけを送る——どの社を押したかも、
+              その行の URL も送らない（`src/lib/analytics/events.ts`）。`sendBeacon` なので
+              新しいタブが開いてもこの1件は落ちない。 */}
+          <a
+            className="go"
+            href={row.outboundUrl}
+            target="_blank"
+            rel={rel(row.paysUs)}
+            onClick={() => track('outbound')}
+          >
             {row.outboundDirect ? `Open this listing at ${row.serviceName} →` : `Open at ${row.serviceName} →`}
           </a>
           <span className={`ref ${row.paysUs ? 'pays' : ''}`}>{row.referralNote ?? 'pays us nothing'} · never moves a row</span>
@@ -236,7 +246,7 @@ export function DeliveryLog({
             <ul>
               {row.itemLinks.map((l) => (
                 <li key={l.itemId}>
-                  <a href={l.url} target="_blank" rel={rel(row.paysUs)}>Open <span className="jp">“{l.title.slice(0, 40)}”</span> at {row.serviceName} →</a>
+                  <a href={l.url} target="_blank" rel={rel(row.paysUs)} onClick={() => track('outbound')}>Open <span className="jp">“{l.title.slice(0, 40)}”</span> at {row.serviceName} →</a>
                 </li>
               ))}
             </ul>

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     + 'are involved, and how referral fees work.',
 };
 
-const UPDATED = '2026-09-15';
+const UPDATED = '2026-09-16';
 const ISSUES = 'https://github.com/muras3/poc_proxycost/issues';
 const REPO = 'https://github.com/muras3/poc_proxycost';
 const CONTACT_EMAIL = 'contact@japanproxyguide.com';
@@ -114,9 +114,37 @@ export default function PrivacyPage() {
 
       <H2>Analytics</H2>
       <p className="mt-2">
-        We plan to add Cloudflare Web Analytics, which counts page views without cookies and without
-        fingerprinting visitors. It is not installed yet either. If we ever want something that needs
-        a cookie, it goes behind the consent banner like the ads do.
+        We count three things, and nothing else: that someone searched or pasted a listing URL, that
+        a comparison was shown, and that someone clicked through to a proxy service. We are trying to
+        answer one question — of the people who see a comparison, how many go on to a proxy.
+      </p>
+      <p className="mt-2">
+        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+          What leaves your browser is one word.
+        </span>{' '}
+        Each of those three events sends a single request to this site carrying one of{' '}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">entry</code>,{' '}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">results</code> or{' '}
+        <code className="rounded bg-neutral-100 px-1 dark:bg-neutral-800">outbound</code>. It does not
+        carry what you searched for, the listing URL you pasted, the items in your cart, their prices
+        or weights, the totals, your destination country, or which proxy service you clicked. There is
+        no third-party analytics script on the site, so none of this reaches anyone else.
+      </p>
+      <p className="mt-2">
+        <span className="font-medium text-neutral-900 dark:text-neutral-100">
+          No cookie and no visitor ID.
+        </span>{' '}
+        We do not set a cookie, store anything in your browser, or create an identifier for you, so we
+        cannot tell one visit from another or follow you between pages. What we get back is three
+        running counts. Because of that, the figure we can compute is a ratio of counts, not a rate
+        per person. Our server necessarily receives your IP address and browser User-Agent when your
+        browser makes any request, as every website does; for these three events we do not record
+        them. Each event is counted at most once per page load.
+      </p>
+      <p className="mt-2">
+        We still plan to add Cloudflare Web Analytics for page views, which uses no cookies and does
+        not fingerprint visitors. It is not installed yet. If we ever want something that needs a
+        cookie, it goes behind the consent banner like the ads do.
       </p>
 
       <H2>If you are in the EU or the UK</H2>
@@ -124,8 +152,16 @@ export default function PrivacyPage() {
         Germany, France and the United Kingdom are destinations this calculator supports, so we
         assume EU and UK visitors. Nothing that requires consent is loaded before you give it: the
         banner appears first, both buttons are equally available, and Reject is a real answer that we
-        remember. The lawful basis for the ad and analytics scripts is your consent; for serving the
-        page itself it is our legitimate interest in running a working website.
+        remember. The lawful basis for the ad script, and for any analytics script we add later, is
+        your consent; for serving the page itself it is our legitimate interest in running a working
+        website.
+      </p>
+      <p className="mt-2">
+        The three-event count described above is not behind the banner, and we want to be plain about
+        why: it neither stores anything on your device nor reads anything from it, and it creates no
+        identifier, so there is nothing about it for you to consent to storing. Rejecting the banner
+        does not change it, because there is nothing there to switch off beyond the three counts. If
+        you disagree with that reading, write to us at the address below.
       </p>
       <p className="mt-2">
         Because we hold no account data, there is normally nothing personal of yours for us to show,
@@ -164,7 +200,7 @@ export default function PrivacyPage() {
       <p className="mt-2">
         When this page changes, the date at the top changes with it, and the edit is a commit in the
         public repository. The two changes we already expect are the AdSense tag and Cloudflare Web
-        Analytics going live.
+        Analytics going live. The three-event count described above is live as of {UPDATED}.
       </p>
 
       <H2>Contact</H2>
