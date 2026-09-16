@@ -1842,6 +1842,8 @@ describe('one item at a time: whose weight decides the winner', () => {
       onlyPricedAtLow: false, onlyPricedAtHigh: false,
       decisive: false,
       bracketAtLow: ['ZenMarket'], bracketAtHigh: ['ZenMarket'],
+      // 両端とも枠は1社。1位と判別が付かない社も1社（＝1位自身）。
+      contestedAtLow: 1, contestedAtHigh: 1,
     });
   });
 
@@ -1861,6 +1863,8 @@ describe('one item at a time: whose weight decides the winner', () => {
       onlyPricedAtLow: false, onlyPricedAtHigh: false,
       decisive: true,
       bracketAtLow: ['Neokyo'], bracketAtHigh: ['FROM JAPAN'],
+      // 顔ぶれは替わるが、どちらの端でも1社に絞れている（＝測れば決まる）。
+      contestedAtLow: 1, contestedAtHigh: 1,
     });
     // **ねんどろいどの真ん中50%（380–600 g）だけで1位が替わる。** 表の精度を上げても消えない。
     expect(r.weightSensitivity['i1']).toMatchObject({
@@ -1969,6 +1973,8 @@ describe('one item at a time: whose weight decides the winner', () => {
       onlyPricedAtLow: false, onlyPricedAtHigh: false,
       decisive: false,
       bracketAtLow: ['ZenMarket'], bracketAtHigh: ['ZenMarket'],
+      // 両端とも枠は1社。1位と判別が付かない社も1社（＝1位自身）。
+      contestedAtLow: 1, contestedAtHigh: 1,
     });
   });
 

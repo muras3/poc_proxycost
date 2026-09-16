@@ -125,6 +125,7 @@ export function Calculator() {
         readOn={readOn}
         unpriced={unpriced}
         sensitivity={result.weightSensitivity}
+        contestedCount={result.contestedIds.length}
         pending={pending}
         open={cartOpen}
         onToggle={toggleCart}

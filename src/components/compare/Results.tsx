@@ -7,6 +7,7 @@ import { methodLabel } from '@/lib/ui/methodLabel';
 import { foreign, yen } from '@/lib/ui/format';
 import type { CompareResult, CountryCode, Item, ProvinceCode } from '@/lib/pricing/types';
 import { Board } from './Board';
+import { headlineFor, tooCloseText, weightEffectFor, weightEffectText } from './rankClaim';
 import { NoteButton, Mark } from './Popover';
 import { TotBar } from './RankRow';
 import { totalParts } from './mockFormat';
@@ -42,22 +43,51 @@ export function Results({
   const hiMax = comp.length ? Math.max(...comp.map((r) => r.total.high ?? r.total.low)) : 0;
   const sens = result.weightSensitivity;
   const decisiveItems = items.filter((i) => sens[i.id]?.decisive);
+  // **「測れば決まる」／「測ると決まらなくなる」を見出しと同格で出す**
+  // （`rankClaim.weightEffectFor`）。`decisive` だけでは向きが分からないので、
+  // その端で1位と判別が付かない社の数（`contestedAtLow`/`High`）と今の社数を
+  // 見比べて分ける。以前この事実はカートの注記にしか出ておらず、順位を読んで
+  // いる人の目には入らなかった。
+  const wEffect = weightEffectFor(result, items);
+  const wText = weightEffectText(wEffect);
 
   /* --- summary: winner + the gap is the headline; total is secondary --- */
   let summary: ReactNode = null;
   if (comp.length >= 2 && first) {
-    const next = comp.find((r) => !r.cheapest);
+    // **見出しが何を言えるかは engine の `contestedIds` だけが決める**
+    // （`rankClaim.headlineFor`）。`recommended`/`equivalent` は使わない——
+    // あれは画面に囲える数の上限（最大2社）が掛かっていて、重なり判定も
+    // 推移的なので、「1位と判別が付かない社の集合」ではない（`rankClaim` 参照）。
+    const h = headlineFor(result);
+    const est = leaders.some((r) => r.closedByAssumption.length > 0);
     let head: ReactNode;
-    if (result.rankIndeterminate) {
+    if (h.kind === 'indeterminate') {
       head = <h2 className="summary">Can&rsquo;t tell who leads to {countryName} — the top total&rsquo;s own upper bound is open.</h2>;
-    } else {
-      const est = leaders.some((r) => r.closedByAssumption.length > 0);
-      const who = leaders.length > 1
-        ? <><b>{andList(leaders.map((r) => r.label))}</b> are tied {est ? 'estimated ' : ''}cheapest</>
-        : <><b>{first.serviceName}</b> is {est ? 'the estimated cheapest' : 'cheapest'}</>;
+    } else if (h.kind === 'tooClose') {
+      // **差額は数値で出さない。**区間が交わっている以上、点推定どうしの差は
+      // 「どちらが安いか」について何も言っていない。ページで一番大きい文字が
+      // 一番強く断定してしまうので、ここに `¥N below` は置かない。
+      head = (
+        <h2 className="summary" data-testid="too-close">
+          <b>{tooCloseText(h.names)}</b> — too close to call to {countryName}
+          {h.names.length > 2 && <> ({h.names.length} services overlap)</>}.
+        </h2>
+      );
+    } else if (h.kind === 'tie') {
       head = (
         <h2 className="summary">
-          {who} to {countryName}
+          <b>{andList(h.names)}</b> are tied {est ? 'estimated ' : ''}cheapest to {countryName}
+          {/* 同額の社の外にも交わっている社が居れば、その数は黙って落とさない。 */}
+          {h.contested > h.names.length && <> — {h.contested} services overlap in all</>}.
+        </h2>
+      );
+    } else {
+      // **断定してよい唯一のケース**（`contestedIds` が1社 ＝ 1位の区間が
+      // 誰の区間とも交わっていない）。ここだけ従来どおり差額を数値で出す。
+      const next = h.kind === 'clear' ? h.next : undefined;
+      head = (
+        <h2 className="summary" data-testid="clear-winner">
+          <b>{first.serviceName}</b> is {est ? 'the estimated cheapest' : 'cheapest'} to {countryName}
           {next && <> — <span className="gap">{yen(next.diff)}</span> below {next.label}</>}.
         </h2>
       );
@@ -66,6 +96,17 @@ export function Results({
     summary = (
       <div data-testid="summary">
         {head}
+        {/* 同格——見出しの直後、総額（`.sumtot`）より前。下段の小さい注記に落とさない。 */}
+        {wText && (
+          <p className="summary-weight" data-testid="weight-effect" data-effect={wEffect.kind}>
+            {wText}{' '}
+            {wEffect.kind !== 'none' && wEffect.items[0] && (
+              <button type="button" className="link" onClick={() => onFocusWeight(wEffect.items[0]!.id)}>
+                Check weights
+              </button>
+            )}
+          </p>
+        )}
         <p className="sumtot">
           {/*
             **2026-09-15、着地総額の断定をやめた（文言のみ）。**以前は「1st, at the door」。
