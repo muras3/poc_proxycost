@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
-  addByHand, cart, gotoCompare, isCollapsed, openCart, shipTo,
+  addByHand, cart, gotoCompare, isCollapsed, openCart, ranking, shipTo,
 } from './helpers';
 
 /**
@@ -144,13 +144,49 @@ test('the lithium-airmail badge is always visible for GB/DE and absent elsewhere
 });
 
 /**
- * Ship by の選択肢の整理（2026-09-16、オーナー指摘「郵便5＋宅配便15の20個は複雑すぎる」）。
- * **順位・総額・選べる便そのものは一切変えていない**——既定で見せる範囲と、
- * 名前の書き方だけを変えた。
+ * **2026-09-16（オーナー確定）: 選ぶ単位は運送会社。**便を20個並べると、細かい便を
+ * たいてい1社しか扱っていないので、選んだ瞬間に他社が全部「比べられません」になり
+ * （実画面で "4 of 5 services can't be ranked"）比較が成立しなかった。
  */
+test('Ship by offers the carriers, not the 20 individual services', async ({ page }) => {
+  await gotoCompare(page);
+  const picker = page.locator('#ship-by-select');
+
+  // 既定は「Cheapest that fits」＋運送会社だけ。便もグループ見出しも出ていない。
+  await expect(picker.locator('option').first()).toHaveText(/^Cheapest that fits/);
+  await expect(picker.locator('optgroup')).toHaveCount(0);
+  const values = await picker.locator('option').evaluateAll(
+    (os) => os.map((o) => (o as HTMLOptionElement).value));
+  expect(values[0]).toBe('cheapest');
+  for (const v of values.slice(1)) expect(v, `便が既定で並んでいる: ${v}`).toMatch(/^carrier:/);
+  // 米国では SF Express だけ扱いが無いので、残り6社が選べる。
+  expect(values.slice(1)).toEqual([
+    'carrier:japan-post', 'carrier:fedex', 'carrier:dhl',
+    'carrier:ups', 'carrier:ecms', 'carrier:buyee',
+  ]);
+
+  // 扱いの無い社は消さず、「Show N not available for …」に畳む（未価格の便と同じ形）。
+  const toggle = page.getByTestId('ship-by-unpriced-toggle');
+  await expect(toggle).toContainText('Show 1 not available for United States');
+  await toggle.click();
+  const sf = picker.locator('option[value="carrier:sf-express"]');
+  await expect(sf).toHaveCount(1);
+  await expect(sf).toBeDisabled();
+  await expect(sf).toContainText('not available for United States');
+
+  // **会社を選ぶと、比べられる行の Ships by はその会社の便になる。**便は行ごとに
+  // 違ってよい（その社が扱うその会社の便のうち総額が最安のもの）。
+  await picker.selectOption('carrier:fedex');
+  const shipsBy = await ranking(page).getByTestId('arrival-bar').allInnerTexts();
+  expect(shipsBy.length, 'FedEx で比べられる行が1つも無い').toBeGreaterThan(0);
+  for (const t of shipsBy) expect(t, `FedEx 以外の便が出ている: ${t}`).toMatch(/FedEx/);
+});
+
 test('Ship by hides the methods that are not priced for the destination, and opens them on demand', async ({ page }) => {
   await gotoCompare(page);
   const picker = page.locator('#ship-by-select');
+  // 便の指名は押したときだけ出る（既定は運送会社）。ここから先の挙動は従来どおり。
+  await page.getByTestId('ship-by-services-toggle').click();
   const toggle = page.getByTestId('ship-by-unpriced-toggle');
 
   // 米国では価格の付かない便は1つ（SF Express）。既定ではその1つが選択肢に居ない。
@@ -178,6 +214,7 @@ test('Ship by hides the methods that are not priced for the destination, and ope
 test('Ship by groups the methods by carrier, with the names cleaned up and the raw label kept', async ({ page }) => {
   await gotoCompare(page);
   const picker = page.locator('#ship-by-select');
+  await page.getByTestId('ship-by-services-toggle').click();
 
   // グループの見出し = 運送会社。郵便が先頭。
   const groups = await picker.locator('optgroup').evaluateAll(
@@ -212,6 +249,7 @@ test('the Ship by field, with the not-priced list open, causes no horizontal scr
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoCompare(page);
   await shipTo(page, 'DE'); // 未価格が5便＝行が一番長くなる宛先
+  await page.getByTestId('ship-by-services-toggle').click();
   const toggle = page.getByTestId('ship-by-unpriced-toggle');
   await toggle.click();
   const overflow = await page.evaluate(

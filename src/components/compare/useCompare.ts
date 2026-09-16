@@ -3,6 +3,7 @@
 import { useMemo, useReducer } from 'react';
 import { compare, DEFAULT_STORAGE_DAYS } from '@/lib/pricing/compare';
 import { weightFieldsFor } from '@/lib/pricing/weights';
+import type { CarrierChoice } from '@/lib/pricing/carriers';
 import { siteById } from '@/lib/search/sites';
 import type {
   CompareResult, CountryCode, CourierMethod, Item, PostalMethod, ProvinceCode, SiteId,
@@ -36,7 +37,7 @@ interface State {
    * `'ems'` に固定されていて、`compare()` 自身の既定が変わった後も UI だけ
    * 一番高い郵便を黙って選び続けていた。**
    */
-  method: PostalMethod | CourierMethod | 'cheapest';
+  method: PostalMethod | CourierMethod | 'cheapest' | CarrierChoice;
   /**
    * 倉庫に置く日数（F21、0d）。既定は `DEFAULT_STORAGE_DAYS`（45日、我々の仮定）。
    * 利用者が変えたら即座に `compare()` を呼び直し、再ランキングする。
@@ -58,7 +59,7 @@ type Action =
   | { type: 'patch'; id: string; patch: Partial<Item> }
   | { type: 'country'; country: CountryCode }
   | { type: 'province'; province: ProvinceCode | null }
-  | { type: 'method'; method: PostalMethod | CourierMethod | 'cheapest' }
+  | { type: 'method'; method: PostalMethod | CourierMethod | 'cheapest' | CarrierChoice }
   | { type: 'storageDays'; storageDays: number };
 
 function itemFromDraft(draft: Draft, id: string): Item {

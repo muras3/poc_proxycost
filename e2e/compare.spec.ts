@@ -26,6 +26,7 @@ import {
   restrictedNote,
   rowCells,
   weightBox,
+  setMethod,
   type RankRow, shipTo, openScopeNote, openRestrictedNote, openNeedleNote, closeCart,
 } from './helpers';
 import { RATES, RATES_AS_OF } from '../src/lib/pricing/rates';
@@ -444,7 +445,7 @@ test('22. two rows with the same total share the rank, and both are marked CHEAP
   await addByHand(page, TIE, 1000, 'rakuten');
   await openCart(page);
   await weightBox(page, TIE).fill('100');
-  await page.getByLabel('Ship by').selectOption('ems');
+  await setMethod(page, 'ems');
 
   await expect.poll(async () => (await readRanking(page)).filter((r) => r.tied).length).toBe(2);
   const rows = await readRanking(page);
@@ -936,7 +937,7 @@ test('18b. the shipping method is a control, and picking one moves every total',
   expect(before.size).toBeGreaterThan(0);
 
   // 船便に切り替えると総額が下がる。**同時に日数が読めること。**
-  await picker.selectOption('parcel-surface');
+  await setMethod(page, 'parcel-surface');
   await expect.poll(async () => first(await readRanking(page)).total)
     .not.toBe([...before.values()][0]);
   const after = priced(await readRanking(page));
@@ -1012,7 +1013,7 @@ test('18c. a method too small for the parcel marks every row not comparable, it 
   const before = await readRanking(page);
   expect(before.length).toBeGreaterThan(0);
 
-  await page.getByLabel('Ship by').selectOption('small-packet-air');
+  await setMethod(page, 'small-packet-air');
   // **全行が「比較できない」になる。**額を付けずに理由を出すのが正しい
   // ——「この重量ではこの方式で送れない」であって「安い」ではない。
   // 全行が比べられないとき、盤は「Can't compare」の枠に替わり、社ごとに理由を並べる
@@ -1024,7 +1025,7 @@ test('18c. a method too small for the parcel marks every row not comparable, it 
   await expect(panel.getByText(/Small packet .* has no published rate above/).first()).toBeVisible();
 
   // 方式を戻せば表も戻る。片道の壊れ方をしていないこと。
-  await page.getByLabel('Ship by').selectOption('parcel-surface');
+  await setMethod(page, 'parcel-surface');
   await expect.poll(async () => (await readRanking(page)).length).toBe(before.length);
 });
 

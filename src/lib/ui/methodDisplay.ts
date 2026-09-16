@@ -1,6 +1,10 @@
 import { COURIER_METHODS, POSTAL_METHODS, RANKED_COURIER_METHOD_IDS } from '@/lib/pricing/postage';
 import type { CountryCode, CourierMethod, PostalMethod } from '@/lib/pricing/types';
 import { COUNTRIES } from '@/lib/pricing/countries';
+import {
+  CARRIER_IDS, CARRIER_NAMES, carrierOf, methodsOfCarrier,
+  type CarrierId, type CarrierName,
+} from '@/lib/pricing/carriers';
 
 /**
  * **画面に出す方式名・日数・状態語の対応表。1箇所だけ。**（オーナー確定 2026-09-16）
@@ -24,11 +28,13 @@ import { COUNTRIES } from '@/lib/pricing/countries';
  * **数値・順位には一切触れない。**`src/lib/pricing` は読むだけ。
  */
 
-/** グループ（運送会社）。並びはこの順で画面に出る。 */
-export const CARRIERS = [
-  'Japan Post', 'FedEx', 'DHL', 'UPS', 'ECMS', 'SF Express', 'Buyee',
-] as const;
-export type Carrier = (typeof CARRIERS)[number];
+/**
+ * グループ（運送会社）。並びはこの順で画面に出る。
+ * **社名と所属の出どころは `src/lib/pricing/carriers.ts` 1箇所**——ここで持ち直すと
+ * 「選べる会社」（Ship by）と「行に出る会社名」が食い違いうる。
+ */
+export type Carrier = CarrierName;
+export const CARRIERS: readonly Carrier[] = CARRIER_IDS.map((id) => CARRIER_NAMES[id]);
 
 /**
  * **状態語は1つずつしか持たない。**同じことを2通りに言わない
@@ -76,67 +82,67 @@ const POSTAL: Record<PostalMethod, { service: string; days: string; tracked: boo
  * 原文に括弧で入っている日数は名前から外し、`days` に移す（`Connect Plus · 3–5 days`）。
  */
 const COURIER: Record<CourierMethod, {
-  carrier: Carrier; service: string; days: string; raw: string; rawFrom: string;
+  service: string; days: string; raw: string; rawFrom: string;
 }> = {
   'courier-fedex': {
-    carrier: 'FedEx', service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
+    service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
     raw: 'FEDEX', rawFrom: 'ZenMarket',
   },
   'courier-fedex-economy': {
-    carrier: 'FedEx', service: 'Economy', days: DAYS_NOT_PUBLISHED,
+    service: 'Economy', days: DAYS_NOT_PUBLISHED,
     raw: 'FedEx - Economy', rawFrom: 'FROM JAPAN',
   },
   'courier-fedex-priority': {
-    carrier: 'FedEx', service: 'Priority', days: DAYS_NOT_PUBLISHED,
+    service: 'Priority', days: DAYS_NOT_PUBLISHED,
     raw: 'FedEx - Priority', rawFrom: 'FROM JAPAN',
   },
   'courier-fedex-lowcost': {
-    carrier: 'FedEx', service: 'Lowcost', days: DAYS_NOT_PUBLISHED,
+    service: 'Lowcost', days: DAYS_NOT_PUBLISHED,
     raw: 'FEDEX LOWCOST', rawFrom: 'ZenMarket',
   },
   'courier-fedex-connect-plus': {
-    carrier: 'FedEx', service: 'Connect Plus', days: '3–5 days',
+    service: 'Connect Plus', days: '3–5 days',
     raw: 'FedEx International Connect Plus (3-5 days)', rawFrom: 'Neokyo',
   },
   'courier-ups': {
-    carrier: 'UPS', service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
+    service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
     raw: 'UPS', rawFrom: 'ZenMarket',
   },
   'courier-dhl': {
-    carrier: 'DHL', service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
+    service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
     raw: 'DHL', rawFrom: 'FROM JAPAN',
   },
   'courier-dhl-green-plus': {
-    carrier: 'DHL', service: 'Green+', days: DAYS_NOT_PUBLISHED,
+    service: 'Green+', days: DAYS_NOT_PUBLISHED,
     raw: 'DHL (GREEN+)', rawFrom: 'ZenMarket',
   },
   'courier-dhl-express-1200': {
-    carrier: 'DHL', service: 'Express 12:00', days: '2–5 days',
+    service: 'Express 12:00', days: '2–5 days',
     raw: 'DHL EXPRESS 12:00 (2-5 days)', rawFrom: 'Neokyo',
   },
   'courier-dhl-express-worldwide': {
-    carrier: 'DHL', service: 'Express Worldwide', days: '2–6 days',
+    service: 'Express Worldwide', days: '2–6 days',
     raw: 'DHL Express Worldwide (2-6 days)', rawFrom: 'Neokyo',
   },
   'courier-sf-express': {
-    carrier: 'SF Express', service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
+    service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
     raw: 'courier-sf-express', rawFrom: 'no service prints this method today',
   },
   'courier-ecms': {
-    carrier: 'ECMS', service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
+    service: TIER_NOT_PUBLISHED, days: DAYS_NOT_PUBLISHED,
     raw: 'ECMS', rawFrom: 'FROM JAPAN',
   },
   'courier-ecms-express': {
-    carrier: 'ECMS', service: 'Express', days: DAYS_NOT_PUBLISHED,
+    service: 'Express', days: DAYS_NOT_PUBLISHED,
     raw: 'ECMS EXPRESS', rawFrom: 'ZenMarket',
   },
   'courier-buyee-air': {
-    carrier: 'Buyee', service: 'Air Delivery', days: DAYS_NOT_PUBLISHED,
+    service: 'Air Delivery', days: DAYS_NOT_PUBLISHED,
     raw: 'Buyee Air Delivery', rawFrom: 'Buyee',
   },
   // `courier-surface` はランキング候補ではない（`Row.surface` 専用）が、型のために持つ。
   'courier-surface': {
-    carrier: 'Japan Post', service: 'International parcel (surface)', days: '1–3 months',
+    service: 'International parcel (surface)', days: '1–3 months',
     raw: 'SURFACE', rawFrom: 'ZenMarket',
   },
 };
@@ -155,7 +161,7 @@ export function methodDisplay(method: PostalMethod | CourierMethod): MethodDispl
   // 宅配便の追跡の有無は社ごとの一次情報を持っていない（`COURIER_METHODS.tracked` も
   // 一律 true の決め打ち）。ここで新しい事実を作らないよう、同じ扱いのままにする。
   return {
-    id: method, carrier: c.carrier, service: c.service, days: c.days,
+    id: method, carrier: CARRIER_NAMES[carrierOf(method)], service: c.service, days: c.days,
     tracked: true, raw: c.raw, rawFrom: c.rawFrom,
   };
 }
@@ -202,6 +208,41 @@ export function methodGroups(
   }
   // グループの並びは `CARRIERS`（郵便が先、あとは社名）。中身の並びはマスタのまま。
   return out.sort((a, b) => CARRIERS.indexOf(a.carrier) - CARRIERS.indexOf(b.carrier));
+}
+
+/**
+ * **Ship by の既定の選択肢（オーナー確定 2026-09-16）: 運送会社。**
+ *
+ * なぜ便ではなく会社か: 便を20個並べていたときは、細かい便をたいてい1社しか
+ * 扱っていないので、利用者が選んだ瞬間に他社が全部「比べられません」になった
+ * （`Lowcost` は ZenMarket だけ——実画面で "4 of 5 services can't be ranked"）。
+ * 会社まで上げれば、その会社の便を1つでも持っている社は比較に残る。
+ *
+ * `available` は「その宛先でその社の便に1つでも価格が付くか」。**付かない社は
+ * 選択肢から消さず**、「Show N not available for {country}」の中に畳む——
+ * 未価格の便を畳むのと同じ形（消すと「無い」と「選べない」が混ざる）。
+ */
+export interface CarrierChoiceOption {
+  id: CarrierId;
+  value: string;
+  name: CarrierName;
+  available: boolean;
+}
+
+export function carrierChoices(
+  priced: (id: PostalMethod | CourierMethod) => boolean,
+): readonly CarrierChoiceOption[] {
+  return CARRIER_IDS.map((id) => ({
+    id,
+    value: `carrier:${id}`,
+    name: CARRIER_NAMES[id],
+    available: methodsOfCarrier(id).some(priced),
+  }));
+}
+
+/** その宛先でその運送会社が使えないときの言い方。**1つだけ。** */
+export function notAvailableFor(country: CountryCode): string {
+  return `not available for ${COUNTRIES[country].name}`;
 }
 
 /** `COURIER_METHODS` を読むのはテストのため（原文との対応が崩れていないかの検査）。 */

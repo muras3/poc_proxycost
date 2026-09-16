@@ -8,6 +8,9 @@ import {
   DEFAULT_PARCEL_DIMENSIONS_TIER, POSTAGE_SOURCE_URL, POSTAL_METHODS, RANKED_COURIER_METHOD_IDS,
   courierPriceFor, dimensionsExceedLimit, markupYen, maxGramsFor, postageFor, zoneFor,
 } from './postage';
+import {
+  CARRIER_NAMES, carrierIdOfChoice, methodsOfCarrier, type CarrierChoice,
+} from './carriers';
 import { rateFor, RATES_AS_OF, RATES_FETCHED_ON, RATES_SOURCE_URL } from './rates';
 import { outboundFor } from './deeplink';
 import {
@@ -185,8 +188,11 @@ interface Ctx {
   assumeUnknownG: number | null;
   /** 既知の重量にこの倍率を掛ける（順位の頑健性チェック用）。 */
   weightScale: number;
-  /** 国際配送の方式。'cheapest' なら行ごとに「運べる中で最安」を選ぶ。 */
-  method: PostalMethod | CourierMethod | 'cheapest';
+  /**
+   * 国際配送の方式。'cheapest' なら行ごとに「運べる中で最安」を選ぶ。
+   * `carrier:<id>` ならその運送会社の便だけを候補にして、同じ規約（総額）で最安を選ぶ。
+   */
+  method: PostalMethod | CourierMethod | 'cheapest' | CarrierChoice;
   /** 倉庫に置く日数。未指定は `DEFAULT_STORAGE_DAYS`。 */
   storageDays: number;
 }
@@ -1230,11 +1236,24 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 従来どおり `shipLine.amount == null` として検出し除外する——総額比較の
   // `low` は未取得を0として畳むため、この除外を怠ると「そもそも運べない方式」
   // が送料0円のふりをして最安に見えてしまう。
-  const candidateIds: readonly (PostalMethod | CourierMethod)[] = [
+  const allCandidateIds: readonly (PostalMethod | CourierMethod)[] = [
     ...nonSurfacePostalMethods.map((s) => s.id as PostalMethod),
     ...COURIER_METHOD_IDS,
   ];
-  const cheapestCandidate = wanted === 'cheapest'
+  // **運送会社を指定したとき（`carrier:<id>`、オーナー確定 2026-09-16）。**
+  // 候補の集合を「その運送会社の便」だけに絞り、**あとは `'cheapest'` と一字一句
+  // 同じ処理**（候補ごとに `buildRow` を呼び直し、`total.low` で比べる）を通す。
+  // 送料だけで比べないのはそのため——着地側の通関立替手数料や税を含む総額で選ぶ
+  // （`docs/audit/cheapest-by-total-2026-09-13.md` の是正と同じ規約）。
+  // 絞り込みは `methodsOfCarrier` が `allCandidateIds` と同じ土台（船便を除いた
+  // 郵便＋`RANKED_COURIER_METHOD_IDS`）から作るので、**`'cheapest'` 側の候補集合は
+  // 一切動かない**＝既定の結果は1円も変わらない。
+  const wantedCarrier = carrierIdOfChoice(wanted);
+  const resolving = wanted === 'cheapest' || wantedCarrier != null;
+  const candidateIds: readonly (PostalMethod | CourierMethod)[] = wantedCarrier
+    ? methodsOfCarrier(wantedCarrier)
+    : allCandidateIds;
+  const cheapestCandidate = resolving
     ? candidateIds
       .map((id) => {
         const row = buildRow(svc, variant, { ...ctx, method: id });
@@ -1255,10 +1274,12 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 別に持ち、`method` 自体は内部計算（`spec`/`rate` の解決）のために
   // 何かしらの値が要るので `'ems'` のままにしておくが、**文言側は
   // `noPricedCandidate` を見て、方式名を名指ししない**。
-  const noPricedCandidate = wanted === 'cheapest' && cheapestCandidate == null;
-  const method: PostalMethod | CourierMethod = wanted === 'cheapest'
+  // 運送会社を指定したときも同じ——その社の便がどれも値段を持たない行では、
+  // 方式を名指しして「その方式を出していない」と書くのは嘘になる。
+  const noPricedCandidate = resolving && cheapestCandidate == null;
+  const method: PostalMethod | CourierMethod = resolving
     ? (cheapestCandidate?.id ?? 'ems')
-    : wanted;
+    : (wanted as PostalMethod | CourierMethod);
   // **`isCourier` は `COURIER_METHOD_IDS`（ランキング候補）とは別に判定する。**
   // `courier-surface` は候補集合には無いが、`ctx.method` で明示的に選ぶことは
   // でき（`Row.surface` の内部計算や、利用者が明示的に選ぶ将来のUIのため）、
@@ -1381,9 +1402,22 @@ function buildRow(svc: Service, variant: Row['variant'], ctx: Ctx): Row | null {
   // 測定点の間の重量で、単調性が崩れていなければ「直上の測定点の価格」、崩れて
   // いれば `null`（P2 1）。郵便は測定区間という概念が無いので `shipHigh === shipYen`
   // で常に閉じる。
-  const courierShip = isCourier ? priceCourier(method as CourierMethod) : null;
-  const shipYen: number | null = isCourier ? (courierShip?.low ?? null) : priceAll(method as PostalMethod);
-  const shipHigh: number | null = isCourier ? (courierShip?.high ?? null) : shipYen;
+  const courierShip = isCourier || noPricedCandidate
+    ? (noPricedCandidate ? null : priceCourier(method as CourierMethod))
+    : null;
+  // **候補が1つも値段を持たなかったら送料は `null`。**`method` が `'ems'` に
+  // なっているのは内部計算のための置き値であって（上の `noPricedCandidate` の
+  // コメント）、EMS を選んだわけではない。運送会社を指定したとき（`carrier:<id>`）は
+  // この置き値が**実際に値段を持ってしまう**——EMS はどの宛先でも価格化済みなので、
+  // ここで止めないと「SF Express を選んだのに EMS の値段で比べられる行」が出る。
+  // `'cheapest'` のときは全方式が未価格の場合にしか起こらず、EMS も当然未価格
+  // だったので表に出ていなかった不具合。
+  const shipYen: number | null = noPricedCandidate
+    ? null
+    : isCourier ? (courierShip?.low ?? null) : priceAll(method as PostalMethod);
+  const shipHigh: number | null = noPricedCandidate
+    ? null
+    : isCourier ? (courierShip?.high ?? null) : shipYen;
   // **「その社が売っていない」「重すぎる」「商品価格が高すぎる」は違う理由なので、書き分ける。**
   const stepLabel = isCourier
     ? (!courierRate
@@ -2468,7 +2502,7 @@ function sensitivityRange(item: Item): [number, number] | null {
  */
 function weightSensitivityFor(
   items: Item[], cc: CompareInput['country'], province: ProvinceCode | null, base: Row[],
-  method: PostalMethod | CourierMethod | 'cheapest', storageDays: number,
+  method: PostalMethod | CourierMethod | 'cheapest' | CarrierChoice, storageDays: number,
 ): Record<string, WeightSensitivity> {
   const out: Record<string, WeightSensitivity> = {};
   const baseIds = cheapestIds(base);
@@ -2665,9 +2699,13 @@ export function compare(
         // 誤り。`ctx.method` が `'cheapest'`（利用者が方式を指定していない）
         // ときは特定の1方式を名指しできないので、方式を問わない言い方にする。
         ? `No published rate covers this parcel for ${
+            // 運送会社を指定したときも、名指しできるのは社であって便ではない
+            // （その社のどの便が使われるかは行ごとに決まる）。
             method === 'cheapest'
               ? 'any shipping method we price'
-              : (POSTAL_METHODS.find((s) => s.id === method)?.label ?? method)
+              : carrierIdOfChoice(method)
+                ? `any ${CARRIER_NAMES[carrierIdOfChoice(method)!]} service we price`
+                : (POSTAL_METHODS.find((s) => s.id === method)?.label ?? method)
           }, so we cannot compare these totals.`
         : indeterminate
           ? indeterminateNote(base.filter((r) => r.comparable))

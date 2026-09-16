@@ -7,12 +7,13 @@ import type {
   CountryCode, CourierMethod, Item, Line, PostalMethod, ProvinceCode,
 } from '@/lib/pricing/types';
 import {
-  UNTRACKED, methodGroups, methodRawNote, notPricedFor,
+  UNTRACKED, carrierChoices, methodGroups, methodRawNote, notAvailableFor, notPricedFor,
 } from '@/lib/ui/methodDisplay';
+import { carrierIdOfChoice, type CarrierChoice } from '@/lib/pricing/carriers';
 import { grams, yen } from '@/lib/ui/format';
 import { Mark } from './Popover';
 
-export type MethodChoice = PostalMethod | CourierMethod | 'cheapest';
+export type MethodChoice = PostalMethod | CourierMethod | 'cheapest' | CarrierChoice;
 const COUNTRY_ORDER: CountryCode[] = ['US', 'GB', 'DE', 'FR', 'AU', 'CA', 'SG'];
 
 /**
@@ -67,9 +68,26 @@ export function Waybill({
   const pricedGroups = methodGroups(priced);
   const unpricedGroups = methodGroups((id) => !priced(id));
   const unpricedCount = unpricedGroups.reduce((s, g) => s + g.methods.length, 0);
-  // 選ばれている便がその宛先で価格化されていないとき（宛先を変えた直後など）は、
+  // **既定の選択肢は運送会社**（オーナー確定 2026-09-16）。便を20個並べると、
+  // 細かい便はたいてい1社しか扱っていないので、選んだ瞬間に他社が全部
+  // 「比べられません」になって比較が成立しない（`Lowcost` は ZenMarket だけ）。
+  const carrierOpts = carrierChoices(priced);
+  const availCarriers = carrierOpts.filter((c) => c.available);
+  const unavailCarriers = carrierOpts.filter((c) => !c.available);
+  const chosenCarrier = carrierIdOfChoice(method);
+  /** いま指名されている便（会社指定・既定のときは無い）。 */
+  const chosenService: PostalMethod | CourierMethod | null =
+    method === 'cheapest' || method.startsWith('carrier:')
+      ? null
+      : (method as PostalMethod | CourierMethod);
+  // 便の指名は**押したときだけ**出す。挙動（グループ分け・未価格は畳む）は今まで通り。
+  const [byService, setByService] = useState(false);
+  const showServices = byService || chosenService != null;
+  // 選ばれている便／社がその宛先で価格化されていないとき（宛先を変えた直後など）は、
   // 畳んだままだと `<select>` が自分の値を表示できない。そのときは開いた状態で出す。
-  const showUnpriced = unpricedOpen || (method !== 'cheapest' && !priced(method));
+  const showUnpriced = showServices
+    ? unpricedOpen || (chosenService != null && !priced(chosenService))
+    : unpricedOpen || (chosenCarrier != null && unavailCarriers.some((c) => c.id === chosenCarrier));
 
   return (
     <section className="waybill" id="waybill" aria-label="Conditions" data-testid="conditions-bar">
@@ -194,7 +212,15 @@ export function Waybill({
           onChange={(e) => onMethod(e.target.value as MethodChoice)}
         >
           <option value="cheapest">Cheapest that fits — per service</option>
-          {pricedGroups.map((g) => (
+          {!showServices && availCarriers.map((c) => (
+            <option key={c.id} value={c.value}>{c.name}</option>
+          ))}
+          {!showServices && showUnpriced && unavailCarriers.map((c) => (
+            <option key={c.id} value={c.value} disabled>
+              {`${c.name} · ${notAvailableFor(country)}`}
+            </option>
+          ))}
+          {showServices && pricedGroups.map((g) => (
             <optgroup key={g.carrier} label={g.carrier}>
               {g.methods.map((m) => (
                 <option key={m.id} value={m.id} title={methodRawNote(m.id)}>
@@ -203,7 +229,7 @@ export function Waybill({
               ))}
             </optgroup>
           ))}
-          {showUnpriced && unpricedGroups.map((g) => (
+          {showServices && showUnpriced && unpricedGroups.map((g) => (
             <optgroup key={g.carrier} label={g.carrier}>
               {g.methods.map((m) => (
                 <option key={m.id} value={m.id} disabled title={methodRawNote(m.id)}>
@@ -213,7 +239,25 @@ export function Waybill({
             </optgroup>
           ))}
         </select>
-        {unpricedCount > 0 && (
+        {/* 便の指名は既定では出さない。押したときだけ、今までの一覧をそのまま出す。 */}
+        <button
+          type="button"
+          className="link wshowmore"
+          id="ship-by-services"
+          data-testid="ship-by-services-toggle"
+          aria-expanded={showServices}
+          aria-controls="ship-by-select"
+          onClick={() => {
+            // 便の一覧を閉じるときは、指名していた便を持ち越さない——閉じた一覧の
+            // 中にしか無い値を `<select>` が表示できなくなる。既定へ戻す。
+            if (showServices && chosenService != null) onMethod('cheapest');
+            setByService((v) => !v);
+            setUnpricedOpen(false);
+          }}
+        >
+          {showServices ? 'Choose a carrier' : 'Choose a specific service'}
+        </button>
+        {(showServices ? unpricedCount > 0 : unavailCarriers.length > 0) && (
           <button
             type="button"
             className="link wshowmore"
@@ -223,7 +267,10 @@ export function Waybill({
             aria-controls="ship-by-select"
             onClick={() => setUnpricedOpen((v) => !v)}
           >
-            {showUnpriced ? 'Hide' : 'Show'} {unpricedCount} {notPricedFor(country)}
+            {showUnpriced ? 'Hide' : 'Show'}{' '}
+            {showServices
+              ? `${unpricedCount} ${notPricedFor(country)}`
+              : `${unavailCarriers.length} ${notAvailableFor(country)}`}
           </button>
         )}
       </div>

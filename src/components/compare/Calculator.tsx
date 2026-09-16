@@ -5,7 +5,10 @@ import { flushSync } from 'react-dom';
 import { AdSlot } from '@/components/chrome/AdSlot';
 import { courierMethodAvailable } from '@/lib/pricing/postage';
 import { COUNTRIES } from '@/lib/pricing/countries';
-import type { CompareResult, CountryCode, Item, Line, ProvinceCode } from '@/lib/pricing/types';
+import type {
+  CompareResult, CountryCode, CourierMethod, Item, Line, ProvinceCode,
+} from '@/lib/pricing/types';
+import { carrierIdOfChoice, methodsOfCarrier } from '@/lib/pricing/carriers';
 import { AddBar } from './AddBar';
 import { Cart, weightInputId } from './Cart';
 import { CostTable } from './CostTable';
@@ -44,7 +47,15 @@ export function Calculator() {
   function setCountry(c: CountryCode) {
     dispatch({ type: 'country', country: c });
     // 行き先で価格化の無い宅配便を選んだままにしない（Mock `setCountry` と同じ）。
-    if (method !== 'cheapest' && method.startsWith('courier-') && !courierMethodAvailable(method as never, c)) {
+    const carrier = carrierIdOfChoice(method);
+    if (carrier) {
+      // 運送会社を選んでいるとき: その社の便が新しい宛先で1つも価格化されて
+      // いなければ既定へ戻す（便のときと同じ規則を、社の単位に上げただけ）。
+      const anyPriced = methodsOfCarrier(carrier).some(
+        (m) => !m.startsWith('courier-') || courierMethodAvailable(m as CourierMethod, c),
+      );
+      if (!anyPriced) dispatch({ type: 'method', method: 'cheapest' });
+    } else if (method !== 'cheapest' && method.startsWith('courier-') && !courierMethodAvailable(method as never, c)) {
       dispatch({ type: 'method', method: 'cheapest' });
     }
   }

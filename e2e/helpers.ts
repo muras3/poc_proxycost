@@ -494,6 +494,17 @@ export function freeShippingDomesticNote(page: Page): Locator {
  * 頼らない）。
  */
 export async function setMethod(page: Page, method: string): Promise<void> {
+  // **2026-09-16**: Ship by の既定の選択肢は運送会社7つ（`carrier:<id>`）だけで、
+  // 便の指名は「Choose a specific service」を押したときだけ出る。便を渡された
+  // ときはその一覧を開いてから選ぶ——テスト側が押す手順を毎回書かずに済むよう、
+  // ここ1箇所で面倒を見る。
+  if (method !== 'cheapest' && !method.startsWith('carrier:')) {
+    const toServices = page.getByTestId('ship-by-services-toggle');
+    if ((await toServices.getAttribute('aria-expanded')) !== 'true') await toServices.click();
+    // その宛先で価格化されていない便は畳まれている。指名されたなら開く。
+    const opt = page.locator(`#ship-by-select option[value="${method}"]`);
+    if ((await opt.count()) === 0) await page.getByTestId('ship-by-unpriced-toggle').click();
+  }
   await page.locator('#ship-by-select').selectOption(method);
 }
 

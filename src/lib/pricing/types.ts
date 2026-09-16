@@ -5,6 +5,10 @@
 //   none       … 未取得。画面では「—」。**0 とは書かない**
 export type Tier = 'fixed' | 'estimate' | 'unverified' | 'none';
 
+// 運送会社の指定（`carrier:fedex` 等）。**型だけの取り込み**なので実行時の循環は無い
+// （`carriers.ts` は `postage.ts` を読み、`postage.ts` はこのファイルを読む）。
+import type { CarrierChoice } from './carriers';
+
 /**
  * 国際配送の方式。**日本郵便が地帯別の料金表を公表していて、通関経路が郵便のままで、
  * 実重量課金のものだけ。**宅配便がここに無い理由は `postage.ts` の先頭に書いてある。
@@ -806,8 +810,13 @@ export interface CompareInput {
    * データが入ったので、日本郵便の方式と同じ枠で明示的に選べる——UI がまだこの
    * 選択肢を出していなくても、`compare()` を直接呼ぶ側（テスト・将来の UI）は
    * 選べる。
+   *
+   * **2026-09-16、運送会社の指定を足した（`carrier:<id>`、`carriers.ts`）。**
+   * 利用者が画面で選ぶ単位はこれ——`carrier:fedex` なら「その社が扱う FedEx の便の
+   * うち、**総額が最安**のもの」を行ごとに選ぶ。選び方の規約は `'cheapest'` と
+   * 完全に同じ（候補の集合を1社ぶんに絞るだけ）なので、送料だけで比べることはない。
    */
-  method?: PostalMethod | CourierMethod | 'cheapest';
+  method?: PostalMethod | CourierMethod | 'cheapest' | CarrierChoice;
   /**
    * カナダ宛のときの州。**未指定でも州税は出す**（発生が確実なので `—` にしない）。
    * 未指定なら人口加重の代表値を tier estimate で、「州を選ぶと確定する」と note に書く。

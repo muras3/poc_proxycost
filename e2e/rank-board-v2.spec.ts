@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import {
-  addByHand, emptyCart, gotoCompare, openCart, openRankRow, ranking, readRanking, weightBox,
+  addByHand, emptyCart, gotoCompare, openCart, openRankRow, ranking, readRanking, setMethod, weightBox,
 } from './helpers';
 
 /**
@@ -28,7 +28,7 @@ test.describe('rank board v2 — closed row shape', () => {
     // **全行**を比べられなくすると盤そのものが「Can't compare」の枠に替わる
     // （下のテスト）ので、ここでは混在する状態を作る。
     await gotoCompare(page);
-    await page.getByLabel('Ship by').selectOption('courier-dhl');
+    await setMethod(page, 'courier-dhl');
 
     await expect.poll(async () => {
       const rows = await readRanking(page);
@@ -59,7 +59,7 @@ test.describe('rank board v2 — closed row shape', () => {
     const heavy = weightBox(page, 'Heavy box for rank-column check');
     await heavy.fill('5000');
     await heavy.blur();
-    await page.getByLabel('Ship by').selectOption('small-packet-air');
+    await setMethod(page, 'small-packet-air');
 
     const panel = page.getByTestId('norank');
     await expect(panel).toBeVisible();
@@ -111,7 +111,7 @@ test.describe('rank board v2 — closed row shape', () => {
     // 上の「順位番号なし」と同じ混在状態（DHL 固定）で、比べられない行にだけ
     // 棒が1本も出ないことを直接確認する。
     await gotoCompare(page);
-    await page.getByLabel('Ship by').selectOption('courier-dhl');
+    await setMethod(page, 'courier-dhl');
 
     const rows = ranking(page).locator('li[data-row-id]');
     await expect.poll(async () => {
@@ -180,7 +180,7 @@ test.describe('rank board v2 — closed row shape', () => {
       await openCart(page);
       await weightBox(page, 'Light item for arrival-bar check').fill('300');
       await weightBox(page, 'Light item for arrival-bar check').blur();
-      await page.getByLabel('Ship by').selectOption(methodId);
+      await setMethod(page, methodId);
 
       const rows = ranking(page).locator('li[data-row-id]');
       await expect.poll(async () => {
@@ -221,7 +221,7 @@ test.describe('rank board v2 — closed row shape', () => {
     // 宅配便が価格化されている唯一の宛先（`courierMethodAvailable`）なので、
     // ここで courier-ups を明示的に選ぶ。
     await gotoCompare(page);
-    await page.getByLabel('Ship by').selectOption('courier-ups');
+    await setMethod(page, 'courier-ups');
 
     const rows = ranking(page).locator('li[data-row-id]');
     await expect.poll(async () => {
@@ -304,7 +304,7 @@ test.describe('rank board v2 — Fable review shapes', () => {
   test('upper-unknown open end stays visible on a row whose low sits at 100% of the scale (US, EMS)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await gotoCompare(page);
-    await page.getByLabel('Ship by').selectOption('ems');
+    await setMethod(page, 'ems');
     const bars = ranking(page).locator('[data-testid="total-bar"][data-upper-unknown="true"]');
     await expect.poll(() => bars.count()).toBeGreaterThan(0);
     const n = await bars.count();
@@ -356,11 +356,10 @@ test.describe('rank board v2 — Fable review shapes', () => {
     await openCart(page);
     await weightBox(page, 'Light item for end-shape check').fill('300');
     await weightBox(page, 'Light item for end-shape check').blur();
-    const shipBy = page.getByLabel('Ship by');
 
     // 方式を固定すると Ships by の列は畳まれる（Mock `.board.uniform`）ので、形は属性で読む。
     // 追跡なし ＝ 棒の終端に開いた赤い輪（Mock `.daybar .ring`）。
-    await shipBy.selectOption('small-packet-air');
+    await setMethod(page, 'small-packet-air');
     const untracked = ranking(page).locator('[data-testid="arrival-bar"][data-tracked="false"]').first();
     await expect(untracked).toHaveCount(1);
     const ring = untracked.locator('[data-testid="arrival-bar-end"]');
@@ -369,7 +368,7 @@ test.describe('rank board v2 — Fable review shapes', () => {
     await expect(untracked).toHaveAttribute('aria-label', /untracked/);
 
     // 未公表 ＝ 長さの無い点線。輪は付かない（追跡の有無とは別の事実）。
-    await shipBy.selectOption('courier-ups');
+    await setMethod(page, 'courier-ups');
     const unpub = ranking(page).locator('[data-testid="arrival-bar"][data-published="false"]').first();
     await expect(unpub).toHaveCount(1);
     await expect(unpub.locator('[data-testid="arrival-bar-end"]')).toHaveCount(0);
@@ -379,7 +378,7 @@ test.describe('rank board v2 — Fable review shapes', () => {
 
   test('opened row shows the raw arrival text in the international shipping line', async ({ page }) => {
     await gotoCompare(page);
-    await page.getByLabel('Ship by').selectOption('ems');
+    await setMethod(page, 'ems');
     await openRankRow(page, 0);
     // 配達ログの国際送料の行の下に、方式名・日数の原文・追跡の有無が1行で出る。
     // 日数の書式は画面全体で1つ（`methodDisplay.ts`）。EMS の原文「a week or less」は

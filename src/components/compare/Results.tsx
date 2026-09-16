@@ -5,7 +5,10 @@ import { andList } from '@/lib/pricing/compare';
 import { COUNTRIES } from '@/lib/pricing/countries';
 import { methodLabel } from '@/lib/ui/methodLabel';
 import { foreign, yen } from '@/lib/ui/format';
-import type { CompareResult, CountryCode, Item, ProvinceCode } from '@/lib/pricing/types';
+import type {
+  CompareResult, CountryCode, CourierMethod, Item, PostalMethod, ProvinceCode,
+} from '@/lib/pricing/types';
+import { CARRIER_NAMES, carrierIdOfChoice } from '@/lib/pricing/carriers';
 import { Board } from './Board';
 import { headlineFor, tooCloseText, weightEffectFor, weightEffectText } from './rankClaim';
 import { NoteButton, Mark } from './Popover';
@@ -150,7 +153,13 @@ export function Results({
     conds.push(
       <p className="cond" key="nr">
         <span className="bang" aria-hidden="true">!</span>
-        <span>{nrServices} of {allServices} services can&rsquo;t be ranked for {methodLabel(method)} — they&rsquo;re listed last with the reason.{' '}
+        {/* 運送会社を選んでいるときは会社名で言う——どの便が使われるかは行ごとに
+            違い、名指しできるのは会社の方（`carriers.ts`）。 */}
+        <span>{nrServices} of {allServices} services can&rsquo;t be ranked for {
+          carrierIdOfChoice(method)
+            ? CARRIER_NAMES[carrierIdOfChoice(method)!]
+            : methodLabel(method as PostalMethod | CourierMethod)
+        } — they&rsquo;re listed last with the reason.{' '}
           <button type="button" className="link" onClick={onFocusMethod}>Back to cheapest per service</button>
         </span>
       </p>,
