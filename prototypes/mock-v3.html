@@ -222,6 +222,49 @@ ol.rows{list-style:none;margin:0;padding:0}
 .tot .plus{color:var(--red);font-weight:700}
 .tot.none{border-bottom:0;color:var(--ink2)}
 .fx{font:10.5px var(--mono);color:var(--ink2)}
+/* v3 #2 (owner review): the total's own range is a bar, not "at least"/"+" text. Same scale on every row
+   (0..globalHigh) so overlapping ranges between rows are visible as overlapping bars, not separate numbers. */
+.totbar{width:112px;height:5px;background:var(--hair);position:relative;margin-top:3px;align-self:flex-end}
+.totbar i{position:absolute;left:0;top:0;bottom:0}
+.totbar i.hi{background:var(--ink);opacity:.3}
+.totbar i.hi.unb{background:linear-gradient(90deg,var(--ink) 0%,var(--ink) 78%,transparent 100%);opacity:.3}
+.totbar i.lo{background:var(--ink)}
+.sumtot .totbar{width:150px;height:6px}
+/* v3 #3 (owner review): arrival time is a bar on a shared log scale (1 day .. 90 days), not "days n/p"/"untracked" text.
+   solid = published figure, dashed = courier's own label (not measured), dotted+open end = no upper bound published,
+   ring at the right end open = untracked. */
+.daybar{position:relative;width:104px;height:6px;margin:2px 0}
+.daybar .track{position:absolute;left:0;right:0;top:2.5px;height:1px;background:var(--hair)}
+.daybar .fill{position:absolute;top:0;height:6px;border-top:1.5px solid var(--ink);left:0}
+.daybar.est .fill{border-top-style:dashed;border-top-color:var(--indigo)}
+.daybar.np .fill{border-top-style:dotted;border-top-color:var(--ink2)}
+.daybar .cap{position:absolute;top:-3px;width:1px;height:6px;background:currentColor}
+.daybar .ring{position:absolute;top:-3px;width:7px;height:7px;border:1.5px solid var(--red);border-radius:50%;background:var(--paper);transform:translateX(-3.5px)}
+/* v3 #4: box count as a two-state shape (1 <-> N) instead of the "ask Buyee to combine" sentence. */
+.boxpair{display:inline-flex;align-items:center;gap:3px;font:12px var(--mono);color:var(--ink2)}
+.boxpair b{color:var(--ink);font-weight:600}
+.boxpair .ar{color:var(--indigo)}
+.boxtie{box-shadow:inset 3px 0 0 rgba(43,58,140,.4)}
+/* v3 #5: the two always-on lines become 2 icon buttons; wording only inside the popover. */
+.iconband{display:flex;gap:14px;align-items:center;padding:6px 12px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.ic{all:unset;cursor:pointer;display:inline-flex;align-items:center}
+.ic svg{display:block;width:20px;height:20px;stroke:var(--ink2);fill:none}
+.ic:hover svg,.ic[aria-expanded=true] svg{stroke:var(--ink)}
+.ic:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+/* v3 #1: a wobbling needle draws the weight-uncertainty range on the scale icon next to the stamp;
+   reduced-motion shows a static open wedge of the same angular width instead of animating. */
+.wmk{all:unset;cursor:pointer;display:inline-flex;margin-left:4px;vertical-align:middle}
+.row.first .stamp+.wmk{position:absolute;left:150px;top:10px;z-index:4}
+@container (max-width:760px){.row.first .stamp+.wmk{left:130px}}
+.wmk svg{display:block;width:18px;height:18px;overflow:visible}
+.wneedle{transform-origin:9px 11px;animation:wobble 1.6s ease-in-out infinite}
+.wfan{fill:var(--red);opacity:.22;display:none}
+@media (prefers-reduced-motion:reduce){.wneedle{display:none}.wfan{display:block}}
+@keyframes wobble{0%,100%{transform:rotate(var(--wamp,10deg))}50%{transform:rotate(calc(var(--wamp,10deg) * -1))}}
+/* red mark on the decisive cart item, visible even when the cart line is folded to one row */
+.hotdot{display:inline-block;width:8px;height:8px;background:var(--red);border-radius:50%;flex:none}
+.item.hot .thumb{position:relative}
+.item.hot .thumb::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;background:var(--red);border-radius:50%;border:1.5px solid var(--paper)}
 .chev{font:12px var(--mono);color:var(--ink2);transition:transform .15s}
 .row[data-open=true] .chev{transform:rotate(90deg)}
 .cav{margin:0;padding:0 12px 12px 70px;display:flex;flex-direction:column;gap:4px}
@@ -644,7 +687,15 @@ function totalParts(row){
 function totalHTML(row, cls='tot'){
   if (!row.comparable) return `<span class="${cls} none" aria-label="no comparable total">\u2014</span>`;
   const p = totalParts(row);
-  return `<span class="${cls}" data-tier="${row.approximate?'estimate':'fixed'}" aria-label="${esc(p.aria)}"><span aria-hidden="true">${esc(p.vis)}${p.plus?'<span class="plus">+</span>':''}</span></span>`;
+  return `<span class="${cls}" data-tier="${row.approximate?'estimate':'fixed'}" aria-label="${esc(p.aria)}"><span aria-hidden="true">${esc(p.vis)}</span></span>`;
+}
+/* v3 #2 (owner review): the total's own uncertainty is a bar, not "at least"/"+" wording. Every row uses the
+   same 0..hiMax scale, so two rows' bars overlapping on screen is the shape for "we can't tell them apart". */
+function totBarHTML(row, hiMax){
+  if (!row.comparable || !hiMax) return '';
+  const lowPct = Math.max(2, Math.round(100*row.total.low/hiMax));
+  const hiPct = row.total.high==null ? 100 : Math.min(100, Math.round(100*row.total.high/hiMax));
+  return `<span class="totbar" aria-hidden="true"><i class="hi${row.total.high==null?' unb':''}" style="width:${hiPct}%"></i><i class="lo" style="width:${lowPct}%"></i></span>`;
 }
 
 /* ================= reference data ================= */
@@ -728,6 +779,28 @@ function mk(title, body, text='\u00A7', cls=''){
   const id = 'n'+(nId++); NOTES.set(id,{title,body});
   return `<button type="button" class="mk ${cls}" data-note="${id}" aria-expanded="false" aria-controls="pop" aria-label="${esc('About: '+title)}">${esc(text)}</button>`;
 }
+/* v3 #1 (owner review): a scale-needle icon replaces the "1st place changes if weights are off" sentence.
+   The needle wobbles through a fixed angle when a weight in the cart is decisive; reduced-motion swaps it
+   for a static filled wedge of the same angular width (CSS media query). */
+function wmk(bodyHtml, label){
+  const amp = 14, rad = amp*Math.PI/180, r = 9, cx = 9, cy = 11;
+  const lx = (cx + r*Math.sin(-rad)).toFixed(1), ly = (cy - r*Math.cos(-rad)).toFixed(1);
+  const rx = (cx + r*Math.sin(rad)).toFixed(1), ry = (cy - r*Math.cos(rad)).toFixed(1);
+  const id = 'n'+(nId++); NOTES.set(id, {title:label||'How sensitive this is to weight', body:bodyHtml});
+  return `<button type="button" class="wmk" data-note="${id}" aria-expanded="false" aria-controls="pop" style="--wamp:${amp}deg" aria-label="${esc(label||'How sensitive this is to weight')}">
+    <svg viewBox="0 0 18 18" aria-hidden="true">
+      <path class="wfan" d="M${cx},${cy} L${lx},${ly} A${r} ${r} 0 0 1 ${rx},${ry} Z"/>
+      <line x1="1" y1="15" x2="17" y2="15" stroke="var(--ink2)" stroke-width="1.2"/>
+      <line class="wneedle" x1="${cx}" y1="${cy}" x2="${cx}" y2="2" stroke="var(--red)" stroke-width="1.6"/>
+      <circle cx="${cx}" cy="${cy}" r="1.5" fill="var(--ink)"/>
+    </svg>
+  </button>`;
+}
+/* v3 #5: two icon buttons replace the always-on text band. Wording moves into the popover only. */
+function icBtn(svgInner, title, bodyHtml, label){
+  const id = 'n'+(nId++); NOTES.set(id, {title,body:bodyHtml});
+  return `<button type="button" class="ic" data-note="${id}" aria-expanded="false" aria-controls="pop" aria-label="${esc(label)}"><svg viewBox="0 0 24 24" aria-hidden="true" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${svgInner}</svg></button>`;
+}
 function openPop(btn){
   const n = NOTES.get(btn.dataset.note); if(!n) return;
   const pop = $('#pop');
@@ -749,7 +822,7 @@ function closePop(refocus){
   popBtn = null;
 }
 document.addEventListener('click', e=>{
-  const b = e.target.closest('.mk'); if (b){ e.preventDefault(); e.stopPropagation(); openPop(b); return; }
+  const b = e.target.closest('.mk, .wmk, .ic'); if (b){ e.preventDefault(); e.stopPropagation(); openPop(b); return; }
   if (e.target.closest('#pop .x')){ closePop(true); return; }
   if (!e.target.closest('#pop')) closePop(false);
 });
@@ -986,7 +1059,7 @@ function renderCart(res){
   const line = `<div class="cartline"><span class="lbl">Cart</span><span class="num">${n} item${n===1?'':'s'} \u00B7 ${S.items.some(i=>i.weightOrigin!=='user')?'\u2248':''}${grams(wTot)}</span>${unpriced.length?`<span class="wsrc as">${unpriced.length} without a price \u2014 not in totals</span>`:''}${S.pending?`<span class="wsrc"><span class="spin" aria-hidden="true"></span> Reading ${esc(S.pending.replace(/^https?:\/\//,'').slice(0,40))}\u2026</span>`:''}<button type="button" class="btn ghost" data-act="cart" aria-expanded="${!!S.cartOpen}">${S.cartOpen?'Done':'Edit cart'}</button></div>`;
   if (!S.cartOpen){
     const d = decisive[0], s = d && sens[d.id];
-    el.innerHTML = line + (d ? `<p class="cond"><span class="bang" aria-hidden="true">!</span><span><b>This weight decides 1st place:</b> <span class="jp">\u300C${esc(d.title.slice(0,22))}${d.title.length>22?'\u2026':''}\u300D</span> ${d.weightOrigin==='user'?'':'\u2248'}${grams(d.weightG)}. Within ${grams(s.lowG)}\u2013${grams(s.highG)}: ${esc(winnersText(s))}.${decisive.length>1?` (+${decisive.length-1} more)`:''} <button type="button" class="link" data-act="focusw" data-id="${d.id}">Check this weight</button></span></p>` : '');
+    el.innerHTML = line + (d ? `<p class="cond" style="border-top:0;padding-top:2px"><span class="hotdot" aria-hidden="true"></span><span class="jp">\u300C${esc(d.title.slice(0,22))}${d.title.length>22?'\u2026':''}\u300D</span>${decisive.length>1?`<span class="lbl">+${decisive.length-1}</span>`:''}${wmk(`<p><b>${esc(d.title)}</b> ${d.weightOrigin==='user'?'':'\u2248'}${grams(d.weightG)}. Within ${grams(s.lowG)}\u2013${grams(s.highG)}: ${esc(winnersText(s))}.</p>`, "This weight decides 1st place")} <button type="button" class="link" data-act="focusw" data-id="${d.id}">Check</button></p>` : '');
     return;
   }
   const conds = [];
@@ -1080,7 +1153,6 @@ const andList = a => a.length<=1 ? (a[0]??'') : a.slice(0,-1).join(', ')+' and '
 
 function renderResults(res){
   const el = $('#results');
-  NOTES = new Map(); nId = 0;
   const priced = S.items.filter(i=>!S.unpriced.has(i.id));
   if (!priced.length){
     el.innerHTML = S.items.length ? `<div class="norank"><h3>Enter a price to compare</h3><p>None of the items in your cart has a price yet. Type one in the cart above.</p></div>` : '';
@@ -1097,6 +1169,7 @@ function renderResults(res){
   const uniform = methods.size <= 1;
   const um = first ? methodInfo(first.method) : null;
   const maxDiff = Math.max(1, ...comp.map(r=>r.diff));
+  const hiMax = comp.length ? Math.max(...comp.map(r=>r.total.high ?? r.total.low)) : 0;
   const showBracket = !res.rankIndeterminate;
   const recCount = rows.filter(r=>r.recommended).length;
 
@@ -1111,14 +1184,14 @@ function renderResults(res){
     } else {
       const est = leaders.some(r=>r.closedByAssumption.length);
       const who = leaders.length>1 ? `<b>${esc(andList(leaders.map(r=>r.label)))}</b> are tied ${est?'estimated ':''}cheapest` : `<b>${esc(first.serviceName)}</b> is ${est?'the estimated cheapest':'cheapest'}`;
-      const gap = next ? `${diffCertain(next,res)?'':'at least '}<span class="gap">${yen(next.diff)}</span> below ${esc(next.label)}` : '';
+      const gap = next ? `<span class="gap">${yen(next.diff)}</span> below ${esc(next.label)}` : '';
       summary = `<h2 class="summary">${who} to ${esc(country)}${gap?' \u2014 '+gap:''}.</h2>`;
     }
     const tp = totalParts(first);
-    summary += `<p class="sumtot"><span class="lbl">1st, at the door</span><span class="v num" aria-label="${esc(tp.aria)}">${esc(tp.vis)}${tp.plus?'<span style="color:var(--red)">+</span>':''}</span>
+    summary += `<p class="sumtot"><span class="lbl">1st, at the door</span><span class="v num" aria-label="${esc(tp.aria)}">${esc(tp.vis)}</span>${totBarHTML(first,hiMax)}
       <span>${esc(foreign(first.total.low,res.currency.code,res.currency.rate))} at ECB rate of ${esc(res.currency.asOf)}</span>
       ${res.rankStable ? mk('How firm is this order', `<p>${esc(res.rankStabilityNote)}</p>`) : ''}
-      ${uniform && um ? `<span>\u00B7 ${first.boxes.length===1?'1 box':first.boxes.length+' boxes'} by ${esc(um.label)}, ${esc(um.days===NP?'transit time not published':um.days)}${um.tracked?'':', untracked'}</span>`:''}</p>`;
+      ${uniform && um ? `<span>\u00B7 ${first.boxes.length===1?'1 box':first.boxes.length+' boxes'} by ${esc(um.label)}</span>`:''}</p>`;
   } else if (comp.length === 1){
     summary = `<h2 class="summary">Only <b>${esc(first.serviceName)}</b> can be priced for this parcel to ${esc(country)}.</h2>`;
   }
@@ -1131,10 +1204,10 @@ function renderResults(res){
     // #5 \u2014 board is replaced below
   } else if (res.rankIndeterminate){
     conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>Could go either way \u2014 the leader's own total has no upper bound, so the order below is only who leads on the low end. Shipping method moves the total more than company choice does. <button type="button" class="link" data-act="method">Change method</button></span></p>`);
-  } else if (!res.rankStable){
-    const tgt = decisiveItems[0] ?? S.items.find(i=>i.weightOrigin!=='user') ?? S.items[0];
-    conds.push(`<p class="cond"><span class="bang" aria-hidden="true">!</span><span>1st place changes if weights are off${decisiveItems.length?` \u2014 mostly the weight of <span class="jp">\u300C${esc(decisiveItems[0].title.slice(0,22))}${decisiveItems[0].title.length>22?'\u2026':''}\u300D</span>${decisiveItems.length>1?` and ${decisiveItems.length-1} more`:''}`:''}. ${mk('What changes with weight', `<p>${esc(res.rankStabilityNote)}</p>`)} <button type="button" class="link" data-act="focusw" data-id="${tgt.id}">Check weights</button></span></p>`);
   }
+  /* v3 #1 (owner review): the "1st place changes if weights are off" sentence is gone. Its meaning is now
+     carried by shapes: a red dot on the decisive cart item (itemHTML / folded cartline) and a wobbling
+     scale-needle icon next to the 1st-place stamp below (rowHTML), both opening the same explanation. */
   const notRanked = rows.filter(r=>!r.comparable);
   if (comp.length && notRanked.length && S.method!=='cheapest'){
     /* v3 kill-list \u00a78: count companies on both sides, not rows over companies (audit \u00a73-12) */
@@ -1149,8 +1222,21 @@ function renderResults(res){
   const LITHIUM_AIRMAIL_COUNTRIES = ['GB','DE'];
   const lithiumLine = LITHIUM_AIRMAIL_COUNTRIES.includes(S.country)
     ? `<p class="cond"><span class="bang" aria-hidden="true">!</span><span>${esc(P.COUNTRIES[S.country].name)} does not take lithium batteries by air mail. Ask the agent before shipping a battery-powered item this way.</span></p>` : '';
-  const bands = `${lithiumLine}<p class="band"><span>Whether your items can legally be shipped at all -- alcohol, lithium batteries, blades -- is not checked here; a total is not a promise the parcel can be sent (<a href="#restricted">list</a>).</span></p>
-    <p class="band"><span class="tag2">Rates</span><span>Fuel surcharge included, remote-area surcharge not included.</span></p>`;
+  /* v3 #5 (owner review): the two always-on sentences become 2 icon buttons; the wording moves into each
+     popover only, so the closed screen carries no paragraph for a caveat that's true every time. */
+  const restrIcon = icBtn(
+    '<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/><line x1="3" y1="3" x2="21" y2="21"/>',
+    'Goods restrictions not checked',
+    `<p>Whether your items can legally be shipped at all &mdash; alcohol, lithium batteries, blades &mdash; is not checked here. A total is not a promise the parcel can be sent. <a href="#restricted">Full list</a>.</p>`,
+    'Goods restrictions not checked'
+  );
+  const ratesIcon = icBtn(
+    '<path d="M5 21V10l7-6 7 6v11"/><circle cx="12" cy="14" r="2.4"/><path d="M9 21v-3.5"/><path d="M15 21v-3.5"/>',
+    'Fuel & remote-area surcharge',
+    `<p>Fuel surcharge is <b>included</b> in every total on this screen. A remote-area surcharge, if the courier charges one for this address, is <b>not included</b>.</p>`,
+    'Fuel surcharge included, remote-area surcharge not included'
+  );
+  const bands = `${lithiumLine}<div class="iconband" role="group" aria-label="Always-on notes">${restrIcon}${ratesIcon}</div>`;
 
   /* --- board --- */
   let board = '';
@@ -1164,9 +1250,17 @@ function renderResults(res){
       const c = rows.find(r=>r.serviceId===d.serviceId && r.variant==='consolidated' && r.comparable);
       if (c && d.total.low - c.total.low > 0) consol[d.id] = {save:d.total.low - c.total.low, unknown:c.total.high===null, name:d.serviceName};
     }
+    /* v3 #4: pair up a service's default (many boxes) and consolidated (ask-to-combine, fewer boxes) rows so
+       the Boxes column can draw a 1<->N shape instead of the "ask Buyee to combine" sentence. */
+    const pairs = {};
+    for (const d of rows.filter(r=>r.variant==='default')){
+      const c = rows.find(r=>r.serviceId===d.serviceId && r.variant==='consolidated');
+      if (c && (d.boxes.length!==c.boxes.length)){ pairs[d.id]=c.boxes.length; pairs[c.id]=d.boxes.length; }
+    }
+    const wobbleBody = decisiveItems.length ? `<p>Within the range we tested, ${esc(res.rankStabilityNote)}</p>` : null;
     board = `<section class="board ${uniform?'uniform':''}" aria-label="Ranking">
-      <div class="bh" aria-hidden="true"><span class="lbl">Rank</span><span class="lbl">Service</span><span class="lbl c-ship">Ships by / arrives</span><span class="lbl">Boxes</span><span class="lbl r">vs 1st</span><span class="lbl r">Total ${mk('How to read a total', `<p><b>\u2248</b> part of it is our estimate. <b>\u00A5X \u2013 Y</b> the range we can stand behind. <b>\u00A5X+</b> a fee is unpublished, so there is no upper bound.</p><p>Underline: solid = published \u00B7 dashed = our estimate.</p>`)}</span><span></span></div>
-      <ol class="rows">${ordered.map((r,idx)=>rowHTML(r,res,{idx,uniform,maxDiff,showBracket,recCount,consol,first})).join('')}</ol>
+      <div class="bh" aria-hidden="true"><span class="lbl">Rank</span><span class="lbl">Service</span><span class="lbl c-ship">Ships by / arrives</span><span class="lbl">Boxes</span><span class="lbl r">vs 1st</span><span class="lbl r">Total ${mk('How to read a total', `<p><b>\u2248</b> part of it is our estimate. <b>\u00A5X \u2013 Y</b> the range we can stand behind. The bar under it: dark = the low end we can stand behind, pale = up to the high end, faded off the right edge = no published upper bound. Same scale on every row, so overlapping bars mean "can't tell these two apart".</p>`)}</span><span></span></div>
+      <ol class="rows">${ordered.map((r,idx)=>rowHTML(r,res,{idx,uniform,maxDiff,showBracket,recCount,consol,first,hiMax,pairs,wobble:wobbleBody})).join('')}</ol>
     </section>`;
   }
 
@@ -1188,7 +1282,7 @@ function rowHTML(r,res,o){
   const stampKey = 'stamp:'+r.id+':'+lw; const stampNew = r.comparable && r.cheapest && !prevText.has(stampKey); if (isFirst) prevText.set(stampKey,1);
   const diffCell = !r.comparable ? flapHTML('d:'+r.id,'NOT RANKED','diff nr')
     : r.diff===0 ? flapHTML('d:'+r.id, res.rankIndeterminate?'LEADS':'1ST','diff lead')
-    : `${diffCertain(r,res)?'':'<span class="fx">at least</span>'}${flapHTML('d:'+r.id,'+'+yen(r.diff),'diff')}`;
+    : flapHTML('d:'+r.id,'+'+yen(r.diff),'diff');
   /* v3: the diff bar itself carries the uncertainty (design note \u00A72.2) -- a plain rectangle for a fixed diff,
      a right-hand fade when this row's own total is open-ended, and (when the ranking is indeterminate) a long
      translucent tail that visually laps the leader's bar instead of a "within our error" sentence. */
@@ -1206,7 +1300,9 @@ function rowHTML(r,res,o){
   }
   if (!r.comparable) cav.push(`<p><span class="bang" aria-hidden="true">!</span><span><b>Not ranked:</b> ${esc(r.notComparableReason)}.</span></p>`);
   // NEEDS FIELD: caveat #12 wants "can't ship" vs "not priced" split; Row has only the free-text reason, so the Mock prints it verbatim under one header.
-  if (r.variant==='consolidated' && r.comparable) cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>One box only if you ask ${esc(r.serviceName)} to combine your orders \u2014 it won't by default.</span></p>`);
+  /* v3 #4 (owner review): "One box only if you ask Buyee to combine..." sentence removed. The Boxes column
+     now draws the 1<->N two-state shape (boxCell below) and both paired rows carry a matching left rule
+     (.boxtie) instead. The "ask before shipping" detail moves into that shape's popover. */
   if (o.consol[r.id]){ const c=o.consol[r.id]; cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>Ask ${esc(c.name)} to combine before shipping: saves about ${yen(c.save)}${c.unknown?' (their fee for combining is unpublished)':''}.</span></p>`); }
   if (r.comparable && !o.uniform && !mi.tracked){ const f = o.first; cav.push(`<p><span class="bang" aria-hidden="true">!</span><span>Untracked \u2014 ${esc(mi.days)}.${f && f.id!==r.id?'':' Cheapest, but you can\'t follow the parcel.'}</span></p>`); }
   /* v3 #21: the total's own missing costs are named on the row (not swallowed by a bare "+"), audit \u00A73-4. */
@@ -1218,18 +1314,23 @@ function rowHTML(r,res,o){
      drawn with the same dashed line-style as every other estimate, not with the postal figure's solid confidence
      (audit \u00A73-9). NEEDS FIELD: engine has no daysTier; grouped by method id prefix as a stand-in. */
   const courierDays = r.method && r.method.startsWith('courier-');
-  const shipCell = `<span class="c-ship"><span class="m">${esc(mi.label)}</span><span class="d ${mi.days===NP?'u':courierDays?'e':''}">${esc(mi.days===NP?'days n/p':mi.days)}</span>${mi.tracked?'':'<span class="utk">untracked</span>'}</span>`;
-  return `<li class="row ${isFirst?'first':''} ${r.comparable?'':'unranked'} ${inBracket?'bracket':''}" data-row-id="${r.id}" data-open="${open}">
-    ${isFirst?`<span class="stamp" data-new="${stampNew?1:0}" aria-hidden="true">${lw==='ESTIMATED CHEAPEST'?'<small>estimated</small>cheapest':esc(lw)}</span>`:''}
+  const shipCell = `<span class="c-ship"><span class="m">${esc(mi.label)}</span>${dayBarHTML(mi,courierDays)}</span>`;
+  const pairN = o.pairs ? o.pairs[r.id] : null;
+  const boxCell = pairN!=null
+    ? `<span class="c-box boxpair" aria-label="${r.boxes.length===1?'1 box':r.boxes.length+' boxes'}, or ${pairN===1?'1':pairN} if combined">1<span class="ar" aria-hidden="true">\u21C4</span>${Math.max(r.boxes.length,pairN)}</span>`
+    : `<span class="c-box">${r.boxes.length===1?'1 box':r.boxes.length+' boxes'}</span>`;
+  const stampIcon = isFirst && o.wobble ? wmk(o.wobble, 'This weight decides 1st place') : '';
+  return `<li class="row ${isFirst?'first':''} ${r.comparable?'':'unranked'} ${inBracket?'bracket':''} ${pairN!=null?'boxtie':''}" data-row-id="${r.id}" data-open="${open}">
+    ${isFirst?`<span class="stamp" data-new="${stampNew?1:0}" aria-hidden="true">${lw==='ESTIMATED CHEAPEST'?'<small>estimated</small>cheapest':esc(lw)}</span>${stampIcon}`:''}
     <button type="button" class="rh" aria-expanded="${open}" aria-controls="log-${r.id}" data-toggle="${r.id}">
       <span class="c-rank">${r.comparable?String(r.rank).padStart(2,'0'):'\u2014'}${isFirst?`<span class="sr">${esc(lw)}</span>`:''}</span>
       <span class="c-svc">
         <span class="svc">${esc(r.serviceName)}${r.variant?`<small>${esc(r.variant)}</small>`:''}</span>
       </span>
       ${shipCell}
-      <span class="c-box">${r.boxes.length===1?'1 box':r.boxes.length+' boxes'}</span>
+      ${boxCell}
       <span class="c-diff">${diffCell}${bar}</span>
-      <span class="c-tot">${totalHTML(r)}</span>
+      <span class="c-tot">${totalHTML(r)}${totBarHTML(r,o.hiMax)}</span>
       <span class="chev" aria-hidden="true">\u203A</span>
     </button>
     ${exLine}
@@ -1246,6 +1347,19 @@ function lineAmount(l){
   const pre = l.tier==='estimate' ? '\u2248' : '';
   if (l.amountKind==='range' && l.amountHighYen!=null) return {txt:`${pre}${yen(l.amount)} \u2013 ${yen(l.amountHighYen).slice(1)}`, tag:l.tier, cls:l.tier};
   return {txt:pre+yen(l.amount), tag:{fixed:'published',estimate:'estimate',unverified:'second-hand',none:'\u2014'}[l.tier], cls:l.tier};
+}
+/* v3 #3 (owner review): arrival time as a bar on a shared log scale (1..90 days) instead of "days n/p"/
+   "untracked" text. solid = published figure, dashed = courier's own label (not measured, #57), dotted with
+   no fill = not published, open red ring at the bar's own end = untracked (#34/#38's tracked flag). */
+const DAY_SCALE_MAX = 90;
+const dayPct = v => Math.max(3, Math.min(100, Math.log(Math.max(v,1)+1)/Math.log(DAY_SCALE_MAX+1)*100));
+function dayBarHTML(mi, isEstimateLabel){
+  if (mi.days===NP) return `<span class="daybar np" aria-hidden="true"><span class="track"></span></span>`;
+  const nums = (String(mi.days).match(/\d+(\.\d+)?/g)||[]).map(Number);
+  if (!nums.length) return `<span class="daybar np" aria-hidden="true"><span class="track"></span></span>`;
+  const lo = nums[0], hi = nums.length>1?nums[nums.length-1]:nums[0];
+  const loPct = dayPct(lo), hiPct = Math.max(loPct+3, dayPct(hi));
+  return `<span class="daybar ${isEstimateLabel?'est':''}" aria-hidden="true"><span class="track"></span><span class="fill" style="left:${loPct}%;width:${hiPct-loPct}%"></span>${!mi.tracked?`<span class="ring" style="left:${hiPct}%"></span>`:''}</span><span class="tag" style="font-size:10px">${esc(mi.days)}</span>`;
 }
 const kg = g => (g/1000).toFixed(1)+' kg';
 const boxWord = n => n===1 ? '1 box' : n+' boxes';
@@ -1412,6 +1526,7 @@ document.getElementById('results').addEventListener('change', e=>{
 function renderAll(){
   const before = new Map([...document.querySelectorAll('li[data-row-id]')].map(li=>[li.dataset.rowId, li.getBoundingClientRect().top]));
   const res = resultFor();
+  NOTES = new Map(); nId = 0;
   renderWaybill(res); renderCart(res); renderResults(res); renderHeft(res);
   const openRow = S.open && res.rows.find(r=>r.id===S.open);
   const sig = openRow ? openRow.id+'|'+openRow.boxes.map(b=>b.weightG+':'+b.itemIndices.join(',')).join('/') : null;
