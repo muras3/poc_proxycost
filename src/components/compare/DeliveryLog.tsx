@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { CA_PROVINCE_AVERAGE_RATE } from '@/lib/pricing/countries';
 import { methodLabel } from '@/lib/ui/methodLabel';
+import { TRACKED, UNTRACKED, methodDisplay, methodRawNote } from '@/lib/ui/methodDisplay';
 import { foreign, yen } from '@/lib/ui/format';
 import type { CompareResult, Item, ProvinceCode, Row } from '@/lib/pricing/types';
 import { BoxArt } from './BoxArt';
@@ -128,9 +129,10 @@ export function DeliveryLog({
   const groups: Record<string, typeof row.lines> = {};
   for (const [k] of STAGES) groups[k] = [];
   for (const l of row.lines) groups[stageOf(l.key)]!.push(l);
-  // 日数の原文は一次情報（郵便）のときだけそのまま出す。宅配便の `text` はエンジンの
-  // 内部語（'not yet modeled'）なので、Mock と同じ「transit time not published」にする。
-  const daysText = row.days.tier === 'fixed' ? row.days.text : 'transit time not published';
+  // 方式名・日数・追跡の言い回しは `methodDisplay.ts` の1箇所から出す。エンジンの
+  // `row.days.text` は宅配便で内部語（'not yet modeled'）になるうえ、郵便でも社ごとの
+  // 原文のままなので、画面の中で Ship by・順位ボードと字が食い違っていた。
+  const daysText = methodDisplay(row.method).days;
   const mi = { label: methodLabel(row.method), days: daysText, tracked: row.days.tracked };
   const avg = `${(CA_PROVINCE_AVERAGE_RATE * 100).toFixed(1)}%`;
 
@@ -153,7 +155,7 @@ export function DeliveryLog({
           {notes.map((t, i) => <p key={i}>{t}</p>)}
           {uncapped && <p>No upper bound — this is what leaves the total open-ended.</p>}
           {l.key === 'intl-shipping' && (
-            <p data-testid="intl-days">Arrival: {daysText}{row.days.tracked ? '' : ' — untracked'}</p>
+            <p data-testid="intl-days">Arrival: {daysText}{row.days.tracked ? '' : ` — ${UNTRACKED}`}</p>
           )}
           {l.sourceUrl && <p><a href={l.sourceUrl} target="_blank" rel="noopener noreferrer">Source →</a></p>}
         </>
@@ -168,8 +170,12 @@ export function DeliveryLog({
             <span className="a" role="cell">{a.txt}</span>
             <span className="v1" role="cell">{v1}</span>
           </div>
+          {/* 整形した表示名の横に、社の原文（`labelRaw`）をそのまま残す——
+              読みやすさのために整えた名前が、原文を消してしまわないように。 */}
           {l.key === 'intl-shipping' && (
-            <p className="lnote" data-testid="intl-line-note">{mi.label} · {mi.days} · {mi.tracked ? 'tracked' : 'untracked'}</p>
+            <p className="lnote" data-testid="intl-line-note">
+              {mi.label} · {mi.days} · {mi.tracked ? TRACKED : UNTRACKED} · {methodRawNote(row.method)}
+            </p>
           )}
           {l.key === 'province-tax' && onProvince && (
             <label className="provpick">
@@ -204,7 +210,13 @@ export function DeliveryLog({
         <div className="door" key="door">
           <span className="lbl">
             {row.comparable
-              ? (row.total.high === null ? 'Total at the door · no upper bound' : 'Total at the door')
+              // **2026-09-15、着地総額の断定をやめた（文言のみ）。**`Results.tsx` の
+              // 「1st, known and estimated charges」と揃える。未取得の費目（Zonos 利用料・
+              // `not published` の売上税）がある以上、着地総額だとは言い切れない。
+              // 上限が無い分岐も同じ言い方に揃える。
+              ? (row.total.high === null
+                ? 'Known and estimated charges · no upper bound'
+                : 'Known and estimated charges · your destination may add more')
               : 'No comparable total — the largest cost is missing'}
           </span>
           <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>

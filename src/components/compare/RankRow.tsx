@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { andList } from '@/lib/pricing/compare';
 import { methodLabel } from '@/lib/ui/methodLabel';
+import { DAYS_NOT_PUBLISHED, UNTRACKED, methodDisplay } from '@/lib/ui/methodDisplay';
 import { yen } from '@/lib/ui/format';
 import type { CompareResult, Row } from '@/lib/pricing/types';
 import { DeliveryLog } from './DeliveryLog';
@@ -138,7 +139,13 @@ export function RankRow({
     && (row.cheapest || row.diff / (result.rows[0]?.total.low || 1) < 0.02);
   const inBracket = ctx.showBracket && (row.recommended || row.equivalent);
   const pairN = ctx.pairs[row.id];
-  const mi = { label: methodLabel(row.method), days: row.days.text, tracked: row.days.tracked };
+  // 方式名・日数・追跡の言い回しは `methodDisplay.ts` の1箇所から出す——Ship by の
+  // 選択肢・配達ログと同じ字で出すため（`row.days.text` は宅配便で内部語になる）。
+  const mi = {
+    label: methodLabel(row.method),
+    days: methodDisplay(row.method).days,
+    tracked: row.days.tracked,
+  };
 
   const cav: ReactNode[] = [];
   if (row.tied) {
@@ -215,7 +222,7 @@ export function RankRow({
             data-published={row.days.tier === 'fixed' ? 'true' : 'false'}
             data-tracked={row.days.tracked ? 'true' : 'false'}
             role="img"
-            aria-label={`Ships by ${mi.label} — ${row.days.text}${row.days.tracked ? '' : ', untracked'}${dayBounds(row.days) ? '' : ' (transit time not published as a figure)'}`}
+            aria-label={`Ships by ${mi.label} — ${mi.days}${row.days.tracked ? '' : `, ${UNTRACKED}`}${dayBounds(row.days) ? '' : ` (${DAYS_NOT_PUBLISHED} as a figure)`}`}
           >
             <span className="m">{mi.label}</span>
             <DayBar row={row} />

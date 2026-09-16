@@ -335,7 +335,12 @@ test.describe('rank board v2 — Fable review shapes', () => {
       const arrivals = await ranking(page).getByTestId('arrival-bar-track')
         .evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
       const labels = await ranking(page).getByTestId('arrival-bar').allInnerTexts();
-      expect(labels.some((l) => l.length > 30), `expected a long method name: ${labels}`).toBe(true);
+      // **2026-09-16**: 方式名を整形した（`methodDisplay.ts`。`FedEx International
+      // Connect Plus (3-5 days)` → `FedEx Connect Plus`）ので、最長の名前は 30 字を
+      // 超えなくなった。このテストが見たいのは「長い方式名があっても棒の左端が
+      // 揃うこと」なので、閾値を今いちばん長い名前（`International parcel (airmail)`
+      // 30字・`DHL Express Worldwide` 21字）が通る長さに直す。
+      expect(labels.some((l) => l.length >= 18), `expected a long method name: ${labels}`).toBe(true);
       expect(new Set(xs).size, `total-bar left x differs: ${xs}`).toBe(1);
       // 到着の棒は desktop では自分の列を持つので左端が揃う。狭い幅では Mock v3 の
       // とおり方式名の右に並ぶ（`.c-ship{flex-direction:row}`）ので、行ごとに位置が違う。
@@ -377,6 +382,9 @@ test.describe('rank board v2 — Fable review shapes', () => {
     await page.getByLabel('Ship by').selectOption('ems');
     await openRankRow(page, 0);
     // 配達ログの国際送料の行の下に、方式名・日数の原文・追跡の有無が1行で出る。
-    await expect(ranking(page).getByTestId('intl-line-note').first()).toContainText('a week or less');
+    // 日数の書式は画面全体で1つ（`methodDisplay.ts`）。EMS の原文「a week or less」は
+    // 同じ行の末尾に `Japan Post: “EMS”` として出どころ付きで残る。
+    await expect(ranking(page).getByTestId('intl-line-note').first()).toContainText('≤1 week');
+    await expect(ranking(page).getByTestId('intl-line-note').first()).toContainText('Japan Post:');
   });
 });
