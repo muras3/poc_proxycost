@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { FeeTable } from '@/components/sources/FeeTable';
 import { EmsTable } from '@/components/sources/EmsTable';
 import { TaxTable } from '@/components/sources/TaxTable';
-import { SERVICES_CHECKED_ON } from '@/lib/pricing/services';
+import { SERVICES, SERVICES_CHECKED_ON } from '@/lib/pricing/services';
+import { POSTAL_METHODS } from '@/lib/pricing/postage';
+import { andList } from '@/lib/pricing/compare';
 import {
   ALTERNATIVE_SHIPPING, ALTERNATIVE_SHIPPING_CHECKED_ON,
 } from '@/lib/pricing/shipping-methods';
@@ -33,6 +35,23 @@ export const metadata: Metadata = {
 };
 
 const ZENMARKET_INVOICE = 'https://nyamo.life/archives/zenmarket.html';
+
+// **方式の一覧を書き写さない。**以前ここの散文は「EMS is also the only method we price」と
+// 手で書いてあり、`POSTAL_METHODS` が5方式に増え、宅配便まで価格化されたあとも直らなかった
+// （engine が正・散文が古い）。マスタから作れば、方式を足した時点で文が自動で追従する。
+const PRICED_POSTAL_LABELS = andList(POSTAL_METHODS.map((m) => m.label));
+
+// 宅配便の価格化対象は国ごとに違う（`courierCoverageFor`）。この節は国を固定しないので、
+// 「どの社が rate grid を持っているか」という国に依らない事実だけをここで言う。
+const SERVICES_WITH_COURIER_GRID = SERVICES.filter(
+  (s) => s.courier && Object.keys(s.courier).length > 0,
+);
+const SERVICES_WITHOUT_COURIER_GRID = SERVICES.filter(
+  (s) => !s.courier || Object.keys(s.courier).length === 0,
+);
+const PRICED_COURIER_SERVICE_COUNT = SERVICES_WITH_COURIER_GRID.length;
+const PRICED_COURIER_SERVICE_NAMES = andList(SERVICES_WITH_COURIER_GRID.map((s) => s.name));
+const NO_COURIER_GRID_NAMES = andList(SERVICES_WITHOUT_COURIER_GRID.map((s) => s.name));
 
 // **国名を書き写さない。**表（LITHIUM_AIRMAIL_LISTED）から作る。書き写せば、表を直した
 // ときにこの文だけが古くなる。
@@ -147,7 +166,7 @@ export default function SourcesPage() {
           differs is how many parcels each company sends and how much packing weight it adds.
         </p>
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          EMS is also the only method we price, and it is not the cheapest one on offer. In the{' '}
+          EMS is not the cheapest method on offer, and it is not the only one we price. In the{' '}
           <a
             className="underline"
             href="https://www.post.japanpost.jp/int/charge/list/index.html"
@@ -158,10 +177,26 @@ export default function SourcesPage() {
           </a>{' '}
           we read on {ALTERNATIVE_SHIPPING_CHECKED_ON}, EMS was cheapest at none of the weights we
           checked: small packet costs 40–50% less than EMS up to 2 kg, and surface mail runs a third
-          to a half of the EMS price above that. Every service below sells methods we leave out, so
-          a real order can come in under the totals on the front page. We quote none of those rates
-          because each company only shows them inside a logged-in quote, and a guessed rate would be
-          an unverified number printed as if it were theirs.
+          to a half of the EMS price above that. So the calculator prices all{' '}
+          {POSTAL_METHODS.length} Japan Post methods — {PRICED_POSTAL_LABELS} — and ranks each
+          service on the cheapest of them that its parcel fits by weight, not on EMS alone.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          Courier rates are priced too, for the {PRICED_COURIER_SERVICE_COUNT} services that publish
+          a rate grid we could read ({PRICED_COURIER_SERVICE_NAMES}), and they are ranked alongside
+          the postal methods. Which couriers are priced varies by destination, so the calculator
+          names the ones it has for the country you picked rather than claiming a fixed list here.{' '}
+          <span className="font-medium">
+            {NO_COURIER_GRID_NAMES} publishes no courier rate grid at all
+          </span>
+          , so for that service only the postal methods above are priced.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          What we still leave out: the methods listed per service below that we hold no rate table
+          for — ePacket Light, SAL while it stays suspended, and any courier a company only quotes
+          inside a logged-in session. Those we do not price, because a guessed rate would be an
+          unverified number printed as if it were theirs. An order sent one of those ways can come
+          in under the totals on the front page.
         </p>
         <ul className="mt-4 max-w-3xl space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
           {ALTERNATIVE_SHIPPING.map((s) => (
@@ -309,7 +344,7 @@ export default function SourcesPage() {
           heading per item would need the material, the construction and the price per pair, and we
           have none of those.
         </p>
-        <div className="mt-3 max-w-3xl overflow-x-auto">
+        <div className="mt-3 max-w-3xl overflow-x-auto" tabIndex={0} role="region" aria-label="US tariff headings checked for each category">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">US tariff headings checked for each category</caption>
             <thead>
@@ -369,7 +404,7 @@ export default function SourcesPage() {
           by population, drawn as an estimate — because a provincial tax certainly happens, and
           dropping a line that certainly happens is a bigger error than estimating it.
         </p>
-        <div className="mt-3 max-w-3xl overflow-x-auto">
+        <div className="mt-3 max-w-3xl overflow-x-auto" tabIndex={0} role="region" aria-label="Provincial tax collected by the CBSA on imports">
           <table className="w-full border-collapse text-sm">
             <caption className="sr-only">Provincial tax collected by the CBSA on imports</caption>
             <thead>
@@ -515,21 +550,36 @@ export default function SourcesPage() {
         <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
           So the calculator tells you when your result sits near a crossover, and the weight you type
           in matters more than any other number on the page. What still holds is that the ranking is
-          decided by the total alone: some of these companies pay us and some do not, and that never
-          moves a row.
+          decided by the total alone: no company pays us today, and the sort never reads that field
+          regardless.
         </p>
       </section>
 
       <section className="mt-12">
-        <H2 id="reversal">The one thing that changes the winner</H2>
+        <H2 id="reversal">What changes the winner</H2>
         <p className="mt-2 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
-          Neokyo includes domestic shipping inside Japan in its service fee, which is most of why it
-          usually wins <em>where it can carry the parcel at all</em> — six of our seven
-          destinations; not the United States, where it sells no Japan Post service. When the seller
-          ships free, that advantage disappears and FROM JAPAN comes first instead. This is the only reversal we have found — and it is not a guess: whether the
-          seller charges for shipping is stated on the listing page, so pasting the listing URL
-          settles it. Picking an item from search results cannot settle it, which is why the
-          calculator asks for the URL at that point rather than quietly assuming ¥800.
+          The thing that moves first place is the shipping method, not the seller&rsquo;s postage.
+          Restricted to EMS, Neokyo leads in all six destinations where it can carry the parcel at
+          all — not the United States, where it sells no Japan Post service. Let every method we
+          price compete instead, which is what the calculator does by default, and that lead mostly
+          goes away: at the same basket Neokyo stays first only in France, while ZenMarket takes
+          five destinations and FROM JAPAN takes Canada. Neokyo&rsquo;s EMS lead comes from its
+          service fee — ¥350 per item, the lowest per-item fee of the five — not from anything
+          bundled into it; all five services bill domestic postage inside Japan as a separate line,
+          Neokyo included. What overtakes it once couriers are in play is the destination handling:
+          the cheapest courier we hold for Neokyo carries a clearance fee on delivery, and the one
+          we hold for ZenMarket does not.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm text-neutral-700 dark:text-neutral-300">
+          A &ldquo;free shipping&rdquo; listing is close to neutral for the ranking, for the same
+          reason: since no service folds domestic postage into its fee, removing it takes almost the
+          same amount off every row. Sweeping our seven destinations across 1–5 items and
+          200–3,000 g, first place changed in four of those combinations and stayed put in the rest
+          — and never in the direction this page used to claim. What shifts is the middle of the
+          table, where a service charging a percentage of the whole remittance gains as the
+          remittance shrinks. Whether the seller charges for shipping is stated on the listing page,
+          so pasting the listing URL settles it; picking an item from search results cannot, which
+          is why the calculator asks for the URL at that point rather than quietly assuming ¥800.
         </p>
       </section>
 

@@ -70,7 +70,7 @@ test.describe('the calculator survives an unusable search', () => {
 
     // キーが無ければ「未設定。URL を貼れ」と出る。黙って何も起きないのは最悪。
     await expect(
-      page.getByText(/not configured|No listings found|unavailable/i),
+      page.getByText(/not configured|isn.t set up|No listings found|unavailable/i),
     ).toBeVisible();
 
     // 通知が出たあとも順位は生きている。**文言ではなく要素で見る**（P1-3 追修正:
@@ -85,18 +85,15 @@ test.describe('the calculator survives an unusable search', () => {
     const banner = page.getByRole('dialog', { name: 'Cookie consent' });
     if (await banner.count()) await banner.getByRole('button', { name: 'Reject' }).click();
 
-    const before = await page.getByRole('button', { name: /^Cart \(/ }).count()
-      ? await page.getByRole('button', { name: /^Cart \(/ }).innerText()
-      : await page.getByRole('heading', { name: /^Cart \(/ }).innerText();
+    // 条件欄のカート1行（`n items · weight`）で、点数が増えていないことを見る。
+    const before = await page.locator('#wCart').innerText();
 
     await page.getByLabel('Listing URL or keyword').fill('http://127.0.0.1/item/1');
     await page.getByRole('button', { name: 'Add', exact: true }).click();
 
-    await expect(page.getByText(/public listing URL|Could not read|will not fetch/i)).toBeVisible();
+    await expect(page.getByText(/public listing URL|Could not read|couldn.t read|will not fetch/i)).toBeVisible();
 
-    const after = await page.getByRole('button', { name: /^Cart \(/ }).count()
-      ? await page.getByRole('button', { name: /^Cart \(/ }).innerText()
-      : await page.getByRole('heading', { name: /^Cart \(/ }).innerText();
+    const after = await page.locator('#wCart').innerText();
     expect(after, 'a failed fetch must not add an item').toBe(before);
   });
 
@@ -105,9 +102,7 @@ test.describe('the calculator survives an unusable search', () => {
     const banner = page.getByRole('dialog', { name: 'Cookie consent' });
     if (await banner.count()) await banner.getByRole('button', { name: 'Reject' }).click();
 
-    const cart = async () => (await page.getByRole('button', { name: /^Cart \(/ }).count()
-      ? page.getByRole('button', { name: /^Cart \(/ }).innerText()
-      : page.getByRole('heading', { name: /^Cart \(/ }).innerText());
+    const cart = () => page.locator('#wCart').innerText();
     const before = await cart();
 
     // Brave が返してくる形そのまま。実測ではヤフオクの候補 192 件中 189 件がこれだった
