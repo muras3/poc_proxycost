@@ -9,6 +9,7 @@ import type { Item, SiteId, WeightSensitivity } from '@/lib/pricing/types';
 import { grams } from '@/lib/ui/format';
 import { Mark } from './Popover';
 import { WeightNeedle } from './WeightNeedle';
+import { itemWeightEffectKind, itemWeightEffectPhrase } from './rankClaim';
 
 /** 重量入力の DOM id。「Check」「Enter the real weight」がここへフォーカスを飛ばす。 */
 export function weightInputId(itemId: string): string {
@@ -53,6 +54,13 @@ export interface CartProps {
   /** 価格をまだ貰えていない項目の id。価格欄は空のまま開く。 */
   unpriced: string[];
   sensitivity: Record<string, WeightSensitivity>;
+  /**
+   * いま1位と判別が付かない社の数（`CompareResult.contestedIds.length`）。
+   * **`decisive` の向きを決めるのに要る**——`decisive` は枠の集合が変わったこと
+   * しか言わず、{A} → {A,B} という広がる変化でも真になるので、これと突き合わせ
+   * ないと「確かめれば決まる」と嘘を書くことになる（`rankClaim` 参照）。
+   */
+  contestedCount: number;
   /** 読み込み中の URL。カートの末尾に「Reading …」の行を出す。 */
   pending: string | null;
   open: boolean;
@@ -68,7 +76,8 @@ export interface CartProps {
  * 1位を決めている重量の品は赤い点と秤の針で名指しする。開くと `.item` の一覧。
  */
 export function Cart({
-  items, readOn, unpriced, sensitivity, pending, open, onToggle, onPatch, onRemove, onFocusWeight,
+  items, readOn, unpriced, sensitivity, contestedCount, pending, open, onToggle, onPatch, onRemove,
+  onFocusWeight,
 }: CartProps) {
   const n = items.length;
   if (!n && !pending) return null;
@@ -111,7 +120,18 @@ export function Cart({
           ? (n === 1 ? 'The only item uses' : `All ${n} items use`)
           : `${assumed.length} of ${n} item${n === 1 ? '' : 's'} use`}
         {' '}a placeholder weight ({grams(ASSUMED_WEIGHT_G)} each) — the totals and the ranking rest on it
-        {assumed.some((i) => sensitivity[i.id]?.decisive) ? ', and it decides the winner' : ''}.{' '}
+        {/* **「決める」と言い切れるのは、測ると1社に絞れるときだけ**（`rankClaim`）。
+            `decisive` は集合が変わったことしか言わないので、そのまま
+            「it decides the winner」と書くと、実際には「測ると判別できなく
+            なりうる」場合まで断定することになる。 */}
+        {(() => {
+          const d = assumed.map((i) => sensitivity[i.id]).filter((w): w is WeightSensitivity => !!w?.decisive);
+          if (!d.length) return '';
+          const kinds = d.map((w) => itemWeightEffectKind(w, contestedCount));
+          if (kinds.includes('settles')) return ', and it decides the winner';
+          if (kinds.includes('unsettles')) return ', and it could put the winner too close to call';
+          return ', and it changes who is in contention';
+        })()}.{' '}
         <button type="button" className="link" onClick={() => onFocusWeight(assumed[0]!.id)}>
           Enter the real weight
         </button>
@@ -165,6 +185,7 @@ export function Cart({
             readOn={readOn[it.id] ?? null}
             priceUnknown={unpriced.includes(it.id)}
             sensitivity={sensitivity[it.id] ?? null}
+            contestedCount={contestedCount}
             onPatch={onPatch}
             onRemove={onRemove}
           />
@@ -185,7 +206,7 @@ export function Cart({
         <span>Solid line = from the listing · dashed = reference or table · dotted + ? = our placeholder</span>
         <span>
           {decisive.length
-            ? `${decisive.length} weight${decisive.length === 1 ? '' : 's'} can change 1st place`
+            ? `${decisive.length} weight${decisive.length === 1 ? '' : 's'} can change who is in contention for 1st`
             : 'no single weight changes 1st place'}
         </span>
       </p>
@@ -194,12 +215,14 @@ export function Cart({
 }
 
 function ItemRow({
-  item, readOn, priceUnknown, sensitivity, onPatch, onRemove,
+  item, readOn, priceUnknown, sensitivity, contestedCount, onPatch, onRemove,
 }: {
   item: Item;
   readOn: string | null;
   priceUnknown: boolean;
   sensitivity: WeightSensitivity | null;
+  /** `Cart` から素通し。`decisive` の向きを決めるのに要る（`rankClaim` 参照）。 */
+  contestedCount: number;
   onPatch: CartProps['onPatch'];
   onRemove: CartProps['onRemove'];
 }) {
@@ -392,7 +415,7 @@ function ItemRow({
         <p className="decisive" data-testid="decisive-note">
           <span className="bang" aria-hidden="true">!</span>
           <span>
-            <b>This weight decides 1st place.</b> Within {grams(sensitivity.lowG)}–{grams(sensitivity.highG)}: {winnersText(sensitivity)}.
+            <b>{itemWeightEffectPhrase(itemWeightEffectKind(sensitivity, contestedCount))}</b> Within {grams(sensitivity.lowG)}–{grams(sensitivity.highG)}: {winnersText(sensitivity)}.
             {sensitivity.winnerAtLow === sensitivity.winnerAtHigh && (
               <>{' '}<span className="wsrc">the recommended set still changes at those two weights, even though the named winner reads the same</span></>
             )}

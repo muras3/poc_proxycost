@@ -77,9 +77,19 @@ export interface RankRow {
   variant: string | null;
   /** `approx. total ~¥33,500` から読んだ数字。幅表示のときは下限。比較不能なら null。 */
   total: number | null;
-  /** 最安との差額。最安行は 0。 */
-  diff: number;
+  /**
+   * 最安との差額。最安行は 0。**区間が1位と交わっている行では `null`**
+   * ——画面が数値を出さないから（下の `contested` 参照）。
+   */
+  diff: number | null;
   cheapest: boolean;
+  /**
+   * 1位と区別が付かない行か（画面の差額欄が 'TOO CLOSE'）。
+   * engine の `CompareResult.contestedIds` に対応する
+   * （`src/components/compare/rankClaim.ts`）。1位自身はここでは false
+   * ——1位の欄は '1ST'／'LEADS' で、差額の欄ではないため。
+   */
+  contested: boolean;
   /** 行の生テキスト。'pays us nothing' の判定などに使う。 */
   text: string;
   /**
@@ -339,6 +349,11 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
     if (!comparable && /^¥/.test(totalLabel)) throw new Error(`row ${i} is not comparable but still prints a total: ${text}`);
     // 判定不能では「1ST」ではなく「LEADS」——`row.cheapest`（下端最小）の事実は同じなので同じ意味に読む。
     const cheapest = comparable && /^(1ST|LEADS)$/.test(diffLabel);
+    // **区間が1位と交わっている行は差額を数値で出さない**（`rankClaim`）。
+    // 点推定どうしの引き算は、交わっている相手に対しては実際の総額の並びと
+    // 逆になりうるので、画面は 'TOO CLOSE' とだけ書く。ここでは null として持ち帰る
+    // ——0 にすると「差が無い」と読めてしまい、1位と見分けが付かなくなる。
+    const contested = comparable && diffLabel === 'TOO CLOSE';
     const shown = rankNum ? Number(rankNum[1]) : 0;
     if (!shown && comparable) throw new Error(`row ${i} shows no rank number: ${rankText} / ${text}`);
     const [svcId, variantPart] = rowId.split(':');
@@ -357,8 +372,9 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
       name,
       variant: variantPart ?? null,
       total: comparable ? parseYen(totalLabel) : null,
-      diff: cheapest || !comparable ? 0 : parseYen(diffLabel),
+      diff: cheapest || !comparable ? 0 : contested ? null : parseYen(diffLabel),
       cheapest,
+      contested,
       text,
       comparable,
     });
