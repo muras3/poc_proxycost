@@ -140,12 +140,22 @@ const EXAMPLES: Draft[] = [
   },
 ];
 
-function initial(): State {
+/**
+ * 画面が最初に持っているカート。**e2e が「画面の見出し」と「engine の答え」を
+ * 突き合わせるのに使う**（`e2e/uncertainty-headline.spec.ts`）——テスト側で
+ * 同じ品を書き写すと、画面の既定カートが変わったときに黙ってずれて、
+ * 突き合わせが突き合わせでなくなる。ここを1つの出どころにする。
+ */
+export function defaultCartItems(): Item[] {
   let seq = 0;
-  const items = EXAMPLES.map((d) => itemFromDraft(d, `i${seq++}`));
+  return EXAMPLES.map((d) => itemFromDraft(d, `i${seq++}`));
+}
+
+function initial(): State {
+  const items = defaultCartItems();
   return {
     items, country: 'US', province: null, method: 'cheapest', storageDays: DEFAULT_STORAGE_DAYS,
-    seq, unpriced: [],
+    seq: items.length, unpriced: [],
   };
 }
 

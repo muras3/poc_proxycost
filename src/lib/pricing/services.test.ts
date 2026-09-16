@@ -177,13 +177,11 @@ describe('the service table itself', () => {
     }
   });
 
-  test('who pays us is recorded, and the cheapest row is still allowed to pay us nothing', () => {
-    expect(svc('neokyo').paysUs).toBe(false);
-    expect(svc('jauce').paysUs).toBe(false);
-    expect(svc('jauce').referralNote).toBeNull();
-    for (const id of ['zenmarket', 'fromjapan', 'buyee']) {
-      expect(svc(id).paysUs).toBe(true);
-      expect(svc(id).referralNote).toBeTruthy();
+  test('nobody pays us (2026-09-15), and the cheapest row is still allowed to pay us nothing', () => {
+    // 2026-09-15時点、代行5社のどことも契約が無い（services.ts の paysUs コメント参照）。
+    for (const id of ['neokyo', 'jauce', 'zenmarket', 'fromjapan', 'buyee'] as const) {
+      expect(svc(id).paysUs, id).toBe(false);
+      expect(svc(id).referralNote, id).toBeNull();
     }
     // 5点 ¥3,000 200g では Neokyo が最安。**報酬を1円も払わない社が1位に立てること**が、
     // 順位が総額だけで決まっている証拠。

@@ -1,11 +1,51 @@
 @import "tailwindcss";
+/* 比較画面（Mock v3 の移し替え）。クラス名・値は prototypes/mock-v3.html と同じ。 */
+@import "./compare.css";
 
+/*
+ * デザイントークン契約（PR-A/B/C 共通）。詳細は docs/design/ui-tokens.md。
+ * B（順位ボード）・C（条件欄・カート・要約）はこの名前を前提に並行作業している。
+ * ここで定義した名前を変えるとマージ前提が崩れる。
+ */
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", "Noto Sans JP", sans-serif;
+  --color-paper: #f2ede3;
+  --color-paper-2: #e9e2d3;
+  --color-ink: #1b1a17;
+  --color-ink-2: #5b574e;
+  --color-rule: rgba(27, 26, 23, 0.28);
+  --color-post-red: #b9201a;
+  --color-post-blue: #2b3a8c;
+  --color-ad-bg: #dedede;
+
+  /*
+   * `--color-paper`（body の地色）は #F2EDE3 で、旧地色 #FAFAF9（ほぼ白）より
+   * 暗い。Tailwind の `text-neutral-500`（既存の補助文字。tiers.tsx・各ページの
+   * 見出し上のラベル等、多数のコンポーネントで使用）と `text-amber-700`
+   * （`tierClass.estimate`。確度「推定」の数字の色）は、旧地色では AA
+   * （4.5:1）を満たしていたが、新しい紙色では 4.06:1 / 4.30:1 に落ちて違反する
+   * （2026-09-15、e2e/a11y.spec.ts の axe 実測で確認）。
+   *
+   * 該当コンポーネントを1つずつ改修すると PR-B/PR-C が並行編集している
+   * ファイル（RankBoard・ItemList・Calculator 等）に触れて衝突するので、
+   * ここでトークン自体を1段暗い色に上書きする。ダークモードの
+   * `dark:text-neutral-400` / `dark:text-amber-400` は別クラスなので影響しない。
+   */
+  --color-neutral-500: var(--color-neutral-600);
+  --color-amber-700: var(--color-amber-800);
 }
 
-/* 淡い紙色。数字を読ませる画面なので彩度を持たせない。 */
+/* next/font が <html>/<body> に置く CSS 変数を Tailwind のフォントトークンに接続する。
+   `inline` はこのブロック専用 ── 通常の @theme だとスコープ変数の解決が一段遅れる。 */
+@theme inline {
+  --font-display: var(--font-big-shoulders), "Arial Narrow", Impact, sans-serif;
+  --font-sans: var(--font-public-sans), "Hiragino Sans", "Noto Sans JP", ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: var(--font-spline-mono), ui-monospace, Menlo, monospace;
+}
+
+/* 淡い紙色。数字を読ませる画面なので彩度を持たせない。
+   `--bg` / `--panel` / `--line` は既存コンポーネント（glyphs 等）が var() で直接参照しているので残す。
+   body 自体は paper トークンを使う（下）。 */
 :root {
   --bg: #fafaf9;
   --panel: #ffffff;
@@ -20,7 +60,6 @@
 }
 
 body {
-  background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 

@@ -77,9 +77,19 @@ export interface RankRow {
   variant: string | null;
   /** `approx. total ~¥33,500` から読んだ数字。幅表示のときは下限。比較不能なら null。 */
   total: number | null;
-  /** 最安との差額。最安行は 0。 */
-  diff: number;
+  /**
+   * 最安との差額。最安行は 0。**区間が1位と交わっている行では `null`**
+   * ——画面が数値を出さないから（下の `contested` 参照）。
+   */
+  diff: number | null;
   cheapest: boolean;
+  /**
+   * 1位と区別が付かない行か（画面の差額欄が 'TOO CLOSE'）。
+   * engine の `CompareResult.contestedIds` に対応する
+   * （`src/components/compare/rankClaim.ts`）。1位自身はここでは false
+   * ——1位の欄は '1ST'／'LEADS' で、差額の欄ではないため。
+   */
+  contested: boolean;
   /** 行の生テキスト。'pays us nothing' の判定などに使う。 */
   text: string;
   /**
@@ -94,9 +104,13 @@ export function ranking(page: Page): Locator {
   return page.getByRole('region', { name: 'Ranking' });
 }
 
-/** 順位リストの各行の見出しボタン。開閉はこれを押す。 */
+/**
+ * 順位リストの各行の見出しボタン（Mock v3 の `.rh`）。開閉はこれを押す。
+ * 行の中には注釈（§）や1位の札の横の秤の針（`.wmk`、これも li の直下）も居るので、`role=button` では数が合わない
+ * ——配達ログを開く `aria-controls="log-…"` を持つボタンだけを引く。
+ */
 export function rankButtons(page: Page): Locator {
-  return ranking(page).getByRole('button');
+  return ranking(page).locator('li[data-row-id] > button[aria-controls^="log-"]');
 }
 
 export function cart(page: Page): Locator {
@@ -114,10 +128,26 @@ export function weightBox(page: Page, title: string): Locator {
 }
 
 /** 「この品の重量だけで1位が替わる」の名指し。compare() の weightSensitivity が出す。 */
-export const DECIDES = /This weight decides the cheapest/;
+export const DECIDES = /This weight decides 1st place/;
 
 export function breakdownTable(page: Page): Locator {
-  return page.getByRole('region', { name: 'Cost breakdown' });
+  return page.locator('#all-fees');
+}
+
+/**
+ * **PR-C（2026-09-15）で全社費目表・What could be off が折りたたみになった。**
+ * `<details data-testid="breakdown-toggle">` の中に入っている——閉じたままでは
+ * `breakdownTable`/`WhatCouldBeOff` の中身は `toBeVisible()` に落ちる（`hidden`
+ * になるのは `<details>` の既定挙動）。中身を見るテストは先にこれを開く。
+ * 既に開いていれば何もしない。
+ */
+export async function openBreakdown(page: Page): Promise<void> {
+  for (const id of ['all-fees', 'what-could-be-off']) {
+    const details = page.locator(`#${id}`);
+    if (!(await details.count())) continue;
+    const isOpen = await details.evaluate((el) => (el as HTMLDetailsElement).open);
+    if (!isOpen) await details.locator('summary').click();
+  }
 }
 
 /** '¥33,500' / '~¥33,500' / '¥1,000 – 2,000' から最初の数字を取る。 */
@@ -226,66 +256,107 @@ export async function gotoCompare(
 }
 
 /**
- * カートはモバイルで畳まれている。中身が見えていなければ開く。
- * lg 以上では見出しの `Cart (n)` が `pointer-events-none` になっていて押せないので、
- * aria-expanded ではなく**中身が見えているか**で判断する。
+ * カートは**既定でどの幅でも畳まれている**（PR-C、mock-v3 §cart——以前は lg 以上で
+ * 常に開いていたが、その版は「たたんだ1行」という mock の形を lg で捨てていた）。
+ * 中身が見えていなければ、たたんだ1行（`data-testid="cart-line"`、条件欄の
+ * `data-testid="conditions-cart-summary"` からも開ける）を押して開く。
  */
 export async function openCart(page: Page): Promise<Locator> {
   const c = cart(page);
   const first = c.getByRole('listitem').first();
   if (!(await first.isVisible())) {
-    await c.getByRole('button', { name: /^Cart \(/ }).click();
+    await page.getByTestId('cart-line').click();
   }
   await expect(first).toBeVisible();
   return c;
 }
 
-/** 順位リストを読む。数字は決め打ちせず、関係だけを検証するための材料にする。 */
+/** カートをたたむ（開いていれば「Done」）。 */
+export async function closeCart(page: Page): Promise<void> {
+  const done = cart(page).getByRole('button', { name: 'Done' });
+  if (await done.count()) await done.click();
+}
+
+/**
+ * 送り先を選ぶ。条件欄の送り先は閉じているときは1つのボタン（Mock v3 `.wplacebtn`）で、
+ * 押すと `Ship to` の select（カナダなら `Province` も）が出る。
+ */
+export async function shipTo(page: Page, code: string): Promise<void> {
+  if (!(await page.getByLabel('Ship to').count())) await page.locator('#wPlace').click();
+  await page.getByLabel('Ship to').selectOption(code);
+  const done = page.locator('#wPlaceDone');
+  if (await done.count()) await done.click();
+}
+
+/** 州を選ぶ（送り先がカナダのとき）。開いていなければ送り先を開いてから。 */
+export async function setProvince(page: Page, code: string): Promise<void> {
+  if (!(await page.getByLabel('Province').count())) await page.locator('#wPlace').click();
+  await page.getByLabel('Province').selectOption(code);
+}
+
+/** 州の select を（送り先を開いて）返す。読むだけのときに使う。 */
+export async function provincePicker(page: Page): Promise<Locator> {
+  if (!(await page.getByLabel('Province').count()) && (await page.locator('#wPlace').count())) {
+    await page.locator('#wPlace').click();
+  }
+  return page.getByLabel('Province');
+}
+
+/** 決め手の重量の注釈（秤の針）を開いて、その本文（`#pop`）を返す。 */
+export async function openNeedleNote(page: Page): Promise<Locator> {
+  const needle = page.getByTestId('weight-needle').first();
+  if ((await needle.getAttribute('aria-expanded')) !== 'true') await needle.click();
+  const pop = page.locator('#pop');
+  await expect(pop).toBeVisible();
+  return pop;
+}
+
+/** 条件欄の送り先ボタン（閉じた状態の表示）。 */
+export function destination(page: Page): Locator {
+  return page.locator('#wPlace');
+}
+
+/**
+ * 順位リストを読む。数字は決め打ちせず、関係だけを検証するための材料にする。
+ * **行の地の文を正規表現で解析しない。**Mock v3 の行は、順位（`.c-rank`）・
+ * 総額（`.tot` の aria-label）・差額（`.flap.diff` の aria-label）を別々の要素に
+ * 持っているので、それぞれを構造的に読む。
+ */
 export async function readRanking(page: Page): Promise<RankRow[]> {
   const buttons = rankButtons(page);
   await expect(buttons.first()).toBeVisible();
   const n = await buttons.count();
-  // **社名と変種は行の地の文からではなく、`<li data-row-id>` から構造的に読む。**
-  // `data-row-id` は各行に1個ずつ、ボタンと同じ並び順で乗っている
-  // （`RankBoard.tsx` の `<li data-row-id={row.id}><button>…`）。
-  const rowIds = await ranking(page).locator('li[data-row-id]').evaluateAll(
-    (els) => els.map((el) => el.getAttribute('data-row-id')),
-  );
-  if (rowIds.length !== n) {
+  const lis = ranking(page).locator('li[data-row-id]');
+  if ((await lis.count()) !== n) {
     throw new Error(
-      `readRanking: found ${n} rank button(s) but ${rowIds.length} li[data-row-id] element(s) `
-      + `— they should be 1:1 (one <li data-row-id> wrapping one row button each). `
-      + `row ids seen: ${JSON.stringify(rowIds)}`,
+      `readRanking: found ${n} rank button(s) but ${await lis.count()} li[data-row-id] element(s) `
+      + `— they should be 1:1 (one <li data-row-id> wrapping one row button each).`,
     );
   }
   const out: RankRow[] = [];
   for (let i = 0; i < n; i++) {
-    const text = (await buttons.nth(i).innerText()).replace(/\s+/g, ' ').trim();
-    // **比べられない行は 'NOT COMPARABLE' と `approx. total —` を出す。**
-    // 額が無いことが正しい状態なので、ここで落とさずに null として持ち帰る。
-    const comparable = !/NOT COMPARABLE/.test(text);
-    const totalMatch = text.match(/approx\. total\s*~?(¥[\d,]+)/);
-    if (comparable && !totalMatch) throw new Error(`row ${i} has no approx. total: ${text}`);
-    if (!comparable && totalMatch) {
-      throw new Error(`row ${i} is not comparable but still prints a total: ${text}`);
-    }
-    // 判定不能では「CHEAPEST」と言い切らず「LEADS」に変わる（P1-3 追修正、
-    // `RankBoard` の `diffText`）——`row.cheapest`（下端最小）という事実自体は
-    // 変わらないので、どちらの文言でも同じ意味として読む。
-    const cheapest = /(^|\s)(CHEAPEST|LEADS)(\s|$)/.test(text);
-    const diffMatch = text.match(/\+¥([\d,]+)/);
-    // 行頭の数字がその行の順位。並び順（i+1）と一致するとは限らない。
-    const shown = text.match(/^(\d+)\s/);
-    if (!shown) throw new Error(`row ${i} shows no rank number: ${text}`);
-    // **社名と変種は `data-row-id`（例: 'buyee:consolidated'）から読む。**
-    // 以前はここを行の地の文の部分一致（`text.includes('consolidated' | 'default')`）
-    // で読んでいたため、ZenMarket の Surface 便注記 "not used as the **default**
-    // because it takes 1-3 months" のような、変種と無関係な地の文が
-    // `variant: 'default'` として誤検出されていた（ZenMarket は default/consolidated
-    // の変種を持たない社で、常に variant は null のはずだった）。地の文はこれからも
-    // 変わり続けるので、部分一致は「今日たまたま引っかからない」だけで直っていない。
-    const rowId = rowIds[i]!;
-    const [svcId, variantPart] = rowId ? rowId.split(':') : [undefined, undefined];
+    const li = lis.nth(i);
+    const rowId = (await li.getAttribute('data-row-id')) ?? '';
+    const text = (await li.innerText()).replace(/\s+/g, ' ').trim();
+    // `.c-rank` は '01' の後ろに読み上げ用の「CHEAPEST」等（`.sr`）を持つ。先頭の数字だけを読む。
+    const rankText = (await li.locator('[data-testid="row-rank"]').innerText()).trim();
+    const rankNum = rankText.match(/^(\d+)/);
+    const diffLabel = (await li.locator('.flap.diff').getAttribute('aria-label')) ?? '';
+    const totalLabel = (await li.locator('.tot').first().getAttribute('aria-label')) ?? '';
+    // 比べられない行は順位に '—'、差額に 'NOT RANKED'、総額に `—` を出す。
+    const comparable = diffLabel !== 'NOT RANKED';
+    if (comparable && !/^¥[\d,]+/.test(totalLabel)) throw new Error(`row ${i} has no total: ${totalLabel} / ${text}`);
+    if (!comparable && /^¥/.test(totalLabel)) throw new Error(`row ${i} is not comparable but still prints a total: ${text}`);
+    // 判定不能では「1ST」ではなく「LEADS」——`row.cheapest`（下端最小）の事実は同じなので同じ意味に読む。
+    const cheapest = comparable && /^(1ST|LEADS)$/.test(diffLabel);
+    // **区間が1位と交わっている行は差額を数値で出さない**（`rankClaim`）。
+    // 点推定どうしの引き算は、交わっている相手に対しては実際の総額の並びと
+    // 逆になりうるので、画面は 'TOO CLOSE' とだけ書く。ここでは null として持ち帰る
+    // ——0 にすると「差が無い」と読めてしまい、1位と見分けが付かなくなる。
+    const contested = comparable && diffLabel === 'TOO CLOSE';
+    const shown = rankNum ? Number(rankNum[1]) : 0;
+    if (!shown && comparable) throw new Error(`row ${i} shows no rank number: ${rankText} / ${text}`);
+    const [svcId, variantPart] = rowId.split(':');
     const name = svcId ? SERVICE_ID_TO_NAME[svcId] : undefined;
     if (!name) {
       const known = Object.keys(SERVICE_ID_TO_NAME).join(', ');
@@ -294,16 +365,16 @@ export async function readRanking(page: Page): Promise<RankRow[]> {
         + `${JSON.stringify(svcId)} is not one of the known ids (${known}). Row text: ${text}`,
       );
     }
-    const variant = variantPart ?? null;
     out.push({
       rank: i + 1,
-      shownRank: Number(shown[1]),
-      tied: /tied with /.test(text),
+      shownRank: shown,
+      tied: /Tied with /.test(text),
       name,
-      variant,
-      total: totalMatch ? parseYen(totalMatch[1]!) : null,
-      diff: cheapest ? 0 : parseYen(diffMatch?.[1] ?? '0'),
+      variant: variantPart ?? null,
+      total: comparable ? parseYen(totalLabel) : null,
+      diff: cheapest || !comparable ? 0 : contested ? null : parseYen(diffLabel),
       cheapest,
+      contested,
       text,
       comparable,
     });
@@ -318,7 +389,8 @@ export async function openRankRow(page: Page, index: number): Promise<Locator> {
     await button.click();
   }
   await expect(button).toHaveAttribute('aria-expanded', 'true');
-  const li = ranking(page).getByRole('listitem').nth(index);
+  const li = ranking(page).locator('li[data-row-id]').nth(index);
+  // 開いた中身は配達ログ（Mock v3 `.log`）。見た目は grid だが `role=table` を持つ。
   await expect(li.getByRole('table')).toBeVisible();
   return li;
 }
@@ -336,7 +408,7 @@ export function costRow(li: Locator, label: string | RegExp): Locator {
  * 文言ではなくこちらで引く。**
  */
 export function costRowByKey(li: Locator, key: string): Locator {
-  return li.locator(`tr[data-cost-key="${key}"]`);
+  return li.locator(`[data-cost-key="${key}"]`);
 }
 
 /** 表の1行を、セルの文字列の配列にする。 */
@@ -368,6 +440,22 @@ export function isNonDecreasing(xs: number[]): boolean {
  */
 export function emsOnlyNote(page: Page): Locator {
   return page.getByTestId('scope-disclosure');
+}
+
+/** 「Ship by §」の注釈を開く（比べている範囲の開示はこの中に居る。Mock v3: wording only inside the popover）。 */
+export async function openScopeNote(page: Page): Promise<Locator> {
+  const mark = page.getByRole('button', { name: 'About: How methods are compared' });
+  if ((await mark.getAttribute('aria-expanded')) !== 'true') await mark.click();
+  await expect(emsOnlyNote(page)).toBeVisible();
+  return emsOnlyNote(page);
+}
+
+/** 常時アイコン（送れるか未確認）を開く。 */
+export async function openRestrictedNote(page: Page): Promise<Locator> {
+  const icon = page.getByTestId('icon-shippability');
+  if ((await icon.getAttribute('aria-expanded')) !== 'true') await icon.click();
+  await expect(restrictedNote(page)).toBeVisible();
+  return restrictedNote(page);
 }
 
 /**
@@ -409,15 +497,35 @@ export async function setMethod(page: Page, method: string): Promise<void> {
   await page.locator('#ship-by-select').selectOption(method);
 }
 
+/**
+ * 開いた行の配達ログで、費目の1行に付いた注釈（§）を開き、ポップオーバーの本文を返す。
+ * 費目の説明文・出典は行の中ではなくここに居る（Mock v3 `mk(l.label, note)`）。
+ */
+export async function lineNote(row: Locator): Promise<string> {
+  const page = row.page();
+  await row.getByRole('button', { name: /^About: / }).click();
+  const pop = page.locator('#pop');
+  await expect(pop).toBeVisible();
+  const text = (await pop.innerText()).replace(/\s+/g, ' ').trim();
+  await page.keyboard.press('Escape');
+  await expect(pop).toBeHidden();
+  return text;
+}
+
 export async function addByHand(
   page: Page, title: string, priceYen: number, site?: string,
 ): Promise<void> {
-  const form = page.getByRole('button', { name: 'Or add an item by hand' });
-  if (await form.count()) await form.click();
-  await page.getByLabel('Item name').fill(title);
-  await page.getByLabel('Price ¥').fill(String(priceYen));
-  if (site) await page.getByLabel('Site').selectOption(site);
-  await page.getByRole('button', { name: 'Add by hand', exact: true }).click();
+  // 「Add by hand」のリンクがフォームを開く（aria-controls=manual）。開いていれば押さない。
+  if (await page.locator('#manual[hidden]').count()) {
+    await page.getByRole('button', { name: 'Add by hand', expanded: false }).first().click();
+  }
+  const form = page.getByRole('form', { name: 'Add an item by hand' });
+  await form.getByLabel('Item name').fill(title);
+  await form.getByLabel('Price ¥').fill(String(priceYen));
+  if (site) await form.getByLabel('Site').selectOption(site);
+  await form.getByRole('button', { name: 'Add by hand' }).click();
+  // Mock v3 は足してもカートを開かない。足した品を直すテストが多いので、ここで開いておく。
+  await openCart(page);
 }
 
 /** カートを空にする。 */

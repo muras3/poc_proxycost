@@ -1,17 +1,23 @@
 import Link from 'next/link';
 
+/**
+ * マストヘッド。Mock v3 の `.mast`（ロゴ ＋ ナビ）をそのまま。
+ * Mock の「⌘K change」コマンドバーは移していない——Mock 自身が
+ * 「accelerator only; every command also has a visible control」と書いており、
+ * 見える操作子（条件欄）がすべて揃っているので、本体には入れない。
+ */
 export function SiteHeader() {
   return (
-    <header className="border-b border-neutral-200 dark:border-neutral-800">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
-          proxycost
+    <header className="mast">
+      <h1>
+        <Link href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+          proxy<i>cost</i>
         </Link>
-        <nav className="flex gap-4 text-xs text-neutral-600 dark:text-neutral-400">
-          <Link href="/weights" className="hover:underline">Weights</Link>
-          <Link href="/sources" className="hover:underline">Sources</Link>
-        </nav>
-      </div>
+      </h1>
+      <nav aria-label="Primary">
+        <Link href="/weights">Weights</Link>
+        <Link href="/sources">Sources</Link>
+      </nav>
     </header>
   );
 }

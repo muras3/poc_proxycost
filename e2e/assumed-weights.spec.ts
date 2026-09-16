@@ -64,14 +64,14 @@ test('three items with no weight data are counted in one place, not one row at a
   await expect(n).toHaveCount(1);
   await expect(n).toHaveAttribute('data-count', '3');
   await expect(n).toHaveAttribute('data-total', '3');
-  await expect(n).toContainText('None of the 3 items in your cart have weight data');
+  await expect(n).toContainText('All 3 items use a placeholder weight');
 
   // 総額と順位への影響を言う。仮置きが多いほど順位は当てにならない。
   await expect(n).toContainText(/totals/);
   await expect(n).toContainText(/ranking/);
 
   // 仮置きの値そのものも出す（画面の重量欄と同じ数字）。
-  await expect(n).toContainText(/~1 kg/);
+  await expect(n).toContainText(/1 kg/);
 
   // 行の側にも印が立つ。**色以外の記号**を1つ持たせる約束（docs/UI-DESIGN.md §6）。
   await expect(rowMarks(page)).toHaveCount(3);
@@ -86,9 +86,8 @@ test('a placeholder among looked-up items says which fraction of the parcel it i
   const n = note(page);
   await expect(n).toHaveAttribute('data-count', '1');
   await expect(n).toHaveAttribute('data-total', '3');
-  await expect(n).toContainText('1 of the 3 items in your cart has no weight data');
-  // 全部が仮置きではないので、割合を言う（「箱ぜんぶ」ではない）。
-  await expect(n).toContainText(/%/);
+  // 全部が仮置きではないので、何点中何点かを言う（「箱ぜんぶ」ではない）。
+  await expect(n).toContainText('1 of 3 items use a placeholder weight');
 
   // 印が立つのは当たらなかった行だけ。
   await expect(rowMarks(page)).toHaveCount(1);
@@ -103,7 +102,7 @@ test('the count follows the cart, and goes silent once every weight is filled in
   // 1点入れる → 残り1点。**入れた品は仮置きではなくなる。**
   await weightBox(page, OFF_TABLE[0]).fill('600');
   await expect(note(page)).toHaveAttribute('data-count', '1');
-  await expect(note(page)).toContainText('1 of the 2 items in your cart has no weight data');
+  await expect(note(page)).toContainText('1 of 2 items use a placeholder weight');
   await expect(rowMarks(page)).toHaveCount(1);
 
   // 全部入れる → 注記も印も消える。直したのに警告が残るのは嘘。
@@ -126,27 +125,39 @@ test('the note is readable without opening the cart', async ({ page }) => {
   await gotoCompare(page);
   await cartOfUnknowns(page, 2);
 
-  // モバイルではカートは畳める。畳んだ中に入れたら、開いた人にしか言っていない。
-  const toggle = cart(page).getByRole('button', { name: /^Cart \(/ });
-  if (await toggle.isVisible()) await toggle.click();
+  // カートは畳める。畳んだ中に入れたら、開いた人にしか言っていない。
+  if (await cart(page).getByRole('listitem').first().isVisible()) await page.getByTestId('cart-line').click();
 
   await expect(note(page)).toBeVisible();
   expect(await isCollapsed(note(page)), '注記が畳まれたカートの中に入っている').toBe(false);
 });
 
-test('the box explains its dashed shapes only when a placeholder is standing in it', async ({ page }) => {
+test('the box draws a placeholder as a dashed shape, and says so in words too', async ({ page }) => {
+  // Mock v3 では箱は秤（`data-testid="scale"`）の上。中身は `BoxArt` の `.it` で、利用者が
+  // 入れていない重量（表の中央値・仮置き）は破線（`data-estimated="true"`）、入れた重量は
+  // 実線で描く。旧 `ParcelView` の「dashed outline」の但し書きと `aria-label` の数え上げは
+  // 無くなったので、**形（破線の数）と言葉（`assumed-weights` の注記の数）が一致する**
+  // ことで同じ意図を固定する。
   await gotoCompare(page);
-  const parcel = page.getByRole('region', { name: 'Parcel' });
+  const scale = page.getByTestId('scale');
+  const dashed = scale.locator('[data-testid="packed-item"][data-estimated="true"]');
+  await expect(scale).toBeVisible();
 
-  // 既定のカートは2点とも重量表に当たる。**画面に無い形を説明しない。**
-  await expect(parcel).toBeVisible();
-  await expect(parcel).not.toContainText(/dashed outline/);
+  // 既定のカートは2点とも重量表に当たる。表の値は推定なので破線だが、仮置きでは
+  // ないので注記は出ない。
+  await expect(scale.getByTestId('packed-item')).toHaveCount(2);
+  await expect(dashed).toHaveCount(2);
+  await expect(note(page)).toHaveCount(0);
 
+  // 仮置きの1点が入ると破線が1つ増え、注記が「3点中1点」と言葉で数える。
   await addByHand(page, OFF_TABLE[0], 4000);
+  await expect(dashed).toHaveCount(3);
+  await expect(note(page)).toHaveAttribute('data-count', '1');
+  await expect(note(page)).toHaveAttribute('data-total', '3');
 
-  // 入った瞬間から、点線が何なのかを箱の但し書きが名指しする。
-  await expect(parcel).toContainText(/dashed outline/);
-  // 形の違いは目で見た人にしか届かない。読み上げでも数えて言う。
-  await expect(page.getByTestId('packing-box-scene'))
-    .toHaveAttribute('aria-label', /placeholder weight we chose/);
+  // 重量を入れた品は実線に変わる。形の違いは「あなたの数字か、我々の数字か」。
+  await weightBox(page, OFF_TABLE[0]).fill('600');
+  await expect(dashed).toHaveCount(2);
+  await expect(scale.locator('[data-testid="packed-item"][data-estimated="false"]')).toHaveCount(1);
+  await expect(note(page)).toHaveCount(0);
 });

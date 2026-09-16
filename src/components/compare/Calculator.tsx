@@ -1,238 +1,209 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
+import { flushSync } from 'react-dom';
 import { AdSlot } from '@/components/chrome/AdSlot';
-import { ManualAdd } from '@/components/search/ManualAdd';
-import { SearchBox } from '@/components/search/SearchBox';
-import { TierLegend, tierClass } from '@/lib/ui/tiers';
-import type { CountryCode, Item, ProvinceCode } from '@/lib/pricing/types';
-import { ConsolidationCallout } from './ConsolidationCallout';
+import { courierMethodAvailable } from '@/lib/pricing/postage';
+import { COUNTRIES } from '@/lib/pricing/countries';
+import type { CompareResult, CountryCode, Item, Line, ProvinceCode } from '@/lib/pricing/types';
+import { AddBar } from './AddBar';
+import { Cart, weightInputId } from './Cart';
 import { CostTable } from './CostTable';
-import { CountryPicker } from './CountryPicker';
 import { EmsOnlyNote } from './EmsOnlyNote';
-import { FreeShippingDomesticNote } from './FreeShippingDomesticNote';
-import { RemoteAreaSurchargeNote } from './RemoteAreaSurchargeNote';
-import { ItemList, type ItemListHandle } from './ItemList';
-import { MethodPicker } from './MethodPicker';
-import { ParcelView } from './ParcelView';
-import { ProvincePicker } from './ProvincePicker';
-import { RankBoard, Summary } from './RankBoard';
-import { StorageDaysInput } from './StorageDaysInput';
-import {
-  AlcoholInCartNote, LongItemsInCartNote, RestrictedGoodsNote,
-} from './RestrictedGoodsNote';
-import { StabilityNote } from './StabilityNote';
+import { Heft } from './Heft';
+import { PopoverProvider } from './Popover';
+import { Results } from './Results';
+import { Waybill, type MethodChoice } from './Waybill';
 import { WhatCouldBeOff } from './WhatCouldBeOff';
 import { useCompare, type Draft } from './useCompare';
 
 /**
- * 画面の結線だけを持つ。並びは docs/UI-DESIGN.md §7。
- * 順位 → 凡例 → 内訳 → 弱点 → 広告の順で、確かな情報ほど上に置く。
+ * 比較画面の結線。並びは Mock v3 のまま:
+ * 商品追加 → 条件欄（waybill）→ 秤（heft）→ 結果（要約・段1の1行・常時アイコン・順位ボード）
+ * → カート（たたんだ1行）→ 全社費目表・What could be off（折りたたみ）→ 広告 → フッター。
+ * 数値・順位は `useCompare`（＝`compare()`）が返すものをそのまま描く。
  */
 export function Calculator() {
   const {
     items, country, province, method, storageDays, seq, unpriced, result, dispatch,
   } = useCompare();
   // URL 取得で確定値になった項目の取得日。Item に日付欄が無いのでここで持つ。
-  // 追加は必ずクライアント側の操作なので、SSR と食い違わない。
   const [readOn, setReadOn] = useState<Record<string, string>>({});
-  // StabilityNote の「Check the weights」→ カートの重量入力へ。
-  // 1位を決めている品（decisive）があればそこへ、無ければ先頭の品へ。
-  const cart = useRef<ItemListHandle>(null);
-  function checkWeights() {
-    const decisive = items.find((i) => result.weightSensitivity[i.id]?.decisive);
-    const target = decisive ?? items[0];
-    if (target) cart.current?.focusWeight(target.id);
-  }
-
-  // 判定不能（P1-3）→「配送方法の選択へ誘導する」（docs/ROADMAP.md P1 確定仕様）。
-  // 総額に効くのは方式（2.3倍）であって会社ではない。**StabilityNote の1行には
-  // 足さない**——デスクトップで既に折り返しの余白が無く（e2e/parcel.spec.ts の
-  // 「順位表が最初の画面から押し出されている」が実測 908 > 900 で落ちた）、
-  // 1文字でも足せば2行目に溢れて順位表を画面外へ押し出す。`RankBoard` の
-  // 「Ranking」領域の**内側**（`<ol>` の直前）に出す——領域そのものの開始位置は
-  // 動かないので、この制約を満たしたまま誘導文を置ける。
-  function focusMethod() {
-    document.getElementById('ship-by-select')?.focus();
-  }
+  const [cartOpen, setCartOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
 
   function onAdd(draft: Draft) {
     if (draft.priceTier === 'fixed') {
-      // useCompare が次に振る id は `i${seq}`。
       const id = `i${seq}`;
-      const today = new Date().toISOString().slice(0, 10);
-      setReadOn((prev) => ({ ...prev, [id]: today }));
+      setReadOn((prev) => ({ ...prev, [id]: new Date().toISOString().slice(0, 10) }));
     }
     dispatch({ type: 'add', draft });
   }
 
-  const empty = items.length === 0;
-  // 価格が未取得の項目は compare() に渡っていない。箱にも入れない
-  // （総額に効いていない品を箱に立てたら、箱と総額が別のカートを指す）。
+  function setCountry(c: CountryCode) {
+    dispatch({ type: 'country', country: c });
+    // 行き先で価格化の無い宅配便を選んだままにしない（Mock `setCountry` と同じ）。
+    if (method !== 'cheapest' && method.startsWith('courier-') && !courierMethodAvailable(method as never, c)) {
+      dispatch({ type: 'method', method: 'cheapest' });
+    }
+  }
+
+  function focusMethod() {
+    const el = document.getElementById('ship-by-select');
+    el?.scrollIntoView({ block: 'center' });
+    el?.focus();
+  }
+
+  /** その品の重量入力へ。畳まれていれば開き、その描画を同期で終えてから focus() する。 */
+  function focusWeight(id: string) {
+    flushSync(() => setCartOpen(true));
+    const el = document.getElementById(weightInputId(id));
+    if (el instanceof HTMLInputElement) {
+      el.scrollIntoView({ block: 'center' });
+      el.focus();
+      el.select();
+    }
+  }
+
+  function toggleCart() {
+    const next = !cartOpen;
+    flushSync(() => setCartOpen(next));
+    if (next) document.getElementById('cart')?.scrollIntoView({ block: 'start' });
+  }
+
   const priced = items.filter((i) => !unpriced.includes(i.id));
-  // 価格を貰えていない項目は総額に入っていない（useCompare が compare() から外す）。
-  const pricedCount = items.length - unpriced.length;
+  const cheapest = result.rows.find((r) => r.comparable && r.cheapest) ?? null;
+  const provinceLine = result.rows[0]?.lines.find((l) => l.key === 'province-tax') ?? null;
+  const onMethod = (m: MethodChoice) => dispatch({ type: 'method', method: m });
 
   return (
-    <div className="mt-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* モバイルでは行き先を先に決めさせる（幅が狭いので入力欄と並べない）。 */}
-        <div className="order-first flex flex-wrap items-center gap-x-4 gap-y-2 sm:order-last sm:shrink-0">
-          <CountryPicker
-            value={country}
-            onChange={(c: CountryCode) => dispatch({ type: 'country', country: c })}
-          />
-          {/* **保管日数も行き先・方式と同じ格の入力**（F21、0d）。既定45日は我々の仮定
-              なので、`tier: estimate` と同じ琥珀色で示す（`StorageDaysInput` のコメント）。
-              **`MethodPicker` より前に置く。**`MethodPicker` の `<select>` は選択肢の文言が
-              長く、モバイル幅ではそれだけで1行を使い切る（`Ship to` の隣には並ばない）。
-              コンパクトな `StorageDaysInput` を先に置くことで `Ship to` と同じ行に収まり、
-              モバイルで折り返す行数が増えない（`e2e/parcel.spec.ts` の「箱がビューポートに
-              収まる」を保つ。並び順を変えただけで、新しいデザインは発明していない）。 */}
-          <StorageDaysInput
-            value={storageDays}
-            onChange={(d) => dispatch({ type: 'storageDays', storageDays: d })}
-          />
-          {/* **方式は行き先と同じ格の入力。**総額は方式で決まり、方式は利用者が選ぶ
-              （Neokyo 原文「please select ... as the shipment method」）。
-              既定は `cheapest`（運べる中で最安、Surface を除く）（`compare()` の
-              `DEFAULT_METHOD`、P2 オーナー確定 2026-09-12）。 */}
-          <MethodPicker
-            value={method}
-            onChange={(m) => dispatch({ type: 'method', method: m })}
-            country={country}
-          />
-          {/* **カナダだけ州で税が変わる**（CBSA D2-3-6）ので、そこだけ2段目を出す。
-              他国で常に出しておくと、選べない欄が画面に残る。 */}
-          {country === 'CA' && (
-            <ProvincePicker
-              value={province}
-              onChange={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
-            />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <SearchBox onAdd={onAdd} />
-          <ManualAdd onAdd={onAdd} />
-        </div>
-      </div>
+    <PopoverProvider>
+      <AddBar onAdd={onAdd} onPending={setPending} manualOpen={manualOpen} onManualOpen={setManualOpen} />
 
-      {/**
-        * **箱は入力とカートと同じ視界に置く。**
-        * 足した品が箱に落ちるのを見せるための絵なので、順位表の下に置いたら
-        * （前の配置）誰も見ない位置で動くことになり、動きが何も伝えない。
-        *
-        * 縦積み（モバイル）では箱をカートの**上**に置く。カートは足すたびに開き、
-        * 1点で 300px 以上あるので、カートの下に置くと2点目からは画面の外に出る。
-        * **勝手にスクロールさせて解決しない**（scrollIntoView が祖先ごと動かして
-        * 常時開示を画面外に押し出した前科がある）。位置で解決する。
-        *
-        * lg 以上では横に2つ。**DOM の順＝画面の順＝フォーカスの順**にしたいので、
-        * モバイルで先に来る箱がそのまま左の列になる（order-* で入れ替えると、
-        * どちらかの幅で読み上げ順とタブ順が画面と食い違う）。
-        * 横に並べるぶん順位表は押し下がらない。
-        */}
-      <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
-        {/* **どの Row の箱を見せるか。**最安（`cheapest`）行——利用者が実際に選ぶ
-            可能性が最も高い行の、実際に計算された個口を見せる。他の行は方式や
-            グルーピングが違いうるので、複数の行を混ぜて1つの箱の絵にはしない。 */}
-        <ParcelView
-          items={priced}
-          country={country}
-          row={result.rows.find((r) => r.cheapest) ?? null}
-          className="lg:w-[32rem] lg:shrink-0"
-        />
-        <ItemList
-          items={items}
-          readOn={readOn}
-          unpriced={unpriced}
-          sensitivity={result.weightSensitivity}
-          ref={cart}
-          className="min-w-0 flex-1"
-          onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
-          onRemove={(id: string) => dispatch({ type: 'remove', id })}
-        />
-      </div>
+      <Waybill
+        country={country}
+        province={province}
+        storageDays={storageDays}
+        method={method}
+        items={items}
+        cartOpen={cartOpen}
+        provinceLine={provinceLine}
+        scopeNote={priced.length > 0 ? <EmsOnlyNote result={result} country={country} /> : null}
+        onCountry={setCountry}
+        onProvince={(p: ProvinceCode | null) => dispatch({ type: 'province', province: p })}
+        onStorageDays={(d) => dispatch({ type: 'storageDays', storageDays: d })}
+        onMethod={onMethod}
+        onCartToggle={toggleCart}
+      />
 
-      {empty ? (
-        <p className="mt-10 text-sm text-neutral-500">Add a listing to compare.</p>
-      ) : pricedCount === 0 ? (
-        // 全部が価格未取得。順位を出すと ¥0 の買い物の順位になる。
-        <p className="mt-10 text-sm text-neutral-500">
-          Enter a price above to compare — we could not read one from the listing.
-        </p>
+      <Heft row={priced.length ? cheapest : null} items={priced} />
+
+      {items.length === 0 && !pending ? (
+        <EmptyState country={country} onManual={() => setManualOpen(true)} />
+      ) : priced.length === 0 ? (
+        <div className="norank" role="status">
+          <h3>Enter a price to compare</h3>
+          <p>None of the items in your cart has a price yet. Type one in the cart below.</p>
+        </div>
       ) : (
-        <>
-          {/* **2026-09-12、courier-ui で押し出された。**`EmsOnlyNote` が宅配便の
-              価格化状況を社名つきで言うようになった分（P2）だけこのブロックが
-              伸び、Ranking セクションの開始位置が画面外へ出た（実測
-              908 > 900、e2e/parcel.spec.ts）。文言は削れない（各文言は
-              e2e/compare.spec.ts の 19番などが一言一句で掴んでいる）ので、
-              **ここの余白を詰めて吸収する。**社名の入り方（今の米国の形）は
-              残り6か国が価格化されても変わらない——`courierCoverageFor` は
-              「価格化済み」「未価格化」「グリッド自体が無い」の3集合に振り分ける
-              だけで、価格化が進むほど集合の中身が動くだけで文の数は増えない。
-              今すでに一番埋まった形（1位に出る米国）を基準に詰めているので、
-              残り6か国が同じ形に育っても再びここが壊れることはない。 */}
-          <div className="mt-6 space-y-1 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-            {/* **2026-09-13、`RemoteAreaSurchargeNote` を足した分だけ、また余白を詰めた。**
-                `EmsOnlyNote` を足した2026-09-12のときと同じ理由・同じ対処
-                （`e2e/parcel.spec.ts` の「順位表が最初の画面から押し出されている」、
-                実測 904 > 900）。文言は削れない（オーナー指定・言い換え禁止）ので
-                ここの `space-y` を 1.5 → 1 に詰めて吸収する。 */}
-            {/* 黙って外すと総額が安く見える。外したことを総額の隣で言う。 */}
-            {unpriced.length > 0 && (
-              <p className={`text-xs ${tierClass.none}`}>
-                {unpriced.length === 1
-                  ? '1 item has no price yet and is not in these totals.'
-                  : `${unpriced.length} items have no price yet and are not in these totals.`}
-              </p>
-            )}
-            <Summary result={result} />
-            <StabilityNote result={result} onCheckWeights={checkWeights} />
-            {/* 比較の範囲（EMS 限定）は順位のすぐ隣に、常に出す。畳んだら
-                「読んでいない人には言っていない」のと同じになる。 */}
-            <EmsOnlyNote result={result} country={country} />
-            {/* **送れるかは一度も見ていない。**同じ理由で同じ場所に、常に出す。
-                酒がカートに入っているときだけ、その下に強い警告を足す（T27）。 */}
-            <RestrictedGoodsNote result={result} country={country} />
-            <AlcoholInCartNote result={result} items={items} />
-            {/* 長さで方式が絞られうる品。**寸法は入力にすら無い**ので、
-                どの方式が落ちるかは書けない——見ていないことだけ言う。 */}
-            <LongItemsInCartNote result={result} items={items} />
-            {/* Buyee だけの話（他4社は材料が無い）。「送料無料」の出品が1点でも
-                あるときだけ、金額は動かさず出す（T-F10、docs/FEE-ITEMS.md §5 R1）。 */}
-            <FreeShippingDomesticNote result={result} items={items} />
-            {/* 燃油は表示送料込みの前提、遠隔地は総額に入れない住所依存の未知——
-                2026-09-13 オーナー決定。宅配便の行が1つでもあれば共通で出す。 */}
-            <RemoteAreaSurchargeNote result={result} />
-          </div>
-
-          <div className="mt-3">
-            <RankBoard result={result} onFocusMethod={focusMethod} />
-            <TierLegend className="mt-3" />
-          </div>
-
-          {/* 箱はここに居た（順位の下・内訳の上）。読み順としては筋が通っていたが、
-              **足した瞬間に動く絵が、入力から1画面以上下に居た。**動きは見られなければ
-              何も伝えないので、入力とカートの隣（上）へ移した。 */}
-
-          <div className="mt-4 empty:mt-0">
-            <ConsolidationCallout result={result} />
-          </div>
-
-          {/* 段ごとの総額の表（WeightStepTable）はここに居たが外した。カートの全点に
-              重量が入って直せる今、「重量が X なら総額は」に答えるのは重量欄そのもの。
-              全点を同じ重量に置く表は、全点が不明だったときにしか意味が無かった。 */}
-
-          <CostTable result={result} />
-
-          <WhatCouldBeOff result={result} />
-
-          {/* 広告はここだけ。比較の中・横には置かない。 */}
-          <AdSlot />
-        </>
+        <Results
+          result={result}
+          country={country}
+          province={province}
+          method={method}
+          items={items}
+          priced={priced}
+          onFocusMethod={() => { onMethod('cheapest'); focusMethod(); }}
+          onFocusWeight={focusWeight}
+          onProvince={(p) => dispatch({ type: 'province', province: p })}
+        />
       )}
+
+      <Cart
+        items={items}
+        readOn={readOn}
+        unpriced={unpriced}
+        sensitivity={result.weightSensitivity}
+        contestedCount={result.contestedIds.length}
+        pending={pending}
+        open={cartOpen}
+        onToggle={toggleCart}
+        onPatch={(id: string, patch: Partial<Item>) => dispatch({ type: 'patch', id, patch })}
+        onRemove={(id: string) => {
+          dispatch({ type: 'remove', id });
+          if (items.length <= 1) setCartOpen(false); // 空になったら「編集中」を残さない
+        }}
+        onFocusWeight={focusWeight}
+      />
+
+      {priced.length > 0 && result.rows.some((r) => r.comparable) && (
+        <Folds result={result} />
+      )}
+
+      {priced.length > 0 && result.rows.some((r) => r.comparable) && <AdSlot />}
+    </PopoverProvider>
+  );
+}
+
+/**
+ * 折りたたみ2つ（Mock v3 `details.fold`）。既定は閉じていて、見出しと件数だけが見える。
+ * 中身（表・一覧）は `CostTable` / `WhatCouldBeOff` のもの。件数は行の費目から数える。
+ */
+function Folds({ result }: { result: CompareResult }) {
+  const rows = result.rows;
+  const keys = new Set<string>();
+  for (const r of rows) for (const l of r.lines) keys.add(l.key);
+  const comparable = rows.filter((r) => r.comparable).flatMap((r) => r.lines);
+  const uniq = (f: (l: Line) => boolean) => new Set(comparable.filter(f).map((l) => l.label)).size;
+  const offCount = uniq((l) => l.tier === 'estimate') + uniq((l) => l.tier === 'unverified') + uniq((l) => l.amount == null);
+  return (
+    <div id="folds">
+      <details className="fold" id="all-fees">
+        <summary data-testid="breakdown-toggle">
+          <h2>All fees, side by side</h2>
+          <span className="lbl">{keys.size} fees × {rows.length} rows</span>
+        </summary>
+        <CostTable result={result} />
+      </details>
+      <details className="fold" id="what-could-be-off">
+        <summary>
+          <h2>What could be off</h2>
+          <span className="lbl">{offCount} fees</span>
+        </summary>
+        <WhatCouldBeOff result={result} />
+      </details>
     </div>
+  );
+}
+
+/** 空のカート（Mock v3 `.empty`）。3つの入口と、その後に何が起きるかの1行。 */
+function EmptyState({ country, onManual }: { country: CountryCode; onManual: () => void }) {
+  return (
+    <>
+      <div className="empty" role="group" aria-label="How to start">
+        <div>
+          <div className="n">1</div>
+          <h3>Paste a listing</h3>
+          <p>Copy the URL of one item on Yahoo! Auctions, Mercari, Rakuten, Suruga-ya… into the box above. We read its price.</p>
+          <button type="button" className="link" onClick={() => document.getElementById('q')?.focus()}>Go to the box</button>
+        </div>
+        <div>
+          <div className="n">2</div>
+          <h3>Or search</h3>
+          <p>Type a keyword (日本語 OK). You pick from results; their prices are reference prices.</p>
+          <button type="button" className="link" onClick={() => document.getElementById('q')?.focus()}>Search by keyword</button>
+        </div>
+        <div>
+          <div className="n">3</div>
+          <h3>Or type it in</h3>
+          <p>Name and price by hand, when a page can&rsquo;t be read.</p>
+          <button type="button" className="link" onClick={onManual}>Add by hand</button>
+        </div>
+      </div>
+      <p className="emptyfoot">
+        Then we price the same cart at Buyee, ZenMarket, Neokyo, FROM JAPAN and Jauce, landed in {COUNTRIES[country].name}.
+      </p>
+    </>
   );
 }
