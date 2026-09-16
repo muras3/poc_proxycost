@@ -30,9 +30,15 @@ const PORT = Number(process.env.PORT ?? process.env.E2E_PORT ?? defaultPort());
 
 export default defineConfig({
   testDir: './e2e',
-  // E2E は実操作を求める。1件ずつ確実に。
-  fullyParallel: false,
-  workers: 1,
+  // **テストは並列が既定。** 単列に戻すのは、並列で壊れることを実測で示せたときだけ。
+  // 根拠（.github/workflows/ci.yml のコメントに残る 2026-09-07 の実測、4コア機・212件）:
+  //   workers=1 → 4.9分 / workers=2 → 3.6分 / workers=4 → 3.0分。
+  //   **並列にして落ちたテストは1件も無かった**ので、隠れた状態依存は無い。
+  // 共有状態は localStorage だけで、これは browser context 単位なので並列で衝突しない。
+  // `test.describe.serial` を要求するファイルは1つも無い（2026-09-16 時点）。
+  fullyParallel: true,
+  // 手元は CPU に応じて。CI の runner は2コアなので 2。
+  workers: process.env.CI ? 2 : '50%',
   retries: 0,
   timeout: 60_000,
   expect: { timeout: 10_000 },
